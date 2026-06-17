@@ -2755,7 +2755,16 @@ def build_graph(
         """
         try:
             _operation = getattr(range_filter, "operation", "")
-            if _operation in ("max", "min"):
+            if _operation == "keyword":
+                # List/category ("liệt kê dịch vụ X" / "tư vấn về X"): return
+                # EVERY record whose name/category matches the keyword, so the
+                # LLM can list/count them ALL (vector/BM25 only surface top-k).
+                entities = await stats_index_repo.query_by_name_keyword(
+                    record_bot_id=state["record_bot_id"],
+                    keyword=getattr(range_filter, "keyword", "") or "",
+                    limit=stats_limit,
+                )
+            elif _operation in ("max", "min"):
                 # Superlative ("đắt nhất"/"rẻ nhất"): no bound → ORDER BY price.
                 entities = await stats_index_repo.top_by_price(
                     record_bot_id=state["record_bot_id"],

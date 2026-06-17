@@ -71,6 +71,7 @@ from ragbot.shared.embedding_cache import set_cached_embedding
 from ragbot.shared.errors import InvariantViolation
 from ragbot.shared.query_range_parser import (
     matches_summary_pattern as _matches_summary_pattern,
+    parse_list_query as _parse_list_query,
     parse_range_query as _parse_range_query,
 )
 from ragbot.shared.vi_tokenizer import expand_abbreviations, restore_diacritics
@@ -199,6 +200,12 @@ async def retrieve(
             # the raw text; fall back to query when condense did not run.
             _raw_query = state.get("original_query") or state.get("query") or ""
             _range_filter = _parse_range_query(_raw_query)
+            # Keyword/category list route: "liệt kê dịch vụ X" / "tư vấn về X" /
+            # "có bao nhiêu X" need EVERY matching record (vector/BM25 only
+            # surface top-k → incomplete list/count). When no price filter
+            # applies, fall back to a name/category keyword lookup.
+            if _range_filter is None:
+                _range_filter = _parse_list_query(_raw_query)
             # Superlative kill-switch: a "max"/"min" filter carries no numeric
             # bound and routes to ORDER BY price. Per-bot opt-out so the route
             # can be disabled without touching the range path.

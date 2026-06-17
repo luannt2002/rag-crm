@@ -415,5 +415,60 @@ class StatsIndexRepository:
             for row in rows
         ]
 
+    async def query_by_name_keyword(
+        self,
+        *,
+        record_bot_id: uuid.UUID,
+        keyword: str,
+        limit: int = DEFAULT_STATS_INDEX_QUERY_LIMIT,
+    ) -> list[dict]:
+        """SELECT every entity whose name OR category contains *keyword*.
+
+        Powers list/count/category queries ("liệt kê dịch vụ tẩy da chết",
+        "tư vấn về da", "có bao nhiêu dịch vụ X"): vector/BM25 retrieve only
+        surfaces top-k chunks so the LLM can never list/count ALL matching
+        services. This returns EVERY matching record from the clean structured
+        index, deterministic + complete. Case/accent-insensitive via ILIKE on
+        the raw substring. Domain-neutral — keys on the corpus name/category,
+        no hard-coded service list. Scoped by record_bot_id (RLS + explicit).
+        """
+        kw = (keyword or "").strip()
+        if not kw:
+            return []
+        effective_limit = min(limit, DEFAULT_STATS_INDEX_QUERY_LIMIT)
+        sql = (
+            "SELECT id, record_document_id, record_chunk_id, entity_name, "
+            "entity_category, price_primary, price_secondary, attributes_json "
+            "FROM document_service_index "
+            "WHERE record_bot_id = :bot_id "
+            "AND (entity_name ILIKE :kw OR entity_category ILIKE :kw) "
+            "ORDER BY entity_name ASC "
+            "LIMIT :limit"
+        )
+        async with self._sf() as session:
+            result = await session.execute(
+                text(sql),
+                {
+                    "bot_id": record_bot_id,
+                    "kw": f"%{kw}%",
+                    "limit": effective_limit,
+                },
+            )
+            rows = result.fetchall()
+
+        return [
+            {
+                "id": row[0],
+                "record_document_id": row[1],
+                "record_chunk_id": row[2],
+                "entity_name": row[3],
+                "entity_category": row[4],
+                "price_primary": row[5],
+                "price_secondary": row[6],
+                "attributes_json": row[7],
+            }
+            for row in rows
+        ]
+
 
 __all__ = ["StatsIndexRepository"]

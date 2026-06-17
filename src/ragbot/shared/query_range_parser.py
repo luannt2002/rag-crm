@@ -95,6 +95,9 @@ class RangeFilter:
     price_column: str
     operation: str
     confidence: float
+    # Non-price keyword for the name/category structured lookup
+    # (operation="keyword"); None for price-range / superlative filters.
+    keyword: str | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -329,6 +332,66 @@ def parse_range_query(query: str) -> RangeFilter | None:
     return None
 
 
+# Signal/stopword phrases stripped to extract the lookup keyword. Both accented
+# and folded forms so a phrase is removed regardless of how the user typed it.
+_LIST_STRIP_PHRASES: Final[tuple[str, ...]] = (
+    "có bao nhiêu", "co bao nhieu", "bao nhiêu", "bao nhieu",
+    "có mấy loại", "có mấy", "mấy loại", "may loai", "mấy", "may",
+    "liệt kê", "liet ke", "danh sách", "danh sach", "kể tên", "ke ten",
+    "có những", "co nhung", "những gì", "nhung gi", "có gì", "co gi",
+    "tư vấn về", "tu van ve", "dịch vụ về", "dich vu ve",
+    "có dịch vụ", "co dich vu", "tư vấn", "tu van", "cho xem", "show", "list",
+    "dịch vụ", "dich vu", "bên em", "ben em", "cho mình", "cho minh",
+    "cho tôi", "cho toi", "giúp em", "giup em", "tất cả", "tat ca",
+    "loại", "loai", "hết", "với", "voi", "các", "của", "nào", "nao",
+    "không", "khong", "có", "co", "ạ", "à", "ra", "mình", "minh",
+)
+
+
+def parse_list_query(query: str) -> RangeFilter | None:
+    """Detect a list/count/category query and extract its lookup keyword.
+
+    "liệt kê dịch vụ tẩy da chết" → keyword "tẩy da chết";
+    "tư vấn về da" → "da"; "có bao nhiêu dịch vụ massage" → "massage".
+
+    Returns ``RangeFilter(operation="keyword", keyword=...)`` so the caller can
+    route to the name/category structured lookup (which returns EVERY matching
+    record — vector/BM25 retrieve only surfaces top-k, so list/count answers
+    are otherwise incomplete). Returns None when no list/category signal is
+    present or the residual keyword is too short to be a useful filter.
+    """
+    if not query or not query.strip():
+        return None
+    folded = _ascii_fold(query)
+    # A price factoid ("… giá bao nhiêu") is NOT a list/count query — it asks
+    # one price, not the full set. Let parse_range_query / vector handle it.
+    if "gia bao nhieu" in folded or "bao nhieu tien" in folded:
+        return None
+    has_list = any(s in folded for s in _LIST_SIGNALS)
+    has_count = any(
+        s in folded for s in ("bao nhieu", "may loai", "may cai", "dem", "so luong")
+    )
+    has_cat = any(s in folded for s in ("tu van ve", "dich vu ve", "co dich vu"))
+    if not (has_list or has_count or has_cat):
+        return None
+    # Strip signal/stopword phrases (longest first) from the ORIGINAL query so
+    # the residual keyword keeps its diacritics for the ILIKE corpus match.
+    # Word-boundary so "hết" is not torn out of "chết" / "có" out of "sóc".
+    kw = query
+    for ph in sorted(_LIST_STRIP_PHRASES, key=len, reverse=True):
+        kw = re.sub(
+            r"\b" + re.escape(ph) + r"\b", " ", kw,
+            flags=re.IGNORECASE | re.UNICODE,
+        )
+    kw = re.sub(r"\s+", " ", kw).strip(" ?.,!")
+    if len(kw) < 2:
+        return None
+    return RangeFilter(
+        price_min=None, price_max=None, price_column="any",
+        operation="keyword", confidence=0.8, keyword=kw,
+    )
+
+
 def _extract_original_span(original: str, start: int, end: int) -> str:
     """Return the substring of *original* aligned to folded-string offsets.
 
@@ -391,5 +454,6 @@ __all__ = [
     "RangeFilter",
     "parse_money_vn",
     "parse_range_query",
+    "parse_list_query",
     "matches_summary_pattern",
 ]
