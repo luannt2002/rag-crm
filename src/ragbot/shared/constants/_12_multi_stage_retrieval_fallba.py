@@ -69,6 +69,15 @@ DEFAULT_METADATA_LAYER3_LLM_ENABLED: Final[bool] = False
 # bracketed token, add an independent `phraseto_tsquery` OR-branch on just
 # that token (`range <-> 5`) so the chunk is retrievable on the symbol alone.
 DEFAULT_BM25_SYMBOL_PHRASE_ENABLED: Final[bool] = True
+# Rank BOOST added to a chunk's sparse score when it matches the symbol/code
+# phrase. The main rank expression scores on the full AND-query, so a chunk
+# holding the exact code but NOT the surrounding words ("195/65R15 về hàng" →
+# the FAQ row has the code but not "về hàng") scored 0 and was drowned by
+# near-duplicate noise (e.g. a multilingual manifest whose boilerplate makes
+# every chunk embed alike). A boost well above typical ts_rank values (~0.01–
+# 0.3) surfaces the exact-code match to the top of the sparse arm. Technical
+# score offset, domain-neutral.
+DEFAULT_BM25_SYMBOL_PHRASE_RANK_BOOST: Final[float] = 1.0
 
 
 # Owner-facing placeholder token the platform substitutes with captured

@@ -24,6 +24,7 @@ from ragbot.shared.constants import (
     CHUNK_LEVEL_METADATA_FILTER_KEYS,
     DEFAULT_BM25_SUBSTRING_FALLBACK_ENABLED,
     DEFAULT_BM25_SYMBOL_PHRASE_ENABLED,
+    DEFAULT_BM25_SYMBOL_PHRASE_RANK_BOOST,
     DEFAULT_EF_SEARCH,
     DEFAULT_EMBEDDING_COLUMN,
     DEFAULT_HYBRID_RRF_BM25_WEIGHT,
@@ -438,6 +439,16 @@ class PgVectorStore:
                 _sparse_predicate = (
                     f"{_sparse_predicate}"
                     " OR search_vector @@ phraseto_tsquery('simple', :symbol_phrase)"
+                )
+                # Boost the exact-code match in the sparse RANK too: the main
+                # rank scores on the AND-query, so a chunk holding the code but
+                # not the surrounding words ranks 0 and is drowned. Credit the
+                # symbol-phrase match so it surfaces to the top of the sparse arm.
+                params["symbol_boost"] = float(DEFAULT_BM25_SYMBOL_PHRASE_RANK_BOOST)
+                _rank_expr = (
+                    f"({_rank_expr} + CASE WHEN search_vector @@ "
+                    "phraseto_tsquery('simple', :symbol_phrase) "
+                    "THEN :symbol_boost ELSE 0 END)"
                 )
 
             # 2026-05-27 — VN structural pre-filter (Fix 3). When the caller
