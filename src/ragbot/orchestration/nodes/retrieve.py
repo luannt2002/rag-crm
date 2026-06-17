@@ -192,7 +192,12 @@ async def retrieve(
         # and avoids dragging intent-classifier maintenance into every
         # currency / language extension.
         if stats_index_repo is not None:
-            _raw_query = state.get("query") or ""
+            # Parse the price bound from the ORIGINAL user text, not the
+            # condensed query: condense_question rewrites state["query"] in
+            # multi-turn and can drop the literal "dưới 500k", making the
+            # stats route flaky (refuse run-to-run). original_query preserves
+            # the raw text; fall back to query when condense did not run.
+            _raw_query = state.get("original_query") or state.get("query") or ""
             _range_filter = _parse_range_query(_raw_query)
             # Superlative kill-switch: a "max"/"min" filter carries no numeric
             # bound and routes to ORDER BY price. Per-bot opt-out so the route

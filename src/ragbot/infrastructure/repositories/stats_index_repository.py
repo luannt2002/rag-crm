@@ -227,7 +227,7 @@ class StatsIndexRepository:
 
         sql = (
             "SELECT id, record_document_id, entity_name, "
-            "entity_category, price_primary, price_secondary "
+            "entity_category, price_primary, price_secondary, attributes_json "
             f"FROM document_service_index WHERE {where_sql} "
             f"ORDER BY price_primary ASC NULLS LAST "
             f"LIMIT :limit"
@@ -244,6 +244,7 @@ class StatsIndexRepository:
                 "entity_category": row[3],
                 "price_primary": row[4],
                 "price_secondary": row[5],
+                "attributes_json": row[6],
             }
             for row in rows
         ]
@@ -289,7 +290,7 @@ class StatsIndexRepository:
         effective_limit = min(limit, DEFAULT_STATS_INDEX_QUERY_LIMIT)
         sql = (
             "SELECT id, record_document_id, record_chunk_id, entity_name, "
-            "entity_category, price_primary, price_secondary "
+            "entity_category, price_primary, price_secondary, attributes_json "
             "FROM document_service_index "
             f"WHERE record_bot_id = :bot_id AND {not_null} "
             f"ORDER BY {price_expr} {order} "
@@ -311,6 +312,7 @@ class StatsIndexRepository:
                 "entity_category": row[4],
                 "price_primary": row[5],
                 "price_secondary": row[6],
+                "attributes_json": row[7],
             }
             for row in rows
         ]

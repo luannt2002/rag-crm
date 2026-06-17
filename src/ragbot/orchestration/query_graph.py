@@ -370,6 +370,7 @@ from ragbot.shared.constants import (
     DEFAULT_STATS_RACE_TIMEOUT_S,
     DEFAULT_STATS_INDEX_RACE_ENABLED,
     DEFAULT_STATS_SUPERLATIVE_LIMIT,
+    DEFAULT_STATS_ATTR_MAX_CHARS,
     RANGE_QUERY_MIN_CONFIDENCE,
     DEFAULT_STRUCTURAL_REF_FALLBACK_PATTERN,
     INTENT_AGGREGATION,
@@ -2841,9 +2842,26 @@ def build_graph(
                 _seen.add(_key)
                 # Currency-neutral: emit the raw number only (the corpus may be
                 # in any currency — appending "VND" would break a USD/EUR bot).
-                _rows.append(
-                    f"{_name}: {int(_price)}" if _price is not None else _name
-                )
+                _parts = [f"{_name}: {int(_price)}"] if _price is not None else [_name]
+                # Surface the remaining structured columns (answer/quantity/date/
+                # image/...) generically so a record-shaped bot (e.g. an n8n
+                # results[] consumer) gets every field, not just the price. The
+                # column names come from the corpus header — domain-neutral, no
+                # hard-coded field list. Skip internal keys + mega-cells (the
+                # huge synonym/variant column that would dilute the chunk).
+                _cat = _e.get("entity_category")
+                if _cat:
+                    _parts.append(f"category: {_cat}")
+                _attrs = _e.get("attributes_json")
+                if isinstance(_attrs, dict):
+                    for _k, _v in _attrs.items():
+                        if _k in ("chunk_index", "question", "variants"):
+                            continue
+                        _vs = str(_v).strip()
+                        if not _vs or len(_vs) > DEFAULT_STATS_ATTR_MAX_CHARS:
+                            continue
+                        _parts.append(f"{_k}: {_vs}")
+                _rows.append(" | ".join(_parts))
                 if len(_rows) >= DEFAULT_STATS_INDEX_LIMIT:
                     break
             synthetic_chunks: list[dict] = []
