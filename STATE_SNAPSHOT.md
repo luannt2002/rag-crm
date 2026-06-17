@@ -3,6 +3,23 @@
 > Always-updated current state. Git history was reset on 2026-06-14 (fresh start);
 > commit-SHA anchors no longer apply — this file is the source of truth.
 
+## Session 2026-06-17 (cont) — Aggregation + number standard + 3-bot role-fix (alembic 0235–0236)
+
+**[T1-Smartness]** Đào sâu retrieval/aggregation/sysprompt cho 3 bot demo (spa/xe/legal), fix tận gốc nhiều bug, HALLU=0 giữ vững. Commits: `4c61deb`→`e5c71ee` (chưa push — harness chặn, user tự push).
+
+**Fixed + verified (rule#0 — evidence load-test):**
+- **Quy chuẩn số canonical** `shared/number_format.py` — 1 SSoT cho ingest+query (trước có 2 parser lệch: `700,000`→700 bug). 21/21 format đúng (`1.200.000`/`5000 nghìn`/`1tr499`/negative). Wire `query_range_parser` + `document_stats` delegate.
+- **Aggregation route** (đắt nhất/rẻ nhất/dưới X): superlative `top_by_price` + range `query_by_price_range` → stats→generate bypass (rerank/grade drop chunk SQL nên route thẳng generate, seed `graded_chunks`). "dưới 700.000"/"đắt nhất Meso 3tr"/"rẻ nhất" chạy.
+- **semantic_cache dim 1280→1024** (alembic 0235) — di sản ZE→Jina (0228 bỏ sót cột này) gây runtime `DataError: expected 1280` MỖI cache write. **API/cache bug thật.**
+- **symbol-phrase rank boost** (pgvector_store) — mã `195/65R15` match FAQ chunk nhưng rank=0 (AND-query), boost lên top sparse. Đúng ở hybrid; downstream rerank/grade vẫn drop → cần structured-route.
+- **Sysprompt 3 bot role-correct** (alembic 0236, 3-agent design): GATE off-topic (từ chối code/game), identity+greeting-intro overview, category list-all, legal doc-orientation. Verified: identity/off-topic/hallu/orientation ✓, HALLU=0 (Michelin/phun-xăm/Điều-78 refuse) ✓.
+- **Greeting leak-skip** (`DEFAULT_SYSPROMPT_LEAK_SKIP_INTENTS`): greeting bị `system_prompt_leak` guard chặn oan (LLM copy persona verbatim → shingle match). Skip cho greeting/chitchat. Chào chạy cả 3 bot + HALLU giữ.
+- Test suite **5916 pass / 0 fail**; fix 9 orphan test + 6 git-env skip-graceful.
+
+**Root-caused, CHƯA code (3 bug = 1 gốc):** spa "tẩy da chết mấy loại"/"tư vấn về da list-all" + xe "195/65R15 còn hàng" — đều **retrieval coverage** (chunks_used=1-2, miss matching services). Sysprompt RULES đúng nhưng retrieval không surface đủ. **1 fix giải cả 3: keyword-list structured route** trong `document_service_index` (lookup name LIKE keyword → trả đủ record → LLM list/đếm/lookup). Mở rộng stats route (hiện chỉ price-range/superlative).
+
+**Docs viết:** `reports/PROJECT_STATE_EXPERT_RAG_*`, `DEEPDIVE_{CHUNKING,RETRIEVAL,COMPLIANCE}_*`, `N8N_PROMPT_CULTURE_*`, `docs/master/DB_SCHEMA_AND_MIGRATION_MINDSET.md` (273-migration synth, head 0236), `docs/dev/{N8N_TO_RAGBOT_PROMPT_MINDSET,CONSULTANT_BOT_BEHAVIOR_RULES}.md`, `reports/{SPA,XE,LEGAL}_BIZFLOW_*`. **Lesson:** đa số bug coverage truy về retrieval/chunking, KHÔNG phải LLM/sysprompt — fix đúng tầng.
+
 ## Session 2026-06-17 — ZE→Jina swap + pure-Jina ingest (alembic 0228–0230)
 
 **[T2-CostPerf]** Embedding/rerank provider ZeroEntropy → **Jina**; ingest made
