@@ -1,0 +1,187 @@
+[
+  {
+    "question": "Thông tư là văn bản quy phạm pháp luật do cơ quan nào ban hành?",
+    "ground_truth_answer": "Thông tư là văn bản quy phạm pháp luật do Bộ trưởng, Thủ trưởng cơ quan ngang Bộ ban hành để hướng dẫn thực hiện văn bản quy phạm pháp luật cấp trên hoặc quy định chi tiết thuộc thẩm quyền ngành.",
+    "ground_truth_contexts": ["Luật Ban hành văn bản quy phạm pháp luật quy định Thông tư do Bộ trưởng, Thủ trưởng cơ quan ngang Bộ ban hành."],
+    "difficulty": "simple_lookup"
+  },
+  {
+    "question": "Cấu trúc cơ bản của một Thông tư gồm những phần nào?",
+    "ground_truth_answer": "Cấu trúc cơ bản của một Thông tư gồm: phần mở đầu (căn cứ ban hành), phần nội dung chính (chia thành các Chương, Điều, Khoản, Điểm), phần điều khoản chuyển tiếp và hiệu lực thi hành, cùng các phụ lục nếu có.",
+    "ground_truth_contexts": ["Cấu trúc văn bản quy phạm pháp luật quy định gồm phần mở đầu, nội dung chính, hiệu lực thi hành.", "Nội dung chính chia thành Chương, Điều, Khoản, Điểm."],
+    "difficulty": "simple_lookup"
+  },
+  {
+    "question": "Một Điều trong Thông tư được phân chia thành những đơn vị nhỏ hơn nào?",
+    "ground_truth_answer": "Một Điều trong Thông tư được phân chia thành Khoản, trong Khoản có thể chia tiếp thành Điểm; các Điểm thường được đánh dấu bằng chữ cái thường a, b, c.",
+    "ground_truth_contexts": ["Quy định kỹ thuật trình bày văn bản quy phạm pháp luật chia Điều thành Khoản, Khoản thành Điểm."],
+    "difficulty": "simple_lookup"
+  },
+  {
+    "question": "Phần Căn cứ pháp lý của một Thông tư thường đặt ở vị trí nào trong văn bản?",
+    "ground_truth_answer": "Phần Căn cứ pháp lý của một Thông tư đặt ở phần mở đầu, ngay sau quốc hiệu và tiêu đề, trước phần nội dung chính, liệt kê các văn bản pháp luật làm căn cứ ban hành.",
+    "ground_truth_contexts": ["Quy định trình bày Thông tư đặt phần Căn cứ pháp lý sau quốc hiệu, tiêu đề, trước nội dung chính."],
+    "difficulty": "simple_lookup"
+  },
+  {
+    "question": "Hiệu lực thi hành của Thông tư thường được quy định tại Điều nào của văn bản?",
+    "ground_truth_answer": "Hiệu lực thi hành của Thông tư thường được quy định tại Điều cuối cùng trong phần điều khoản thi hành, ghi rõ ngày bắt đầu có hiệu lực và các nội dung chuyển tiếp.",
+    "ground_truth_contexts": ["Quy định trình bày Thông tư đặt Điều hiệu lực thi hành ở cuối phần điều khoản thi hành."],
+    "difficulty": "simple_lookup"
+  },
+  {
+    "question": "Một Thông tư được sửa đổi, bổ sung phải tuân theo trình tự kỹ thuật gì để đảm bảo tính nhất quán với văn bản gốc?",
+    "ground_truth_answer": "Việc sửa đổi, bổ sung Thông tư phải tuân theo Luật Ban hành văn bản quy phạm pháp luật, ghi rõ Điều, Khoản, Điểm bị thay thế, bổ sung hoặc bãi bỏ; văn bản sửa đổi viện dẫn chính xác văn bản gốc và đảm bảo không trái với văn bản cấp cao hơn.",
+    "ground_truth_contexts": ["Luật Ban hành văn bản quy phạm pháp luật quy định kỹ thuật sửa đổi, bổ sung văn bản.", "Văn bản sửa đổi phải viện dẫn chính xác Điều, Khoản, Điểm và không trái cấp trên."],
+    "difficulty": "multi_hop"
+  },
+  {
+    "question": "Khi Thông tư hết hiệu lực, các văn bản hướng dẫn dưới nó và biên bản đã lập trên cơ sở Thông tư đó được xử lý ra sao?",
+    "ground_truth_answer": "Khi Thông tư hết hiệu lực, các văn bản hướng dẫn dưới nó tự động hết hiệu lực trừ khi quy định khác; biên bản đã lập trên cơ sở Thông tư đó vẫn được xử lý theo pháp luật tại thời điểm xảy ra hành vi, theo nguyên tắc áp dụng pháp luật trong thời gian.",
+    "ground_truth_contexts": ["Quy định văn bản hướng dẫn hết hiệu lực khi văn bản gốc hết hiệu lực, trừ trường hợp khác.", "Nguyên tắc áp dụng pháp luật tại thời điểm xảy ra hành vi theo Luật Ban hành văn bản quy phạm pháp luật."],
+    "difficulty": "multi_hop"
+  },
+  {
+    "question": "Quy trình ban hành một Thông tư gồm các bước chính nào, từ soạn thảo đến công bố?",
+    "ground_truth_answer": "Quy trình ban hành Thông tư gồm: lập đề nghị xây dựng, soạn thảo, lấy ý kiến đối tượng chịu tác động và cơ quan liên quan, thẩm định, hoàn thiện, Bộ trưởng ký ban hành và đăng Công báo, cập nhật cơ sở dữ liệu quốc gia về pháp luật.",
+    "ground_truth_contexts": ["Quy trình ban hành Thông tư theo Luật Ban hành văn bản quy phạm pháp luật.", "Yêu cầu đăng Công báo và cập nhật cơ sở dữ liệu quốc gia về pháp luật."],
+    "difficulty": "multi_hop"
+  },
+  {
+    "question": "Phụ lục của một Thông tư có giá trị pháp lý như thế nào so với phần nội dung chính của Thông tư?",
+    "ground_truth_answer": "Phụ lục của một Thông tư có giá trị pháp lý ngang phần nội dung chính khi được ban hành kèm theo Thông tư đó, dùng để liệt kê chi tiết biểu mẫu, danh mục, mẫu báo cáo phục vụ thi hành; phải có chữ ký xác nhận của người ký Thông tư.",
+    "ground_truth_contexts": ["Quy định Phụ lục có giá trị pháp lý ngang phần nội dung chính khi ban hành kèm Thông tư.", "Yêu cầu chữ ký xác nhận của người ký Thông tư trên Phụ lục."],
+    "difficulty": "multi_hop"
+  },
+  {
+    "question": "Khi có mâu thuẫn giữa hai Thông tư của hai Bộ khác nhau trong cùng lĩnh vực, nguyên tắc giải quyết được áp dụng như thế nào?",
+    "ground_truth_answer": "Khi có mâu thuẫn giữa hai Thông tư của hai Bộ khác nhau, nguyên tắc giải quyết là ưu tiên áp dụng văn bản cấp cao hơn; nếu cùng cấp, áp dụng văn bản ban hành sau cho lĩnh vực thuộc thẩm quyền chuyên ngành của cơ quan ban hành.",
+    "ground_truth_contexts": ["Nguyên tắc áp dụng pháp luật theo Luật Ban hành văn bản quy phạm pháp luật.", "Quy tắc ưu tiên văn bản cấp cao hơn và văn bản ban hành sau cùng cấp."],
+    "difficulty": "multi_hop"
+  },
+  {
+    "question": "Thông tư liên tịch giữa các Bộ ngày nay còn được ban hành không, và nếu không thì hình thức thay thế là gì?",
+    "ground_truth_answer": "Theo Luật Ban hành văn bản quy phạm pháp luật hiện hành, Thông tư liên tịch giữa các Bộ không còn được ban hành; hình thức thay thế là phối hợp ban hành riêng từng Thông tư của từng Bộ với nội dung tham chiếu lẫn nhau, hoặc đề nghị cấp Chính phủ ban hành Nghị định chung.",
+    "ground_truth_contexts": ["Quy định Luật Ban hành văn bản quy phạm pháp luật hiện hành bãi bỏ Thông tư liên tịch giữa các Bộ.", "Hình thức thay thế: Thông tư riêng hoặc Nghị định cấp Chính phủ."],
+    "difficulty": "multi_hop"
+  },
+  {
+    "question": "Quy trình rà soát, hệ thống hóa Thông tư định kỳ được thực hiện bởi cơ quan nào và bao gồm các bước nào?",
+    "ground_truth_answer": "Quy trình rà soát, hệ thống hóa Thông tư định kỳ do các Bộ chủ trì thực hiện, gồm các bước lập danh mục Thông tư còn hiệu lực, đánh giá nội dung phù hợp pháp luật hiện hành, đề xuất sửa đổi hoặc bãi bỏ, công bố kết quả rà soát.",
+    "ground_truth_contexts": ["Cơ quan chủ trì rà soát Thông tư là các Bộ ban hành.", "Các bước rà soát: lập danh mục, đánh giá, đề xuất sửa đổi/bãi bỏ, công bố kết quả."],
+    "difficulty": "multi_hop"
+  },
+  {
+    "question": "Việc đăng tải Thông tư trên Công báo và cơ sở dữ liệu quốc gia về pháp luật được thực hiện trong thời hạn nào kể từ ngày ký?",
+    "ground_truth_answer": "Việc đăng tải Thông tư trên Công báo và cơ sở dữ liệu quốc gia về pháp luật được thực hiện trong thời hạn quy định tại Luật Ban hành văn bản quy phạm pháp luật, đảm bảo công khai minh bạch sau khi Bộ trưởng ký ban hành.",
+    "ground_truth_contexts": ["Luật Ban hành văn bản quy phạm pháp luật quy định thời hạn đăng Công báo và cập nhật cơ sở dữ liệu."],
+    "difficulty": "multi_hop"
+  },
+  {
+    "question": "Khi một Thông tư có hiệu lực thi hành, người dân và doanh nghiệp có quyền viện dẫn trực tiếp Thông tư trong các giao dịch và khiếu nại không?",
+    "ground_truth_answer": "Khi Thông tư có hiệu lực thi hành, người dân và doanh nghiệp có quyền viện dẫn trực tiếp Thông tư trong các giao dịch và khiếu nại với cơ quan nhà nước; Thông tư là văn bản quy phạm pháp luật có hiệu lực bắt buộc chung trong lĩnh vực thuộc thẩm quyền của Bộ ban hành.",
+    "ground_truth_contexts": ["Thông tư có hiệu lực bắt buộc chung trong lĩnh vực thuộc thẩm quyền Bộ ban hành.", "Người dân và doanh nghiệp có quyền viện dẫn văn bản quy phạm pháp luật trong giao dịch."],
+    "difficulty": "multi_hop"
+  },
+  {
+    "question": "Quy định về điều khoản chuyển tiếp trong Thông tư có vai trò gì và thường được đặt tại Điều nào?",
+    "ground_truth_answer": "Điều khoản chuyển tiếp trong Thông tư có vai trò xử lý các trường hợp đang phát sinh hoặc đã thực hiện trước thời điểm Thông tư có hiệu lực; thường đặt tại Điều kế cận Điều quy định hiệu lực thi hành, cuối phần điều khoản thi hành.",
+    "ground_truth_contexts": ["Vai trò điều khoản chuyển tiếp xử lý trường hợp phát sinh trước thời điểm Thông tư có hiệu lực.", "Vị trí đặt Điều khoản chuyển tiếp kế cận Điều hiệu lực thi hành."],
+    "difficulty": "multi_hop"
+  },
+  {
+    "question": "Số ký hiệu chuẩn của một Thông tư của Bộ Giao thông Vận tải năm 2020 có dạng như thế nào, ví dụ Thông tư 09/2020?",
+    "ground_truth_answer": "Số ký hiệu chuẩn của Thông tư của Bộ Giao thông Vận tải năm 2020 có dạng số/năm/TT-BGTVT; ví dụ 09/2020/TT-BGTVT, trong đó 09 là số thứ tự, 2020 là năm ban hành, TT là Thông tư, BGTVT là Bộ Giao thông Vận tải.",
+    "ground_truth_contexts": ["Quy định ký hiệu văn bản theo Luật Ban hành văn bản quy phạm pháp luật và Nghị định hướng dẫn.", "Cấu trúc số/năm/TT-tên_viết_tắt_cơ_quan."],
+    "difficulty": "numerical_reference"
+  },
+  {
+    "question": "Thời hạn lấy ý kiến đối tượng chịu tác động trong quy trình ban hành Thông tư tối thiểu là bao nhiêu ngày?",
+    "ground_truth_answer": "Thời hạn lấy ý kiến đối tượng chịu tác động trong quy trình ban hành Thông tư được quy định cụ thể tại Luật Ban hành văn bản quy phạm pháp luật và Nghị định hướng dẫn, đảm bảo đủ thời gian để các bên liên quan đóng góp ý kiến.",
+    "ground_truth_contexts": ["Luật Ban hành văn bản quy phạm pháp luật quy định thời hạn lấy ý kiến đối tượng chịu tác động."],
+    "difficulty": "numerical_reference"
+  },
+  {
+    "question": "Một Thông tư thường có hiệu lực thi hành sau bao nhiêu ngày kể từ ngày ký ban hành, theo quy tắc chung?",
+    "ground_truth_answer": "Theo quy tắc chung của Luật Ban hành văn bản quy phạm pháp luật, Thông tư có hiệu lực thi hành sau một khoảng thời gian nhất định kể từ ngày ký ban hành, trừ trường hợp văn bản có quy định khác; chi tiết số ngày tra tại luật áp dụng.",
+    "ground_truth_contexts": ["Luật Ban hành văn bản quy phạm pháp luật quy định thời gian có hiệu lực thi hành sau ngày ký ban hành."],
+    "difficulty": "numerical_reference"
+  },
+  {
+    "question": "Số lượng Điều trong một Thông tư trung bình là bao nhiêu, và có giới hạn tối đa nào theo quy định không?",
+    "ground_truth_answer": "Số lượng Điều trong một Thông tư không có giới hạn tối đa theo quy định pháp luật; số Điều phụ thuộc vào phạm vi điều chỉnh và mức độ chi tiết hóa của Thông tư, được thiết kế phù hợp nội dung cần quy định.",
+    "ground_truth_contexts": ["Luật Ban hành văn bản quy phạm pháp luật không giới hạn số Điều của một Thông tư."],
+    "difficulty": "numerical_reference"
+  },
+  {
+    "question": "Thông tư có được sửa đổi bằng Quyết định của Thủ tướng Chính phủ không?",
+    "ground_truth_answer": "Thông tư không được sửa đổi bằng Quyết định của Thủ tướng Chính phủ; việc sửa đổi, bổ sung Thông tư thuộc thẩm quyền của Bộ trưởng đã ban hành Thông tư đó hoặc cơ quan có thẩm quyền cao hơn theo Luật Ban hành văn bản quy phạm pháp luật.",
+    "ground_truth_contexts": ["Thẩm quyền sửa đổi Thông tư thuộc về Bộ trưởng đã ban hành theo Luật Ban hành văn bản quy phạm pháp luật."],
+    "difficulty": "hallu_trap",
+    "is_hallu_trap": true
+  },
+  {
+    "question": "Tất cả Thông tư đều phải được Quốc hội thông qua trước khi có hiệu lực thi hành đúng không?",
+    "ground_truth_answer": "Không, Thông tư không cần Quốc hội thông qua trước khi có hiệu lực thi hành; Thông tư là văn bản dưới Luật và Nghị định, do Bộ trưởng ký ban hành trong phạm vi thẩm quyền chuyên ngành, theo Luật Ban hành văn bản quy phạm pháp luật.",
+    "ground_truth_contexts": ["Thông tư là văn bản dưới Luật và Nghị định, do Bộ trưởng ký ban hành."],
+    "difficulty": "hallu_trap",
+    "is_hallu_trap": true
+  },
+  {
+    "question": "Một Thông tư có thể thay thế một Nghị định của Chính phủ trong cùng lĩnh vực không?",
+    "ground_truth_answer": "Một Thông tư không thể thay thế một Nghị định của Chính phủ trong cùng lĩnh vực; Thông tư là văn bản dưới Nghị định trong thang hiệu lực văn bản quy phạm pháp luật, chỉ có Nghị định khác hoặc Luật mới có thể thay thế Nghị định.",
+    "ground_truth_contexts": ["Thang hiệu lực văn bản quy phạm pháp luật quy định Thông tư đứng dưới Nghị định."],
+    "difficulty": "hallu_trap",
+    "is_hallu_trap": true
+  },
+  {
+    "question": "Người ban hành Thông tư có bắt buộc phải là Thủ trưởng cơ quan ngang Bộ duy nhất không, hay có thể là cấp Thứ trưởng?",
+    "ground_truth_answer": "Người ban hành Thông tư phải là Bộ trưởng, Thủ trưởng cơ quan ngang Bộ; Thứ trưởng không có thẩm quyền ký ban hành Thông tư, trừ trường hợp được ủy quyền ký theo quy định nội bộ và phải đảm bảo đúng pháp luật về ủy quyền.",
+    "ground_truth_contexts": ["Thẩm quyền ban hành Thông tư thuộc về Bộ trưởng, Thủ trưởng cơ quan ngang Bộ.", "Quy định ủy quyền ký theo pháp luật về ủy quyền."],
+    "difficulty": "hallu_trap",
+    "is_hallu_trap": true
+  },
+  {
+    "question": "Cơ sở dữ liệu quốc gia về pháp luật có chứa toàn văn của tất cả Thông tư đã ban hành từ năm 1945 không?",
+    "ground_truth_answer": "Cơ sở dữ liệu quốc gia về pháp luật không nhất thiết chứa toàn văn của tất cả Thông tư đã ban hành từ năm 1945; cơ sở dữ liệu này tập trung vào văn bản quy phạm pháp luật còn hiệu lực và một phần văn bản đã hết hiệu lực được số hóa, theo quy định về phạm vi cơ sở dữ liệu.",
+    "ground_truth_contexts": ["Quy định phạm vi cơ sở dữ liệu quốc gia về pháp luật tập trung vào văn bản còn hiệu lực và một phần văn bản đã số hóa."],
+    "difficulty": "hallu_trap",
+    "is_hallu_trap": true
+  },
+  {
+    "question": "Tiêu đề chính thức của một Thông tư được trình bày theo mẫu nào, có bao gồm tên đầy đủ của văn bản pháp luật làm căn cứ ban hành không?",
+    "ground_truth_answer": "Tiêu đề chính thức của một Thông tư gồm chữ Thông tư, số ký hiệu, ngày tháng năm ban hành và nội dung khái quát; phần Căn cứ pháp lý liệt kê tên đầy đủ các văn bản làm căn cứ ban hành, đặt ngay sau tiêu đề.",
+    "ground_truth_contexts": ["Quy định trình bày tiêu đề Thông tư gồm số ký hiệu, ngày tháng, nội dung khái quát.", "Phần Căn cứ pháp lý liệt kê tên đầy đủ văn bản làm căn cứ."],
+    "difficulty": "simple_lookup"
+  },
+  {
+    "question": "Khi Thông tư có sai sót về kỹ thuật trình bày, quy trình đính chính được thực hiện ra sao?",
+    "ground_truth_answer": "Khi Thông tư có sai sót về kỹ thuật trình bày, cơ quan ban hành thực hiện thủ tục đính chính bằng văn bản đính chính, đăng Công báo và cập nhật cơ sở dữ liệu quốc gia về pháp luật; văn bản đính chính không làm thay đổi nội dung quy phạm pháp luật của Thông tư gốc.",
+    "ground_truth_contexts": ["Quy trình đính chính Thông tư bằng văn bản đính chính, đăng Công báo.", "Văn bản đính chính không thay đổi nội dung quy phạm pháp luật của Thông tư gốc."],
+    "difficulty": "simple_lookup"
+  },
+  {
+    "question": "Thông tư có thể quy định mức xử phạt vi phạm hành chính cụ thể không, hay phải viện dẫn Nghị định xử phạt?",
+    "ground_truth_answer": "Thông tư không quy định mức xử phạt vi phạm hành chính cụ thể; mức xử phạt vi phạm hành chính phải được quy định tại Nghị định xử phạt do Chính phủ ban hành, theo Luật Xử lý vi phạm hành chính. Thông tư có thể hướng dẫn áp dụng các quy định trong Nghị định xử phạt.",
+    "ground_truth_contexts": ["Luật Xử lý vi phạm hành chính quy định mức xử phạt phải tại Nghị định do Chính phủ ban hành.", "Thông tư hướng dẫn áp dụng quy định trong Nghị định xử phạt."],
+    "difficulty": "simple_lookup"
+  },
+  {
+    "question": "Một Thông tư có thể có hiệu lực hồi tố không, theo quy định của pháp luật Việt Nam?",
+    "ground_truth_answer": "Một Thông tư không có hiệu lực hồi tố, trừ trường hợp đặc biệt được quy định cụ thể và có lợi cho đối tượng bị áp dụng; nguyên tắc này được quy định tại Luật Ban hành văn bản quy phạm pháp luật để đảm bảo tính ổn định và dự đoán được của pháp luật.",
+    "ground_truth_contexts": ["Luật Ban hành văn bản quy phạm pháp luật quy định nguyên tắc không hồi tố của văn bản quy phạm pháp luật.", "Ngoại lệ hồi tố có lợi cho đối tượng bị áp dụng được quy định cụ thể."],
+    "difficulty": "simple_lookup"
+  },
+  {
+    "question": "Trong Thông tư, dấu chấm phẩy và dấu phẩy được sử dụng để phân tách Khoản và Điểm theo quy tắc nào?",
+    "ground_truth_answer": "Trong Thông tư, các Khoản được phân tách bằng dấu chấm xuống dòng; các Điểm trong cùng một Khoản phân tách bằng dấu chấm phẩy và xuống dòng; các thành phần liệt kê trong cùng Điểm phân tách bằng dấu phẩy hoặc dấu chấm phẩy tùy mức độ phức tạp.",
+    "ground_truth_contexts": ["Quy định kỹ thuật trình bày văn bản quy phạm pháp luật về dấu phân tách Khoản và Điểm."],
+    "difficulty": "simple_lookup"
+  },
+  {
+    "question": "Khi một Thông tư có Phụ lục biểu mẫu, người sử dụng có được tự thiết kế lại biểu mẫu để phù hợp với hệ thống quản lý của mình không?",
+    "ground_truth_answer": "Khi Thông tư có Phụ lục biểu mẫu, người sử dụng phải sử dụng đúng biểu mẫu được ban hành kèm theo Thông tư; việc thay đổi nội dung, bố cục biểu mẫu không được phép, trừ khi Thông tư cho phép điều chỉnh hoặc có văn bản hướng dẫn của cơ quan ban hành.",
+    "ground_truth_contexts": ["Quy định Phụ lục biểu mẫu phải sử dụng đúng mẫu được ban hành kèm theo.", "Việc điều chỉnh biểu mẫu phải được cho phép bởi Thông tư hoặc văn bản hướng dẫn."],
+    "difficulty": "multi_hop"
+  }
+]

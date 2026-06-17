@@ -1,0 +1,175 @@
+[project]
+name = "ragbot"
+version = "1.0.0"
+description = "RAGbot — multi-tenant RAG service (channel-agnostic, Python 3.12+)"
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "Proprietary" }
+authors = [{ name = "RAGbot Team" }]
+
+dependencies = [
+    # Web
+    "fastapi>=0.110.0",
+    "uvicorn[standard]>=0.27.0",
+    "uvloop>=0.19.0",
+    "httptools>=0.6.1",
+    # Validation / Config
+    "pydantic>=2.6.0",
+    "pydantic-settings>=2.2.0",
+    "email-validator>=2.1.0",
+    # Persistence
+    "sqlalchemy[asyncio]>=2.0.27",
+    "asyncpg>=0.29.0",
+    # psycopg2-binary is the SYNC driver Alembic uses (asyncpg is async-only).
+    # Without it `alembic upgrade head` fails ImportError on a fresh install.
+    "psycopg2-binary>=2.9.9",
+    "alembic>=1.13.0",
+    # Cache / Bus
+    "redis[hiredis]>=5.0.0",
+    # Orchestration
+    "langgraph>=0.2.0",
+    "langchain-core>=0.3.0",
+    "langchain-text-splitters>=0.2.0",
+    # LLM
+    "litellm>=1.40.0",
+    "instructor>=1.3.0",
+    "jinja2>=3.1.3",
+    # HTTP / utils
+    "httpx>=0.27.0",
+    "tenacity>=8.2.3",
+    # OCR / Docs
+    "pypdfium2>=4.26.0",
+    "python-docx>=1.1.0",
+    # Excel parser (infrastructure/parser/excel_openpyxl_parser.py)
+    "openpyxl>=3.1.2",
+    # Vietnamese tokenizer (shared/vi_tokenizer.py — P22 VN compound segment)
+    "underthesea>=6.7.0",
+    # Security
+    "pyjwt>=2.8.0",
+    "python-jose[cryptography]>=3.3.0",
+    "passlib[bcrypt]>=1.7.4",
+    # Observability
+    "structlog>=24.1.0",
+    "orjson>=3.9.15",
+    "prometheus-client>=0.20.0",
+    # DI
+    "dependency-injector>=4.41.0",
+    # Misc
+    "python-slugify>=8.0.4",
+    "aiofiles>=23.2.1",
+]
+
+[project.optional-dependencies]
+# Layout-aware document parsers (opt-in — keep core install small).
+# Kreuzberg: Rust-pure OCR + structure extractor with Tesseract OCR for
+# scanned PDFs. See src/ragbot/infrastructure/ocr/kreuzberg_parser.py for
+# proof citation + benchmark numbers. License is ELv2 (embedded use OK).
+parsers = [
+    # AdapChunk Layer 1 primary parser (debug doc Phần 10 winner):
+    # 97 formats native, Rust-pure binding, F1 ~91% layout (parity Docling),
+    # ~9× faster than Docling, ~71MB install, ELv2 license (embedded OK).
+    "kreuzberg>=4.3.0",
+]
+dev = [
+    "ruff>=0.3.0",
+    "mypy>=1.9.0",
+    "pytest>=8.1.0",
+    "pytest-asyncio>=0.23.5",
+    "pytest-cov>=4.1.0",
+    "hypothesis>=6.99.0",
+    "testcontainers[postgres,redis]>=4.0.0",
+    "bandit>=1.7.7",
+    "ipython>=8.22.0",
+    "httpx>=0.27.0",
+    "types-pyjwt",
+    "python-dotenv>=1.0.0",
+    "locust>=2.20.0",
+    # RAGAS auto-eval (scripts/eval_ragas.py). Pulled into dev only — the
+    # production hot path never imports `ragas`; the eval script does the
+    # import lazily so unit tests can mock the metric layer without the
+    # package installed.
+    "ragas>=0.1.0",
+]
+
+[project.scripts]
+ragbot-api = "ragbot.main:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ragbot"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E", "F", "W", "I", "N", "UP", "B", "A", "C4", "PIE", "T20", "SIM",
+    "TID", "ARG", "PTH", "ERA", "PL", "RUF", "ASYNC", "S", "RET", "ANN",
+]
+ignore = [
+    "D100", "D104", "COM812", "ISC001",
+    "ANN401",   # Allow Any in generic helpers
+    "PLR0913",  # Many constructor args (DI)
+    "S101",     # assert used (in tests)
+    "N818",     # Exception class name ending with Error suffix
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "PLR2004", "ANN"]
+"alembic/**" = ["ANN", "PLR", "D"]
+"scripts/**" = ["T201", "PLC0415", "PLR0912", "ANN001"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_return_any = true
+warn_unreachable = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+module = [
+    "litellm.*",
+    "langgraph.*",
+    "langchain_core.*",
+]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+# Without a pip-installed package (no .venv pip in coder env), tests
+# must find `ragbot` via src-layout. This declaration replaces the ad-hoc
+# `PYTHONPATH=src` prefix callers previously had to set by hand.
+pythonpath = ["src"]
+markers = [
+    "unit: unit tests (no IO)",
+    "integration: integration tests (with testcontainers)",
+    "e2e: end-to-end tests",
+    "eval: RAGAS eval tests",
+    "slow: slow tests",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["src/ragbot"]
+omit = ["*/tests/*", "*/__init__.py", "*/alembic/*"]
+
+[tool.coverage.report]
+precision = 2
+show_missing = true
+skip_covered = false

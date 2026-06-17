@@ -1,0 +1,154 @@
+from __future__ import annotations
+from typing import Final  # noqa: F401
+from ._20_cag_mode_cache_augmented_gen import *  # noqa: F401,F403
+
+# --- Streaming upload (WB-2 P1-5) ------------------------------------------
+# Partner-facing /documents/upload-stream pushes large bodies (>50MB scanned
+# binders, compliance archives) directly to a temp file.  The full-load
+# ``await request.body()`` path peaks at >2x file size in resident memory
+# (Starlette buffer + framework copy + parser bytes view); streaming caps
+# resident memory at the chunk size regardless of upload bytes.  Hard cap
+# defends the host from disk-fill DoS even before the per-tenant quota
+# kicks in.
+DEFAULT_UPLOAD_STREAM_MAX_BYTES: Final[int] = 500 * 1024 * 1024  # 500 MiB
+# 1 MiB read window — balance between syscall overhead (smaller) and
+# resident memory peak (larger). Matches the default block size used by
+# Python's tempfile and aiofiles helpers.
+DEFAULT_UPLOAD_STREAM_CHUNK_SIZE: Final[int] = 1024 * 1024  # 1 MiB
+# Temp dir lives under ``/tmp`` so the OS reclaims orphaned chunks on
+# reboot; ``mkdir -p`` is the route's responsibility.  Partner data never
+# survives a host crash even if the cleanup branch is skipped.
+DEFAULT_UPLOAD_TEMP_DIR: Final[str] = "/tmp/ragbot_uploads"
+# Redis Stream subject for upload-worker hand-off.  The route ``XADD``s
+# the temp-file pointer + 4-key identity; a separate worker (PHASE 2)
+# consumes, runs the parser registry, persists chunks, and unlinks the
+# temp file.  ``.v1`` matches existing ``SUBJECT_DOCUMENT_*`` naming
+# convention (wire-protocol topic suffix — not a code version-ref).
+SUBJECT_DOCUMENT_UPLOAD_STREAM: Final[str] = "document.upload_stream.v1"
+
+# --- Stats Index (document_service_index table) ----------------------------
+# Maximum rows returned from a single stats-index list/query call.
+DEFAULT_STATS_INDEX_QUERY_LIMIT: Final[int] = 1000
+# Threshold below which a numeric token is ignored by the price extractor
+# (avoids treating article numbers like "Điều 12" → 12 as prices).
+DEFAULT_STATS_PRICE_MIN_DIGITS: Final[int] = 4
+# Price bucket boundaries (VND) used by aggregate_summary.
+# Bucket keys are generated from these thresholds at call-time so names
+# stay in sync with values. Override at runtime via system_config.
+DEFAULT_PRICE_BUCKETS_VND: Final[tuple[int, ...]] = (
+    500_000,    # "under_500k"
+    1_000_000,  # "under_1M"
+    2_000_000,  # "under_2M"
+    5_000_000,  # "under_5M"
+)
+# Minimum amount considered a valid price (filters ordinal numbers / row IDs).
+DEFAULT_PRICE_MIN_VND: Final[int] = 10_000
+
+# --- Stats-index query routing (B3 — Self-Query Retrieval) ------------------
+# Max rows returned from document_service_index when routing an
+# aggregation / comparison query via SQL instead of vector retrieve.
+DEFAULT_STATS_INDEX_LIMIT: Final[int] = 100
+# Parser confidence floor — parse_range_query results below this
+# threshold are ignored and the pipeline falls back to vector retrieve.
+RANGE_QUERY_MIN_CONFIDENCE: Final[float] = 0.7
+# --- Superlative aggregation ("đắt nhất" / "rẻ nhất" → ORDER BY price) -------
+# A price-superlative query carries no numeric bound, so parse_range_query
+# returns a RangeFilter with operation "max"/"min" and null bounds; the stats
+# route then runs ORDER BY price DESC/ASC LIMIT K against the clean
+# document_service_index (not a re-parse of raw retrieved chunks, which fails
+# on CSV price formats like "Laser Carbon,1200000"). Domain-neutral.
+SUPERLATIVE_QUERY_CONFIDENCE: Final[float] = 0.8
+# Master switch (per-bot override: pipeline_config 'stats_superlative_enabled').
+# Fail-soft: a bot whose stats index has no priced rows (e.g. a legal corpus)
+# gets zero entities → the route returns nothing → falls back to vector.
+DEFAULT_STATS_SUPERLATIVE_ENABLED: Final[bool] = True
+# Rows returned for a superlative query — small so the LLM sees the ranked
+# head ("the 5 most expensive"), not the whole price table.
+DEFAULT_STATS_SUPERLATIVE_LIMIT: Final[int] = 5
+# Fallback structural-reference detector for the stats_index guard. The guard
+# normally relies on the injected metadata_filter_strategy to detect an
+# article/clause anchor and skip stats routing — but that strategy is None on
+# the default path, leaving the guard a no-op (a "Điều 34 giá" query then wrongly
+# routes to stats_index and bypasses the exact-article fetch). This regex is the
+# always-on fallback: universal DOCUMENT-STRUCTURE vocabulary (not brand/domain
+# data), so it stays domain-neutral. Operators can override via system_config
+# 'structural_ref_fallback_pattern'. Matches a structural word + number.
+DEFAULT_STRUCTURAL_REF_FALLBACK_PATTERN: Final[str] = (
+    r"(?i)\b(điều|khoản|điểm|chương|mục|tiết|article|section|clause|chapter|"
+    r"paragraph|art\.?|sec\.?)\s*\.?\s*\d+"
+)
+# Safety timeout (seconds) for the stats-vs-vector race: both tasks are
+# cancelled and the fallback path runs if neither completes within this
+# window.  Kept generous (3 s) to accommodate slow SQL on cold cache;
+# vector retrieve p95 is ~700 ms so the race always resolves well before
+# the downstream LLM call.  Per-bot override: ``stats_race_timeout_s``
+# in pipeline_config.  Default OFF — enable per-bot via
+# ``stats_index_race_enabled = true`` in pipeline_config.
+DEFAULT_STATS_RACE_TIMEOUT_S: Final[float] = 3.0
+# Race mode is opt-in per-bot so existing deployments keep the current
+# sequential gate (stats first → if empty, vector) until explicitly
+# enabled.  Flip to True in system_config to make it the platform
+# default once A/B validates recall improvement.
+DEFAULT_STATS_INDEX_RACE_ENABLED: Final[bool] = False
+# Vietnamese range-query signal patterns used by parse_range_query.
+# Parser compares the diacritic-folded query against these tokens;
+# adding a new pattern = extend this tuple, no code change needed.
+RANGE_QUERY_PATTERNS_VI: Final[tuple[str, ...]] = (
+    "dưới",
+    "trên",
+    "từ",
+    "đến",
+    "ít hơn",
+    "nhỏ hơn",
+    "lớn hơn",
+    "cao hơn",
+    "thấp hơn",
+    "khoảng",
+    "không quá",
+    "tối đa",
+    "có bao nhiêu",
+    "liệt kê",
+)
+# Summary-query patterns — when any of these tokens appears in the query
+# the pipeline routes to doc-level summary_json instead of chunk retrieve.
+SUMMARY_QUERY_PATTERNS_VI: Final[tuple[str, ...]] = (
+    "tóm tắt",
+    "tổng quan",
+    "tổng cộng",
+    "tất cả",
+    "toàn bộ",
+    "overview",
+    "summarize",
+    "summarise",
+)
+# --- Heuristic Intent Classifier (Layer 1 latency opt) ----------------------
+# Regex-based fast-path for common Vietnamese query patterns. When a pattern
+# matches with confidence >= threshold the LLM understand_query call is
+# skipped entirely (saves ~1.6s p50). LLM fallback activates for any query
+# where no pattern matches OR confidence is below the threshold.
+#
+# HALLU=0 sacred: the heuristic is a SKIP gate — it only fires on clear-signal
+# intents (greeting, chitchat). Ambiguous or domain queries always fall through
+# to the LLM path. Threshold 0.85 keeps false-positive rate < 1% per manual
+# audit of 50-turn VN probe set. Bot owners cannot lower threshold via config
+# (would break HALLU sacred).
+HEURISTIC_INTENT_CONFIDENCE_THRESHOLD: Final[float] = 0.85
+# Flag lets ops disable the heuristic layer per-bot without redeploying.
+# Default ON — measured latency saving 1.4-1.6s on greeter / chitchat turns.
+DEFAULT_HEURISTIC_INTENT_ENABLED: Final[bool] = True
+
+# --- Grounding check truly parallel flag ------------------------------------
+# When True, `_schedule_grounding_check_background` wraps the coroutine in
+# asyncio.create_task so the judge runs concurrently with response shipping
+# rather than as a deferred sequential call. Decouples HALLU guard latency
+# from user-visible response time entirely.
+DEFAULT_GROUNDING_CHECK_TRULY_PARALLEL: Final[bool] = True
+
+# --- Guard output parallel 3-checks flag ------------------------------------
+# When True the three output guard checks (PII, math_lockdown, leak) that are
+# currently serial are dispatched via asyncio.gather so total latency is
+# max(t_pii, t_math, t_leak) instead of sum. Safe to parallelise: each check
+# reads state (immutable during guard_output) and writes only guardrail_flags
+# (list — merged additively post-gather). Falls back to serial when flag is
+# False (default True post-validation).
+DEFAULT_GUARD_OUTPUT_PARALLEL_ENABLED: Final[bool] = True

@@ -1,0 +1,116 @@
+{
+  "bot_id": "test-spa-id",
+  "channel_type": "web",
+  "note": "CS spa consulting flows. expect = substring that a correct answer/chunk should contain (for recall-miss detection). null = open.",
+  "questions": [
+    {
+      "id": "q01",
+      "flow": "hoi_tham",
+      "q": "Chào shop, cho mình hỏi thăm chút",
+      "expect": null
+    },
+    {
+      "id": "q02",
+      "flow": "liet_ke_dich_vu",
+      "q": "Spa có những dịch vụ gì, liệt kê tất cả giúp mình",
+      "expect": "Laser Carbon"
+    },
+    {
+      "id": "q03",
+      "flow": "hoi_gia_san_pham",
+      "q": "Laser Carbon giá bao nhiêu?",
+      "expect": "1200000"
+    },
+    {
+      "id": "q04",
+      "flow": "hoi_gia_san_pham",
+      "q": "Giá dịch vụ trị mụn chuyên sâu?",
+      "expect": "700000"
+    },
+    {
+      "id": "q05",
+      "flow": "soi_san_pham",
+      "q": "Dịch vụ Nano kim cương là gì, có gì đặc biệt?",
+      "expect": "Nano kim cương"
+    },
+    {
+      "id": "q06",
+      "flow": "liet_ke_duoi_gia",
+      "q": "Có dịch vụ nào dưới 500 nghìn không?",
+      "expect": "129000"
+    },
+    {
+      "id": "q07",
+      "flow": "liet_ke_tren_gia",
+      "q": "Liệt kê các dịch vụ trên 1 triệu",
+      "expect": "2500000"
+    },
+    {
+      "id": "q08",
+      "flow": "re_nhat",
+      "q": "Dịch vụ nào rẻ nhất ở spa?",
+      "expect": "99000"
+    },
+    {
+      "id": "q09",
+      "flow": "dat_nhat",
+      "q": "Dịch vụ nào đắt nhất?",
+      "expect": "3000000"
+    },
+    {
+      "id": "q10",
+      "flow": "ngan_sach",
+      "q": "Mình có 2 triệu thì làm được những dịch vụ nào?",
+      "expect": null
+    },
+    {
+      "id": "q11",
+      "flow": "khuyen_mai",
+      "q": "Hiện có dịch vụ nào đang khuyến mãi / combo không?",
+      "expect": "Combo"
+    },
+    {
+      "id": "q12",
+      "flow": "so_sanh",
+      "q": "So sánh Laser Carbon với Trẻ hóa IPL",
+      "expect": null
+    },
+    {
+      "id": "q13",
+      "flow": "triet_long",
+      "q": "Triệt lông nách giá combo 10 buổi bao nhiêu?",
+      "expect": "1199000"
+    },
+    {
+      "id": "q14",
+      "flow": "tu_van_quy_trinh",
+      "q": "Quy trình chăm sóc da chuyên sâu gồm các bước nào?",
+      "expect": null
+    },
+    {
+      "id": "q15",
+      "flow": "dat_lich",
+      "q": "Mình muốn đặt lịch khám da mặt",
+      "expect": null
+    },
+    {
+      "id": "q16",
+      "flow": "dat_lich_slot",
+      "q": "Tên mình là Lan, sđt 0901234567, hẹn 9h sáng mai, đi 2 người",
+      "expect": null
+    },
+    {
+      "id": "q17",
+      "flow": "oos_trap",
+      "q": "Spa có bán xe máy không?",
+      "expect": null
+    },
+    {
+      "id": "q18",
+      "flow": "hallu_trap",
+      "q": "Dịch vụ cấy chỉ collagen vàng 24k giá bao nhiêu?",
+      "expect": null
+    }
+  ],
+  "workspace_id": "spa"
+}

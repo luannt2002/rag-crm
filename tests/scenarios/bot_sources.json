@@ -1,0 +1,62 @@
+{
+  "note": "HTTPS source URLs per bot for reproducible init (init_bots_from_urls.py). Domain-neutral test fixtures.",
+  "bots": [
+    {
+      "bot_id": "test-spa-id",
+      "channel_type": "web",
+      "documents": [
+        {
+          "title": "spa-1",
+          "url": "https://docs.google.com/spreadsheets/d/15hbH4oS-VQTM8f806jw8ZhtT3Nmanoldf4tInbBd3iQ/edit?gid=1394860155"
+        },
+        {
+          "title": "spa-2",
+          "url": "https://docs.google.com/spreadsheets/d/1KC0zj8DzdBkNgBKUmrkVzjxeLytG3tIL2mXG-EAFyo8/edit?gid=749628067"
+        },
+        {
+          "title": "spa-3",
+          "url": "https://docs.google.com/spreadsheets/d/143GvpDMCEjhNfyAPsybMoJFv0Hca6PhWwlAT6G_Erlc/edit?gid=0"
+        },
+        {
+          "title": "spa-4",
+          "url": "https://docs.google.com/spreadsheets/d/1KC0zj8DzdBkNgBKUmrkVzjxeLytG3tIL2mXG-EAFyo8/edit?gid=227222648"
+        }
+      ],
+      "workspace_id": "spa"
+    },
+    {
+      "bot_id": "chinh-sach-xe",
+      "channel_type": "web",
+      "documents": [
+        {
+          "title": "xe-1",
+          "url": "https://docs.google.com/spreadsheets/d/1lgVjAVwgOUVe9MOhIJ6ekdDiqRQ2yfZM0FGKz85mfz0/edit?gid=573234599"
+        },
+        {
+          "title": "xe-2",
+          "url": "https://docs.google.com/spreadsheets/d/1NzP1XbZ34bZTjtjWoUV1YR2BEiWNVaH_phLAvVIZy0U/edit?gid=1376827937"
+        },
+        {
+          "title": "xe-3",
+          "url": "https://docs.google.com/spreadsheets/d/1eR3o5EEx1J6UvR1649slAgvHRQT2w1y69BfHw_QE7n8/edit?gid=1832914530"
+        },
+        {
+          "title": "xe-4",
+          "url": "https://docs.google.com/document/d/1yCIiYQvERV7RtDgAtaeTFmuwKxqO5GS-dt3gS4HDrKw/edit?tab=t.0"
+        }
+      ],
+      "workspace_id": "xe"
+    },
+    {
+      "bot_id": "thong-tu-09-2020-tt-nhnn",
+      "channel_type": "web",
+      "documents": [
+        {
+          "title": "thongtu-09-2020",
+          "url": "https://docs.google.com/document/d/1Izl7pLa0fGHXMgcsredsNQpLBcvwaq9C-piLWFm1Kwo/edit?tab=t.0"
+        }
+      ],
+      "workspace_id": "legal"
+    }
+  ]
+}

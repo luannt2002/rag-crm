@@ -1,0 +1,47 @@
+# Coder team local environment — Postgres + Redis + auto-load test DB dump
+#
+# Usage (from repo root):
+#   docker-compose -f docker/coder/docker-compose.yml up -d
+#   # → Postgres at localhost:5432, Redis at localhost:6379
+#   # → DB seed loaded from tests/fixtures/db_seed/test_db_dump.sql automatically on first start
+#
+# Coder team uses this for integration test + local app run before commit.
+# DO NOT use for production. Credentials below are dev-only.
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: ragbot-coder-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: coder_dev_local
+      POSTGRES_DB: ragbot_v2_dev
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - coder_pg_data:/var/lib/postgresql/data
+      - ../../tests/fixtures/db_seed/test_db_dump.sql:/docker-entrypoint-initdb.d/01-seed.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ragbot_v2_dev"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: ragbot-coder-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - coder_redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  coder_pg_data:
+  coder_redis_data:

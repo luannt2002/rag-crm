@@ -1,0 +1,67 @@
+{
+  "metadata": {
+    "version": "v1",
+    "created": "2026-04-28",
+    "purpose": "Kịch bản test 1-room cho Ragbot — đo metrics REAL, không tự phong điểm",
+    "bot_identity_source": "ENV — không hardcode brand. Đọc từ RAGBOT_TEST_TENANT_ID, RAGBOT_TEST_BOT_ID, RAGBOT_TEST_CHANNEL_TYPE",
+    "ratio": "80% on-topic (PRICE+SERVICE+INFO) / 20% off-topic (OFF-CORPUS+NOISE)",
+    "categories": {
+      "PRICE": {"count": 18, "tag": "[PRICE]", "expected_type": "answered", "min_top_score": 0.30},
+      "SERVICE": {"count": 9,  "tag": "[SERVICE]", "expected_type": "answered", "min_top_score": 0.28},
+      "INFO":    {"count": 6,  "tag": "[INFO]", "expected_type": "answered", "min_top_score": 0.25},
+      "OFF_CORPUS": {"count": 5, "tag": "[OFF-CORPUS]", "expected_type": "refused", "min_top_score": null},
+      "NOISE":   {"count": 5, "tag": "[NOISE]", "expected_type": "refused", "min_top_score": null}
+    },
+    "total_questions": 43,
+    "notes": "Câu hỏi viết generic theo cấu trúc corpus (4 sheets: pricing, products, services, packages). Khi chạy thực tế, replace placeholder <product_name>/<service_name>/<package_name> bằng entity rút từ chính corpus của bot test (do init_questions_from_corpus.py — Sprint 13)."
+  },
+  "questions": [
+    {"turn_id": 1,  "category": "PRICE",      "tag": "[PRICE]",      "question": "Giá <product_name_1> hiện tại là bao nhiêu?",                          "expected_type": "answered", "expected_keywords": ["<product_name_1>", "giá"]},
+    {"turn_id": 2,  "category": "PRICE",      "tag": "[PRICE]",      "question": "<service_name_1> giá bao nhiêu một buổi?",                              "expected_type": "answered", "expected_keywords": ["<service_name_1>"]},
+    {"turn_id": 3,  "category": "PRICE",      "tag": "[PRICE]",      "question": "Combo <package_name_1> giá bao nhiêu?",                                 "expected_type": "answered", "expected_keywords": ["<package_name_1>"]},
+    {"turn_id": 4,  "category": "PRICE",      "tag": "[PRICE]",      "question": "Bảng giá đầy đủ của shop?",                                             "expected_type": "answered", "expected_keywords": ["giá"]},
+    {"turn_id": 5,  "category": "PRICE",      "tag": "[PRICE]",      "question": "<product_name_2> đang bán giá nhiêu?",                                  "expected_type": "answered", "expected_keywords": ["<product_name_2>"]},
+    {"turn_id": 6,  "category": "PRICE",      "tag": "[PRICE]",      "question": "Có gói nào dưới 1 triệu không?",                                        "expected_type": "answered", "expected_keywords": ["giá"]},
+    {"turn_id": 7,  "category": "PRICE",      "tag": "[PRICE]",      "question": "Gói cao cấp nhất giá bao nhiêu?",                                       "expected_type": "answered", "expected_keywords": ["giá", "gói"]},
+    {"turn_id": 8,  "category": "PRICE",      "tag": "[PRICE]",      "question": "<service_name_2> 10 buổi giá tổng cộng?",                               "expected_type": "answered", "expected_keywords": ["<service_name_2>", "buổi"]},
+    {"turn_id": 9,  "category": "PRICE",      "tag": "[PRICE]",      "question": "Có khuyến mãi cho khách mới không?",                                    "expected_type": "answered", "expected_keywords": []},
+    {"turn_id": 10, "category": "PRICE",      "tag": "[PRICE]",      "question": "Combo <package_name_2> rẻ hơn mua lẻ bao nhiêu?",                       "expected_type": "answered", "expected_keywords": ["<package_name_2>"]},
+    {"turn_id": 11, "category": "PRICE",      "tag": "[PRICE]",      "question": "<product_name_3> với <product_name_1> cái nào rẻ hơn?",                 "expected_type": "answered", "expected_keywords": ["<product_name_3>", "<product_name_1>"]},
+    {"turn_id": 12, "category": "PRICE",      "tag": "[PRICE]",      "question": "Chi phí trọn gói <package_name_1> là bao nhiêu?",                       "expected_type": "answered", "expected_keywords": ["<package_name_1>"]},
+    {"turn_id": 13, "category": "PRICE",      "tag": "[PRICE]",      "question": "<service_name_3> giá niêm yết hiện tại?",                               "expected_type": "answered", "expected_keywords": ["<service_name_3>"]},
+    {"turn_id": 14, "category": "PRICE",      "tag": "[PRICE]",      "question": "Giá <product_name_2> đã bao gồm thuế chưa?",                            "expected_type": "answered", "expected_keywords": ["<product_name_2>"]},
+    {"turn_id": 15, "category": "PRICE",      "tag": "[PRICE]",      "question": "Mua 5 buổi <service_name_1> được giảm giá không?",                      "expected_type": "answered", "expected_keywords": ["<service_name_1>"]},
+    {"turn_id": 16, "category": "PRICE",      "tag": "[PRICE]",      "question": "Combo <package_name_2> bao gồm những dịch vụ nào và giá?",              "expected_type": "answered", "expected_keywords": ["<package_name_2>"]},
+    {"turn_id": 17, "category": "PRICE",      "tag": "[PRICE]",      "question": "Phí phát sinh thêm khi dùng <service_name_2>?",                         "expected_type": "answered", "expected_keywords": ["<service_name_2>"]},
+    {"turn_id": 18, "category": "PRICE",      "tag": "[PRICE]",      "question": "<product_name_3> có giá khác giữa các size không?",                     "expected_type": "answered", "expected_keywords": ["<product_name_3>"]},
+
+    {"turn_id": 19, "category": "SERVICE",    "tag": "[SERVICE]",    "question": "<service_name_1> bao gồm những bước gì?",                               "expected_type": "answered", "expected_keywords": ["<service_name_1>"]},
+    {"turn_id": 20, "category": "SERVICE",    "tag": "[SERVICE]",    "question": "<service_name_2> kéo dài bao lâu?",                                     "expected_type": "answered", "expected_keywords": ["<service_name_2>"]},
+    {"turn_id": 21, "category": "SERVICE",    "tag": "[SERVICE]",    "question": "<service_name_3> phù hợp với đối tượng nào?",                           "expected_type": "answered", "expected_keywords": ["<service_name_3>"]},
+    {"turn_id": 22, "category": "SERVICE",    "tag": "[SERVICE]",    "question": "<service_name_1> khác <service_name_2> chỗ nào?",                       "expected_type": "answered", "expected_keywords": ["<service_name_1>", "<service_name_2>"]},
+    {"turn_id": 23, "category": "SERVICE",    "tag": "[SERVICE]",    "question": "<product_name_1> dùng để làm gì?",                                      "expected_type": "answered", "expected_keywords": ["<product_name_1>"]},
+    {"turn_id": 24, "category": "SERVICE",    "tag": "[SERVICE]",    "question": "<product_name_2> sử dụng nguyên liệu gì?",                              "expected_type": "answered", "expected_keywords": ["<product_name_2>"]},
+    {"turn_id": 25, "category": "SERVICE",    "tag": "[SERVICE]",    "question": "Quy trình đặt <package_name_1> như thế nào?",                           "expected_type": "answered", "expected_keywords": ["<package_name_1>"]},
+    {"turn_id": 26, "category": "SERVICE",    "tag": "[SERVICE]",    "question": "<service_name_2> có hiệu quả sau bao nhiêu buổi?",                      "expected_type": "answered", "expected_keywords": ["<service_name_2>"]},
+    {"turn_id": 27, "category": "SERVICE",    "tag": "[SERVICE]",    "question": "Sau khi dùng <service_name_3> cần kiêng gì?",                           "expected_type": "answered", "expected_keywords": ["<service_name_3>"]},
+
+    {"turn_id": 28, "category": "INFO",       "tag": "[INFO]",       "question": "Địa chỉ cơ sở chính ở đâu?",                                            "expected_type": "answered", "expected_keywords": ["địa chỉ"]},
+    {"turn_id": 29, "category": "INFO",       "tag": "[INFO]",       "question": "Giờ mở cửa hàng ngày?",                                                 "expected_type": "answered", "expected_keywords": ["giờ"]},
+    {"turn_id": 30, "category": "INFO",       "tag": "[INFO]",       "question": "Số hotline liên hệ?",                                                   "expected_type": "answered", "expected_keywords": ["hotline"]},
+    {"turn_id": 31, "category": "INFO",       "tag": "[INFO]",       "question": "Có chi nhánh ở những thành phố nào?",                                   "expected_type": "answered", "expected_keywords": []},
+    {"turn_id": 32, "category": "INFO",       "tag": "[INFO]",       "question": "Có ship hàng toàn quốc không?",                                         "expected_type": "answered", "expected_keywords": []},
+    {"turn_id": 33, "category": "INFO",       "tag": "[INFO]",       "question": "Chính sách đổi trả hàng?",                                              "expected_type": "answered", "expected_keywords": []},
+
+    {"turn_id": 34, "category": "OFF_CORPUS", "tag": "[OFF-CORPUS]", "question": "Có dịch vụ <unknown_service_1> không?",                                 "expected_type": "refused",  "expected_keywords": []},
+    {"turn_id": 35, "category": "OFF_CORPUS", "tag": "[OFF-CORPUS]", "question": "Bán <unknown_product_1> không?",                                        "expected_type": "refused",  "expected_keywords": []},
+    {"turn_id": 36, "category": "OFF_CORPUS", "tag": "[OFF-CORPUS]", "question": "Giá <unknown_product_2> bao nhiêu?",                                    "expected_type": "refused",  "expected_keywords": []},
+    {"turn_id": 37, "category": "OFF_CORPUS", "tag": "[OFF-CORPUS]", "question": "Có gói <unknown_package_1> không?",                                     "expected_type": "refused",  "expected_keywords": []},
+    {"turn_id": 38, "category": "OFF_CORPUS", "tag": "[OFF-CORPUS]", "question": "Tư vấn cho tôi loại <unknown_category_1> phù hợp.",                     "expected_type": "refused",  "expected_keywords": []},
+
+    {"turn_id": 39, "category": "NOISE",      "tag": "[NOISE]",      "question": "Bạn ăn cơm chưa?",                                                       "expected_type": "refused",  "expected_keywords": []},
+    {"turn_id": 40, "category": "NOISE",      "tag": "[NOISE]",      "question": "Thời tiết hôm nay thế nào?",                                            "expected_type": "refused",  "expected_keywords": []},
+    {"turn_id": 41, "category": "NOISE",      "tag": "[NOISE]",      "question": "Tỷ giá USD hôm nay là bao nhiêu?",                                      "expected_type": "refused",  "expected_keywords": []},
+    {"turn_id": 42, "category": "NOISE",      "tag": "[NOISE]",      "question": "Tư vấn cho tôi cách giảm cân tại nhà?",                                 "expected_type": "refused",  "expected_keywords": []},
+    {"turn_id": 43, "category": "NOISE",      "tag": "[NOISE]",      "question": "Kể tôi nghe 1 câu chuyện cười.",                                        "expected_type": "refused",  "expected_keywords": []}
+  ]
+}

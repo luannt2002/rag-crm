@@ -1,0 +1,2116 @@
+{
+  "run_at": "2026-04-20T17:58:11.861843",
+  "bot_id": "<test-bot-id>",
+  "channel_type": "web",
+  "base_url": "https://<server-host>:3004",
+  "total_rooms": 10,
+  "rooms": [
+    {
+      "room_id": "room-01-gia-co-ban",
+      "room_name": "Giá cơ bản (Easy)",
+      "total_questions": 10,
+      "ok_count": 1,
+      "error_count": 9,
+      "avg_duration_ms": 576,
+      "total_cost_usd": 0.0083992,
+      "results": [
+        {
+          "room_id": "room-01-gia-co-ban",
+          "room_name": "Giá cơ bản (Easy)",
+          "question_index": 1,
+          "question": "giá gội đầu thường bao nhiêu",
+          "answer": "Dạ dịch vụ gội đầu thư giãn - dầu thường bên em có giá 60.000đ/buổi, làm trong 30 phút ạ. Em hỗ trợ chị đặt lịch tại <Brand Name> nhé ạ?",
+          "ok": true,
+          "error": null,
+          "duration_ms": 5132,
+          "chunks_used": 1,
+          "top_score": 0.017336838849365915,
+          "sources": [
+            "Bảng giá dịch vụ gội đầu"
+          ],
+          "tokens": {
+            "prompt": 20798,
+            "completion": 50
+          },
+          "cost_usd": 0.0083992
+        },
+        {
+          "room_id": "room-01-gia-co-ban",
+          "room_name": "Giá cơ bản (Easy)",
+          "question_index": 2,
+          "question": "triệt lông nách giá sao",
+          "answer": "",
+          "ok": false,
+          "error": {
+            "code": "UNAUTHORIZED",
+            "message": "invalid token",
+            "details": {}
+          },
+          "duration_ms": 61,
+          "chunks_used": 0,
+          "top_score": 0,
+          "sources": [],
+          "tokens": {},
+          "cost_usd": 0
+        },
+        {
+          "room_id": "room-01-gia-co-ban",
+          "room_name": "Giá cơ bản (Easy)",
+          "question_index": 3,
+          "question": "chăm sóc da chuyên sâu bao nhiêu tiền",
+          "answer": "",
+          "ok": false,
+          "error": {
+            "code": "UNAUTHORIZED",
+            "message": "invalid token",
+            "details": {}
+          },
+          "duration_ms": 64,
+          "chunks_used": 0,
+          "top_score": 0,
+          "sources": [],
+          "tokens": {},
+          "cost_usd": 0
+        },
+        {
+          "room_id": "room-01-gia-co-ban",
+          "room_name": "Giá cơ bản (Easy)",
+          "question_index": 4,
+          "question": "massage cổ vai gáy giá bao nhiêu",
+          "answer": "",
+          "ok": false,
+          "error": {
+            "code": "UNAUTHORIZED",
+            "message": "invalid token",
+            "details": {}
+          },
+          "duration_ms": 82,
+          "chunks_used": 0,
+          "top_score": 0,
+          "sources": [],
+          "tokens": {},
+          "cost_usd": 0
+        },
+        {
+          "room_id": "room-01-gia-co-ban",
+          "room_name": "Giá cơ bản (Easy)",
+          "question_index": 5,
+          "question": "gội đầu dưỡng sinh giá bao nhiêu",
+          "answer": "",
+          "ok": false,
+          "error": {
+            "code": "UNAUTHORIZED",
+            "message": "invalid token",
+            "details": {}
+          },
+          "duration_ms": 76,
+          "chunks_used": 0,
+          "top_score": 0,
+          "sources": [],
+          "tokens": {},
+          "cost_usd": 0
+        },
+        {
+          "room_id": "room-01-gia-co-ban",
+          "room_name": "Giá cơ bản (Easy)",
+          "question_index": 6,
+          "question": "triệt lông mép giá sao",
+          "answer": "",
+          "ok": false,
+          "error": {
+            "code": "UNAUTHORIZED",
+            "message": "invalid token",
+            "details": {}
+          },
+          "duration_ms": 68,
+          "chunks_used": 0,
+          "top_score": 0,
+          "sources": [],
+          "tokens": {},
+          "cost_usd": 0
+        },
+        {
+          "room_id": "room-01-gia-co-ban",
+          "room_name": "Giá cơ bản (Easy)",
+          "question_index": 7,
+          "question": "tẩy da chết body giá bao nhiêu",
+          "answer": "",
+          "ok": false,
+          "error": {
+            "code": "UNAUTHORIZED",
+            "message": "invalid token",
+            "details": {}
+          },
+          "duration_ms": 80,
+          "chunks_used": 0,
+          "top_score": 0,
+          "sources": [],
+          "tokens": {},
+          "cost_usd": 0
+        },
+        {
+          "room_id": "room-01-gia-co-ban",
+          "room_name": "Giá cơ bản (Easy)",
+          "question_index": 8,
+          "question": "massage chân bao nhiêu",
+          "answer": "",
+          "ok": false,
+          "error": {
+            "code": "UNAUTHORIZED",
+            "message": "invalid token",
+            "details": {}
+          },
+          "duration_ms": 63,
+          "chunks_used": 0,
+          "top_score": 0,
+          "sources": [],
+          "tokens": {},
+          "cost_usd": 0
+        },
+        {
+          "room_id": "room-01-gia-co-ban",
+          "room_name": "Giá cơ bản (Easy)",
+          "question_index": 9,
+          "question": "cấp nước da tầng giá sao",
+          "answer": "",
+          "ok": false,
+          "error": {
+            "code": "UNAUTHORIZED",
+            "message": "invalid token",
+            "details": {}
+          },
+          "duration_ms": 69,
+          "chunks_used": 0,
+          "top_score": 0,
+          "sources": [],
+          "tokens": {},
+          "cost_usd": 0
+        },
+        {
+          "room_id": "room-01-gia-co-ban",
+          "room_name": "Giá cơ bản (Easy)",
+          "question_index": 10,
+          "question": "triệt lông toàn thân bao nhiêu",
+          "answer": "",
+          "ok": false,
+          "error": {
+            "code": "UNAUTHORIZED",
+            "message": "invalid token",
+            "details": {}
+          },
+          "duration_ms": 73,
+          "chunks_used": 0,
+          "top_score": 0,
+          "sources": [],
+          "tokens": {},
+          "cost_usd": 0
+        }
+      ]
+    },
+    {
+      "room_id": "room-02-thong-tin",
+      "room_name": "Thông tin cơ bản (Easy)",
+      "total_questions": 10,
+      "ok_count": 10,
+      "error_count": 0,
+      "avg_duration_ms": 6132,
+      "total_cost_usd": 0.08246919999999999,
+      "results": [
+        {
+          "room_id": "room-02-thong-tin",
+          "room_name": "Thông tin cơ bản (Easy)",
+          "question_index": 1,
+          "question": "shop tên gì",
+          "answer": "<Brand Name> ạ.",
+          "ok": true,
+          "error": null,
+          "duration_ms": 5094,
+          "chunks_used": 1,
+          "top_score": 0.017336838849365915,
+          "sources": [
+            "Thông tin các dịch vụ"
+          ],
+          "tokens": {
+            "prompt": 20760,
+            "completion": 8
+          },
+          "cost_usd": 0.0083168
+        },
+        {
+          "room_id": "room-02-thong-tin",
+          "room_name": "Thông tin cơ bản (Easy)",
+          "question_index": 2,
+          "question": "địa chỉ ở đâu",
+          "answer": "Em gửi chị địa chỉ của <Brand Name> ạ:\nĐịa chỉ: <demo-address>\n(chị đi thang bộ lên tầng 2 nhé ạ)\nHotline: <demo-hotline>\nGiờ mở cửa: 9-21h, từ T2-CN\nLink Google Maps: <demo-maps>\nCần hỗ trợ thêm chị nhắn em hoặc liên hệ số hotline nhé ạ!",
+          "ok": true,
+          "error": null,
+          "duration_ms": 5586,
+          "chunks_used": 1,
+          "top_score": 0.017336838849365915,
+          "sources": [
+            "Thông tin các dịch vụ"
+          ],
+          "tokens": {
+            "prompt": 20609,
+            "completion": 122
+          },
+          "cost_usd": 0.0084388
+        },
+        {
+          "room_id": "room-02-thong-tin",
+          "room_name": "Thông tin cơ bản (Easy)",
+          "question_index": 3,
+          "question": "hotline bao nhiêu",
+          "answer": "Hotline của <Brand Name> là <demo-hotline> chị ạ.",
+          "ok": true,
+          "error": null,
+          "duration_ms": 5026,
+          "chunks_used": 1,
+          "top_score": 0.017336838849365915,
+          "sources": [
+            "Thông tin các dịch vụ"
+          ],
+          "tokens": {
+            "prompt": 20487,
+            "completion": 20
+          },
+          "cost_usd": 0.0082268
+        },
+        {
+          "room_id": "room-02-thong-tin",
+          "room_name": "Thông tin cơ bản (Easy)",
+          "question_index": 4,
+          "question": "giờ mở cửa",
+          "answer": "Giờ mở cửa của <Brand Name> là từ 9h đến 21h, từ thứ 2 đến chủ nhật chị ạ.",
+          "ok": true,
+          "error": null,
+          "duration_ms": 6288,
+          "chunks_used": 1,
+          "top_score": 0.017336838849365915,
+          "sources": [
+            "Thông tin các dịch vụ"
+          ],
+          "tokens": {
+            "prompt": 20453,
+            "completion": 31
+          },
+          "cost_usd": 0.0082308
+        },
+        {
+          "room_id": "room-02-thong-tin",
+          "room_name": "Thông tin cơ bản (Easy)",
+          "question_index": 5,
+          "question": "email shop là gì",
+          "answer": "Dạ, email liên hệ của <Brand Name> là <demo-email> chị ạ.",
+          "ok": true,
+          "error": null,
+          "duration_ms": 4773,
+          "chunks_used": 1,
+          "top_score": 0.017336838849365915,
+          "sources": [
+            "Thông tin các dịch vụ"
+          ],
+          "tokens": {
+            "prompt": 20480,
+            "completion": 24
+          },
+          "cost_usd": 0.0082304
+        },
+        {
+          "room_id": "room-02-thong-tin",
+          "room_name": "Thông tin cơ bản (Easy)",
+          "question_index": 6,
+          "question": "có fanpage không",
+          "answer": "Dạ, <Brand Name> có fanpage trên Facebook với tên <Brand Name> chị ạ. Nếu cần em gửi link cho chị nhé?",
+          "ok": true,
+          "error": null,
+          "duration_ms": 5791,
+          "chunks_used": 1,
+          "top_score": 0.017336838849365915,
+          "sources": [
+            "Thông tin các dịch vụ"
+          ],
+          "tokens": {
+            "prompt": 20374,
+            "completion": 33
+          },
+          "cost_usd": 0.0082024
+        },
+        {
+          "room_id": "room-02-thong-tin",
+          "room_name": "Thông tin cơ bản (Easy)",
+          "question_index": 7,
+          "question": "shop ở quận nào",
+          "answer": "Dạ, <Brand Name> nằm ở quận Thanh Xuân, Hà Nội chị ạ.",
+          "ok": true,
+          "error": null,
+          "duration_ms": 6199,
+          "chunks_used": 1,
+          "top_score": 0.017336838849365915,
+          "sources": [
+            "Thông tin các dịch vụ"
+          ],
+          "tokens": {
+            "prompt": 20393,
+            "completion": 22
+          },
+          "cost_usd": 0.0081924
+        },
+        {
+          "room_id": "room-02-thong-tin",
+          "room_name": "Thông tin cơ bản (Easy)",
+          "question_index": 8,
+          "question": "làm việc chủ nhật không",
+          "answer": "Dạ, <Brand Name> mở cửa từ 9h đến 21h tất cả các ngày trong tuần, bao gồm cả chủ nhật chị ạ.",
+          "ok": true,
+          "error": null,
+          "duration_ms": 12243,
+          "chunks_used": 1,
+          "top_score": 0.017336838849365915,
+          "sources": [
+            "Thông tin các dịch vụ"
+          ],
+          "tokens": {
+            "prompt": 20382,
+            "completion": 34
+          },
+          "cost_usd": 0.0082072
+        },
+        {
+          "room_id": "room-02-thong-tin",
+          "room_name": "Thông tin cơ bản (Easy)",
+          "question_index": 9,
+          "question": "có mấy chi nhánh",
+          "answer": "Dạ hiện tại <Brand Name> chỉ có 1 chi nhánh duy nhất tại <demo-address> ạ.",
+          "ok": true,
+          "error": null,
+          "duration_ms": 5424,
+          "chunks_used": 1,
+          "top_score": 0.017336838849365915,
+          "sources": [
+            "Thông tin các dịch vụ"
+          ],
+          "tokens": {
+            "prompt": 20400,
+            "completion": 39
+          },
+          "cost_usd": 0.0082224
+        },
+        {
+          "room_id": "room-02-thong-tin",
+          "room_name": "Thông tin cơ bản (Easy)",
+          "question_index": 10,
+          "question": "shop mở cửa mấy giờ",
+          "answer": "Dạ, <Brand Name> mở cửa từ 9h đến 21h mỗi ngày chị ạ.",
+          "ok": true,
+          "error": null,
+          "duration_ms": 4896,
+          "chunks_used": 1,
+          "top_score": 0.017336838849365915,
+          "sources": [
+            "Thông tin các dịch vụ"
+          ],
+          "tokens": {
+            "prompt": 20407,
+            "completion": 24
+          },
+          "cost_usd": 0.0082012
+        }
+      ]
+    },
+    {
+      "room_id": "room-03-so-sanh",
+      "room_name": "So sánh & tổng hợp (Medium)",
+      "total_questions": 10,
+      "ok_count": 10,
+      "error_count": 0,
+      "avg_duration_ms": 7087,
+      "total_cost_usd": 0.08286360000000001,
+      "results": [
+        {
+          "room_id": "room-03-so-sanh",
+          "room_name": "So sánh & tổng hợp (Medium)",
+          "question_index": 1,
+          "question": "gội đầu dưỡng sinh với gội thường chênh bao nhiêu",
+          "answer": "Hiện tại, bên em đang có chương trình ưu đãi đặc biệt cho khách hàng mới trải nghiệm dịch vụ gội đầu dưỡng sinh với giá chỉ 99K/buổi (giá gốc: 350k/buổi) trong vòng 60 phút ạ. Em đăng ký 1 buổi trải nghiệm dịch vụ này cho chị nhé!",
+          "ok": true,
+          "error": null,
+          "duration_ms": 7812,
+          "chunks_used": 1,
+          "top_score": 0.017336838849365915,
+          "sources": [
+            "Bảng giá dịch vụ gội đầu"
+          ],
+          "tokens": {
+            "prompt": 20445,
+            "completion": 74
+          },
+          "cost_usd": 0.0082964
+        },
+        {
+          "room_id": "room-03-so-sanh",
+          "room_name": "So sánh & tổng hợp (Medium)",
+          "question_index": 2,
+          "question": "dịch vụ đắt nhất là gì",
+          "answer": "Dạ, dịch vụ đắt nhất tại <Brand Name> là triệt lông toàn thân với combo 10 buổi có giá 11.999.000 VND ạ. Em hỗ trợ chị đặt lịch trải nghiệm dịch vụ này nhé ạ?",
+          "ok": true,
+          "error": null,
+          "duration_ms": 5835,
+          "chunks_used": 1,
+          "top_score": 0.016816412099430966,
+          "sources": [
+            "BẢNG GIÁ CHĂM SÓC DA CÔNG NGHỆ CAO"
+          ],
+          "tokens": {
+            "prompt": 20441,
+            "completion": 55
+          },
+          "cost_usd": 0.0082644
+        },
+        {
+          "room_id": "room-03-so-sanh",
+          "room_name": "So sánh & tổng hợp (Medium)",
+          "question_index": 3,
+          "question": "dịch vụ rẻ nhất là gì",
+          "answer": "Dạ, dịch vụ rẻ nhất tại <Brand Name> là gội đầu thư giãn sử dụng dầu thường với giá 60.000đ/buổi ạ. Em hỗ trợ chị đặt lịch trải nghiệm dịch vụ này nhé ạ?",
+          "ok": true,
+          "error": null,
+          "duration_ms": 5268,
+          "chunks_used": 1,
+          "top_score": 0.01707242848447961,
+          "sources": [
+            "Bảng giá dịch vụ gội đầu"
+          ],
+          "tokens": {
+            "prompt": 20500,
+            "completion": 53
+          },
+          "cost_usd": 0.0082848
+        },
+        {
+          "room_id": "room-03-so-sanh",
+          "room_name": "So sánh & tổng hợp (Medium)",
+          "question_index": 4,
+          "question": "có mấy loại gội đầu",
+          "answer": "Dạ, bên em có 4 loại dịch vụ gội đầu gồm: gội đầu thư giãn dầu thường, gội đầu thư giãn dầu cặp, gội đầu thư giãn dầu cặp Weilaiya và gội đầu dưỡng sinh ạ. Em hỗ trợ chị đặt lịch trải nghiệm dịch vụ tại <Brand Name> nhé ạ?",
+          "ok": true,
+          "error": null,
+          "duration_ms": 5908,
+          "chunks_used": 1,
+          "top_score": 0.01707242848447961,
+          "sources": [
+            "Bảng giá dịch vụ gội đầu"
+          ],
+          "tokens": {
+            "prompt": 20533,
+            "completion": 76
+          },
+          "cost_usd": 0.0083348
+        },
+        {
+          "room_id": "room-03-so-sanh",
+          "room_name": "So sánh & tổng hợp (Medium)",
+          "question_index": 5,
+          "question": "gội đầu rẻ nhất bao nhiêu",
+          "answer": "Dạ dịch vụ gội đầu thư giãn dầu thường bên em có giá 60.000đ/buổi, làm trong 30 phút ạ. Em hỗ trợ chị đặt lịch tại <Brand Name> nhé ạ?",
+          "ok": true,
+          "error": null,
+          "duration_ms": 5766,
+          "chunks_used": 1,
+          "top_score": 0.017336838849365915,
+          "sources": [
+            "Bảng giá dịch vụ gội đầu"
+          ],
+          "tokens": {
+            "prompt": 20534,
+            "completion": 49
+          },
+          "cost_usd": 0.008292
+        },
+        {
+          "room_id": "room-03-so-sanh",
+          "room_name": "So sánh & tổng hợp (Medium)",
+          "question_index": 6,
+          "question": "so sánh triệt lông nách với triệt lông mép",
+          "answer": "Dạ, chị muốn em tư vấn chi tiết về hiệu quả, quy trình hay chi phí giữa dịch vụ triệt lông nách và triệt lông mép ạ?",
+          "ok": true,
+          "error": null,
+          "duration_ms": 8057,
+          "chunks_used": 1,
+          "top_score": 0.016816412099430966,
+          "sources": [
+            "BẢNG GIÁ CHĂM SÓC DA CÔNG NGHỆ CAO"
+          ],
+          "tokens": {
+            "prompt": 20503,
+            "completion": 38
+          },
+          "cost_usd": 0.008262
+        },
+        {
+          "room_id": "room-03-so-sanh",
+          "room_name": "So sánh & tổng hợp (Medium)",
+          "question_index": 7,
+          "question": "liệt kê tất cả dịch vụ massage",
+          "answer": "Dạ bên em có massage các vùng cổ vai gáy, body và nhiều dịch vụ dưỡng sinh khác ạ. Hiện tại chị đang đau mỏi ở vùng nào để em tư vấn cụ thể cho chị ạ?",
+          "ok": true,
+          "error": null,
+          "duration_ms": 9956,
+          "chunks_used": 2,
+          "top_score": 0.017336838849365915,
+          "sources": [
+            "Thông tin các dịch vụ",
+            "Bảng giá dịch vụ gội đầu"
+          ],
+          "tokens": {
+            "prompt": 20695,
+            "completion": 46
+          },
+          "cost_usd": 0.0083516
+        },
+        {
+          "room_id": "room-03-so-sanh",
+          "room_name": "So sánh & tổng hợp (Medium)",
+          "question_index": 8,
+          "question": "có bao nhiêu loại chăm sóc da",
+          "answer": "Dạ, để bên em tư vấn chi tiết hơn cho chị, chị có thể chia sẻ hiện tại chị đang mong muốn cải thiện vấn đề gì của da không ạ?",
+          "ok": true,
+          "error": null,
+          "duration_ms": 9701,
+          "chunks_used": 1,
+          "top_score": 0.016816412099430966,
+          "sources": [
+            "BẢNG GIÁ CHĂM SÓC DA CÔNG NGHỆ CAO"
+          ],
+          "tokens": {
+            "prompt": 20444,
+            "completion": 36
+          },
+          "cost_usd": 0.0082352
+        },
+        {
+          "room_id": "room-03-so-sanh",
+          "room_name": "So sánh & tổng hợp (Medium)",
+          "question_index": 9,
+          "question": "combo nào tiết kiệm nhất",
+          "answer": "Dạ, để bên em tư vấn chi tiết hơn cho chị, chị có thể chia sẻ hiện tại chị đang quan tâm đến nhóm dịch vụ nào ạ?",
+          "ok": true,
+          "error": null,
+          "duration_ms": 6651,
+          "chunks_used": 2,
+          "top_score": 0.017336838849365915,
+          "sources": [
+            "BẢNG GIÁ CHĂM SÓC DA CÔNG NGHỆ CAO",
+            "Bảng giá dịch vụ gội đầu"
+          ],
+          "tokens": {
+            "prompt": 20640,
+            "completion": 33
+          },
+          "cost_usd": 0.0083088
+        },
+        {
+          "room_id": "room-03-so-sanh",
+          "room_name": "So sánh & tổng hợp (Medium)",
+          "question_index": 10,
+          "question": "mua 30 buổi gội đầu được tặng mấy buổi",
+          "answer": "Khi mua 30 buổi gội đầu tại spa, chị sẽ được tặng thêm 5 buổi gội đầu ạ.",
+          "ok": true,
+          "error": null,
+          "duration_ms": 5924,
+          "chunks_used": 1,
+          "top_score": 0.017336838849365915,
+          "sources": [
+            "Bảng giá dịch vụ gội đầu"
+          ],
+          "tokens": {
+            "prompt": 20468,
+            "completion": 29
+          },
+          "cost_usd": 0.0082336
+        }
+      ]
+    },
+    {
+      "room_id": "room-04-chuyen-sau",
+      "room_name": "Chuyên sâu & tính toán (Hard)",
+      "total_questions": 10,
+      "ok_count": 10,
+      "error_count": 0,
+      "avg_duration_ms": 7256,
+      "total_cost_usd": 0.0749336,
+      "results": [
+        {
+          "room_id": "room-04-chuyen-sau",
+          "room_name": "Chuyên sâu & tính toán (Hard)",
+          "question_index": 1,
+          "question": "nếu tôi làm triệt lông toàn thân combo 10 buổi thì trung bình mỗi buổi bao nhiêu",
+          "answer": "Chị muốn em tư vấn tổng chi phí combo 10 buổi triệt lông toàn thân hay giá trung bình mỗi buổi ạ?",
+          "ok": true,
+          "error": null,
+          "duration_ms": 5324,
+          "chunks_used": 1,
+          "top_score": 0.017336838849365915,
+          "sources": [
+            "BẢNG GIÁ CHĂM SÓC DA CÔNG NGHỆ CAO"
+          ],
+          "tokens": {
+            "prompt": 20415,
+            "completion": 30
+          },
+          "cost_usd": 0.008214
+        },
+        {
+          "room_id": "room-04-chuyen-sau",
+          "room_name": "Chuyên sâu & tính toán (Hard)",
+          "question_index": 2,
+          "question": "so sánh giá Ultherapy với chăm sóc da chuyên sâu, chênh lệch bao nhiêu",
+          "answer": "Dạ, để em tư vấn rõ hơn cho chị, chị đang muốn tìm hiểu về dịch vụ Ultherapy hay dịch vụ chăm sóc da chuyên sâu ạ?",
+          "ok": true,
+          "error": null,
+          "duration_ms": 10676,
+          "chunks_used": 2,
+          "top_score": 0.017336838849365915,
+          "sources": [
+            "Bảng giá dịch vụ gội đầu",
+            "Thông tin các dịch vụ"
+          ],
+          "tokens": {
+            "prompt": 20664,
+            "completion": 33
+          },
+          "cost_usd": 0.0083184
+        },
+        {
+          "room_id": "room-04-chuyen-sau",
+          "room_name": "Chuyên sâu & tính toán (Hard)",
+          "question_index": 3,
+          "question": "tôi có 500k muốn làm đẹp, gợi ý dịch vụ nào phù hợp",
+          "answer": "Dạ, để em tư vấn chi tiết hơn cho chị, chị có thể chia sẻ hiện tại chị đang muốn cải thiện vấn đề gì của da hoặc mong muốn dịch vụ làm đẹp nào ạ?",
+          "ok": true,
+          "error": null,
+          "duration_ms": 7078,
+          "chunks_used": 1,
+          "top_score": 0.01707242848447961,
+          "sources": [
+            "Bảng giá dịch vụ gội đầu"
+          ],
+          "tokens": {
+            "prompt": 20476,
+            "completion": 41
+          },
+          "cost_usd": 0.008256
+        },
+        {
+          "room_id": "room-04-chuyen-sau",
+          "room_name": "Chuyên sâu & tính toán (Hard)",
+          "question_index": 4,
+          "question": "tôi muốn làm cả gội đầu dưỡng sinh và massage body, tổng bao nhiêu",
+          "answer": "Dạ, dịch vụ gội đầu dưỡng sinh bên em có giá 350k/buổi trong 60 phút, còn dịch vụ massage body có giá ưu đãi 299k/buổi trong 60 phút ạ. Em hỗ trợ chị đặt lịch trải nghiệm dịch vụ nhé ạ?",
+          "ok": true,
+          "error": null,
+          "duration_ms": 5688,
+          "chunks_used": 1,
+          "top_score": 0.017336838849365915,
+          "sources": [
+            "Bảng giá dịch vụ gội đầu"
+          ],
+          "tokens": {
+            "prompt": 20490,
+            "completion": 62
+          },
+          "cost_usd": 0.0082952
+        },
+        {
+          "room_id": "room-04-chuyen-sau",
+          "room_name": "Chuyên sâu & tính toán (Hard)",
+          "question_index": 5,
+          "question": "nếu mua combo buffet CNC 6 triệu, mỗi buổi trung bình bao nhiêu so với giá lẻ",
+          "answer": "Dạ, giá dịch vụ gội đầu dưỡng sinh bên em là 350k/buổi, dịch vụ massage body là 299k/buổi ạ. Nếu chị mua lẻ từng dịch vụ thì tổng chi phí là 649k/buổi. Em hỗ trợ chị đặt lịch trải nghiệm dịch vụ nhé ạ?",
+          "ok": true,
+          "error": null,
+          "duration_ms": 7914,
+          "chunks_used": 1,
+          "top_score": 0.016816412099430966,
+          "sources": [
+            "Bảng giá dịch vụ gội đầu"
+          ],
+          "tokens": {
+            "prompt": 20533,
+            "completion": 69
+          },
+          "cost_usd": 0.0083236
+        },
+        {
+          "room_id": "room-04-chuyen-sau",
+          "room_name": "Chuyên sâu & tính toán (Hard)",
+          "question_index": 6,
+          "question": "chi phí triệt lông nách 10 buổi combo so với 10 buổi lẻ tiết kiệm bao nhiêu",
+          "answer": "Dạ triệt lông nách có giá 199k/buổi lẻ, nếu chị mua 10 buổi combo chỉ còn 1.199.000đ thôi ạ. Ngoài ra nếu chị mua combo 10 buổi sẽ được tặng thêm 5 buổi và được bảo hành 2 năm ạ. Em hỗ trợ chị đặt lịch triệt lông tại <Brand Name> nhé ạ?",
+          "ok": true,
+          "error": null,
+          "duration_ms": 6064,
+          "chunks_used": 1,
+          "top_score": 0.017336838849365915,
+          "sources": [
+            "BẢNG GIÁ CHĂM SÓC DA CÔNG NGHỆ CAO"
+          ],
+          "tokens": {
+            "prompt": 20527,
+            "completion": 90
+          },
+          "cost_usd": 0.0083548
+        },
+        {
+          "room_id": "room-04-chuyen-sau",
+          "room_name": "Chuyên sâu & tính toán (Hard)",
+          "question_index": 7,
+          "question": "tôi muốn trị mụn, nên chọn dịch vụ nào, quy trình ra sao",
+          "answer": "Dạ, dịch vụ điều trị mụn tại <Brand Name> được thực hiện chuẩn y khoa giúp làm sạch sâu, phục hồi nhẹ nhàng cho da dầu mụn. Em hỗ trợ chị đặt lịch trải nghiệm dịch vụ nhé ạ?",
+          "ok": true,
+          "error": null,
+          "duration_ms": 7423,
+          "chunks_used": 1,
+          "top_score": 0.017336838849365915,
+          "sources": [
+            "Thông tin các dịch vụ"
+          ],
+          "tokens": {
+            "prompt": 20593,
+            "completion": 53
+          },
+          "cost_usd": 0.008322
+        },
+        {
+          "room_id": "room-04-chuyen-sau",
+          "room_name": "Chuyên sâu & tính toán (Hard)",
+          "question_index": 8,
+          "question": "hydra ballet với detox ballet khác nhau ở đâu",
+          "answer": "Dạ, hiện tại dịch vụ Hydra Ballet tại <Brand Name> dành cho da khô, được thực hiện chuẩn y khoa, sử dụng dược mỹ phẩm Pháp PAYOT kết hợp kỹ thuật massage Gym Beauté® 42 bước độc quyền, giúp cấp ẩm đa tầng cho làn da căng mọng, mịn màng, nâng cơ tự nhiên, cải thiện độ săn chắc, và giúp thư giãn sâu, giải tỏa căng thẳng sau những ngày bận rộn ạ. Em hỗ trợ chị đặt lịch trải nghiệm dịch vụ này nhé ạ?",
+          "ok": true,
+          "error": null,
+          "duration_ms": 8461,
+          "chunks_used": 1,
+          "top_score": 0.017336838849365915,
+          "sources": [
+            "Thông tin các dịch vụ"
+          ],
+          "tokens": {
+            "prompt": 20592,
+            "completion": 123
+          },
+          "cost_usd": 0.0084336
+        },
+        {
+          "room_id": "room-04-chuyen-sau",
+          "room_name": "Chuyên sâu & tính toán (Hard)",
+          "question_index": 9,
+          "question": "da tôi nhạy cảm nên làm dịch vụ gì",
+          "answer": "Xin loi, toi khong co thong tin de tra loi cau hoi nay.",
+          "ok": true,
+          "error": null,
+          "duration_ms": 2041,
+          "chunks_used": 0,
+          "top_score": 0,
+          "sources": [],
+          "tokens": {
+            "prompt": 0,
+            "completion": 0
+          },
+          "cost_usd": 0.0
+        },
+        {
+          "room_id": "room-04-chuyen-sau",
+          "room_name": "Chuyên sâu & tính toán (Hard)",
+          "question_index": 10,
+          "question": "ấm nóng cổ tử cung là gì, có đau không",
+          "answer": "Dạ, dịch vụ ấm nóng cổ tử cung bên em được thực hiện bởi chuyên viên kinh nghiệm, giúp đào thải độc tố, thúc đẩy lưu thông khí huyết vùng tử cung, giảm tình trạng đau bụng kinh và rối loạn nội tiết. Em hỗ trợ chị đặt lịch trải nghiệm dịch vụ nhé ạ?",
+          "ok": true,
+          "error": null,
+          "duration_ms": 11891,
+          "chunks_used": 2,
+          "top_score": 0.017336838849365915,
+          "sources": [
+            "BẢNG GIÁ CHĂM SÓC DA CÔNG NGHỆ CAO",
+            "Bảng giá dịch vụ gội đầu"
+          ],
+          "tokens": {
+            "prompt": 20760,
+            "completion": 70
+          },
+          "cost_usd": 0.008416
+        }
+      ]
+    },
+    {
+      "room_id": "room-05-khong-dau",
+      "room_name": "Không dấu / Viết tắt (Typo)",
+      "total_questions": 10,
+      "ok_count": 10,
+      "error_count": 0,
+      "avg_duration_ms": 7243,
+      "total_cost_usd": 0.083148,
+      "results": [
+        {
+          "room_id": "room-05-khong-dau",
+          "room_name": "Không dấu / Viết tắt (Typo)",
+          "question_index": 1,
+          "question": "goi dau gia sao",
+          "answer": "Dạ, dịch vụ gội đầu bên em có các loại: gội đầu thư giãn với dầu thường, dầu cặp, dầu cặp Weilaiya và gội đầu dưỡng sinh ạ. Chị muốn em tư vấn chi tiết về loại gội đầu nào ạ?",
+          "ok": true,
+          "error": null,
+          "duration_ms": 8146,
+          "chunks_used": 1,
+          "top_score": 0.01707242848447961,
+          "sources": [
+            "Bảng giá dịch vụ gội đầu"
+          ],
+          "tokens": {
+            "prompt": 20563,
+            "completion": 60
+          },
+          "cost_usd": 0.0083212
+        },
+        {
+          "room_id": "room-05-khong-dau",
+          "room_name": "Không dấu / Viết tắt (Typo)",
+          "question_index": 2,
+          "question": "triet long nach bao nhieu",
+          "answer": "Dạ triệt lông nách có giá 1.199.000đ/buổi, nếu chị mua 10 buổi chỉ còn 899.000đ thôi ạ. Ngoài ra nếu chị mua combo 10 buổi sẽ được tặng thêm 5 buổi và được bảo hành 2 năm ạ. Em hỗ trợ chị đặt lịch triệt lông tại <Brand Name> nhé ạ?",
+          "ok": true,
+          "error": null,
+          "duration_ms": 6797,
+          "chunks_used": 1,
+          "top_score": 0.017336838849365915,
+          "sources": [
+            "BẢNG GIÁ CHĂM SÓC DA CÔNG NGHỆ CAO"
+          ],
+          "tokens": {
+            "prompt": 20450,
+            "completion": 89
+          },
+          "cost_usd": 0.0083224
+        },
+        {
+          "room_id": "room-05-khong-dau",
+          "room_name": "Không dấu / Viết tắt (Typo)",
+          "question_index": 3,
+          "question": "cs da chuyen sau gia",
+          "answer": "Dạ, để bên em tư vấn chi tiết hơn cho chị, chị có thể chia sẻ hiện tại chị đang mong muốn cải thiện vấn đề gì của da không ạ?",
+          "ok": true,
+          "error": null,
+          "duration_ms": 5492,
+          "chunks_used": 1,
+          "top_score": 0.017336838849365915,
+          "sources": [
+            "Thông tin các dịch vụ"
+          ],
+          "tokens": {
+            "prompt": 20538,
+            "completion": 36
+          },
+          "cost_usd": 0.0082728
+        },
+        {
+          "room_id": "room-05-khong-dau",
+          "room_name": "Không dấu / Viết tắt (Typo)",
+          "question_index": 4,
+          "question": "massage co vai gay bao nhieu",
+          "answer": "Hiện tại, bên em đang có chương trình ưu đãi đặc biệt cho khách hàng mới trải nghiệm dịch vụ với giá chỉ 99K/buổi (giá gốc: 400k/buổi) trong vòng 60 phút. Sau 1 buổi chị sẽ cảm thấy cơ thể khỏe khoắn, đỡ mỏi mệt hơn hẳn ạ. Em đăng ký 1 buổi trải nghiệm dịch vụ này cho chị nhé!",
+          "ok": true,
+          "error": null,
+          "duration_ms": 9324,
+          "chunks_used": 2,
+          "top_score": 0.017336838849365915,
+          "sources": [
+            "Thông tin các dịch vụ",
+            "Bảng giá dịch vụ gội đầu"
+          ],
+          "tokens": {
+            "prompt": 20705,
+            "completion": 95
+          },
+          "cost_usd": 0.008434
+        },
+        {
+          "room_id": "room-05-khong-dau",
+          "room_name": "Không dấu / Viết tắt (Typo)",
+          "question_index": 5,
+          "question": "tay da chet body gia",
+          "answer": "Dạ, để em hỗ trợ chị tốt hơn, chị có thể cho em biết hiện tại chị đang quan tâm dịch vụ gì cụ thể ạ?",
+          "ok": true,
+          "error": null,
+          "duration_ms": 7173,
+          "chunks_used": 1,
+          "top_score": 0.016816412099430966,
+          "sources": [
+            "BẢNG GIÁ CHĂM SÓC DA CÔNG NGHỆ CAO"
+          ],
+          "tokens": {
+            "prompt": 20522,
+            "completion": 31
+          },
+          "cost_usd": 0.0082584
+        },
+        {
+          "room_id": "room-05-khong-dau",
+          "room_name": "Không dấu / Viết tắt (Typo)",
+          "question_index": 6,
+          "question": "goi dau duong sinh gia bao nhieu",
+          "answer": "Hiện tại, bên em đang có chương trình ưu đãi đặc biệt cho khách hàng mới trải nghiệm dịch vụ với giá chỉ 99K/buổi (giá gốc: 350k/buổi) trong vòng 60 phút. Sau 1 buổi chị sẽ cảm thấy cơ thể khỏe khoắn, đỡ mỏi mệt hơn hẳn ạ. Em đăng ký 1 buổi trải nghiệm dịch vụ này cho chị nhé!",
+          "ok": true,
+          "error": null,
+          "duration_ms": 6111,
+          "chunks_used": 1,
+          "top_score": 0.017336838849365915,
+          "sources": [
+            "Bảng giá dịch vụ gội đầu"
+          ],
+          "tokens": {
+            "prompt": 20497,
+            "completion": 95
+          },
+          "cost_usd": 0.0083508
+        },
+        {
+          "room_id": "room-05-khong-dau",
+          "room_name": "Không dấu / Viết tắt (Typo)",
+          "question_index": 7,
+          "question": "triet long toan than combo bao nhieu",
+          "answer": "Dạ chị muốn biết giá combo triệt lông vùng nào ạ?",
+          "ok": true,
+          "error": null,
+          "duration_ms": 7261,
+          "chunks_used": 1,
+          "top_score": 0.017336838849365915,
+          "sources": [
+            "BẢNG GIÁ CHĂM SÓC DA CÔNG NGHỆ CAO"
+          ],
+          "tokens": {
+            "prompt": 20521,
+            "completion": 16
+          },
+          "cost_usd": 0.008234
+        },
+        {
+          "room_id": "room-05-khong-dau",
+          "room_name": "Không dấu / Viết tắt (Typo)",
+          "question_index": 8,
+          "question": "co vai gay gia re nhat bao nhieu",
+          "answer": "Dạ em chưa rõ chị đang hỏi về loại vải gậy nào ạ? Chị vui lòng cho em biết rõ hơn để em hỗ trợ chị nhé!",
+          "ok": true,
+          "error": null,
+          "duration_ms": 10614,
+          "chunks_used": 2,
+          "top_score": 0.017336838849365915,
+          "sources": [
+            "BẢNG GIÁ CHĂM SÓC DA CÔNG NGHỆ CAO",
+            "Bảng giá dịch vụ gội đầu"
+          ],
+          "tokens": {
+            "prompt": 20659,
+            "completion": 34
+          },
+          "cost_usd": 0.008318
+        },
+        {
+          "room_id": "room-05-khong-dau",
+          "room_name": "Không dấu / Viết tắt (Typo)",
+          "question_index": 9,
+          "question": "dia chi shop o dau",
+          "answer": "Em gửi chị địa chỉ của <Brand Name> ạ:\nĐịa chỉ: <demo-address>\n(chị đi thang bộ lên tầng 2 nhé ạ)\nHotline: <demo-hotline>\nGiờ mở cửa: 9-21h, từ T2-CN\nLink Google Maps: <demo-maps>\nCần hỗ trợ thêm chị nhắn em hoặc liên hệ số hotline nhé ạ!",
+          "ok": true,
+          "error": null,
+          "duration_ms": 6143,
+          "chunks_used": 1,
+          "top_score": 0.017336838849365915,
+          "sources": [
+            "Thông tin các dịch vụ"
+          ],
+          "tokens": {
+            "prompt": 20456,
+            "completion": 122
+          },
+          "cost_usd": 0.0083776
+        },
+        {
+          "room_id": "room-05-khong-dau",
+          "room_name": "Không dấu / Viết tắt (Typo)",
+          "question_index": 10,
+          "question": "hotline so may",
+          "answer": "Em gửi chị số hotline của <Brand Name> ạ: <demo-hotline>\nNếu cần hỗ trợ thêm chị nhắn em hoặc liên hệ số hotline nhé ạ!",
+          "ok": true,
+          "error": null,
+          "duration_ms": 5369,
+          "chunks_used": 1,
+          "top_score": 0.017336838849365915,
+          "sources": [
+            "Thông tin các dịch vụ"
+          ],
+          "tokens": {
+            "prompt": 20487,
+            "completion": 40
+          },
+          "cost_usd": 0.0082588
+        }
+      ]
+    },
+    {
+      "room_id": "room-06-teencode",
+      "room_name": "Teencode & viết tắt (Typo+)",
+      "total_questions": 10,
+      "ok_count": 10,
+      "error_count": 0,
+      "avg_duration_ms": 4836,
+      "total_cost_usd": 0.0496088,
+      "results": [
+        {
+          "room_id": "room-06-teencode",
+          "room_name": "Teencode & viết tắt (Typo+)",
+          "question_index": 1,
+          "question": "cho e hoi gia goi dau vs",
+          "answer": "Dạ, để bên em tư vấn chi tiết hơn cho chị, chị có thể chia sẻ hiện tại chị đang muốn gội đầu loại nào ạ?",
+          "ok": true,
+          "error": null,
+          "duration_ms": 6952,
+          "chunks_used": 1,
+          "top_score": 0.01707242848447961,
+          "sources": [
+            "Bảng giá dịch vụ gội đầu"
+          ],
+          "tokens": {
+            "prompt": 20533,
+            "completion": 32
+          },
+          "cost_usd": 0.0082644
+        },
+        {
+          "room_id": "room-06-teencode",
+          "room_name": "Teencode & viết tắt (Typo+)",
+          "question_index": 2,
+          "question": "ko biet nen lam dv gi",
+          "answer": "Xin loi, toi khong co thong tin de tra loi cau hoi nay.",
+          "ok": true,
+          "error": null,
+          "duration_ms": 1931,
+          "chunks_used": 0,
+          "top_score": 0,
+          "sources": [],
+          "tokens": {
+            "prompt": 0,
+            "completion": 0
+          },
+          "cost_usd": 0.0
+        },
+        {
+          "room_id": "room-06-teencode",
+          "room_name": "Teencode & viết tắt (Typo+)",
+          "question_index": 3,
+          "question": "e muon triet long dc ko",
+          "answer": "Dạ vâng ạ, hiện tại chị đang muốn triệt lông vùng nào ạ?",
+          "ok": true,
+          "error": null,
+          "duration_ms": 6905,
+          "chunks_used": 1,
+          "top_score": 0.016816412099430966,
+          "sources": [
+            "BẢNG GIÁ CHĂM SÓC DA CÔNG NGHỆ CAO"
+          ],
+          "tokens": {
+            "prompt": 20384,
+            "completion": 21
+          },
+          "cost_usd": 0.0081872
+        },
+        {
+          "room_id": "room-06-teencode",
+          "room_name": "Teencode & viết tắt (Typo+)",
+          "question_index": 4,
+          "question": "shop co km gi ko a",
+          "answer": "Dạ hiện dịch vụ này bên em chưa có chương trình khuyến mãi chị ơi, nhưng bên em đang có giá ưu đãi trải nghiệm 99K/buổi cho khách hàng mới ạ.",
+          "ok": true,
+          "error": null,
+          "duration_ms": 5545,
+          "chunks_used": 1,
+          "top_score": 0.01707242848447961,
+          "sources": [
+            "Bảng giá dịch vụ gội đầu"
+          ],
+          "tokens": {
+            "prompt": 20407,
+            "completion": 44
+          },
+          "cost_usd": 0.0082332
+        },
+        {
+          "room_id": "room-06-teencode",
+          "room_name": "Teencode & viết tắt (Typo+)",
+          "question_index": 5,
+          "question": "lam dep mat gia bn",
+          "answer": "Dạ chị cho em biết chị muốn triệt lông vùng nào ạ?",
+          "ok": true,
+          "error": null,
+          "duration_ms": 7580,
+          "chunks_used": 2,
+          "top_score": 0.017336838849365915,
+          "sources": [
+            "Thông tin các dịch vụ",
+            "BẢNG GIÁ CHĂM SÓC DA CÔNG NGHỆ CAO"
+          ],
+          "tokens": {
+            "prompt": 20563,
+            "completion": 17
+          },
+          "cost_usd": 0.0082524
+        },
+        {
+          "room_id": "room-06-teencode",
+          "room_name": "Teencode & viết tắt (Typo+)",
+          "question_index": 6,
+          "question": "dt shop so may",
+          "answer": "Em gửi chị địa chỉ của <Brand Name> ạ:\nĐịa chỉ: <demo-address>\n(chị đi thang bộ lên tầng 2 nhé ạ)\nHotline: <demo-hotline>\nGiờ mở cửa: 9-21h, từ T2-CN\nLink Google Maps: <demo-maps>\nCần hỗ trợ thêm chị nhắn em hoặc liên hệ số hotline nhé ạ!",
+          "ok": true,
+          "error": null,
+          "duration_ms": 6271,
+          "chunks_used": 1,
+          "top_score": 0.017336838849365915,
+          "sources": [
+            "Thông tin các dịch vụ"
+          ],
+          "tokens": {
+            "prompt": 20388,
+            "completion": 122
+          },
+          "cost_usd": 0.0083504
+        },
+        {
+          "room_id": "room-06-teencode",
+          "room_name": "Teencode & viết tắt (Typo+)",
+          "question_index": 7,
+          "question": "co goi combo nao tiet kiem ko",
+          "answer": "Dạ, để bên em tư vấn chi tiết hơn cho chị, chị có thể chia sẻ hiện tại chị đang mong muốn cải thiện vấn đề gì của mắt không ạ?",
+          "ok": true,
+          "error": null,
+          "duration_ms": 8690,
+          "chunks_used": 2,
+          "top_score": 0.017336838849365915,
+          "sources": [
+            "Thông tin các dịch vụ",
+            "BẢNG GIÁ CHĂM SÓC DA CÔNG NGHỆ CAO"
+          ],
+          "tokens": {
+            "prompt": 20659,
+            "completion": 36
+          },
+          "cost_usd": 0.0083212
+        },
+        {
+          "room_id": "room-06-teencode",
+          "room_name": "Teencode & viết tắt (Typo+)",
+          "question_index": 8,
+          "question": "nv tu van giup e vs",
+          "answer": "Xin loi, toi khong co thong tin de tra loi cau hoi nay.",
+          "ok": true,
+          "error": null,
+          "duration_ms": 2053,
+          "chunks_used": 0,
+          "top_score": 0,
+          "sources": [],
+          "tokens": {
+            "prompt": 0,
+            "completion": 0
+          },
+          "cost_usd": 0.0
+        },
+        {
+          "room_id": "room-06-teencode",
+          "room_name": "Teencode & viết tắt (Typo+)",
+          "question_index": 9,
+          "question": "dang bi mun nen lam j",
+          "answer": "Yeu cau khong hop le",
+          "ok": true,
+          "error": null,
+          "duration_ms": 250,
+          "chunks_used": 0,
+          "top_score": 0,
+          "sources": [],
+          "tokens": {
+            "prompt": 0,
+            "completion": 0
+          },
+          "cost_usd": 0.0
+        },
+        {
+          "room_id": "room-06-teencode",
+          "room_name": "Teencode & viết tắt (Typo+)",
+          "question_index": 10,
+          "question": "e muon dat lich dc ko",
+          "answer": "Xin loi, toi khong co thong tin de tra loi cau hoi nay.",
+          "ok": true,
+          "error": null,
+          "duration_ms": 2187,
+          "chunks_used": 0,
+          "top_score": 0,
+          "sources": [],
+          "tokens": {
+            "prompt": 0,
+            "completion": 0
+          },
+          "cost_usd": 0.0
+        }
+      ]
+    },
+    {
+      "room_id": "room-07-ngoai-tai-lieu",
+      "room_name": "Ngoài tài liệu (Trick)",
+      "total_questions": 10,
+      "ok_count": 10,
+      "error_count": 0,
+      "avg_duration_ms": 7877,
+      "total_cost_usd": 0.0747124,
+      "results": [
+        {
+          "room_id": "room-07-ngoai-tai-lieu",
+          "room_name": "Ngoài tài liệu (Trick)",
+          "question_index": 1,
+          "question": "spa có dịch vụ phun xăm không",
+          "answer": "Dạ phần này chuyên viên bên em sẽ giải thích rõ hơn khi chị đến spa ạ.",
+          "ok": true,
+          "error": null,
+          "duration_ms": 9118,
+          "chunks_used": 2,
+          "top_score": 0.017336838849365915,
+          "sources": [
+            "Thông tin các dịch vụ",
+            "Bảng giá dịch vụ gội đầu"
+          ],
+          "tokens": {
+            "prompt": 20556,
+            "completion": 20
+          },
+          "cost_usd": 0.0082544
+        },
+        {
+          "room_id": "room-07-ngoai-tai-lieu",
+          "room_name": "Ngoài tài liệu (Trick)",
+          "question_index": 2,
+          "question": "có nối mi không",
+          "answer": "Dạ phần này chuyên viên bên em sẽ giải thích rõ hơn khi chị đến spa ạ.",
+          "ok": true,
+          "error": null,
+          "duration_ms": 8172,
+          "chunks_used": 2,
+          "top_score": 0.017336838849365915,
+          "sources": [
+            "Thông tin các dịch vụ",
+            "Bảng giá dịch vụ gội đầu"
+          ],
+          "tokens": {
+            "prompt": 20560,
+            "completion": 20
+          },
+          "cost_usd": 0.008256
+        },
+        {
+          "room_id": "room-07-ngoai-tai-lieu",
+          "room_name": "Ngoài tài liệu (Trick)",
+          "question_index": 3,
+          "question": "làm nail giá bao nhiêu",
+          "answer": "Dạ, để em hỗ trợ chị tốt hơn, chị có thể cho em biết chị đang quan tâm dịch vụ nail nào cụ thể hoặc khu vực làm nail chị muốn làm không ạ?",
+          "ok": true,
+          "error": null,
+          "duration_ms": 7381,
+          "chunks_used": 1,
+          "top_score": 0.017336838849365915,
+          "sources": [
+            "Thông tin các dịch vụ"
+          ],
+          "tokens": {
+            "prompt": 20374,
+            "completion": 39
+          },
+          "cost_usd": 0.008212
+        },
+        {
+          "room_id": "room-07-ngoai-tai-lieu",
+          "room_name": "Ngoài tài liệu (Trick)",
+          "question_index": 4,
+          "question": "có bán mỹ phẩm không",
+          "answer": "Dạ phần này chuyên viên bên em sẽ giải thích rõ hơn khi chị đến spa ạ.",
+          "ok": true,
+          "error": null,
+          "duration_ms": 8105,
+          "chunks_used": 2,
+          "top_score": 0.017336838849365915,
+          "sources": [
+            "Thông tin các dịch vụ",
+            "BẢNG GIÁ CHĂM SÓC DA CÔNG NGHỆ CAO"
+          ],
+          "tokens": {
+            "prompt": 20551,
+            "completion": 20
+          },
+          "cost_usd": 0.0082524
+        },
+        {
+          "room_id": "room-07-ngoai-tai-lieu",
+          "room_name": "Ngoài tài liệu (Trick)",
+          "question_index": 5,
+          "question": "spa có bể bơi không",
+          "answer": "Dạ phần này chuyên viên bên em sẽ giải thích rõ hơn khi chị đến spa ạ.",
+          "ok": true,
+          "error": null,
+          "duration_ms": 8555,
+          "chunks_used": 2,
+          "top_score": 0.017336838849365915,
+          "sources": [
+            "Thông tin các dịch vụ",
+            "BẢNG GIÁ CHĂM SÓC DA CÔNG NGHỆ CAO"
+          ],
+          "tokens": {
+            "prompt": 20548,
+            "completion": 20
+          },
+          "cost_usd": 0.0082512
+        },
+        {
+          "room_id": "room-07-ngoai-tai-lieu",
+          "room_name": "Ngoài tài liệu (Trick)",
+          "question_index": 6,
+          "question": "có dịch vụ xông hơi không",
+          "answer": "Dạ phần này chuyên viên bên em sẽ giải thích rõ hơn khi chị đến spa ạ.",
+          "ok": true,
+          "error": null,
+          "duration_ms": 8590,
+          "chunks_used": 2,
+          "top_score": 0.017336838849365915,
+          "sources": [
+            "Thông tin các dịch vụ",
+            "Bảng giá dịch vụ gội đầu"
+          ],
+          "tokens": {
+            "prompt": 20596,
+            "completion": 20
+          },
+          "cost_usd": 0.0082704
+        },
+        {
+          "room_id": "room-07-ngoai-tai-lieu",
+          "room_name": "Ngoài tài liệu (Trick)",
+          "question_index": 7,
+          "question": "chi nhánh Hồ Chí Minh ở đâu",
+          "answer": "Em gửi chị địa chỉ của <Brand Name> ạ:\nĐịa chỉ: <demo-address>\n(chị đi thang bộ lên tầng 2 nhé ạ)\nHotline: <demo-hotline>\nGiờ mở cửa: 9-21h, từ T2-CN\nLink Google Maps: <demo-maps>\nCần hỗ trợ thêm chị nhắn em hoặc liên hệ số hotline nhé ạ!",
+          "ok": true,
+          "error": null,
+          "duration_ms": 10610,
+          "chunks_used": 2,
+          "top_score": 0.017336838849365915,
+          "sources": [
+            "Thông tin các dịch vụ",
+            "BẢNG GIÁ CHĂM SÓC DA CÔNG NGHỆ CAO"
+          ],
+          "tokens": {
+            "prompt": 20543,
+            "completion": 122
+          },
+          "cost_usd": 0.0084124
+        },
+        {
+          "room_id": "room-07-ngoai-tai-lieu",
+          "room_name": "Ngoài tài liệu (Trick)",
+          "question_index": 8,
+          "question": "có nhận thực tập sinh không",
+          "answer": "Xin loi, toi khong co thong tin de tra loi cau hoi nay.",
+          "ok": true,
+          "error": null,
+          "duration_ms": 1638,
+          "chunks_used": 0,
+          "top_score": 0,
+          "sources": [],
+          "tokens": {
+            "prompt": 0,
+            "completion": 0
+          },
+          "cost_usd": 0.0
+        },
+        {
+          "room_id": "room-07-ngoai-tai-lieu",
+          "room_name": "Ngoài tài liệu (Trick)",
+          "question_index": 9,
+          "question": "shop có bác sĩ da liễu không",
+          "answer": "Dạ, hiện tại <Brand Name> có bác sĩ da liễu và chuyên gia tư vấn phác đồ điều trị chuyên sâu để cải thiện tình trạng da an toàn và hiệu quả cao ạ. Để hiểu rõ tình trạng da hiện tại của chị, em mời chị qua spa để được soi da, phân tích 17 chỉ số bằng công nghệ AI và lên phác đồ điều trị riêng với da chị ạ. Em hỗ trợ chị đặt lịch soi da miễn phí và trải nghiệm dịch vụ tại <Brand Name> nhé ạ?",
+          "ok": true,
+          "error": null,
+          "duration_ms": 7278,
+          "chunks_used": 2,
+          "top_score": 0.017336838849365915,
+          "sources": [
+            "Thông tin các dịch vụ",
+            "Bảng giá dịch vụ gội đầu"
+          ],
+          "tokens": {
+            "prompt": 20681,
+            "completion": 116
+          },
+          "cost_usd": 0.008458
+        },
+        {
+          "room_id": "room-07-ngoai-tai-lieu",
+          "room_name": "Ngoài tài liệu (Trick)",
+          "question_index": 10,
+          "question": "có hỗ trợ trả góp không",
+          "answer": "Dạ phần này chuyên viên bên em sẽ giải thích rõ hơn khi chị đến spa ạ.",
+          "ok": true,
+          "error": null,
+          "duration_ms": 9328,
+          "chunks_used": 2,
+          "top_score": 0.017336838849365915,
+          "sources": [
+            "Thông tin các dịch vụ",
+            "Bảng giá dịch vụ gội đầu"
+          ],
+          "tokens": {
+            "prompt": 20784,
+            "completion": 20
+          },
+          "cost_usd": 0.0083456
+        }
+      ]
+    },
+    {
+      "room_id": "room-08-vu-vo",
+      "room_name": "Vu vơ & casual (Casual)",
+      "total_questions": 10,
+      "ok_count": 10,
+      "error_count": 0,
+      "avg_duration_ms": 5674,
+      "total_cost_usd": 0.0495336,
+      "results": [
+        {
+          "room_id": "room-08-vu-vo",
+          "room_name": "Vu vơ & casual (Casual)",
+          "question_index": 1,
+          "question": "trời nóng quá",
+          "answer": "Dạ, chị vui lòng cho em biết chị muốn hỏi thời tiết ở khu vực nào ạ?",
+          "ok": true,
+          "error": null,
+          "duration_ms": 6709,
+          "chunks_used": 2,
+          "top_score": 0.017336838849365915,
+          "sources": [
+            "Thông tin các dịch vụ",
+            "BẢNG GIÁ CHĂM SÓC DA CÔNG NGHỆ CAO"
+          ],
+          "tokens": {
+            "prompt": 20628,
+            "completion": 21
+          },
+          "cost_usd": 0.0082848
+        },
+        {
+          "room_id": "room-08-vu-vo",
+          "room_name": "Vu vơ & casual (Casual)",
+          "question_index": 2,
+          "question": "bạn có khỏe không",
+          "answer": "Xin loi, toi khong co thong tin de tra loi cau hoi nay.",
+          "ok": true,
+          "error": null,
+          "duration_ms": 1778,
+          "chunks_used": 0,
+          "top_score": 0,
+          "sources": [],
+          "tokens": {
+            "prompt": 0,
+            "completion": 0
+          },
+          "cost_usd": 0.0
+        },
+        {
+          "room_id": "room-08-vu-vo",
+          "room_name": "Vu vơ & casual (Casual)",
+          "question_index": 3,
+          "question": "hôm nay thứ mấy",
+          "answer": "Dạ, hôm nay là thứ Sáu ạ. Chị cần em hỗ trợ gì thêm không ạ?",
+          "ok": true,
+          "error": null,
+          "duration_ms": 7025,
+          "chunks_used": 2,
+          "top_score": 0.017336838849365915,
+          "sources": [
+            "Bảng giá dịch vụ gội đầu",
+            "BẢNG GIÁ CHĂM SÓC DA CÔNG NGHỆ CAO"
+          ],
+          "tokens": {
+            "prompt": 20557,
+            "completion": 24
+          },
+          "cost_usd": 0.0082612
+        },
+        {
+          "room_id": "room-08-vu-vo",
+          "room_name": "Vu vơ & casual (Casual)",
+          "question_index": 4,
+          "question": "bitcoin giá bao nhiêu",
+          "answer": "Dạ phần này chuyên viên bên em sẽ giải thích rõ hơn khi chị đến spa ạ.",
+          "ok": true,
+          "error": null,
+          "duration_ms": 8753,
+          "chunks_used": 2,
+          "top_score": 0.017336838849365915,
+          "sources": [
+            "BẢNG GIÁ CHĂM SÓC DA CÔNG NGHỆ CAO",
+            "Bảng giá dịch vụ gội đầu"
+          ],
+          "tokens": {
+            "prompt": 20558,
+            "completion": 20
+          },
+          "cost_usd": 0.0082552
+        },
+        {
+          "room_id": "room-08-vu-vo",
+          "room_name": "Vu vơ & casual (Casual)",
+          "question_index": 5,
+          "question": "bóng đá hôm nay ai thắng",
+          "answer": "Dạ phần này chuyên viên bên em sẽ giải thích rõ hơn khi chị đến spa ạ.",
+          "ok": true,
+          "error": null,
+          "duration_ms": 10356,
+          "chunks_used": 2,
+          "top_score": 0.017336838849365915,
+          "sources": [
+            "BẢNG GIÁ CHĂM SÓC DA CÔNG NGHỆ CAO",
+            "Thông tin các dịch vụ"
+          ],
+          "tokens": {
+            "prompt": 20537,
+            "completion": 20
+          },
+          "cost_usd": 0.0082468
+        },
+        {
+          "room_id": "room-08-vu-vo",
+          "room_name": "Vu vơ & casual (Casual)",
+          "question_index": 6,
+          "question": "tôi đang buồn",
+          "answer": "Xin loi, toi khong co thong tin de tra loi cau hoi nay.",
+          "ok": true,
+          "error": null,
+          "duration_ms": 1698,
+          "chunks_used": 0,
+          "top_score": 0,
+          "sources": [],
+          "tokens": {
+            "prompt": 0,
+            "completion": 0
+          },
+          "cost_usd": 0.0
+        },
+        {
+          "room_id": "room-08-vu-vo",
+          "room_name": "Vu vơ & casual (Casual)",
+          "question_index": 7,
+          "question": "thời tiết hôm nay thế nào",
+          "answer": "Dạ phần này chuyên viên bên em sẽ giải thích rõ hơn khi chị đến spa ạ.",
+          "ok": true,
+          "error": null,
+          "duration_ms": 8262,
+          "chunks_used": 2,
+          "top_score": 0.017336838849365915,
+          "sources": [
+            "Thông tin các dịch vụ",
+            "BẢNG GIÁ CHĂM SÓC DA CÔNG NGHỆ CAO"
+          ],
+          "tokens": {
+            "prompt": 20526,
+            "completion": 20
+          },
+          "cost_usd": 0.0082424
+        },
+        {
+          "room_id": "room-08-vu-vo",
+          "room_name": "Vu vơ & casual (Casual)",
+          "question_index": 8,
+          "question": "kể chuyện cười đi",
+          "answer": "Xin loi, toi khong co thong tin de tra loi cau hoi nay.",
+          "ok": true,
+          "error": null,
+          "duration_ms": 1761,
+          "chunks_used": 0,
+          "top_score": 0,
+          "sources": [],
+          "tokens": {
+            "prompt": 0,
+            "completion": 0
+          },
+          "cost_usd": 0.0
+        },
+        {
+          "room_id": "room-08-vu-vo",
+          "room_name": "Vu vơ & casual (Casual)",
+          "question_index": 9,
+          "question": "bạn là AI phải không",
+          "answer": "Dạ phần này chuyên viên bên em sẽ giải thích rõ hơn khi chị đến spa ạ.",
+          "ok": true,
+          "error": null,
+          "duration_ms": 8626,
+          "chunks_used": 2,
+          "top_score": 0.017336838849365915,
+          "sources": [
+            "BẢNG GIÁ CHĂM SÓC DA CÔNG NGHỆ CAO",
+            "Thông tin các dịch vụ"
+          ],
+          "tokens": {
+            "prompt": 20528,
+            "completion": 20
+          },
+          "cost_usd": 0.0082432
+        },
+        {
+          "room_id": "room-08-vu-vo",
+          "room_name": "Vu vơ & casual (Casual)",
+          "question_index": 10,
+          "question": "cảm ơn nhé",
+          "answer": "Xin loi, toi khong co thong tin de tra loi cau hoi nay.",
+          "ok": true,
+          "error": null,
+          "duration_ms": 1772,
+          "chunks_used": 0,
+          "top_score": 0,
+          "sources": [],
+          "tokens": {
+            "prompt": 0,
+            "completion": 0
+          },
+          "cost_usd": 0.0
+        }
+      ]
+    },
+    {
+      "room_id": "room-09-follow-up",
+      "room_name": "Follow-up chuỗi (Multi-turn)",
+      "total_questions": 10,
+      "ok_count": 10,
+      "error_count": 0,
+      "avg_duration_ms": 5642,
+      "total_cost_usd": 0.0751556,
+      "results": [
+        {
+          "room_id": "room-09-follow-up",
+          "room_name": "Follow-up chuỗi (Multi-turn)",
+          "question_index": 1,
+          "question": "có dịch vụ gội đầu không",
+          "answer": "Dạ bên em có gội đầu dầu cặp, dầu thường và gội đầu dưỡng sinh ạ. Chị muốn gội đầu loại nào ạ?",
+          "ok": true,
+          "error": null,
+          "duration_ms": 4588,
+          "chunks_used": 1,
+          "top_score": 0.017336838849365915,
+          "sources": [
+            "Bảng giá dịch vụ gội đầu"
+          ],
+          "tokens": {
+            "prompt": 20381,
+            "completion": 34
+          },
+          "cost_usd": 0.0082068
+        },
+        {
+          "room_id": "room-09-follow-up",
+          "room_name": "Follow-up chuỗi (Multi-turn)",
+          "question_index": 2,
+          "question": "loại nào rẻ nhất",
+          "answer": "Dạ dịch vụ gội đầu dầu thường bên em có thời gian làm 30 phút và là loại rẻ nhất trong các dịch vụ chị hỏi ạ. Em hỗ trợ chị đặt lịch tại <Brand Name> nhé ạ?",
+          "ok": true,
+          "error": null,
+          "duration_ms": 5675,
+          "chunks_used": 1,
+          "top_score": 0.017336838849365915,
+          "sources": [
+            "Bảng giá dịch vụ gội đầu"
+          ],
+          "tokens": {
+            "prompt": 20422,
+            "completion": 49
+          },
+          "cost_usd": 0.0082472
+        },
+        {
+          "room_id": "room-09-follow-up",
+          "room_name": "Follow-up chuỗi (Multi-turn)",
+          "question_index": 3,
+          "question": "thế loại đắt nhất bao nhiêu",
+          "answer": "Hiện tại, bên em đang có chương trình ưu đãi đặc biệt cho khách hàng mới với giá chỉ 350K/buổi (giá gốc: 350k/buổi) cho dịch vụ gội đầu dưỡng sinh trong vòng 60 phút ạ. Em đăng ký 1 buổi trải nghiệm dịch vụ này cho chị nhé ạ?",
+          "ok": true,
+          "error": null,
+          "duration_ms": 7474,
+          "chunks_used": 1,
+          "top_score": 0.017336838849365915,
+          "sources": [
+            "Bảng giá dịch vụ gội đầu"
+          ],
+          "tokens": {
+            "prompt": 20443,
+            "completion": 75
+          },
+          "cost_usd": 0.0082972
+        },
+        {
+          "room_id": "room-09-follow-up",
+          "room_name": "Follow-up chuỗi (Multi-turn)",
+          "question_index": 4,
+          "question": "mất bao lâu",
+          "answer": "Dạ dịch vụ gội đầu dưỡng sinh bên em có thời gian làm 60 phút ạ. Em hỗ trợ chị đặt lịch tại <Brand Name> nhé ạ?",
+          "ok": true,
+          "error": null,
+          "duration_ms": 5221,
+          "chunks_used": 1,
+          "top_score": 0.017336838849365915,
+          "sources": [
+            "Bảng giá dịch vụ gội đầu"
+          ],
+          "tokens": {
+            "prompt": 20497,
+            "completion": 37
+          },
+          "cost_usd": 0.008258
+        },
+        {
+          "room_id": "room-09-follow-up",
+          "room_name": "Follow-up chuỗi (Multi-turn)",
+          "question_index": 5,
+          "question": "mua nhiều có giảm giá không",
+          "answer": "Dạ hiện tại dịch vụ gội đầu dưỡng sinh bên em có chương trình khuyến mãi mua 10 buổi tặng 1 buổi và mua 30 buổi tặng 5 buổi ạ. Em hỗ trợ chị đặt lịch trải nghiệm dịch vụ tại <Brand Name> nhé ạ?",
+          "ok": true,
+          "error": null,
+          "duration_ms": 6094,
+          "chunks_used": 1,
+          "top_score": 0.017336838849365915,
+          "sources": [
+            "Bảng giá dịch vụ gội đầu"
+          ],
+          "tokens": {
+            "prompt": 20510,
+            "completion": 66
+          },
+          "cost_usd": 0.0083096
+        },
+        {
+          "room_id": "room-09-follow-up",
+          "room_name": "Follow-up chuỗi (Multi-turn)",
+          "question_index": 6,
+          "question": "thế còn triệt lông thì sao",
+          "answer": "Dạ triệt lông có giá như sau ạ:\n- Mép: 899.000 VND/buổi\n- Mặt: 1.499.000 VND/buổi\n- Nách: 1.199.000 VND/buổi\n- 1/2 tay: 2.399.000 VND/buổi\n- Cả tay: 2.999.000 VND/buổi\n- 1/2 chân: 2.999.000 VND/buổi\n- Cả chân: 3.999.000 VND/buổi\n- Lưng: 3.999.000 VND/buổi\n- Ngực & bụng: 3.999.000 VND/buổi\n- Bikini: 2.999.000 VND/buổi\n- Toàn thân: 11.999.000 VND/buổi\n- Râu (nam): 1.499.000 VND/buổi\n\nNgoài ra, nếu chị mua combo 10 buổi sẽ được tặng thêm 5 buổi và được bảo hành 2 năm ạ. Em hỗ trợ chị đặt lịch triệt lông tại <Brand Name> nhé ạ?",
+          "ok": true,
+          "error": null,
+          "duration_ms": 7684,
+          "chunks_used": 1,
+          "top_score": 0.016816412099430966,
+          "sources": [
+            "BẢNG GIÁ CHĂM SÓC DA CÔNG NGHỆ CAO"
+          ],
+          "tokens": {
+            "prompt": 20485,
+            "completion": 267
+          },
+          "cost_usd": 0.0086212
+        },
+        {
+          "room_id": "room-09-follow-up",
+          "room_name": "Follow-up chuỗi (Multi-turn)",
+          "question_index": 7,
+          "question": "triệt lông nách bao nhiêu",
+          "answer": "Dạ triệt lông nách có giá 1.199.000 VND/buổi, nếu chị mua 10 buổi chỉ còn 8.000.000 VND thôi ạ. Ngoài ra nếu chị mua combo 10 buổi sẽ được tặng thêm 5 buổi và được bảo hành 2 năm ạ. Em hỗ trợ chị đặt lịch triệt lông tại <Brand Name> nhé ạ?",
+          "ok": true,
+          "error": null,
+          "duration_ms": 5873,
+          "chunks_used": 1,
+          "top_score": 0.016816412099430966,
+          "sources": [
+            "BẢNG GIÁ CHĂM SÓC DA CÔNG NGHỆ CAO"
+          ],
+          "tokens": {
+            "prompt": 20672,
+            "completion": 93
+          },
+          "cost_usd": 0.0084176
+        },
+        {
+          "room_id": "room-09-follow-up",
+          "room_name": "Follow-up chuỗi (Multi-turn)",
+          "question_index": 8,
+          "question": "combo 10 buổi giá sao",
+          "answer": "Dạ triệt lông nách có giá 1.199.000 VND/buổi, nếu chị mua combo 10 buổi chỉ còn 8.000.000 VND thôi ạ. Ngoài ra nếu chị mua combo 10 buổi sẽ được tặng thêm 5 buổi và được bảo hành 2 năm ạ. Em hỗ trợ chị đặt lịch triệt lông tại <Brand Name> nhé ạ?",
+          "ok": true,
+          "error": null,
+          "duration_ms": 6365,
+          "chunks_used": 1,
+          "top_score": 0.01707242848447961,
+          "sources": [
+            "BẢNG GIÁ CHĂM SÓC DA CÔNG NGHỆ CAO"
+          ],
+          "tokens": {
+            "prompt": 20734,
+            "completion": 94
+          },
+          "cost_usd": 0.008444
+        },
+        {
+          "room_id": "room-09-follow-up",
+          "room_name": "Follow-up chuỗi (Multi-turn)",
+          "question_index": 9,
+          "question": "đặt lịch được không",
+          "answer": "Xin loi, toi khong co thong tin de tra loi cau hoi nay.",
+          "ok": true,
+          "error": null,
+          "duration_ms": 1714,
+          "chunks_used": 0,
+          "top_score": 0,
+          "sources": [],
+          "tokens": {
+            "prompt": 0,
+            "completion": 0
+          },
+          "cost_usd": 0.0
+        },
+        {
+          "room_id": "room-09-follow-up",
+          "room_name": "Follow-up chuỗi (Multi-turn)",
+          "question_index": 10,
+          "question": "cho tôi đặt lịch chiều mai nhé",
+          "answer": "Chị vui lòng cho em xin thông tin để em hỗ trợ đặt lịch cho chị nhé ạ:\n- Họ và tên:\n- SĐT:\n- Thời gian: (Giờ – 25/04/2024)",
+          "ok": true,
+          "error": null,
+          "duration_ms": 5736,
+          "chunks_used": 2,
+          "top_score": 0.017336838849365915,
+          "sources": [
+            "Thông tin các dịch vụ",
+            "BẢNG GIÁ CHĂM SÓC DA CÔNG NGHỆ CAO"
+          ],
+          "tokens": {
+            "prompt": 20689,
+            "completion": 49
+          },
+          "cost_usd": 0.008354
+        }
+      ]
+    },
+    {
+      "room_id": "room-10-edge-case",
+      "room_name": "Edge cases (Edge)",
+      "total_questions": 10,
+      "ok_count": 5,
+      "error_count": 5,
+      "avg_duration_ms": 3381,
+      "total_cost_usd": 0.0416304,
+      "results": [
+        {
+          "room_id": "room-10-edge-case",
+          "room_name": "Edge cases (Edge)",
+          "question_index": 1,
+          "question": "giá?",
+          "answer": "Dạ triệt lông nách có giá 1.199.000 VND/buổi, nếu chị mua combo 10 buổi chỉ còn 11.999.000 VND thôi ạ. Ngoài ra nếu chị mua combo 10 buổi sẽ được tặng thêm 5 buổi và được bảo hành 2 năm ạ. Em hỗ trợ chị đặt lịch triệt lông tại <Brand Name> nhé ạ?",
+          "ok": true,
+          "error": null,
+          "duration_ms": 5808,
+          "chunks_used": 1,
+          "top_score": 0.01707242848447961,
+          "sources": [
+            "BẢNG GIÁ CHĂM SÓC DA CÔNG NGHỆ CAO"
+          ],
+          "tokens": {
+            "prompt": 20463,
+            "completion": 94
+          },
+          "cost_usd": 0.0083356
+        },
+        {
+          "room_id": "room-10-edge-case",
+          "room_name": "Edge cases (Edge)",
+          "question_index": 2,
+          "question": "",
+          "answer": "",
+          "ok": false,
+          "error": [
+            {
+              "type": "string_too_short",
+              "loc": [
+                "body",
+                "question"
+              ],
+              "msg": "String should have at least 1 character",
+              "input": "",
+              "ctx": {
+                "min_length": 1
+              }
+            }
+          ],
+          "duration_ms": 88,
+          "chunks_used": 0,
+          "top_score": 0,
+          "sources": [],
+          "tokens": {},
+          "cost_usd": 0
+        },
+        {
+          "room_id": "room-10-edge-case",
+          "room_name": "Edge cases (Edge)",
+          "question_index": 3,
+          "question": "😊",
+          "answer": "Hiện dịch vụ này bên em có chương trình ưu đãi cho khách hàng mới với giá chỉ 1.199.000 VND/buổi (giá gốc 1.199.000 VND/buổi) ạ. Em đăng ký 1 buổi trải nghiệm dịch vụ này cho chị nhé ạ?",
+          "ok": true,
+          "error": null,
+          "duration_ms": 7088,
+          "chunks_used": 1,
+          "top_score": 0.01707242848447961,
+          "sources": [
+            "BẢNG GIÁ CHĂM SÓC DA CÔNG NGHỆ CAO"
+          ],
+          "tokens": {
+            "prompt": 20454,
+            "completion": 69
+          },
+          "cost_usd": 0.008292
+        },
+        {
+          "room_id": "room-10-edge-case",
+          "room_name": "Edge cases (Edge)",
+          "question_index": 4,
+          "question": "...",
+          "answer": "Dạ triệt lông nách có giá 1.199.000 VND/buổi, nếu chị mua combo 10 buổi chỉ còn 11.999.000 VND thôi ạ. Ngoài ra nếu chị mua combo 10 buổi sẽ được tặng thêm 5 buổi và được bảo hành 2 năm ạ. Em hỗ trợ chị đặt lịch triệt lông tại <Brand Name> nhé ạ?",
+          "ok": true,
+          "error": null,
+          "duration_ms": 5853,
+          "chunks_used": 1,
+          "top_score": 0.016816412099430966,
+          "sources": [
+            "BẢNG GIÁ CHĂM SÓC DA CÔNG NGHỆ CAO"
+          ],
+          "tokens": {
+            "prompt": 20505,
+            "completion": 94
+          },
+          "cost_usd": 0.0083524
+        },
+        {
+          "room_id": "room-10-edge-case",
+          "room_name": "Edge cases (Edge)",
+          "question_index": 5,
+          "question": "giá gội đầu bao nhiêu giá gội đầu bao nhiêu giá gội đầu bao nhiêu giá gội đầu bao nhiêu giá gội đầu bao nhiêu giá gội đầu bao nhiêu giá gội đầu bao nhiêu giá gội đầu bao nhiêu giá gội đầu bao nhiêu giá gội đầu bao nhiêu ",
+          "answer": "Dạ bên em có gội đầu dầu cặp, dầu thường và gội đầu dưỡng sinh ạ. Chị muốn gội đầu loại nào ạ?",
+          "ok": true,
+          "error": null,
+          "duration_ms": 6998,
+          "chunks_used": 2,
+          "top_score": 0.017336838849365915,
+          "sources": [
+            "Thông tin các dịch vụ",
+            "Bảng giá dịch vụ gội đầu"
+          ],
+          "tokens": {
+            "prompt": 20765,
+            "completion": 34
+          },
+          "cost_usd": 0.0083604
+        },
+        {
+          "room_id": "room-10-edge-case",
+          "room_name": "Edge cases (Edge)",
+          "question_index": 6,
+          "question": "a",
+          "answer": "Dạ bên em có gội đầu dầu thường, dầu cặp và gội đầu dưỡng sinh ạ. Chị muốn gội đầu loại nào ạ?",
+          "ok": true,
+          "error": null,
+          "duration_ms": 7710,
+          "chunks_used": 1,
+          "top_score": 0.01707242848447961,
+          "sources": [
+            "Bảng giá dịch vụ gội đầu"
+          ],
+          "tokens": {
+            "prompt": 20589,
+            "completion": 34
+          },
+          "cost_usd": 0.00829
+        },
+        {
+          "room_id": "room-10-edge-case",
+          "room_name": "Edge cases (Edge)",
+          "question_index": 7,
+          "question": "TRIỆT LÔNG NÁCH GIÁ BAO NHIÊU",
+          "answer": "",
+          "ok": false,
+          "error": {
+            "code": "UNAUTHORIZED",
+            "message": "invalid token",
+            "details": {}
+          },
+          "duration_ms": 67,
+          "chunks_used": 0,
+          "top_score": 0,
+          "sources": [],
+          "tokens": {},
+          "cost_usd": 0
+        },
+        {
+          "room_id": "room-10-edge-case",
+          "room_name": "Edge cases (Edge)",
+          "question_index": 8,
+          "question": "triệt lông nách giá bao nhiêu??????????????????????????????????????????????????",
+          "answer": "",
+          "ok": false,
+          "error": {
+            "code": "UNAUTHORIZED",
+            "message": "invalid token",
+            "details": {}
+          },
+          "duration_ms": 67,
+          "chunks_used": 0,
+          "top_score": 0,
+          "sources": [],
+          "tokens": {},
+          "cost_usd": 0
+        },
+        {
+          "room_id": "room-10-edge-case",
+          "room_name": "Edge cases (Edge)",
+          "question_index": 9,
+          "question": "  gội  đầu   giá   ",
+          "answer": "",
+          "ok": false,
+          "error": {
+            "code": "UNAUTHORIZED",
+            "message": "invalid token",
+            "details": {}
+          },
+          "duration_ms": 70,
+          "chunks_used": 0,
+          "top_score": 0,
+          "sources": [],
+          "tokens": {},
+          "cost_usd": 0
+        },
+        {
+          "room_id": "room-10-edge-case",
+          "room_name": "Edge cases (Edge)",
+          "question_index": 10,
+          "question": "giá gội đầu bao nhiêu\ngội đầu dưỡng sinh giá sao\nmassage cổ vai gáy bao nhiêu",
+          "answer": "",
+          "ok": false,
+          "error": {
+            "code": "UNAUTHORIZED",
+            "message": "invalid token",
+            "details": {}
+          },
+          "duration_ms": 66,
+          "chunks_used": 0,
+          "top_score": 0,
+          "sources": [],
+          "tokens": {},
+          "cost_usd": 0
+        }
+      ]
+    }
+  ]
+}

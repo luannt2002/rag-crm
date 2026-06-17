@@ -1,0 +1,10 @@
+[Unit]
+Description=Trigger Redis<->DB token usage reconcile every 5 min
+
+[Timer]
+OnCalendar=*:0/5
+Persistent=true
+Unit=ragbot-token-reconcile.service
+
+[Install]
+WantedBy=timers.target

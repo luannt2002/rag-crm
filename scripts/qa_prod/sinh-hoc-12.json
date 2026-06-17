@@ -1,0 +1,27 @@
+{
+  "bot_id": "sinh-hoc-12",
+  "archetype": "academic-tutor",
+  "questions": [
+    {"id": "sinh-L1-1", "level": "L1", "nghiep_vu": "khai_niem", "category": "factoid",
+     "question": "Quy luật phân li của Mendel: lai AA × aa thì F1 có kiểu gen gì?",
+     "must_contain": ["Aa", "100"], "fact_id": "sinh.f1"},
+    {"id": "sinh-L1-2", "level": "L1", "nghiep_vu": "khai_niem", "category": "factoid",
+     "question": "Đời F2 trong lai một cặp tính trạng của Mendel có tỉ lệ kiểu hình là bao nhiêu?",
+     "must_contain": ["3", "1"], "fact_id": "sinh.f2_kh"},
+    {"id": "sinh-L1-3", "level": "L1", "nghiep_vu": "khai_niem", "category": "factoid",
+     "question": "Công thức Hardy-Weinberg cho quần thể có dạng như thế nào?",
+     "must_contain": ["p2", "2pq", "q2"], "fact_id": "sinh.hardy"},
+    {"id": "sinh-L2-1", "level": "L2", "nghiep_vu": "khai_niem", "category": "factoid_filter",
+     "question": "Đời F2 trong lai một cặp tính trạng có tỉ lệ KIỂU GEN (không phải kiểu hình) là bao nhiêu?",
+     "must_contain": ["1", "2", "1"], "fact_id": "sinh.f2_kg"},
+    {"id": "sinh-L3-1", "level": "L3", "nghiep_vu": "giai_bai_tap", "category": "aggregation",
+     "question": "Lai hai cặp tính trạng AaBb × AaBb, đời F2 có bao nhiêu tổ hợp và tỉ lệ kiểu hình là gì?",
+     "must_contain": ["16", "9", "3", "1"], "fact_ref": ["sinh.f2_2cap"]},
+    {"id": "sinh-L4-1", "level": "L4", "nghiep_vu": "khai_niem", "category": "multi_hop",
+     "question": "Tần số hoán vị gen tối đa là bao nhiêu phần trăm, và 1% hoán vị tương ứng bao nhiêu đơn vị bản đồ (cM)?",
+     "must_contain": ["50", "1"], "fact_ref": ["sinh.hoanvi"]},
+    {"id": "sinh-L0-1", "level": "L0", "nghiep_vu": "oos", "category": "refusal_trap",
+     "question": "Giải thích cơ chế quang hợp ở thực vật C4 giúp em.",
+     "expect_refuse": true, "must_not_fabricate": true, "fact_id": "sinh.oos"}
+  ]
+}

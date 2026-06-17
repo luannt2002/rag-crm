@@ -1,0 +1,10 @@
+[Unit]
+Description=Trigger monthly token quota reset
+
+[Timer]
+OnCalendar=*-*-01 00:01:00 Asia/Ho_Chi_Minh
+Persistent=true
+Unit=ragbot-monthly-reset.service
+
+[Install]
+WantedBy=timers.target

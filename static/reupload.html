@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Re-upload 3 bot · Ragbot</title>
+<style>
+  body{font-family:system-ui,Segoe UI,Roboto,sans-serif;max-width:880px;margin:24px auto;padding:0 16px;color:#1a1a1a}
+  h1{font-size:1.4rem} h2{font-size:1.05rem;margin:18px 0 6px}
+  .bot{border:1px solid #e2e2e2;border-radius:10px;padding:14px 16px;margin:12px 0}
+  .ws{display:inline-block;background:#eef3ff;color:#2546b8;border-radius:6px;padding:1px 8px;font-size:.78rem;margin-left:8px}
+  .file{font-size:.82rem;color:#555;margin:3px 0;word-break:break-all}
+  button{background:#2546b8;color:#fff;border:0;border-radius:8px;padding:9px 16px;font-size:.92rem;cursor:pointer}
+  button:disabled{opacity:.5;cursor:wait} button.sec{background:#444}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0}
+  input{border:1px solid #ccc;border-radius:7px;padding:8px;font-size:.86rem;width:340px}
+  .st{font-size:.82rem;margin-top:6px;white-space:pre-wrap;font-family:ui-monospace,monospace;background:#f7f7f7;border-radius:6px;padding:8px;display:none}
+  .ok{color:#1a7f37} .err{color:#c1121f}
+</style>
+</head>
+<body>
+<h1>🔁 Re-upload tài liệu 3 bot (9 file cố định)</h1>
+<p style="color:#666;font-size:.88rem">1 nút → BE đọc <code>bot_sources.json</code> (single source) → wipe + upload toàn bộ 9 file theo workspace của từng bot. Không cần upload từng file.</p>
+
+<div class="row">
+  <input id="tok" placeholder="Operator bypass token (X-Loadtest-Bypass)" />
+  <button id="btnAll">Re-upload TẤT CẢ (3 bot)</button>
+  <label style="font-size:.84rem"><input type="checkbox" id="wipe" checked style="width:auto"> wipe trước</label>
+</div>
+<div id="bots"></div>
+<div class="st" id="out"></div>
+
+<script>
+const API = "/api/ragbot/test";
+const bypass = () => document.getElementById("tok").value.trim();
+let JWT = "";
+const out = (m, cls) => { const e=document.getElementById("out"); e.style.display="block"; e.className="st "+(cls||""); e.textContent=m; };
+const hdr = () => ({ "Content-Type":"application/json", "Authorization":"Bearer "+JWT, "X-Loadtest-Bypass": bypass() });
+
+async function ensureToken() {
+  if (JWT) return;
+  const r = await fetch(`${API}/tokens/self`, { headers: { "X-Loadtest-Bypass": bypass() } });
+  if (!r.ok) throw new Error("token "+r.status+" — kiểm tra bypass token");
+  JWT = (await r.json()).token;
+}
+
+async function load() {
+  await ensureToken();
+  const r = await fetch(`${API}/seed-sources`, { headers: hdr() });
+  const d = await r.json();
+  const box = document.getElementById("bots");
+  box.innerHTML = "";
+  (d.bots||[]).forEach(b => {
+    const el = document.createElement("div"); el.className="bot";
+    el.innerHTML = `<h2>${b.bot_id} <span class="ws">ws: ${b.workspace_id||"(tenant)"}</span> · ${b.channel_type}</h2>`
+      + (b.documents||[]).map(x=>`<div class="file">• ${x.title} — ${x.url}</div>`).join("")
+      + `<div class="row"><button class="sec" data-bot="${b.bot_id}">Re-upload riêng ${b.bot_id}</button></div>`;
+    box.appendChild(el);
+  });
+  box.querySelectorAll("button[data-bot]").forEach(btn =>
+    btn.onclick = () => reinit(btn.dataset.bot));
+}
+
+async function reinit(bot) {
+  const wipe = document.getElementById("wipe").checked;
+  out(`⏳ Đang gửi 9 file (bot=${bot}, wipe=${wipe}) tới BE...`);
+  document.querySelectorAll("button").forEach(b=>b.disabled=true);
+  try {
+    await ensureToken();
+    const r = await fetch(`${API}/reinit-bots?bot=${encodeURIComponent(bot)}&wipe=${wipe}`,
+      { method:"POST", headers: hdr() });
+    const d = await r.json();
+    if (!r.ok) { out("❌ "+JSON.stringify(d), "err"); return; }
+    let s = "✅ ĐÃ QUEUE — worker đang chunk+embed nền:\n";
+    (d.bots||[]).forEach(b => {
+      s += `\n${b.bot_id} (ws=${b.workspace_id}):\n`;
+      (b.documents||[]).forEach(x => s += `  • ${x.title}: ${x.status}${x.error?" — "+x.error:""}\n`);
+    });
+    out(s, "ok");
+  } catch (e) { out("❌ "+e.message, "err"); }
+  finally { document.querySelectorAll("button").forEach(b=>b.disabled=false); }
+}
+
+document.getElementById("btnAll").onclick = () => reinit("all");
+load().catch(e => out("Không load được seed-sources: "+e.message+" (nhập token rồi reload)", "err"));
+</script>
+</body>
+</html>

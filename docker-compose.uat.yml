@@ -1,0 +1,117 @@
+# =============================================================================
+# docker-compose.uat.yml — UAT (User Acceptance Testing) overlay
+#
+# Use as overlay on top of base docker-compose.yml:
+#   docker compose -f docker-compose.yml -f docker-compose.uat.yml \
+#     --env-file .env.uat config         # validate
+#   docker compose -f docker-compose.yml -f docker-compose.uat.yml \
+#     --env-file .env.uat up -d          # bring up
+#
+# DIFFERENCES vs base (dev) compose:
+#   - No hardcoded postgres password (sourced from .env.uat)
+#   - Redis with AOF (durability)
+#   - api restart policy unless-stopped (no on-failure-only)
+#   - api healthcheck wired to /health endpoint
+#   - db-backup sidecar service (cron pg_dump via scripts/backup_db.sh)
+#   - No host port exposure for postgres / redis (UAT services
+#     bind to internal network only — LB sits in front of api)
+#   - Named volumes prefixed `ragbot_uat_*` so multiple env coexist
+#     on one host without clobber
+# =============================================================================
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    # UAT credentials sourced from .env.uat — never hardcoded here.
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER required in .env.uat}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD required in .env.uat}
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB required in .env.uat}
+    volumes:
+      - ragbot_uat_pg_data:/var/lib/postgresql/data
+      - ragbot_uat_pg_backups:/backups
+    # No host port — UAT api connects via internal docker network.
+    # If admin needs psql access, use `docker compose exec postgres psql`.
+    ports: []
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+    restart: unless-stopped
+
+  redis:
+    image: redis/redis-stack-server:7.4.0-v1
+    # UAT enables AOF for stream durability. Tune maxmemory via env
+    # so each tenant tier can size independently.
+    command: [
+      "redis-server",
+      "--maxmemory", "${REDIS_MAXMEMORY:-2gb}",
+      "--maxmemory-policy", "allkeys-lru",
+      "--save", "60 1000",
+      "--appendonly", "yes",
+      "--appendfsync", "everysec"
+    ]
+    volumes:
+      - ragbot_uat_redis_data:/data
+    ports: []
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+    restart: unless-stopped
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api
+    env_file:
+      - .env.uat
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      DATABASE_URL_SYNC: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      ALEMBIC_SQLALCHEMY_URL: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      REDIS_URL: redis://redis:6379/0
+      APP_ENV: uat
+      APP_DEBUG: "false"
+    ports:
+      - "${RAGBOT_API_HOST_PORT:-3004}:3004"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:3004/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 4
+      start_period: 30s
+    restart: unless-stopped
+
+  # Sidecar — runs daily pg_dump via host crontab; mount script + backup dir.
+  # Does not run continuously; spawned on demand via `docker compose run db-backup`.
+  db-backup:
+    image: postgres:16-alpine
+    profiles: ["backup"]
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      RAGBOT_BACKUP_DIR: /backups
+      RAGBOT_BACKUP_RETAIN: "${RAGBOT_BACKUP_RETAIN:-7}"
+    volumes:
+      - ragbot_uat_pg_backups:/backups
+      - ./scripts/backup_db.sh:/usr/local/bin/backup_db.sh:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    entrypoint: ["bash", "/usr/local/bin/backup_db.sh"]
+    restart: "no"
+
+volumes:
+  ragbot_uat_pg_data:
+    name: ragbot_uat_pg_data
+  ragbot_uat_pg_backups:
+    name: ragbot_uat_pg_backups
+  ragbot_uat_redis_data:
+    name: ragbot_uat_redis_data

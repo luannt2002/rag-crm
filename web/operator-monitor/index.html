@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Ragbot Operator Monitor</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+:root{--bg:#0e1116;--p:#161b22;--p2:#1f2530;--bd:#2a313c;--t:#d4dae3;--m:#8a93a3;--a:#58a6ff;--g:#3fb950;--w:#d29922;--b:#f85149;--mono:ui-monospace,Menlo,Consolas,monospace}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--t);font:14px/1.5 system-ui,Segoe UI,Roboto,sans-serif}
+header{display:flex;align-items:baseline;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--bd);background:var(--p)}
+header h1{margin:0;font-size:16px}
+.meta{color:var(--m);font-size:12px;font-family:var(--mono)}
+main{display:grid;gap:14px;padding:14px 20px;grid-template-columns:repeat(auto-fit,minmax(360px,1fr))}
+.panel{background:var(--p);border:1px solid var(--bd);border-radius:6px;padding:14px 16px}
+.panel h2{margin:0 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:.8px;color:var(--m);font-weight:600}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.row+.row{margin-top:6px}
+label{color:var(--m);font-size:12px;min-width:96px}
+input{background:var(--p2);color:var(--t);border:1px solid var(--bd);border-radius:4px;padding:5px 8px;font-family:var(--mono);font-size:12px;flex:1;min-width:120px}
+button{background:var(--a);color:#0b1120;border:0;border-radius:4px;padding:6px 12px;font-weight:600;cursor:pointer;font-size:12px}
+button.gh{background:var(--p2);color:var(--t);border:1px solid var(--bd)}
+button:hover{filter:brightness(1.1)}
+.kvs{display:grid;grid-template-columns:1fr auto;gap:4px 12px;font-family:var(--mono);font-size:12px}
+.kvs .k{color:var(--m)}.kvs .v{text-align:right}
+.pill{display:inline-block;padding:1px 8px;border-radius:999px;font-size:11px;font-weight:600;font-family:var(--mono)}
+.pill.good{background:rgba(63,185,80,.12);color:var(--g)}
+.pill.warn{background:rgba(210,153,34,.12);color:var(--w)}
+.pill.bad{background:rgba(248,81,73,.12);color:var(--b)}
+table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12px}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--bd)}
+th{color:var(--m);font-weight:600}.num{text-align:right}
+pre{background:var(--p2);border:1px solid var(--bd);border-radius:4px;padding:8px 10px;margin:0;max-height:260px;overflow:auto;font-size:11px;color:var(--m);white-space:pre-wrap}
+.chart{width:100%;height:140px}.bar{fill:var(--a)}
+.lbl{font-size:10px;fill:var(--m);font-family:var(--mono)}.val{font-size:10px;fill:var(--t);font-family:var(--mono)}
+.err{color:var(--b);font-family:var(--mono);font-size:11px}.ok{color:var(--g);font-family:var(--mono);font-size:11px}
+.full{grid-column:1/-1}
+</style>
+</head>
+<body>
+<header>
+  <h1>Ragbot Operator Monitor</h1>
+  <div class="meta">
+    <span id="apiBase"></span> &middot;
+    <span id="health" class="pill warn">checking</span> &middot;
+    <span id="upd"></span>
+  </div>
+</header>
+<main>
+  <section class="panel">
+    <h2>Bot identity (3-key)</h2>
+    <div class="row"><label for="tid">tenant_id</label><input id="tid" type="text" autocomplete="off"></div>
+    <div class="row"><label for="bid">bot_id</label><input id="bid" type="text" autocomplete="off"></div>
+    <div class="row"><label for="cty">channel_type</label><input id="cty" type="text" placeholder="web"></div>
+    <div class="row" style="margin-top:10px">
+      <button id="save">Save and refresh</button>
+      <button id="clrTok" class="gh">Clear token</button>
+    </div>
+    <div class="row" style="margin-top:8px"><small id="idSt" class="ok"></small></div>
+  </section>
+
+  <section class="panel">
+    <h2>Live corpus state</h2>
+    <div id="prOut" class="kvs"><span class="k">status</span><span class="v">loading…</span></div>
+    <div id="prErr" class="err"></div>
+  </section>
+
+  <section class="panel">
+    <h2>Cost &amp; latency snapshot</h2>
+    <div id="clOut" class="kvs"><span class="k">status</span><span class="v">loading…</span></div>
+    <div id="clErr" class="err"></div>
+  </section>
+
+  <section class="panel full">
+    <h2>Recent load tests — PASS rate trend</h2>
+    <svg id="trend" class="chart" viewBox="0 0 800 140" preserveAspectRatio="none"></svg>
+    <div id="trErr" class="err"></div>
+    <small class="meta">Pass <code>?trends=URL1,URL2,...</code> with mega_round*.json URLs (must include <code>summary.rates_pct.PASS</code>).</small>
+  </section>
+
+  <section class="panel full">
+    <h2>Corpus document list</h2>
+    <div id="docs"><div class="kvs"><span class="k">status</span><span class="v">loading…</span></div></div>
+    <div id="dErr" class="err"></div>
+  </section>
+
+  <section class="panel full">
+    <h2>Live log tail (manual)</h2>
+    <div class="row">
+      <label for="logUrl">log url</label>
+      <input id="logUrl" type="text" placeholder="optional URL (CORS-enabled)">
+      <button id="logFetch" class="gh">Fetch</button>
+      <button id="logClr" class="gh">Clear</button>
+    </div>
+    <pre id="logOut">No log fetched yet.</pre>
+  </section>
+</main>
+<script type="module">
+import {apiBase,getToken,clearToken,fetchHealth,fetchPassRate,fetchCost,fetchLatency,fetchDocuments} from './api-client.js';
+
+const params=new URLSearchParams(location.search);
+if(params.get('api_base')) window.RAGBOT_API_BASE=params.get('api_base');
+
+const LS={tid:'ragbot_tenant_id',bid:'ragbot_bot_id',cty:'ragbot_channel_type'};
+const $=id=>document.getElementById(id);
+const id=()=>({
+  tenantId: params.get('tenant_id')||localStorage.getItem(LS.tid)||'',
+  botId:    params.get('bot_id')   ||localStorage.getItem(LS.bid)||'',
+  channelType: params.get('channel_type')||localStorage.getItem(LS.cty)||'',
+});
+const cur=id();
+$('tid').value=cur.tenantId; $('bid').value=cur.botId; $('cty').value=cur.channelType;
+$('apiBase').textContent=apiBase();
+
+function setKVs(elId,obj){
+  const el=$(elId); el.innerHTML='';
+  for(const [k,v] of Object.entries(obj)){
+    const ks=document.createElement('span'); ks.className='k'; ks.textContent=k;
+    const vs=document.createElement('span'); vs.className='v'; vs.textContent=String(v);
+    el.appendChild(ks); el.appendChild(vs);
+  }
+}
+const esc=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+
+async function refreshHealth(){
+  const b=$('health');
+  try{
+    const h=await fetchHealth();
+    const s=(h.status||h.ok||'ok').toString().toLowerCase();
+    b.className='pill '+(s.includes('ok')||s==='true'?'good':s.includes('degraded')?'warn':'bad');
+    b.textContent=s;
+  }catch(_e){ b.className='pill bad'; b.textContent='down'; }
+}
+async function refreshPR(token){
+  $('prErr').textContent='';
+  try{
+    const r=await fetchPassRate({token});
+    const all=Object.values(r.data||{});
+    const t=all.reduce((a,s)=>{
+      a.pass+=+s.pass_count||0; a.refuse+=+s.refuse_count||0;
+      a.hallu+=+s.hallu_count||0; a.turns+=+s.total_turns||0; return a;
+    },{pass:0,refuse:0,hallu:0,turns:0});
+    const pct=(n)=>t.turns?(100*n/t.turns).toFixed(1)+' %':'-';
+    const i=id();
+    setKVs('prOut',{
+      bots_in_window: all.length,
+      total_turns: t.turns,
+      pass_pct: pct(t.pass),
+      refuse_pct: pct(t.refuse),
+      hallu_pct: pct(t.hallu),
+      window: r.window?`${r.window.since} → ${r.window.until}`:'-',
+      identity: i.tenantId&&i.botId?`${i.tenantId}/${i.botId}/${i.channelType}`:'(set 3-key)',
+    });
+  }catch(e){
+    $('prErr').textContent=e.message+(e.data?' — '+JSON.stringify(e.data):'');
+    setKVs('prOut',{status:'error'});
+  }
+}
+async function refreshCL(token){
+  $('clErr').textContent='';
+  try{
+    const [c,l]=await Promise.all([fetchCost({token}),fetchLatency({token})]);
+    const cb=Object.values(c.data||{}), lb=Object.values(l.data||{});
+    const cost=cb.reduce((a,s)=>a+(+s.cost_usd_total||0),0);
+    const turns=cb.reduce((a,s)=>a+(+s.total_turns||0),0);
+    const p95=lb.reduce((m,s)=>Math.max(m,+s.p95_ms||0),0);
+    const p50=lb.reduce((m,s)=>Math.max(m,+s.p50_ms||0),0);
+    setKVs('clOut',{
+      cost_usd_total: cost.toFixed(4),
+      cost_usd_per_turn: turns?(cost/turns).toFixed(6):'-',
+      latency_p50_ms_max: p50,
+      latency_p95_ms_max: p95,
+      bots_in_window: cb.length,
+    });
+  }catch(e){
+    $('clErr').textContent=e.message+(e.data?' — '+JSON.stringify(e.data):'');
+    setKVs('clOut',{status:'error'});
+  }
+}
+async function refreshDocs(token){
+  $('dErr').textContent='';
+  const i=id();
+  if(!i.tenantId||!i.botId||!i.channelType){
+    $('docs').innerHTML='<div class="kvs"><span class="k">status</span><span class="v">3-key required</span></div>';
+    return;
+  }
+  try{
+    const r=await fetchDocuments({token,tenantId:i.tenantId,botId:i.botId,channelType:i.channelType});
+    const docs=r.documents||[];
+    if(!docs.length){
+      $('docs').innerHTML='<div class="kvs"><span class="k">total</span><span class="v">0</span></div>';
+      return;
+    }
+    const rows=docs.map(d=>`<tr><td>${esc(d.document_name||d.id)}</td><td class="num">${d.chunk_count??'-'}</td><td>${esc(d.created_at||'-')}</td><td>${esc((d.content_hash||'').slice(0,10))}</td></tr>`).join('');
+    $('docs').innerHTML=`<table><thead><tr><th>Document</th><th class="num">Chunks</th><th>Created</th><th>Hash</th></tr></thead><tbody>${rows}</tbody></table><small class="meta">total: ${r.total??docs.length}</small>`;
+  }catch(e){
+    $('dErr').textContent=e.message+(e.data?' — '+JSON.stringify(e.data):'');
+  }
+}
+async function refreshTrend(){
+  $('trErr').textContent='';
+  const tp=params.get('trends');
+  if(!tp){ $('trErr').textContent='No ?trends=URL1,URL2 supplied. Trend disabled.'; return; }
+  const urls=tp.split(',').map(s=>s.trim()).filter(Boolean);
+  const pts=[];
+  for(const u of urls){
+    try{
+      const r=await fetch(u); if(!r.ok) continue;
+      const j=await r.json();
+      const rates=(j.summary&&j.summary.rates_pct)||{};
+      pts.push({label:u.split('/').pop().replace(/\.json$/,'').slice(0,14), pass:+rates.PASS||0});
+    }catch(_e){}
+  }
+  drawBars(pts);
+}
+function drawBars(pts){
+  const svg=$('trend'); svg.innerHTML='';
+  if(!pts.length) return;
+  const W=800,H=140,pad=24, bw=(W-pad*2)/pts.length;
+  const mx=Math.max(100,...pts.map(p=>p.pass));
+  pts.forEach((p,i)=>{
+    const x=pad+i*bw+4, w=Math.max(4,bw-8), h=(H-pad*2)*(p.pass/mx), y=H-pad-h;
+    const NS='http://www.w3.org/2000/svg';
+    const r=document.createElementNS(NS,'rect');
+    r.setAttribute('class','bar'); r.setAttribute('x',x); r.setAttribute('y',y);
+    r.setAttribute('width',w); r.setAttribute('height',h); svg.appendChild(r);
+    const lb=document.createElementNS(NS,'text');
+    lb.setAttribute('class','lbl'); lb.setAttribute('x',x+w/2); lb.setAttribute('y',H-6);
+    lb.setAttribute('text-anchor','middle'); lb.textContent=p.label; svg.appendChild(lb);
+    const v=document.createElementNS(NS,'text');
+    v.setAttribute('class','val'); v.setAttribute('x',x+w/2); v.setAttribute('y',y-4);
+    v.setAttribute('text-anchor','middle'); v.textContent=p.pass.toFixed(1); svg.appendChild(v);
+  });
+}
+
+$('logFetch').onclick=async()=>{
+  const u=$('logUrl').value.trim();
+  if(!u){ $('logOut').textContent='Provide a URL first.'; return; }
+  try{ const r=await fetch(u); const t=await r.text(); $('logOut').textContent=t.slice(-12000); }
+  catch(e){ $('logOut').textContent='Fetch failed: '+e.message; }
+};
+$('logClr').onclick=()=>{ $('logOut').textContent=''; };
+
+async function refreshAll(){
+  $('upd').textContent='updated '+new Date().toLocaleTimeString();
+  let tok='';
+  try{ tok=await getToken(); $('idSt').className='ok'; $('idSt').textContent='token: ok'; }
+  catch(e){ $('idSt').className='err'; $('idSt').textContent='token error: '+e.message; }
+  await Promise.all([refreshHealth(),refreshPR(tok),refreshCL(tok),refreshDocs(tok),refreshTrend()]);
+}
+
+$('save').onclick=()=>{
+  localStorage.setItem(LS.tid,$('tid').value.trim());
+  localStorage.setItem(LS.bid,$('bid').value.trim());
+  localStorage.setItem(LS.cty,$('cty').value.trim());
+  refreshAll();
+};
+$('clrTok').onclick=()=>{ clearToken(); $('idSt').textContent='token cleared'; refreshAll(); };
+
+refreshAll();
+setInterval(refreshAll,30000);
+</script>
+</body>
+</html>

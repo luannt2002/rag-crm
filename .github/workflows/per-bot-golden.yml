@@ -1,0 +1,95 @@
+name: per-bot-golden
+
+# Per-bot golden test CI gate.
+#
+# Bot owners check in golden Q&A pairs at golden_set/<record_bot_id>.jsonl.
+# This job runs every PR + on workflow_dispatch, replays each bot's
+# golden questions through scripts/eval_per_bot_golden.py, and exits 1
+# if any bot's current pass rate drops below its baseline pass rate
+# (golden_set/baseline.jsonl).
+#
+# Domain-neutral: the runner knows nothing about industry / brand. The
+# <record_bot_id>.jsonl filename slug is the internal UUID of the bot,
+# resolved from the platform's mandatory 4-key identity tuple
+# (record_tenant_id, workspace_id, bot_id, channel_type).
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  per-bot-golden:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: ragbot
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/ragbot
+      REDIS_URL: redis://localhost:6379/0
+      PYTHONPATH: src
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Install dependencies
+        run: uv sync --extra dev
+
+      - name: Wait for PostgreSQL
+        run: |
+          for _ in $(seq 1 30); do
+            if pg_isready -h localhost -U postgres; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "postgres did not become ready" >&2
+          exit 1
+        env:
+          PGPASSWORD: postgres
+
+      - name: Run alembic migrations
+        run: uv run alembic upgrade head
+
+      - name: Run per-bot golden eval
+        # Default arguments (--golden-dir golden_set/) match the repo
+        # layout. If golden_set/ has no <record_bot_id>.jsonl files the
+        # script exits 0 (no-op). The default --baseline points at
+        # golden_set/baseline.jsonl when present; missing baseline =
+        # no regression check.
+        run: |
+          uv run python scripts/eval_per_bot_golden.py \
+            --golden-dir golden_set \
+            --baseline golden_set/baseline.jsonl

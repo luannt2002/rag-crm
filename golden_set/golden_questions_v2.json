@@ -1,0 +1,623 @@
+{
+  "_header": {
+    "version": "2.0",
+    "created": "2026-04-29",
+    "purpose": "Golden set for DeepEval RAGAS-compatible runner (Sprint 10 Tier-IQ #3).",
+    "honest_status": "100 ready (40 v1 + 60 v2 extracted from real bot corpus 2026-04-29). All questions written in Vietnamese, domain-neutral (no brand/customer literals); expected_answer summarised from the bot's actual content (pricing tables, service descriptions, FAQs, info). Verify before flipping deepeval_enabled=true.",
+    "schema": {
+      "id": "gs-NNN, monotonically increasing",
+      "question": "User question (Vietnamese for vi-VN test bot)",
+      "expected_answer": "Ground-truth canonical answer; placeholder marker for unfilled entries",
+      "expected_doc_type": "Source category in the test bot's corpus (pricing | service-detail | info | faq | unanswerable)",
+      "tenant_id": "Resolved at runtime via --tenant-id CLI arg (NOT baked here per domain-neutral rule)",
+      "bot_id": "Resolved at runtime via --bot-id CLI arg",
+      "channel_type": "Resolved at runtime via --channel-type CLI arg"
+    },
+    "notes": [
+      "Identity (tenant_id, bot_id, channel_type) is INJECTED by runner at call time, NOT stored per question — keeps golden set portable across bots/tenants and respects the EXTERNAL 3-key identity convention.",
+      "Categories chosen so the same set can validate any spa/wellness-style RAG bot loaded with comparable corpus. Domain content only — no brand/customer literals."
+    ]
+  },
+  "questions": [
+    {
+      "id": "gs-001",
+      "question": "giá gội đầu thường bao nhiêu",
+      "expected_answer": "Giá gội đầu thường được nêu trong bảng giá dịch vụ.",
+      "expected_doc_type": "pricing"
+    },
+    {
+      "id": "gs-002",
+      "question": "gội đầu dưỡng sinh khác gội thường chỗ nào",
+      "expected_answer": "Gội đầu dưỡng sinh có thêm massage và liệu trình thư giãn so với gội thường.",
+      "expected_doc_type": "service-detail"
+    },
+    {
+      "id": "gs-003",
+      "question": "thời gian gội đầu bao lâu",
+      "expected_answer": "Thời gian gội đầu một buổi nằm trong khoảng nêu trong bảng dịch vụ.",
+      "expected_doc_type": "service-detail"
+    },
+    {
+      "id": "gs-004",
+      "question": "mua 10 buổi tặng mấy buổi",
+      "expected_answer": "Combo nhiều buổi có ưu đãi tặng buổi/giảm giá theo bảng combo.",
+      "expected_doc_type": "pricing"
+    },
+    {
+      "id": "gs-005",
+      "question": "chăm sóc da mặt bên em có gói nào",
+      "expected_answer": "Có nhiều gói chăm sóc da mặt từ cơ bản đến chuyên sâu, liệt kê trong bảng dịch vụ.",
+      "expected_doc_type": "service-detail"
+    },
+    {
+      "id": "gs-006",
+      "question": "giá chăm sóc da bao nhiêu",
+      "expected_answer": "Giá chăm sóc da theo từng gói nêu trong bảng giá.",
+      "expected_doc_type": "pricing"
+    },
+    {
+      "id": "gs-007",
+      "question": "có trị mụn ẩn không",
+      "expected_answer": "Có dịch vụ trị mụn ẩn — chi tiết trong nhóm dịch vụ chăm sóc da chuyên sâu.",
+      "expected_doc_type": "service-detail"
+    },
+    {
+      "id": "gs-008",
+      "question": "một liệu trình mấy buổi",
+      "expected_answer": "Một liệu trình thường gồm số buổi nêu trong mô tả gói.",
+      "expected_doc_type": "service-detail"
+    },
+    {
+      "id": "gs-009",
+      "question": "triệt lông nách giá bao nhiêu",
+      "expected_answer": "Giá triệt lông nách lẻ và combo có trong bảng giá triệt lông.",
+      "expected_doc_type": "pricing"
+    },
+    {
+      "id": "gs-010",
+      "question": "triệt lông vĩnh viễn có thật không",
+      "expected_answer": "Triệt lông giảm 80–95% sau liệu trình; không có 100% vĩnh viễn tuyệt đối.",
+      "expected_doc_type": "faq"
+    },
+    {
+      "id": "gs-011",
+      "question": "công nghệ triệt lông bên em dùng loại gì",
+      "expected_answer": "Sử dụng công nghệ laser/IPL theo mô tả trong tài liệu công nghệ triệt lông.",
+      "expected_doc_type": "service-detail"
+    },
+    {
+      "id": "gs-012",
+      "question": "một combo triệt lông mấy buổi",
+      "expected_answer": "Combo triệt lông gồm số buổi tiêu chuẩn nêu trong bảng combo.",
+      "expected_doc_type": "service-detail"
+    },
+    {
+      "id": "gs-013",
+      "question": "massage cổ vai gáy giá bao nhiêu",
+      "expected_answer": "Giá massage cổ vai gáy nêu trong bảng giá massage.",
+      "expected_doc_type": "pricing"
+    },
+    {
+      "id": "gs-014",
+      "question": "massage body toàn thân bao nhiêu tiền",
+      "expected_answer": "Giá massage body toàn thân nêu trong bảng giá massage.",
+      "expected_doc_type": "pricing"
+    },
+    {
+      "id": "gs-015",
+      "question": "thời gian massage bao lâu",
+      "expected_answer": "Thời gian massage tiêu chuẩn nằm trong khoảng nêu trong gói dịch vụ.",
+      "expected_doc_type": "service-detail"
+    },
+    {
+      "id": "gs-016",
+      "question": "massage bầu có được không",
+      "expected_answer": "Có/không tùy chính sách dịch vụ — theo tài liệu massage bầu.",
+      "expected_doc_type": "faq"
+    },
+    {
+      "id": "gs-017",
+      "question": "bên em có gì",
+      "expected_answer": "Có các nhóm dịch vụ chính: gội đầu, chăm sóc da, triệt lông, massage — chi tiết trong danh mục dịch vụ.",
+      "expected_doc_type": "info"
+    },
+    {
+      "id": "gs-018",
+      "question": "shop ở đâu",
+      "expected_answer": "Địa chỉ chi nhánh nêu trong tài liệu thông tin liên hệ.",
+      "expected_doc_type": "info"
+    },
+    {
+      "id": "gs-019",
+      "question": "có mấy chi nhánh",
+      "expected_answer": "Số chi nhánh và địa chỉ nêu trong tài liệu thông tin chi nhánh.",
+      "expected_doc_type": "info"
+    },
+    {
+      "id": "gs-020",
+      "question": "có app đặt lịch không",
+      "expected_answer": "Thông tin kênh đặt lịch (app/web/hotline) nêu trong tài liệu liên hệ.",
+      "expected_doc_type": "info"
+    },
+    {
+      "id": "gs-021",
+      "question": "giá triệt lông nách",
+      "expected_answer": "Giá triệt lông nách nêu trong bảng giá triệt lông.",
+      "expected_doc_type": "pricing"
+    },
+    {
+      "id": "gs-022",
+      "question": "quy trình triệt lông nách gồm mấy bước",
+      "expected_answer": "Quy trình triệt lông nách gồm các bước chuẩn nêu trong tài liệu quy trình.",
+      "expected_doc_type": "service-detail"
+    },
+    {
+      "id": "gs-023",
+      "question": "giá chăm sóc da chuyên sâu",
+      "expected_answer": "Giá chăm sóc da chuyên sâu theo từng gói nêu trong bảng giá.",
+      "expected_doc_type": "pricing"
+    },
+    {
+      "id": "gs-024",
+      "question": "quy trình chăm sóc da gồm gì",
+      "expected_answer": "Quy trình chăm sóc da gồm các bước tiêu chuẩn nêu trong tài liệu quy trình.",
+      "expected_doc_type": "service-detail"
+    },
+    {
+      "id": "gs-025",
+      "question": "da em bị mụn nên chọn dịch vụ nào",
+      "expected_answer": "Đề xuất nhóm dịch vụ trị mụn / chăm sóc da chuyên sâu phù hợp với da mụn.",
+      "expected_doc_type": "service-detail"
+    },
+    {
+      "id": "gs-026",
+      "question": "em bị đau vai gáy lâu rồi",
+      "expected_answer": "Đề xuất dịch vụ massage cổ vai gáy phù hợp.",
+      "expected_doc_type": "service-detail"
+    },
+    {
+      "id": "gs-027",
+      "question": "lông nách em rậm quá",
+      "expected_answer": "Đề xuất dịch vụ triệt lông nách phù hợp với tình trạng được mô tả.",
+      "expected_doc_type": "service-detail"
+    },
+    {
+      "id": "gs-028",
+      "question": "chị 40t da bắt đầu chảy",
+      "expected_answer": "Đề xuất dịch vụ chăm sóc da nâng cơ / trẻ hóa phù hợp độ tuổi.",
+      "expected_doc_type": "service-detail"
+    },
+    {
+      "id": "gs-029",
+      "question": "thời tiết hôm nay thế nào",
+      "expected_answer": "Câu hỏi nằm ngoài phạm vi dịch vụ — bot từ chối lịch sự hoặc chuyển hướng.",
+      "expected_doc_type": "unanswerable"
+    },
+    {
+      "id": "gs-030",
+      "question": "bitcoin giờ bao nhiêu",
+      "expected_answer": "Câu hỏi nằm ngoài phạm vi dịch vụ — bot từ chối lịch sự hoặc chuyển hướng.",
+      "expected_doc_type": "unanswerable"
+    },
+    {
+      "id": "gs-031",
+      "question": "1 + 1 bằng mấy",
+      "expected_answer": "Câu hỏi nằm ngoài phạm vi dịch vụ — bot từ chối lịch sự hoặc chuyển hướng về dịch vụ.",
+      "expected_doc_type": "unanswerable"
+    },
+    {
+      "id": "gs-032",
+      "question": "cho em hỏi công thức chả giò",
+      "expected_answer": "Câu hỏi nằm ngoài phạm vi dịch vụ — bot từ chối lịch sự hoặc chuyển hướng.",
+      "expected_doc_type": "unanswerable"
+    },
+    {
+      "id": "gs-033",
+      "question": "có voucher giảm giá không",
+      "expected_answer": "Thông tin khuyến mãi/voucher hiện hành nêu trong tài liệu chương trình ưu đãi.",
+      "expected_doc_type": "info"
+    },
+    {
+      "id": "gs-034",
+      "question": "bên em có nhận thanh toán thẻ không",
+      "expected_answer": "Phương thức thanh toán hỗ trợ nêu trong tài liệu chính sách thanh toán.",
+      "expected_doc_type": "info"
+    },
+    {
+      "id": "gs-035",
+      "question": "mấy giờ mở cửa",
+      "expected_answer": "Giờ mở cửa nêu trong tài liệu thông tin chi nhánh.",
+      "expected_doc_type": "info"
+    },
+    {
+      "id": "gs-036",
+      "question": "có chỗ gửi xe không",
+      "expected_answer": "Thông tin gửi xe nêu trong tài liệu tiện ích chi nhánh.",
+      "expected_doc_type": "info"
+    },
+    {
+      "id": "gs-037",
+      "question": "sau khi gội đầu có phải kiêng gì không",
+      "expected_answer": "Lưu ý sau dịch vụ gội đầu nêu trong tài liệu hướng dẫn sau dịch vụ.",
+      "expected_doc_type": "faq"
+    },
+    {
+      "id": "gs-038",
+      "question": "sau triệt có phải kiêng tắm nắng không",
+      "expected_answer": "Có — nên tránh tắm nắng sau triệt lông theo hướng dẫn chăm sóc sau dịch vụ.",
+      "expected_doc_type": "faq"
+    },
+    {
+      "id": "gs-039",
+      "question": "bà bầu có triệt được không",
+      "expected_answer": "Phụ nữ mang thai không khuyến nghị triệt lông — theo chính sách an toàn dịch vụ.",
+      "expected_doc_type": "faq"
+    },
+    {
+      "id": "gs-040",
+      "question": "da nhạy cảm có làm chăm sóc da được không",
+      "expected_answer": "Có gói chăm sóc da phù hợp cho da nhạy cảm — chi tiết trong tài liệu dịch vụ.",
+      "expected_doc_type": "service-detail"
+    },
+    {
+      "id": "gs-041",
+      "question": "gội đầu thư giãn dầu thường giá bao nhiêu",
+      "expected_answer": "Giá gội đầu thư giãn dầu thường được niêm yết trong bảng giá dịch vụ gội đầu.",
+      "expected_doc_type": "pricing"
+    },
+    {
+      "id": "gs-042",
+      "question": "gội đầu dưỡng sinh giá tiền",
+      "expected_answer": "Giá gội đầu dưỡng sinh nêu trong bảng giá dịch vụ gội đầu — mức cao hơn gói gội thường vì có thêm liệu trình massage.",
+      "expected_doc_type": "pricing"
+    },
+    {
+      "id": "gs-043",
+      "question": "gội đầu dầu cặp giá bao nhiêu",
+      "expected_answer": "Gói gội đầu dầu cặp có giá riêng trong bảng giá dịch vụ gội đầu.",
+      "expected_doc_type": "pricing"
+    },
+    {
+      "id": "gs-044",
+      "question": "massage cổ vai gáy 60 phút giá bao nhiêu",
+      "expected_answer": "Giá massage cổ vai gáy 60 phút được nêu trong bảng giá dịch vụ massage.",
+      "expected_doc_type": "pricing"
+    },
+    {
+      "id": "gs-045",
+      "question": "massage cổ vai gáy 90 phút bao nhiêu tiền",
+      "expected_answer": "Giá massage cổ vai gáy 90 phút có trong bảng giá dịch vụ massage, cao hơn gói 60 phút.",
+      "expected_doc_type": "pricing"
+    },
+    {
+      "id": "gs-046",
+      "question": "massage chân giá bao nhiêu",
+      "expected_answer": "Giá massage chân nêu trong bảng giá dịch vụ massage — thường rẻ hơn massage body.",
+      "expected_doc_type": "pricing"
+    },
+    {
+      "id": "gs-047",
+      "question": "massage body 60 phút giá",
+      "expected_answer": "Giá massage body 60 phút nêu trong bảng giá dịch vụ massage.",
+      "expected_doc_type": "pricing"
+    },
+    {
+      "id": "gs-048",
+      "question": "thải độc đầu giá bao nhiêu",
+      "expected_answer": "Giá dịch vụ thải độc đầu có trong bảng giá nhóm dưỡng sinh.",
+      "expected_doc_type": "pricing"
+    },
+    {
+      "id": "gs-049",
+      "question": "tẩy da chết body giá bao nhiêu",
+      "expected_answer": "Giá tẩy da chết body có trong bảng giá nhóm dưỡng sinh.",
+      "expected_doc_type": "pricing"
+    },
+    {
+      "id": "gs-050",
+      "question": "tẩy da chết và ủ trắng body bao nhiêu",
+      "expected_answer": "Giá gói tẩy da chết kèm ủ trắng body cao hơn gói tẩy da chết đơn lẻ — chi tiết trong bảng giá.",
+      "expected_doc_type": "pricing"
+    },
+    {
+      "id": "gs-051",
+      "question": "ấm nóng cổ tử cung giá bao nhiêu",
+      "expected_answer": "Giá liệu trình ấm nóng cổ tử cung 60 phút nêu trong bảng giá dưỡng sinh.",
+      "expected_doc_type": "pricing"
+    },
+    {
+      "id": "gs-052",
+      "question": "chuyển hóa bụng giá tiền",
+      "expected_answer": "Giá dịch vụ chuyển hóa bụng nêu trong bảng giá dưỡng sinh.",
+      "expected_doc_type": "pricing"
+    },
+    {
+      "id": "gs-053",
+      "question": "chăm sóc da chuyên sâu giá bao nhiêu một buổi",
+      "expected_answer": "Giá một buổi chăm sóc da chuyên sâu được nêu trong bảng giá dịch vụ chăm sóc da công nghệ cao.",
+      "expected_doc_type": "pricing"
+    },
+    {
+      "id": "gs-054",
+      "question": "trị mụn chuyên sâu giá bao nhiêu",
+      "expected_answer": "Giá một buổi trị mụn chuyên sâu nêu trong bảng giá dịch vụ chăm sóc da.",
+      "expected_doc_type": "pricing"
+    },
+    {
+      "id": "gs-055",
+      "question": "chăm sóc da cấp ô xi tươi giá bao nhiêu",
+      "expected_answer": "Giá một buổi chăm sóc da cấp ô xi tươi nêu trong bảng giá chăm sóc da.",
+      "expected_doc_type": "pricing"
+    },
+    {
+      "id": "gs-056",
+      "question": "chăm sóc da thải độc giá bao nhiêu",
+      "expected_answer": "Giá một buổi chăm sóc da thải độc nêu trong bảng giá chăm sóc da.",
+      "expected_doc_type": "pricing"
+    },
+    {
+      "id": "gs-057",
+      "question": "chăm sóc da cấp nước đa tầng giá",
+      "expected_answer": "Giá một buổi chăm sóc da cấp nước đa tầng nêu trong bảng giá chăm sóc da.",
+      "expected_doc_type": "pricing"
+    },
+    {
+      "id": "gs-058",
+      "question": "chăm sóc da nano kim cương bao nhiêu",
+      "expected_answer": "Giá một buổi chăm sóc da nano kim cương nêu trong bảng giá chăm sóc da — cao hơn các gói cơ bản.",
+      "expected_doc_type": "pricing"
+    },
+    {
+      "id": "gs-059",
+      "question": "chăm sóc da nâng cơ giá",
+      "expected_answer": "Giá một buổi chăm sóc da nâng cơ nêu trong bảng giá chăm sóc da.",
+      "expected_doc_type": "pricing"
+    },
+    {
+      "id": "gs-060",
+      "question": "dưỡng sinh mắt giá bao nhiêu",
+      "expected_answer": "Giá một buổi chăm sóc da dưỡng sinh mắt nêu trong bảng giá chăm sóc da.",
+      "expected_doc_type": "pricing"
+    },
+    {
+      "id": "gs-061",
+      "question": "trẻ hóa da bằng ánh sáng giá bao nhiêu",
+      "expected_answer": "Giá một buổi trẻ hóa da bằng ánh sáng có trong bảng giá chăm sóc da công nghệ cao.",
+      "expected_doc_type": "pricing"
+    },
+    {
+      "id": "gs-062",
+      "question": "laser carbon giá bao nhiêu",
+      "expected_answer": "Giá một buổi laser carbon nêu trong bảng giá chăm sóc da công nghệ cao.",
+      "expected_doc_type": "pricing"
+    },
+    {
+      "id": "gs-063",
+      "question": "peel trị thâm giá bao nhiêu",
+      "expected_answer": "Giá một buổi peel trị thâm nêu trong bảng giá chăm sóc da.",
+      "expected_doc_type": "pricing"
+    },
+    {
+      "id": "gs-064",
+      "question": "căng bóng da giá bao nhiêu",
+      "expected_answer": "Giá một buổi căng bóng da nêu trong bảng giá dịch vụ chăm sóc da.",
+      "expected_doc_type": "pricing"
+    },
+    {
+      "id": "gs-065",
+      "question": "peel điều trị mụn chuyên sâu bao nhiêu",
+      "expected_answer": "Giá một buổi peel điều trị mụn chuyên sâu nêu trong bảng giá chăm sóc da.",
+      "expected_doc_type": "pricing"
+    },
+    {
+      "id": "gs-066",
+      "question": "meso căng bóng giá bao nhiêu",
+      "expected_answer": "Giá một buổi meso căng bóng trẻ hóa nêu trong bảng giá chăm sóc da, mức cao hơn các gói cơ bản.",
+      "expected_doc_type": "pricing"
+    },
+    {
+      "id": "gs-067",
+      "question": "triệt lông mép giá bao nhiêu",
+      "expected_answer": "Giá triệt lông mép buổi lẻ và combo có trong bảng giá triệt lông.",
+      "expected_doc_type": "pricing"
+    },
+    {
+      "id": "gs-068",
+      "question": "triệt lông mặt bao nhiêu tiền",
+      "expected_answer": "Giá triệt lông mặt buổi lẻ và combo có trong bảng giá triệt lông.",
+      "expected_doc_type": "pricing"
+    },
+    {
+      "id": "gs-069",
+      "question": "triệt lông tay nửa giá bao nhiêu",
+      "expected_answer": "Giá triệt lông một nửa tay buổi lẻ và combo có trong bảng giá triệt lông.",
+      "expected_doc_type": "pricing"
+    },
+    {
+      "id": "gs-070",
+      "question": "triệt lông cả tay giá bao nhiêu",
+      "expected_answer": "Giá triệt lông cả tay buổi lẻ và combo có trong bảng giá triệt lông.",
+      "expected_doc_type": "pricing"
+    },
+    {
+      "id": "gs-071",
+      "question": "triệt lông cả chân giá bao nhiêu",
+      "expected_answer": "Giá triệt lông cả chân buổi lẻ và combo có trong bảng giá triệt lông.",
+      "expected_doc_type": "pricing"
+    },
+    {
+      "id": "gs-072",
+      "question": "triệt lông bikini giá bao nhiêu",
+      "expected_answer": "Giá triệt lông vùng bikini buổi lẻ và combo có trong bảng giá triệt lông.",
+      "expected_doc_type": "pricing"
+    },
+    {
+      "id": "gs-073",
+      "question": "triệt lông toàn thân giá bao nhiêu",
+      "expected_answer": "Giá triệt lông toàn thân buổi lẻ và combo có trong bảng giá triệt lông — gói cao nhất trong nhóm triệt lông.",
+      "expected_doc_type": "pricing"
+    },
+    {
+      "id": "gs-074",
+      "question": "triệt râu cho nam giá bao nhiêu",
+      "expected_answer": "Giá triệt râu nam buổi lẻ và combo nêu trong bảng giá triệt lông.",
+      "expected_doc_type": "pricing"
+    },
+    {
+      "id": "gs-075",
+      "question": "triệt lông bao lâu hết một buổi",
+      "expected_answer": "Thời gian một buổi triệt lông tùy vùng triệt — chi tiết trong bảng dịch vụ triệt lông.",
+      "expected_doc_type": "service-detail"
+    },
+    {
+      "id": "gs-076",
+      "question": "công nghệ triệt lông bên em là gì",
+      "expected_answer": "Sử dụng công nghệ laser hiện đại theo chuẩn y khoa để giảm lông an toàn.",
+      "expected_doc_type": "service-detail"
+    },
+    {
+      "id": "gs-077",
+      "question": "sau bao nhiêu buổi triệt thì thấy hiệu quả",
+      "expected_answer": "Theo mô tả dịch vụ, lông giảm rõ rệt sau 1-2 buổi liệu trình.",
+      "expected_doc_type": "service-detail"
+    },
+    {
+      "id": "gs-078",
+      "question": "có giá trải nghiệm triệt lông cho khách mới không",
+      "expected_answer": "Có chính sách giá trải nghiệm cho khách hàng mới ở 1 vùng triệt — chi tiết trong tài liệu dịch vụ triệt lông.",
+      "expected_doc_type": "service-detail"
+    },
+    {
+      "id": "gs-079",
+      "question": "triệt lông có bảo hành không",
+      "expected_answer": "Có chính sách bảo hành sau combo triệt lông — chi tiết trong tài liệu dịch vụ.",
+      "expected_doc_type": "faq"
+    },
+    {
+      "id": "gs-080",
+      "question": "ưu đãi mua 10 buổi triệt được tặng mấy buổi",
+      "expected_answer": "Mua 10 buổi triệt lông được tặng thêm 5 buổi theo chương trình khuyến mãi.",
+      "expected_doc_type": "pricing"
+    },
+    {
+      "id": "gs-081",
+      "question": "gội đầu mua 10 buổi tặng mấy buổi",
+      "expected_answer": "Mua 10 buổi gội đầu được tặng 1 buổi theo chương trình khuyến mãi.",
+      "expected_doc_type": "pricing"
+    },
+    {
+      "id": "gs-082",
+      "question": "mua 30 buổi gội đầu được tặng bao nhiêu",
+      "expected_answer": "Mua 30 buổi gội đầu được tặng 5 buổi theo chương trình khuyến mãi.",
+      "expected_doc_type": "pricing"
+    },
+    {
+      "id": "gs-083",
+      "question": "gói buffet chăm sóc da có mấy mức giá",
+      "expected_answer": "Gói buffet chăm sóc da công nghệ cao chia làm 3 mức giá khác nhau theo bảng combo.",
+      "expected_doc_type": "pricing"
+    },
+    {
+      "id": "gs-084",
+      "question": "gói buffet chăm sóc da dùng tối đa mấy buổi",
+      "expected_answer": "Mỗi gói buffet được sử dụng tối đa 10 buổi theo điều khoản gói.",
+      "expected_doc_type": "service-detail"
+    },
+    {
+      "id": "gs-085",
+      "question": "gói buffet chăm sóc da dùng trong bao lâu",
+      "expected_answer": "Thời gian sử dụng một gói buffet là 3 tháng kể từ ngày đầu sử dụng dịch vụ.",
+      "expected_doc_type": "service-detail"
+    },
+    {
+      "id": "gs-086",
+      "question": "gói buffet có giới hạn số lần dùng dịch vụ không",
+      "expected_answer": "Trong số buổi đã đặt của gói, khách được lựa chọn đa dịch vụ và không giới hạn số lần sử dụng.",
+      "expected_doc_type": "service-detail"
+    },
+    {
+      "id": "gs-087",
+      "question": "gói buffet có cá nhân hóa phác đồ không",
+      "expected_answer": "Có — phác đồ điều trị được cá nhân hóa theo từng khách hàng trong gói buffet.",
+      "expected_doc_type": "service-detail"
+    },
+    {
+      "id": "gs-088",
+      "question": "gói buffet chăm sóc da đang giảm bao nhiêu phần trăm",
+      "expected_answer": "Gói buffet chăm sóc da công nghệ cao đang được sale 50% theo chương trình hiện hành.",
+      "expected_doc_type": "pricing"
+    },
+    {
+      "id": "gs-089",
+      "question": "căng bóng da quy trình bao nhiêu bước",
+      "expected_answer": "Quy trình căng bóng da gồm hơn 20 bước chăm sóc trong một buổi điều trị.",
+      "expected_doc_type": "service-detail"
+    },
+    {
+      "id": "gs-090",
+      "question": "căng bóng da chăm sóc những vùng nào",
+      "expected_answer": "Quy trình căng bóng da chăm sóc toàn diện da mặt, cổ, vai gáy và vùng bụng theo mô tả dịch vụ.",
+      "expected_doc_type": "service-detail"
+    },
+    {
+      "id": "gs-091",
+      "question": "trẻ hóa da bằng sóng siêu âm có đau không",
+      "expected_answer": "Theo mô tả dịch vụ, liệu trình trẻ hóa bằng sóng siêu âm không đau và an toàn cho da.",
+      "expected_doc_type": "faq"
+    },
+    {
+      "id": "gs-092",
+      "question": "trẻ hóa da bằng sóng siêu âm có cần phẫu thuật không",
+      "expected_answer": "Không — liệu trình trẻ hóa bằng sóng siêu âm không yêu cầu phẫu thuật hay nghỉ dưỡng.",
+      "expected_doc_type": "faq"
+    },
+    {
+      "id": "gs-093",
+      "question": "trẻ hóa da bằng sóng siêu âm tác động vào lớp nào của da",
+      "expected_answer": "Liệu trình tác động vào lớp cân cơ SMAS để nâng cơ và làm săn chắc da.",
+      "expected_doc_type": "service-detail"
+    },
+    {
+      "id": "gs-094",
+      "question": "trẻ hóa da bằng sóng siêu âm có kích thích collagen không",
+      "expected_answer": "Có — liệu trình kích thích sản sinh collagen và elastin tự nhiên để duy trì hiệu quả lâu dài.",
+      "expected_doc_type": "service-detail"
+    },
+    {
+      "id": "gs-095",
+      "question": "trẻ hóa da bằng sóng siêu âm mua 2 buổi được tặng gì",
+      "expected_answer": "Mua 2 buổi trẻ hóa full mặt được tặng 1 buổi trẻ hóa vùng cổ theo chương trình ưu đãi.",
+      "expected_doc_type": "pricing"
+    },
+    {
+      "id": "gs-096",
+      "question": "nâng cơ trẻ hóa giá combo 10 buổi bao nhiêu",
+      "expected_answer": "Combo 10 buổi nâng cơ trẻ hóa đang sale với mức ưu đãi nêu trong tài liệu khuyến mãi (giảm so với giá gốc).",
+      "expected_doc_type": "pricing"
+    },
+    {
+      "id": "gs-097",
+      "question": "căng bóng da khách mới có giá trải nghiệm không",
+      "expected_answer": "Có — khách hàng đăng ký lần đầu có giá trải nghiệm ưu đãi cho buổi căng bóng da.",
+      "expected_doc_type": "pricing"
+    },
+    {
+      "id": "gs-098",
+      "question": "thư giãn dùng tinh dầu loại nào",
+      "expected_answer": "Liệu trình căng bóng da dùng tinh dầu thiên nhiên để hỗ trợ thư giãn tâm trí.",
+      "expected_doc_type": "service-detail"
+    },
+    {
+      "id": "gs-099",
+      "question": "bên em có bán thuốc tây không",
+      "expected_answer": "Câu hỏi nằm ngoài phạm vi dịch vụ — bot từ chối lịch sự hoặc chuyển hướng về dịch vụ chính.",
+      "expected_doc_type": "unanswerable"
+    },
+    {
+      "id": "gs-100",
+      "question": "tư vấn cách giảm cân tại nhà",
+      "expected_answer": "Câu hỏi nằm ngoài phạm vi dịch vụ — bot từ chối lịch sự hoặc chuyển hướng về liệu trình thẩm mỹ thực tế.",
+      "expected_doc_type": "unanswerable"
+    }
+  ]
+}

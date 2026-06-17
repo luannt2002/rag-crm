@@ -1,0 +1,903 @@
+{
+  "info": {
+    "name": "RAGbot API",
+    "description": "Full API collection. Change base_url variable for production.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3004"
+    },
+    {
+      "key": "bot_id",
+      "value": "1774946011723"
+    },
+    {
+      "key": "channel_type",
+      "value": "web"
+    },
+    {
+      "key": "bot_uuid",
+      "value": "4d741129-e1ed-4224-be35-675ee7d16e1e"
+    },
+    {
+      "key": "provider_id",
+      "value": ""
+    },
+    {
+      "key": "model_id",
+      "value": ""
+    },
+    {
+      "key": "binding_id",
+      "value": ""
+    },
+    {
+      "key": "job_id",
+      "value": ""
+    },
+    {
+      "key": "message_id",
+      "value": "1"
+    },
+    {
+      "key": "conversation_id",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "health",
+      "item": [
+        {
+          "name": "Health",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/health",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        },
+        {
+          "name": "Ready",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/ready",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "sync",
+      "item": [
+        {
+          "name": "Sync Bot",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/ragbot/sync/bot",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bot_id\": \"{{bot_id}}\",\n  \"channel_type\": \"{{channel_type}}\",\n  \"bot_name\": \"luannt-test\",\n  \"tenant_id\": 32,\n  \"system_prompt\": \"Bạn là trợ lý AI. Trả lời ngắn gọn bằng tiếng Việt.\",\n  \"temperature\": 0.1,\n  \"max_tokens\": 4096\n}"
+            }
+          }
+        },
+        {
+          "name": "Sync Documents",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/ragbot/sync/documents",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bot_id\": \"{{bot_id}}\",\n  \"channel_type\": \"{{channel_type}}\",\n  \"documents\": [\n    {\n      \"title\": \"Thông tin cửa hàng\",\n      \"content\": \"Cửa hàng mỹ phẩm Inno. Địa chỉ: 123 Nguyễn Huệ, Q1, HCM.\",\n      \"url\": \"https://example.com\",\n      \"source_type\": \"manual\"\n    }\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "List Documents",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/ragbot/sync/documents?bot_id={{bot_id}}&channel_type={{channel_type}}",
+              "query": [
+                {
+                  "key": "bot_id",
+                  "value": "{{bot_id}}"
+                },
+                {
+                  "key": "channel_type",
+                  "value": "{{channel_type}}"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        },
+        {
+          "name": "Delete Documents",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base_url}}/api/ragbot/sync/documents",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bot_id\": \"{{bot_id}}\",\n  \"channel_type\": \"{{channel_type}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Test Chat",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/ragbot/sync/chat",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bot_id\": \"{{bot_id}}\",\n  \"channel_type\": \"{{channel_type}}\",\n  \"question\": \"giá chăm sóc da chuyên sâu bao nhiêu?\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "chat",
+      "item": [
+        {
+          "name": "Submit a question (returns 202 + job_id)",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/ragbot/chat",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bot_id\": \"{{bot_uuid}}\",\n  \"user_id\": \"test-user\",\n  \"content\": \"xin chào\",\n  \"mode\": \"sync\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Record user feedback (👍 / 👎) on an assistant message",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/ragbot/feedback",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bot_id\": \"{{bot_uuid}}\",\n  \"conversation_id\": \"{{conversation_id}}\",\n  \"message_id\": \"{{message_id}}\",\n  \"user_id\": \"test-user\",\n  \"rating\": \"up\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "documents",
+      "item": [
+        {
+          "name": "Ingest a document (URL → parse → chunk → embed → upsert)",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/ragbot/documents/create",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bot_id\": \"{{bot_uuid}}\",\n  \"source_url\": \"https://example.com/doc.pdf\",\n  \"document_name\": \"Test Doc\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete by tool_name (sync) — bumps corpus_version",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base_url}}/api/ragbot/documents",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bot_id\": \"{{bot_uuid}}\",\n  \"tool_name\": \"test_doc\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Re-ingest existing document (delete chunks + enqueue ingest)",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/ragbot/documents/rechunk",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bot_id\": \"{{bot_uuid}}\",\n  \"source_url\": \"https://example.com/doc.pdf\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "jobs",
+      "item": [
+        {
+          "name": "Get Job Status",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/ragbot/jobs/{{job_id}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "admin/bots",
+      "item": [
+        {
+          "name": "Admin Create Bot",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/ragbot/admin/bots",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bot_id\": \"{{bot_id}}\",\n  \"channel_type\": \"{{channel_type}}\",\n  \"bot_name\": \"New Bot\",\n  \"tenant_id\": 32\n}"
+            }
+          }
+        },
+        {
+          "name": "Admin List Bots",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/ragbot/admin/bots?tenant_id={{tenant_id}}&channel_type={{channel_type}}",
+              "query": [
+                {
+                  "key": "tenant_id",
+                  "value": "{{tenant_id}}"
+                },
+                {
+                  "key": "channel_type",
+                  "value": "{{channel_type}}"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        },
+        {
+          "name": "Admin Update Bot",
+          "request": {
+            "method": "PATCH",
+            "url": "{{base_url}}/api/ragbot/admin/bots/{{bot_uuid}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        },
+        {
+          "name": "Admin Delete Bot",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base_url}}/api/ragbot/admin/bots/{{bot_uuid}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        },
+        {
+          "name": "Admin Bot Cache Status",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/ragbot/admin/bots/cache/status",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        },
+        {
+          "name": "Admin Bot Cache Reload",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/ragbot/admin/bots/cache/reload",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "admin/ai",
+      "item": [
+        {
+          "name": "List Providers",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/ragbot/admin/ai/providers",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        },
+        {
+          "name": "Create Provider",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/ragbot/admin/ai/providers",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"OpenAI\",\n  \"type\": \"llm\",\n  \"base_url\": \"https://api.openai.com/v1\",\n  \"auth_type\": \"api_key\"\n}"
+            }
+          }
+        },
+        {
+          "name": "List Models",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/ragbot/admin/ai/models?provider_id=&kind=",
+              "query": [
+                {
+                  "key": "provider_id",
+                  "value": ""
+                },
+                {
+                  "key": "kind",
+                  "value": ""
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        },
+        {
+          "name": "Create Model",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/ragbot/admin/ai/models",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"provider_id\": \"{{provider_id}}\",\n  \"name\": \"gpt-4.1-mini\",\n  \"kind\": \"chat\",\n  \"context_window\": 128000,\n  \"max_output_tokens\": 16384\n}"
+            }
+          }
+        },
+        {
+          "name": "List Bindings",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/ragbot/admin/bots/{{bot_id}}/bindings",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        },
+        {
+          "name": "Create Binding",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/ragbot/admin/bots/{{bot_id}}/bindings",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        },
+        {
+          "name": "List Audit",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/ragbot/admin/bots/{{bot_id}}/audit-log?limit=",
+              "query": [
+                {
+                  "key": "limit",
+                  "value": ""
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        },
+        {
+          "name": "Admin Update Provider",
+          "request": {
+            "method": "PATCH",
+            "url": "{{base_url}}/api/ragbot/admin/ai/providers/{{provider_id}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        },
+        {
+          "name": "Admin Delete Provider",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base_url}}/api/ragbot/admin/ai/providers/{{provider_id}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        },
+        {
+          "name": "Admin Test Provider",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/ragbot/admin/ai/providers/{{provider_id}}/test",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        },
+        {
+          "name": "Admin Rotate Key",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/ragbot/admin/ai/providers/{{provider_id}}/rotate-key",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        },
+        {
+          "name": "Admin Update Model",
+          "request": {
+            "method": "PATCH",
+            "url": "{{base_url}}/api/ragbot/admin/ai/models/{{model_id}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        },
+        {
+          "name": "Admin Delete Model",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base_url}}/api/ragbot/admin/ai/models/{{model_id}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        },
+        {
+          "name": "Admin Update Binding",
+          "request": {
+            "method": "PATCH",
+            "url": "{{base_url}}/api/ragbot/admin/bots/{{bot_id}}/bindings/{{binding_id}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        },
+        {
+          "name": "Admin Delete Binding",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base_url}}/api/ragbot/admin/bots/{{bot_id}}/bindings/{{binding_id}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        },
+        {
+          "name": "Admin Cache Reload",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/ragbot/admin/ai/cache/reload",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        },
+        {
+          "name": "Admin Cache Status",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/ragbot/admin/ai/cache/status",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        },
+        {
+          "name": "Admin Effective Config",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/ragbot/admin/ai/models/{{model_id}}/effective-config?bot_id={{bot_id}}",
+              "query": [
+                {
+                  "key": "bot_id",
+                  "value": "{{bot_id}}"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "admin/metrics",
+      "item": [
+        {
+          "name": "Metrics Overview",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/ragbot/admin/metrics/overview?date_from=&date_to=&bot_id={{bot_id}}",
+              "query": [
+                {
+                  "key": "date_from",
+                  "value": ""
+                },
+                {
+                  "key": "date_to",
+                  "value": ""
+                },
+                {
+                  "key": "bot_id",
+                  "value": "{{bot_id}}"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        },
+        {
+          "name": "Metrics By Model",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/ragbot/admin/metrics/by-model?date_from=&date_to=",
+              "query": [
+                {
+                  "key": "date_from",
+                  "value": ""
+                },
+                {
+                  "key": "date_to",
+                  "value": ""
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        },
+        {
+          "name": "Metrics Top Questions",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/ragbot/admin/metrics/top-questions?only_failed=&limit=",
+              "query": [
+                {
+                  "key": "only_failed",
+                  "value": ""
+                },
+                {
+                  "key": "limit",
+                  "value": ""
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        },
+        {
+          "name": "Metrics Step Breakdown",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/ragbot/admin/metrics/steps?date_from=",
+              "query": [
+                {
+                  "key": "date_from",
+                  "value": ""
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        },
+        {
+          "name": "Metrics Active Models",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/ragbot/admin/metrics/active-models",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "admin/policy",
+      "item": [
+        {
+          "name": "Upsert Capability",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/ragbot/admin/ai/models/{{model_id}}/capability",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        },
+        {
+          "name": "Get Capability",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/ragbot/admin/ai/models/{{model_id}}/capability",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        },
+        {
+          "name": "List Policies",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/ragbot/admin/policies?bot_id={{bot_id}}",
+              "query": [
+                {
+                  "key": "bot_id",
+                  "value": "{{bot_id}}"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        },
+        {
+          "name": "Upsert Policy",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/ragbot/admin/policies",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"model_id\": \"{{model_id}}\",\n  \"private_doc_ratio\": 80,\n  \"web_search_ratio\": 10,\n  \"general_knowledge_ratio\": 10\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "admin/gdpr",
+      "item": [
+        {
+          "name": "Gdpr Erase Message",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base_url}}/api/ragbot/admin/gdpr/erase/message/{{message_id}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        },
+        {
+          "name": "Gdpr Erase Conversation",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base_url}}/api/ragbot/admin/gdpr/erase/conversation/{{conversation_id}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "admin/audit",
+      "item": [
+        {
+          "name": "Audit Message",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/ragbot/admin/audit/messages/{{message_id}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

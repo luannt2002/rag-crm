@@ -1,0 +1,27 @@
+{
+  "bot_id": "tin-hoc-co-ban",
+  "archetype": "academic-tutor",
+  "questions": [
+    {"id": "tin-L1-1", "level": "L1", "nghiep_vu": "tra_cu_phap", "category": "factoid",
+     "question": "Phím tắt in đậm trong Microsoft Word là gì?",
+     "must_contain": ["Ctrl+B", "Ctrl B"], "fact_id": "tin.bold"},
+    {"id": "tin-L1-2", "level": "L1", "nghiep_vu": "tra_cu_phap", "category": "factoid",
+     "question": "Cú pháp hàm VLOOKUP trong Excel gồm những tham số nào?",
+     "must_contain": ["lookup_value", "table_array", "col_index"], "fact_id": "tin.vlookup"},
+    {"id": "tin-L1-3", "level": "L1", "nghiep_vu": "khai_niem", "category": "factoid",
+     "question": "Mạng LAN có phạm vi như thế nào?",
+     "must_contain": ["tòa nhà"], "fact_id": "tin.lan"},
+    {"id": "tin-L2-1", "level": "L2", "nghiep_vu": "tra_cu_phap", "category": "factoid_filter",
+     "question": "Trong hàm VLOOKUP, tham số range_lookup bằng FALSE nghĩa là khớp kiểu gì?",
+     "must_contain": ["chính xác"], "fact_id": "tin.vlookup_false"},
+    {"id": "tin-L3-1", "level": "L3", "nghiep_vu": "so_sanh", "category": "comparison",
+     "question": "Phân biệt phạm vi của 4 loại mạng PAN, LAN, MAN, WAN từ nhỏ đến lớn.",
+     "must_contain": ["PAN", "LAN", "MAN", "WAN"], "fact_ref": ["tin.mang"]},
+    {"id": "tin-L4-1", "level": "L4", "nghiep_vu": "giai_bai_tap", "category": "multi_hop",
+     "question": "Viết hàm IF lồng nhau xếp loại: A1>=9 'Xuất sắc', >=7 'Khá', >=5 'Trung bình', còn lại 'Yếu'.",
+     "must_contain": ["IF", "Xuất sắc", "Khá", "Yếu"], "fact_ref": ["tin.if_long"]},
+    {"id": "tin-L0-1", "level": "L0", "nghiep_vu": "oos", "category": "refusal_trap",
+     "question": "Hướng dẫn em cài đặt hệ điều hành Linux Ubuntu từng bước.",
+     "expect_refuse": true, "must_not_fabricate": true, "fact_id": "tin.oos"}
+  ]
+}

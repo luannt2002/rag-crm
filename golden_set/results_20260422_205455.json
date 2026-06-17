@@ -1,0 +1,686 @@
+{
+  "run_at": "2026-04-22T13:54:55.298498+00:00",
+  "dataset": "sample_evaluation.json",
+  "dataset_version": "1.0",
+  "bot_id": "<test-bot-id>",
+  "channel_type": "web",
+  "base_url": "http://localhost:3004",
+  "total_questions": 20,
+  "ok_count": 20,
+  "error_count": 0,
+  "metrics": {
+    "avg_keyword_overlap": 0.4162,
+    "avg_key_info_ratio": 0.8417,
+    "source_hit_rate": 0.8,
+    "avg_duration_ms": 6474.1,
+    "total_cost_usd": 0.154817,
+    "quality_breakdown": {
+      "correct": 17,
+      "partial": 3
+    }
+  },
+  "by_category": {
+    "booking": {
+      "count": 1,
+      "avg_overlap": 0.0,
+      "avg_key_info": 1.0,
+      "source_hit_rate": 1.0,
+      "quality": {
+        "partial": 1
+      },
+      "correct_count": 0,
+      "correct_pct": 0.0
+    },
+    "comparison": {
+      "count": 3,
+      "avg_overlap": 0.5387,
+      "avg_key_info": 0.5833,
+      "source_hit_rate": 0.6667,
+      "quality": {
+        "correct": 3
+      },
+      "correct_count": 3,
+      "correct_pct": 100.0
+    },
+    "info": {
+      "count": 7,
+      "avg_overlap": 0.4616,
+      "avg_key_info": 1.0,
+      "source_hit_rate": 1.0,
+      "quality": {
+        "correct": 7
+      },
+      "correct_count": 7,
+      "correct_pct": 100.0
+    },
+    "out_of_scope": {
+      "count": 1,
+      "avg_overlap": 0.0357,
+      "avg_key_info": 1.0,
+      "source_hit_rate": 1.0,
+      "quality": {
+        "partial": 1
+      },
+      "correct_count": 0,
+      "correct_pct": 0.0
+    },
+    "pricing": {
+      "count": 4,
+      "avg_overlap": 0.4242,
+      "avg_key_info": 0.7709,
+      "source_hit_rate": 0.25,
+      "quality": {
+        "correct": 4
+      },
+      "correct_count": 4,
+      "correct_pct": 100.0
+    },
+    "promotion": {
+      "count": 2,
+      "avg_overlap": 0.3472,
+      "avg_key_info": 1.0,
+      "source_hit_rate": 1.0,
+      "quality": {
+        "correct": 2
+      },
+      "correct_count": 2,
+      "correct_pct": 100.0
+    },
+    "service_detail": {
+      "count": 1,
+      "avg_overlap": 0.5,
+      "avg_key_info": 1.0,
+      "source_hit_rate": 1.0,
+      "quality": {
+        "correct": 1
+      },
+      "correct_count": 1,
+      "correct_pct": 100.0
+    },
+    "service_list": {
+      "count": 1,
+      "avg_overlap": 0.55,
+      "avg_key_info": 0.0,
+      "source_hit_rate": 1.0,
+      "quality": {
+        "partial": 1
+      },
+      "correct_count": 0,
+      "correct_pct": 0.0
+    }
+  },
+  "by_difficulty": {
+    "easy": {
+      "count": 7,
+      "avg_overlap": 0.431,
+      "avg_key_info": 1.0,
+      "source_hit_rate": 1.0,
+      "quality": {
+        "correct": 7
+      },
+      "correct_count": 7,
+      "correct_pct": 100.0
+    },
+    "hard": {
+      "count": 4,
+      "avg_overlap": 0.2463,
+      "avg_key_info": 0.8125,
+      "source_hit_rate": 0.75,
+      "quality": {
+        "correct": 2,
+        "partial": 2
+      },
+      "correct_count": 2,
+      "correct_pct": 50.0
+    },
+    "medium": {
+      "count": 9,
+      "avg_overlap": 0.4802,
+      "avg_key_info": 0.7315,
+      "source_hit_rate": 0.6667,
+      "quality": {
+        "correct": 8,
+        "partial": 1
+      },
+      "correct_count": 8,
+      "correct_pct": 88.9
+    }
+  },
+  "results": [
+    {
+      "id": "gs-001",
+      "question": "gội đầu dầu thường giá bao nhiêu",
+      "ground_truth": "Gội đầu thư giãn dầu thường giá 60,000đ/buổi, thời gian 30 phút",
+      "answer": "Dạ dịch vụ gội đầu thư giãn - dầu thường bên em có giá 60,000đ/buổi, thời gian làm 30 phút ạ. Em hỗ trợ chị đặt lịch tại <Brand Name> nhé ạ?",
+      "difficulty": "easy",
+      "category": "pricing",
+      "expected_sources": [
+        "Bảng giá dịch vụ gội đầu"
+      ],
+      "actual_sources": [
+        "Bảng giá dịch vụ gội đầu"
+      ],
+      "keyword_overlap": 0.5,
+      "key_info_ratio": 1.0,
+      "key_info_complete": true,
+      "response_quality": "correct",
+      "source_hit": true,
+      "duration_ms": 6947,
+      "status": "ok",
+      "chunks_used": 1,
+      "tokens": {
+        "prompt": 21314,
+        "completion": 51
+      },
+      "cost_usd": 0.0086072
+    },
+    {
+      "id": "gs-003",
+      "question": "triệt lông nách combo 10 buổi giá bao nhiêu",
+      "ground_truth": "Triệt lông nách combo 10 buổi giá 1,199,000đ",
+      "answer": "Dạ, giá combo 10 buổi triệt lông nách tại <Brand Name> là 1.199.000 VND ạ. Em hỗ trợ chị đặt lịch triệt lông tại <Brand Name> nhé ạ?",
+      "difficulty": "medium",
+      "category": "pricing",
+      "expected_sources": [
+        "BẢNG GIÁ GIÁ TRIỆT LÔNG"
+      ],
+      "actual_sources": [
+        "BẢNG GIÁ CHĂM SÓC DA CÔNG NGHỆ CAO",
+        "Thông tin các dịch vụ"
+      ],
+      "keyword_overlap": 0.381,
+      "key_info_ratio": 0.6667,
+      "key_info_complete": false,
+      "response_quality": "correct",
+      "source_hit": false,
+      "duration_ms": 6454,
+      "status": "ok",
+      "chunks_used": 2,
+      "tokens": {
+        "prompt": 21507,
+        "completion": 53
+      },
+      "cost_usd": 0.0086876
+    },
+    {
+      "id": "gs-009",
+      "question": "triệt lông toàn thân giá bao nhiêu",
+      "ground_truth": "Triệt lông toàn thân combo 10 buổi giá 11,999,000đ",
+      "answer": "Dạ, giá combo 10 buổi triệt lông toàn thân tại <Brand Name> là 11.999.000 VND ạ. Em hỗ trợ chị đặt lịch triệt lông tại <Brand Name> nhé ạ?",
+      "difficulty": "medium",
+      "category": "pricing",
+      "expected_sources": [
+        "BẢNG GIÁ GIÁ TRIỆT LÔNG"
+      ],
+      "actual_sources": [
+        "BẢNG GIÁ CHĂM SÓC DA CÔNG NGHỆ CAO"
+      ],
+      "keyword_overlap": 0.4348,
+      "key_info_ratio": 0.75,
+      "key_info_complete": false,
+      "response_quality": "correct",
+      "source_hit": false,
+      "duration_ms": 8502,
+      "status": "ok",
+      "chunks_used": 1,
+      "tokens": {
+        "prompt": 21290,
+        "completion": 53
+      },
+      "cost_usd": 0.0086008
+    },
+    {
+      "id": "gs-015",
+      "question": "triệt lông mép giá bao nhiêu",
+      "ground_truth": "Triệt lông mép combo 10 buổi giá 899,000đ",
+      "answer": "Dạ, giá combo 10 buổi triệt lông mép tại <Brand Name> là 899.000 VND ạ. Em hỗ trợ chị đặt lịch triệt lông tại <Brand Name> nhé ạ?",
+      "difficulty": "medium",
+      "category": "pricing",
+      "expected_sources": [
+        "BẢNG GIÁ GIÁ TRIỆT LÔNG"
+      ],
+      "actual_sources": [
+        "BẢNG GIÁ CHĂM SÓC DA CÔNG NGHỆ CAO"
+      ],
+      "keyword_overlap": 0.381,
+      "key_info_ratio": 0.6667,
+      "key_info_complete": false,
+      "response_quality": "correct",
+      "source_hit": false,
+      "duration_ms": 6841,
+      "status": "ok",
+      "chunks_used": 1,
+      "tokens": {
+        "prompt": 21312,
+        "completion": 51
+      },
+      "cost_usd": 0.0086064
+    },
+    {
+      "id": "gs-002",
+      "question": "shop tên gì",
+      "ground_truth": "<Brand Name>",
+      "answer": "Dạ, spa tên là <Brand Name> ạ. Em hỗ trợ chị thông tin gì thêm không ạ?",
+      "difficulty": "easy",
+      "category": "info",
+      "expected_sources": [
+        "Thông tin các dịch vụ"
+      ],
+      "actual_sources": [
+        "Thông tin các dịch vụ"
+      ],
+      "keyword_overlap": 0.1538,
+      "key_info_ratio": 1.0,
+      "key_info_complete": true,
+      "response_quality": "correct",
+      "source_hit": true,
+      "duration_ms": 7066,
+      "status": "ok",
+      "chunks_used": 1,
+      "tokens": {
+        "prompt": 21314,
+        "completion": 26
+      },
+      "cost_usd": 0.0085672
+    },
+    {
+      "id": "gs-005",
+      "question": "địa chỉ ở đâu",
+      "ground_truth": "<demo-address>",
+      "answer": "Em gửi chị địa chỉ của <Brand Name> ạ:\nĐịa chỉ: <demo-address>\n(Chị đi thang bộ lên tầng 2 nhé ạ)\nHotline: <demo-hotline>\nGiờ mở cửa: 9-21h, từ T2-CN\nLink Google Maps: <demo-maps>\nCần hỗ trợ thêm chị nhắn em hoặc liên hệ số hotline nhé ạ!",
+      "difficulty": "easy",
+      "category": "info",
+      "expected_sources": [
+        "Thông tin các dịch vụ"
+      ],
+      "actual_sources": [
+        "Thông tin các dịch vụ"
+      ],
+      "keyword_overlap": 0.1915,
+      "key_info_ratio": 1.0,
+      "key_info_complete": true,
+      "response_quality": "correct",
+      "source_hit": true,
+      "duration_ms": 7112,
+      "status": "ok",
+      "chunks_used": 1,
+      "tokens": {
+        "prompt": 21284,
+        "completion": 123
+      },
+      "cost_usd": 0.0087104
+    },
+    {
+      "id": "gs-007",
+      "question": "hotline bao nhiêu",
+      "ground_truth": "<demo-hotline>",
+      "answer": "Hotline của <Brand Name> là <demo-hotline> ạ.",
+      "difficulty": "easy",
+      "category": "info",
+      "expected_sources": [
+        "Thông tin các dịch vụ"
+      ],
+      "actual_sources": [
+        "Thông tin các dịch vụ"
+      ],
+      "keyword_overlap": 0.5,
+      "key_info_ratio": 1.0,
+      "key_info_complete": true,
+      "response_quality": "correct",
+      "source_hit": true,
+      "duration_ms": 5948,
+      "status": "ok",
+      "chunks_used": 1,
+      "tokens": {
+        "prompt": 21348,
+        "completion": 19
+      },
+      "cost_usd": 0.0085696
+    },
+    {
+      "id": "gs-008",
+      "question": "giờ mở cửa",
+      "ground_truth": "9h-21h, từ thứ 2 đến chủ nhật",
+      "answer": "Giờ mở cửa của <Brand Name> là từ 9h đến 21h, từ thứ 2 đến chủ nhật ạ.",
+      "difficulty": "easy",
+      "category": "info",
+      "expected_sources": [
+        "Thông tin các dịch vụ"
+      ],
+      "actual_sources": [
+        "Thông tin các dịch vụ"
+      ],
+      "keyword_overlap": 0.5,
+      "key_info_ratio": 1.0,
+      "key_info_complete": true,
+      "response_quality": "correct",
+      "source_hit": true,
+      "duration_ms": 6492,
+      "status": "ok",
+      "chunks_used": 1,
+      "tokens": {
+        "prompt": 21312,
+        "completion": 30
+      },
+      "cost_usd": 0.0085728
+    },
+    {
+      "id": "gs-014",
+      "question": "email shop",
+      "ground_truth": "<demo-email>",
+      "answer": "Email của <Brand Name> là <demo-email> ạ.",
+      "difficulty": "easy",
+      "category": "info",
+      "expected_sources": [
+        "Thông tin các dịch vụ"
+      ],
+      "actual_sources": [
+        "Thông tin các dịch vụ"
+      ],
+      "keyword_overlap": 0.5714,
+      "key_info_ratio": 1.0,
+      "key_info_complete": true,
+      "response_quality": "correct",
+      "source_hit": true,
+      "duration_ms": 6426,
+      "status": "ok",
+      "chunks_used": 1,
+      "tokens": {
+        "prompt": 21314,
+        "completion": 18
+      },
+      "cost_usd": 0.0085544
+    },
+    {
+      "id": "gs-016",
+      "question": "có fanpage không",
+      "ground_truth": "Có, fanpage <Brand Name> trên Facebook",
+      "answer": "Dạ có ạ, fanpage của <Brand Name> là <Brand Name> ạ.",
+      "difficulty": "easy",
+      "category": "info",
+      "expected_sources": [
+        "Thông tin các dịch vụ"
+      ],
+      "actual_sources": [
+        "Thông tin các dịch vụ"
+      ],
+      "keyword_overlap": 0.6,
+      "key_info_ratio": 1.0,
+      "key_info_complete": true,
+      "response_quality": "correct",
+      "source_hit": true,
+      "duration_ms": 6061,
+      "status": "ok",
+      "chunks_used": 1,
+      "tokens": {
+        "prompt": 21206,
+        "completion": 23
+      },
+      "cost_usd": 0.0085192
+    },
+    {
+      "id": "gs-019",
+      "question": "shop ở quận nào",
+      "ground_truth": "Quận Thanh Xuân, Hà Nội",
+      "answer": "<Brand Name> ở quận Thanh Xuân, Hà Nội ạ.",
+      "difficulty": "medium",
+      "category": "info",
+      "expected_sources": [
+        "Thông tin các dịch vụ"
+      ],
+      "actual_sources": [
+        "Thông tin các dịch vụ"
+      ],
+      "keyword_overlap": 0.7143,
+      "key_info_ratio": 1.0,
+      "key_info_complete": true,
+      "response_quality": "correct",
+      "source_hit": true,
+      "duration_ms": 7228,
+      "status": "ok",
+      "chunks_used": 1,
+      "tokens": {
+        "prompt": 21211,
+        "completion": 17
+      },
+      "cost_usd": 0.0085116
+    },
+    {
+      "id": "gs-004",
+      "question": "có khuyến mãi gì không",
+      "ground_truth": "Gội đầu: mua 10 buổi tặng 1 buổi, mua 30 buổi tặng 5 buổi",
+      "answer": "Dạ, hiện bên em có khuyến mãi mua 10 buổi gội đầu tặng 1 buổi và mua 30 buổi tặng 5 buổi ạ. Nếu chị quan tâm dịch vụ nào cụ thể hơn, em hỗ trợ tư vấn thêm cho chị nhé!",
+      "difficulty": "medium",
+      "category": "promotion",
+      "expected_sources": [
+        "Bảng giá dịch vụ gội đầu"
+      ],
+      "actual_sources": [
+        "Bảng giá dịch vụ gội đầu",
+        "BẢNG GIÁ CHĂM SÓC DA CÔNG NGHỆ CAO"
+      ],
+      "keyword_overlap": 0.25,
+      "key_info_ratio": 1.0,
+      "key_info_complete": true,
+      "response_quality": "correct",
+      "source_hit": true,
+      "duration_ms": 7005,
+      "status": "ok",
+      "chunks_used": 2,
+      "tokens": {
+        "prompt": 21425,
+        "completion": 61
+      },
+      "cost_usd": 0.0086676
+    },
+    {
+      "id": "gs-018",
+      "question": "mua 30 buổi gội đầu được tặng mấy buổi",
+      "ground_truth": "Mua 30 buổi tặng 5 buổi",
+      "answer": "Dạ, khi mua 30 buổi gội đầu, chị sẽ được tặng thêm 5 buổi ạ.",
+      "difficulty": "medium",
+      "category": "promotion",
+      "expected_sources": [
+        "Bảng giá dịch vụ gội đầu"
+      ],
+      "actual_sources": [
+        "Bảng giá dịch vụ gội đầu"
+      ],
+      "keyword_overlap": 0.4444,
+      "key_info_ratio": 1.0,
+      "key_info_complete": true,
+      "response_quality": "correct",
+      "source_hit": true,
+      "duration_ms": 7234,
+      "status": "ok",
+      "chunks_used": 1,
+      "tokens": {
+        "prompt": 21285,
+        "completion": 26
+      },
+      "cost_usd": 0.0085556
+    },
+    {
+      "id": "gs-006",
+      "question": "gội đầu dưỡng sinh với gội thường chênh bao nhiêu",
+      "ground_truth": "Gội đầu dưỡng sinh 350,000đ - Gội đầu thường 60,000đ = chênh 290,000đ",
+      "answer": "Dạ, gội đầu dưỡng sinh có giá 350.000đ/buổi, còn gội đầu thư giãn dầu thường là 60.000đ/buổi, chênh lệch khoảng 290.000đ ạ.",
+      "difficulty": "hard",
+      "category": "comparison",
+      "expected_sources": [
+        "Bảng giá dịch vụ gội đầu"
+      ],
+      "actual_sources": [
+        "Bảng giá dịch vụ gội đầu"
+      ],
+      "keyword_overlap": 0.5263,
+      "key_info_ratio": 0.5,
+      "key_info_complete": false,
+      "response_quality": "correct",
+      "source_hit": true,
+      "duration_ms": 8560,
+      "status": "ok",
+      "chunks_used": 1,
+      "tokens": {
+        "prompt": 21301,
+        "completion": 52
+      },
+      "cost_usd": 0.0086036
+    },
+    {
+      "id": "gs-012",
+      "question": "dịch vụ đắt nhất là gì",
+      "ground_truth": "Triệt lông toàn thân combo 10 buổi giá 11,999,000đ",
+      "answer": "Dạ, dịch vụ đắt nhất trong tài liệu là triệt lông toàn thân với giá combo 10 buổi là 11.999.000đ ạ. [Nguồn: BẢNG GIÁ CHĂM SÓC DA CÔNG NGHỆ CAO]",
+      "difficulty": "hard",
+      "category": "comparison",
+      "expected_sources": [
+        "BẢNG GIÁ GIÁ TRIỆT LÔNG"
+      ],
+      "actual_sources": [
+        "Bảng giá dịch vụ gội đầu",
+        "BẢNG GIÁ CHĂM SÓC DA CÔNG NGHỆ CAO"
+      ],
+      "keyword_overlap": 0.4231,
+      "key_info_ratio": 0.75,
+      "key_info_complete": false,
+      "response_quality": "correct",
+      "source_hit": false,
+      "duration_ms": 7113,
+      "status": "ok",
+      "chunks_used": 2,
+      "tokens": {
+        "prompt": 21528,
+        "completion": 61
+      },
+      "cost_usd": 0.0087088
+    },
+    {
+      "id": "gs-017",
+      "question": "gội đầu rẻ nhất bao nhiêu",
+      "ground_truth": "Gội đầu thư giãn dầu thường giá 60,000đ/buổi — rẻ nhất",
+      "answer": "Hiện dịch vụ gội đầu thư giãn dầu thường có giá 60.000đ/buổi ạ.",
+      "difficulty": "medium",
+      "category": "comparison",
+      "expected_sources": [
+        "Bảng giá dịch vụ gội đầu"
+      ],
+      "actual_sources": [
+        "Bảng giá dịch vụ gội đầu"
+      ],
+      "keyword_overlap": 0.6667,
+      "key_info_ratio": 0.5,
+      "key_info_complete": false,
+      "response_quality": "correct",
+      "source_hit": true,
+      "duration_ms": 8430,
+      "status": "ok",
+      "chunks_used": 1,
+      "tokens": {
+        "prompt": 21339,
+        "completion": 25
+      },
+      "cost_usd": 0.0085756
+    },
+    {
+      "id": "gs-010",
+      "question": "hôm nay trời đẹp quá",
+      "ground_truth": "Bot nên redirect về dịch vụ spa hoặc hỏi nhu cầu khách",
+      "answer": "Xin chào! Tôi là trợ lý AI. Bạn có thể hỏi tôi về thông tin trong tài liệu đã được cung cấp. Tôi sẵn sàng giúp đỡ bạn!",
+      "difficulty": "hard",
+      "category": "out_of_scope",
+      "expected_sources": [],
+      "actual_sources": [],
+      "keyword_overlap": 0.0357,
+      "key_info_ratio": 1.0,
+      "key_info_complete": true,
+      "response_quality": "partial",
+      "source_hit": true,
+      "duration_ms": 1259,
+      "status": "ok",
+      "chunks_used": 0,
+      "tokens": {
+        "prompt": 0,
+        "completion": 0
+      },
+      "cost_usd": 0.0
+    },
+    {
+      "id": "gs-011",
+      "question": "có mấy loại gội đầu",
+      "ground_truth": "4 loại: Gội đầu thư giãn dầu thường (60k), dầu cặp (120k), dầu cặp Weilaiya (150k), gội đầu dưỡng sinh (350k)",
+      "answer": "Dạ, trong tài liệu có 4 loại dịch vụ gội đầu ạ: gội đầu thư giãn dầu thường, gội đầu thư giãn dầu cặp, gội đầu thư giãn dầu cặp Weilaiya và gội đầu dưỡng sinh.",
+      "difficulty": "medium",
+      "category": "service_list",
+      "expected_sources": [
+        "Bảng giá dịch vụ gội đầu"
+      ],
+      "actual_sources": [
+        "Bảng giá dịch vụ gội đầu"
+      ],
+      "keyword_overlap": 0.55,
+      "key_info_ratio": 0.0,
+      "key_info_complete": false,
+      "response_quality": "partial",
+      "source_hit": true,
+      "duration_ms": 6951,
+      "status": "ok",
+      "chunks_used": 1,
+      "tokens": {
+        "prompt": 21308,
+        "completion": 56
+      },
+      "cost_usd": 0.0086128
+    },
+    {
+      "id": "gs-013",
+      "question": "gội đầu mất bao lâu",
+      "ground_truth": "Gội đầu thư giãn 30 phút, gội đầu dưỡng sinh 60 phút",
+      "answer": "Dạ, thời gian gội đầu tùy loại dịch vụ ạ: gội đầu thư giãn các loại mất 30 phút, còn gội đầu dưỡng sinh mất 60 phút ạ.",
+      "difficulty": "medium",
+      "category": "service_detail",
+      "expected_sources": [
+        "Bảng giá dịch vụ gội đầu"
+      ],
+      "actual_sources": [
+        "Bảng giá dịch vụ gội đầu"
+      ],
+      "keyword_overlap": 0.5,
+      "key_info_ratio": 1.0,
+      "key_info_complete": true,
+      "response_quality": "correct",
+      "source_hit": true,
+      "duration_ms": 6507,
+      "status": "ok",
+      "chunks_used": 1,
+      "tokens": {
+        "prompt": 21296,
+        "completion": 42
+      },
+      "cost_usd": 0.0085856
+    },
+    {
+      "id": "gs-020",
+      "question": "tôi muốn đặt lịch gội đầu",
+      "ground_truth": "Bot nên hỏi loại gội đầu và thời gian mong muốn, sau đó hỗ trợ đặt lịch",
+      "answer": "Xin loi, toi khong co thong tin de tra loi cau hoi nay.",
+      "difficulty": "hard",
+      "category": "booking",
+      "expected_sources": [],
+      "actual_sources": [],
+      "keyword_overlap": 0.0,
+      "key_info_ratio": 1.0,
+      "key_info_complete": true,
+      "response_quality": "partial",
+      "source_hit": true,
+      "duration_ms": 1347,
+      "status": "ok",
+      "chunks_used": 0,
+      "tokens": {
+        "prompt": 0,
+        "completion": 0
+      },
+      "cost_usd": 0.0
+    }
+  ]
+}

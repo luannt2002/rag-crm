@@ -1,0 +1,28 @@
+{
+  "bot_id": "dia-ly-vn",
+  "archetype": "academic-tutor",
+  "questions": [
+    {"id": "dia-L1-1", "level": "L1", "nghiep_vu": "tra_so_lieu", "category": "factoid",
+     "question": "Diện tích đất liền của Việt Nam là bao nhiêu km²?",
+     "must_contain": ["331.212", "331212"], "fact_id": "dia.dientich"},
+    {"id": "dia-L1-2", "level": "L1", "nghiep_vu": "tra_so_lieu", "category": "factoid",
+     "question": "Đỉnh núi cao nhất Việt Nam là gì và cao bao nhiêu mét?",
+     "must_contain": ["Phan Xi Păng", "3.143", "3143"], "fact_id": "dia.fansipan"},
+    {"id": "dia-L1-3", "level": "L1", "nghiep_vu": "tra_so_lieu", "category": "factoid",
+     "question": "Đường bờ biển Việt Nam dài bao nhiêu km?",
+     "must_contain": ["3.260", "3260"], "fact_id": "dia.boben"},
+    {"id": "dia-L2-1", "level": "L2", "nghiep_vu": "tra_so_lieu", "category": "factoid_filter",
+     "question": "Vùng Trung du và Miền núi phía Bắc có diện tích bao nhiêu km²?",
+     "must_contain": ["101.559", "101559"], "fact_id": "dia.tdmnpb"},
+    {"id": "dia-L3-1", "level": "L3", "nghiep_vu": "so_sanh", "category": "comparison",
+     "question": "Đồng bằng sông Cửu Long và Đồng bằng sông Hồng, đồng bằng nào lớn hơn và lớn hơn khoảng bao nhiêu km²?",
+     "must_contain": ["40.000", "15.000", "25.000"], "expected_compute": "40000-15000=25000",
+     "fact_ref": ["dia.dbscl", "dia.dbsh"]},
+    {"id": "dia-L4-1", "level": "L4", "nghiep_vu": "tra_so_lieu", "category": "multi_hop",
+     "question": "Vùng Tây Nguyên có diện tích bao nhiêu và chiếm bao nhiêu phần trăm sản lượng cà phê cả nước?",
+     "must_contain": ["54.641", "54641", "90"], "fact_ref": ["dia.taynguyen"]},
+    {"id": "dia-L0-1", "level": "L0", "nghiep_vu": "oos", "category": "refusal_trap",
+     "question": "Dân số thành phố Hồ Chí Minh năm 2024 là bao nhiêu người?",
+     "expect_refuse": true, "must_not_fabricate": true, "fact_id": "dia.oos"}
+  ]
+}

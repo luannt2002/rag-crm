@@ -1,0 +1,91 @@
+# Local dev full stack: Postgres (pgvector), Redis Stack, optional Infinity + TEI rerank.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ragbot
+      POSTGRES_PASSWORD: ragbot
+      POSTGRES_DB: ragbot
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ragbot -d ragbot"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  redis:
+    image: redis/redis-stack-server:7.4.0-v1
+    # P25-L5: Production-grade Redis config.
+    # - allkeys-lru: evict least-recently-used across ALL keys (embeddings +
+    #   semantic cache + rate-limit + streams consumer state). Replaces default
+    #   `noeviction` which silently fails writes under RAM pressure.
+    # - save "": disable RDB snapshot — streams survive via replication only;
+    #   avoid disk I/O bursts on pilot.
+    # - appendonly no: no AOF for pilot. Switch to "yes" if streams durability
+    #   becomes required (add volume-backed /data persistence plan first).
+    # - maxmemory 2gb: sized for ~10× current working set (~1.1 GB) + safety
+    #   margin. Operator can tune via compose override.
+    command: [
+      "redis-server",
+      "--maxmemory", "2gb",
+      "--maxmemory-policy", "allkeys-lru",
+      "--save", "",
+      "--appendonly", "no"
+    ]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://ragbot:ragbot@postgres:5432/ragbot
+      REDIS_URL: redis://redis:6379/0
+      EMBEDDING_SERVER_URL: http://infinity:7997
+      RERANKER_SERVER_URL: http://tei-reranker:8080
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Optional services — disabled by default to save resources
+  # Enable with `docker compose --profile ml up`
+
+  infinity:
+    image: michaelf34/infinity:latest
+    profiles: ["ml"]
+    command: ["v2", "--model-id", "BAAI/bge-m3", "--port", "7997"]
+    ports:
+      - "7997:7997"
+    restart: unless-stopped
+
+  tei-reranker:
+    image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.5
+    profiles: ["ml"]
+    command: ["--model-id", "BAAI/bge-reranker-v2-m3", "--port", "8080"]
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+volumes:
+  pg-data:
+  redis-data:

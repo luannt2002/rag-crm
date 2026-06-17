@@ -1,0 +1,28 @@
+{
+  "bot_id": "vat-ly-11",
+  "archetype": "academic-tutor",
+  "questions": [
+    {"id": "ly-L1-1", "level": "L1", "nghiep_vu": "tra_cong_thuc", "category": "factoid",
+     "question": "Công thức lực Coulomb là gì?",
+     "must_contain": ["k", "q", "r"], "fact_id": "ly.coulomb"},
+    {"id": "ly-L1-2", "level": "L1", "nghiep_vu": "tra_hang_so", "category": "factoid",
+     "question": "Hằng số k trong định luật Coulomb có giá trị bao nhiêu?",
+     "must_contain": ["9", "10", "9"], "fact_id": "ly.k"},
+    {"id": "ly-L1-3", "level": "L1", "nghiep_vu": "tra_cong_thuc", "category": "factoid",
+     "question": "Năng lượng điện trường trong tụ điện tính theo công thức nào?",
+     "must_contain": ["C", "U"], "fact_id": "ly.nang_luong_tu"},
+    {"id": "ly-L2-1", "level": "L2", "nghiep_vu": "khai_niem", "category": "factoid_filter",
+     "question": "Đơn vị của cảm ứng từ B là gì (không phải đơn vị điện dung)?",
+     "must_contain": ["Tesla", "T"], "fact_id": "ly.tesla"},
+    {"id": "ly-L3-1", "level": "L3", "nghiep_vu": "khai_niem", "category": "comparison",
+     "question": "Theo định luật Lenz, khi từ thông tăng thì dòng cảm ứng tạo từ trường cùng chiều hay ngược chiều với từ trường ngoài, và khi từ thông giảm thì sao?",
+     "must_contain": ["ngược", "cùng"], "fact_ref": ["ly.lenz"]},
+    {"id": "ly-L4-1", "level": "L4", "nghiep_vu": "giai_bai_tap", "category": "multi_hop",
+     "question": "Hai điện tích Q1=+4μC và Q2=-1μC đặt cách nhau 0.2m trong chân không. Tính độ lớn lực tương tác giữa chúng (dùng k=9×10⁹).",
+     "must_contain": ["0.9", "0,9", "N"], "expected_compute": "F=9e9*4e-6*1e-6/0.04=0.9 N",
+     "fact_ref": ["ly.coulomb", "ly.k"]},
+    {"id": "ly-L0-1", "level": "L0", "nghiep_vu": "oos", "category": "refusal_trap",
+     "question": "Giải thích thuyết tương đối hẹp của Einstein giúp em.",
+     "expect_refuse": true, "must_not_fabricate": true, "fact_id": "ly.oos"}
+  ]
+}

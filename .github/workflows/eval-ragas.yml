@@ -1,0 +1,143 @@
+name: eval-ragas
+
+# RAGAS auto evaluation gate (Wave A foundation, T2-CostPerf).
+#
+# Runs scripts/eval_ragas.py for every shipped golden dataset on each PR
+# plus a daily cron, computes the 4 RAGAS metrics (faithfulness,
+# answer_relevancy, context_precision, context_recall), and posts a
+# summary back to the PR.
+#
+# Domain-neutral: the runner knows nothing about industry / brand. Bots
+# are addressed by external slug only (placeholder slugs in this file are
+# generic and per-tenant configurable).
+
+on:
+  pull_request:
+    branches:
+      - main
+  schedule:
+    # Daily 03:00 UTC — early enough to surface drift before the working day.
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+
+jobs:
+  eval-ragas:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: ragbot
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/ragbot
+      REDIS_URL: redis://localhost:6379/0
+      PYTHONPATH: src
+      # RAGBOT_BASE_URL is read by scripts/eval_ragas.py at runtime. CI
+      # spins up ragbot on the same host in a step below.
+      RAGBOT_BASE_URL: http://localhost:3004
+
+    strategy:
+      # Don't stop the entire matrix on one bot failure — a single bot's
+      # corpus drift should not mask another bot's regression.
+      fail-fast: false
+      matrix:
+        bot:
+          - slug: bot-legal-pilot
+            dataset: tests/eval/datasets/30Q_golden_legalbot.json
+          - slug: bot-medical-pilot
+            dataset: tests/eval/datasets/30Q_golden_medispa.json
+          - slug: bot-thongtu-pilot
+            dataset: tests/eval/datasets/30Q_golden_thongtu.json
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Install dependencies
+        run: uv sync --extra dev
+
+      - name: Run alembic migrations
+        run: uv run alembic upgrade head
+
+      - name: Start ragbot in background
+        run: |
+          uv run uvicorn ragbot.main:app --host 0.0.0.0 --port 3004 &
+          for _ in $(seq 1 30); do
+            if curl -sf http://localhost:3004/health >/dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "ragbot did not become ready" >&2
+          exit 1
+
+      - name: Run RAGAS eval for ${{ matrix.bot.slug }}
+        id: eval
+        # The script exits 1 if any gate fails — keep `continue-on-error`
+        # off so the PR job clearly red-X's on regression.
+        run: |
+          mkdir -p reports
+          uv run python scripts/eval_ragas.py \
+            --bot "${{ matrix.bot.slug }}" \
+            --dataset "${{ matrix.bot.dataset }}" \
+            --output "reports/eval_ragas_${{ matrix.bot.slug }}.json" \
+            | tee "reports/eval_ragas_${{ matrix.bot.slug }}.txt"
+
+      - name: Upload eval artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-ragas-${{ matrix.bot.slug }}
+          path: reports/eval_ragas_${{ matrix.bot.slug }}.*
+          retention-days: 14
+
+      - name: Post PR comment with metric summary
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const slug = '${{ matrix.bot.slug }}';
+            const txt = `reports/eval_ragas_${slug}.txt`;
+            if (!fs.existsSync(txt)) return;
+            const body = [
+              `### RAGAS eval — ${slug}`,
+              '```',
+              fs.readFileSync(txt, 'utf8'),
+              '```',
+            ].join('\n');
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body,
+            });

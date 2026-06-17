@@ -1,0 +1,81 @@
+version: "1.0"
+name: "Ragbot AIDLC Workspace"
+
+# Skills = system prompts cho 4 role: Architect / Implementer / Reviewer / Auditor.
+# Mỗi skill .md file map role pipeline 9-phase trong claude-ops/30-aidlc/role-pipeline.md.
+skills:
+  - id: architect
+    path: ./.aidlc/skills/architect.md
+  - id: implementer
+    path: ./.aidlc/skills/implementer.md
+  - id: reviewer
+    path: ./.aidlc/skills/reviewer.md
+  - id: auditor
+    path: ./.aidlc/skills/auditor.md
+
+# Agents = Claude instances wired tới skill + model.
+# Tier policy CLAUDE.md: Architect/Implementer/Auditor on Opus, Reviewer on Sonnet.
+agents:
+  - id: architect
+    name: "Spec Architect"
+    skill: architect
+    model: claude-opus-4-7
+    capabilities: [files]
+
+  - id: implementer
+    name: "Phase Implementer"
+    skill: implementer
+    model: claude-opus-4-7
+    capabilities: [files, github]
+
+  - id: reviewer
+    name: "Quality Gate Reviewer"
+    skill: reviewer
+    model: claude-sonnet-4-6
+    capabilities: [files]
+
+  - id: auditor
+    name: "Post-Ship Auditor"
+    skill: auditor
+    model: claude-opus-4-7
+    capabilities: [files, github]
+
+# Pipeline: 9-phase artifact gate per Ragbot stream.
+# Mỗi step produces concrete artifact file. human_review:true cho phép user gate.
+pipelines:
+  - id: ragbot-9phase
+    steps:
+      - agent: architect
+        produces: ["claude-ops/30-aidlc/epics/{epic}/01-spec.md"]
+
+      - agent: architect
+        produces: ["claude-ops/30-aidlc/epics/{epic}/02-design.md"]
+
+      - agent: architect
+        produces: ["claude-ops/30-aidlc/epics/{epic}/03-tasks.md"]
+        human_review: true
+
+      - agent: implementer
+        produces: ["claude-ops/30-aidlc/epics/{epic}/04-impl-plan.md"]
+
+      - agent: implementer
+        produces: ["claude-ops/30-aidlc/epics/{epic}/05-code.commits.md"]
+
+      - agent: implementer
+        produces: ["claude-ops/30-aidlc/epics/{epic}/06-tests.md"]
+
+      - agent: reviewer
+        produces: ["claude-ops/30-aidlc/epics/{epic}/03-reviewer.md"]
+
+      - agent: auditor
+        produces: ["claude-ops/30-aidlc/epics/{epic}/04-auditor.md"]
+        human_review: true
+
+      - agent: auditor
+        produces: ["claude-ops/30-aidlc/epics/{epic}/09-ship.md"]
+
+# State entity: each epic persists in claude-ops/30-aidlc/epics/<id>/
+state:
+  entity: epic
+  root: claude-ops/30-aidlc/epics
+  status_file: .state.json

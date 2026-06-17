@@ -1,0 +1,39 @@
+; RAGbot chat async worker — Redis Stream consumer for ``chat.requested``.
+;
+; INSTALL (manual, NOT auto — project mandate "no devops"):
+;   1. Replace placeholder paths below with real install paths.
+;   2. sudo cp deploy/ragbot-chat-worker.service /etc/systemd/system/
+;   3. sudo systemctl daemon-reload
+;   4. sudo systemctl start ragbot-chat-worker.service     # start
+;   5. sudo systemctl enable ragbot-chat-worker.service    # ENABLE only on
+;                                                          ; explicit operator
+;                                                          ; decision.
+;
+; SCALE: run multiple replicas via templated unit
+;   ``ragbot-chat-worker@.service`` (rename + ``%i`` in consumer name).
+;
+; Placeholders:
+;   <ragbot-root>  → repo root, e.g. /opt/ragbot
+;   <ragbot-venv>  → python venv root, e.g. /opt/ragbot/.venv
+;   <ragbot-user>  → service user, e.g. ragbot
+
+[Unit]
+Description=RAGbot Chat Async Worker (Redis Stream chat.requested consumer)
+After=network.target redis.service postgresql.service
+
+[Service]
+Type=simple
+User=<ragbot-user>
+WorkingDirectory=<ragbot-root>
+EnvironmentFile=<ragbot-root>/.env
+Environment=PYTHONPATH=<ragbot-root>/src
+ExecStart=<ragbot-venv>/bin/python -m scripts.chat_async_worker
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+KillSignal=SIGTERM
+TimeoutStopSec=15
+
+[Install]
+WantedBy=multi-user.target

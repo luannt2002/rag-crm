@@ -1,0 +1,33 @@
+# Hexagonal-boundary allowlist — files in src/ragbot/application/ that
+# still import ragbot.infrastructure.*. New violations MUST NOT be added
+# (the test fails). Existing entries get removed as each file is fixed.
+#
+# Issue #7 in RAG_Master_of_Masters_DeepDive_Report.md tracks the full
+# refactor; the V18+ admin sprint owns shrinking this list to zero.
+#
+# Categories (informational — not parsed):
+#   ORM:    imports infra.db.models.* — needs new repository port
+#   REPO:   imports concrete repo class — needs port extraction
+#   FACTORY: import is intrinsic to the file's role (resolver/factory)
+#   UOW:    imports UnitOfWorkFactory — composition-root coupling
+#   GRAPH:  imports KnowledgeGraphService — needs port extraction
+#
+# Format: one relative path per line, comments allowed (`#`).
+
+src/ragbot/application/services/ai_config_service.py          # ORM + lazy SECRETS
+src/ragbot/application/services/bot_management_service.py     # ORM + REPO + UOW
+src/ragbot/application/services/cost_cap_alerter.py           # ORM
+src/ragbot/application/services/document_service/__init__.py             # GRAPH + parser/embedder/session-helper
+src/ragbot/application/services/document_service/ingest_core.py          # GRAPH + parser/embedder/session-helper
+src/ragbot/application/services/document_service/ingest_helpers.py       # GRAPH + parser/embedder/session-helper + pii_detector
+src/ragbot/application/services/document_service/ingest_phases.py        # GRAPH + parser/embedder/session-helper
+src/ragbot/application/services/document_service/ingest_stages.py        # doc_profile + embedder
+src/ragbot/application/services/document_service/ingest_stages_enrich.py # doc_profile + embedder
+src/ragbot/application/services/document_service/ingest_stages_final.py  # doc_profile + embedder
+src/ragbot/application/services/document_service/ingest_stages_store.py  # doc_profile + embedder
+src/ragbot/application/services/guardrail_rule_loader.py      # FACTORY (parse_flag_mask helper — pending port extraction)
+src/ragbot/application/services/ingest_idempotency_service.py # ORM (IngestIdempotencyKeyModel — pending repo port)
+src/ragbot/application/services/reranker_resolver.py          # FACTORY (resolver is a factory by design)
+src/ragbot/application/services/tenant_analytics_service.py   # ORM
+src/ragbot/application/services/tenant_config_cache.py        # ORM
+src/ragbot/application/use_cases/give_feedback.py             # REPO (TYPE_CHECKING-guarded)

@@ -1,0 +1,27 @@
+{
+  "bot_id": "lich-su-vn",
+  "archetype": "academic-tutor",
+  "questions": [
+    {"id": "su-L1-1", "level": "L1", "nghiep_vu": "tra_su_kien", "category": "factoid",
+     "question": "Năm nào Ngô Quyền đánh bại quân Nam Hán trên sông Bạch Đằng?",
+     "must_contain": ["938"], "fact_id": "su.bachdang"},
+    {"id": "su-L1-2", "level": "L1", "nghiep_vu": "tra_su_kien", "category": "factoid",
+     "question": "Chiến dịch Điện Biên Phủ kéo dài bao nhiêu ngày đêm?",
+     "must_contain": ["56"], "fact_id": "su.dbp"},
+    {"id": "su-L1-3", "level": "L1", "nghiep_vu": "tra_su_kien", "category": "factoid",
+     "question": "Lý Thái Tổ dời đô về Thăng Long vào năm nào?",
+     "must_contain": ["1010"], "fact_id": "su.doidothanglong"},
+    {"id": "su-L2-1", "level": "L2", "nghiep_vu": "tra_su_kien", "category": "factoid_filter",
+     "question": "Hiệp định Giơnevơ được ký ngày nào và lấy vĩ tuyến nào làm ranh giới tạm thời?",
+     "must_contain": ["20-7-1954", "17"], "fact_id": "su.gioneva"},
+    {"id": "su-L3-1", "level": "L3", "nghiep_vu": "tong_hop", "category": "aggregation",
+     "question": "Chiến dịch Hồ Chí Minh kết thúc ngày nào, ai tuyên bố đầu hàng, và tại đâu?",
+     "must_contain": ["30-4-1975", "Dương Văn Minh", "Độc Lập"], "fact_ref": ["su.hcm_chiendich"]},
+    {"id": "su-L4-1", "level": "L4", "nghiep_vu": "tra_su_kien", "category": "multi_hop",
+     "question": "Trước Đổi Mới, lạm phát năm 1986 cao nhất lịch sử là bao nhiêu phần trăm, và mỗi năm phải nhập khẩu bao nhiêu gạo giai đoạn 1976-1980?",
+     "must_contain": ["774", "1,5 triệu", "1.5 triệu"], "fact_ref": ["su.lamphat86"]},
+    {"id": "su-L0-1", "level": "L0", "nghiep_vu": "oos", "category": "refusal_trap",
+     "question": "Vua Quang Trung đại phá quân Thanh năm nào?",
+     "expect_refuse": true, "must_not_fabricate": true, "fact_id": "su.oos"}
+  ]
+}

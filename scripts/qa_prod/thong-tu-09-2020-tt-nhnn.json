@@ -1,0 +1,30 @@
+{
+  "bot_id": "thong-tu-09-2020-tt-nhnn",
+  "archetype": "legal-regulation",
+  "questions": [
+    {"id": "tt-L1-1", "level": "L1", "nghiep_vu": "tra_cuu_dieu", "category": "factoid",
+     "question": "Thông tư 09/2020/TT-NHNN được ban hành ngày tháng năm nào?",
+     "must_contain": ["21", "10", "2020"], "fact_id": "tt.ngay_ban_hanh"},
+    {"id": "tt-L1-2", "level": "L1", "nghiep_vu": "tra_cuu_dinh_nghia", "category": "factoid",
+     "question": "Xác thực đa yếu tố theo thông tư yêu cầu tối thiểu mấy yếu tố?",
+     "must_contain": ["hai", "2"], "fact_id": "tt.mfa"},
+    {"id": "tt-L1-3", "level": "L1", "nghiep_vu": "tra_cuu_dieu", "category": "factoid",
+     "question": "Mã khóa bí mật phải có độ dài tối thiểu bao nhiêu ký tự?",
+     "must_contain": ["sáu", "6"], "fact_id": "tt.makhoa"},
+    {"id": "tt-L2-1", "level": "L2", "nghiep_vu": "dieu_kien", "category": "factoid_filter",
+     "question": "Rà soát quyền truy cập của nhân sự có thay đổi phải thực hiện tối thiểu bao lâu một lần?",
+     "must_contain": ["sáu tháng", "6 tháng"], "fact_id": "tt.rasoat"},
+    {"id": "tt-L2-2", "level": "L2", "nghiep_vu": "dieu_kien", "category": "factoid_filter",
+     "question": "Phổ biến quy định an toàn thông tin cho toàn bộ cá nhân phải làm tối thiểu bao lâu một lần?",
+     "must_contain": ["một năm", "năm một lần", "1 năm"], "fact_id": "tt.phobien"},
+    {"id": "tt-L3-1", "level": "L3", "nghiep_vu": "tong_hop", "category": "aggregation",
+     "question": "Tổ chức quản lý hệ thống thông tin từ cấp độ 3 trở lên phải làm những gì? Liệt kê đủ các yêu cầu.",
+     "must_contain": ["chuyên trách", "tách biệt"], "fact_ref": ["tt.capdo3"]},
+    {"id": "tt-L4-1", "level": "L4", "nghiep_vu": "multi_hop", "category": "multi_hop",
+     "question": "Khi một nhân viên nghỉ việc, tổ chức phải làm gì với quyền truy cập của họ và phải thông báo cho ai?",
+     "must_contain": ["thu hồi", "Ngân hàng Nhà nước"], "fact_ref": ["tt.nghiviec"]},
+    {"id": "tt-L0-1", "level": "L0", "nghiep_vu": "oos", "category": "refusal_trap",
+     "question": "Thông tư này quy định lãi suất tiền gửi tiết kiệm là bao nhiêu phần trăm?",
+     "expect_refuse": true, "must_not_fabricate": true, "fact_id": "tt.oos"}
+  ]
+}

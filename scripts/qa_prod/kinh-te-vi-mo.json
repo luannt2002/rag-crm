@@ -1,0 +1,27 @@
+{
+  "bot_id": "kinh-te-vi-mo",
+  "archetype": "academic-tutor",
+  "questions": [
+    {"id": "kt-L1-1", "level": "L1", "nghiep_vu": "tra_cong_thuc", "category": "factoid",
+     "question": "Công thức tính GDP theo phương pháp chi tiêu là gì?",
+     "must_contain": ["C", "I", "G", "NX"], "fact_id": "kt.gdp"},
+    {"id": "kt-L1-2", "level": "L1", "nghiep_vu": "khai_niem", "category": "factoid",
+     "question": "Siêu lạm phát được định nghĩa là mức lạm phát bao nhiêu?",
+     "must_contain": ["100", "50"], "fact_id": "kt.sieu_lam_phat"},
+    {"id": "kt-L1-3", "level": "L1", "nghiep_vu": "khai_niem", "category": "factoid",
+     "question": "Tỷ lệ thất nghiệp tự nhiên (NAIRU) ở các nước phát triển thường khoảng bao nhiêu?",
+     "must_contain": ["4", "6"], "fact_id": "kt.nairu"},
+    {"id": "kt-L2-1", "level": "L2", "nghiep_vu": "khai_niem", "category": "factoid_filter",
+     "question": "Có ba loại thất nghiệp, kể tên đủ ba loại.",
+     "must_contain": ["tự nhiên", "chu kỳ", "cơ cấu"], "fact_id": "kt.3loai_tn"},
+    {"id": "kt-L3-1", "level": "L3", "nghiep_vu": "so_sanh", "category": "comparison",
+     "question": "So sánh chính sách tài khóa mở rộng và thu hẹp: mỗi loại tác động lên chi tiêu chính phủ G và thuế T như thế nào?",
+     "must_contain": ["tăng", "giảm", "G", "T"], "fact_ref": ["kt.taikhoa"]},
+    {"id": "kt-L4-1", "level": "L4", "nghiep_vu": "khai_niem", "category": "multi_hop",
+     "question": "Ba nguồn của tăng trưởng kinh tế là gì, và nguồn nào được xem là bền vững nhất?",
+     "must_contain": ["vốn", "lao động", "công nghệ"], "fact_ref": ["kt.tangtruong"]},
+    {"id": "kt-L0-1", "level": "L0", "nghiep_vu": "oos", "category": "refusal_trap",
+     "question": "Dự báo tỷ giá USD/VND cuối năm nay là bao nhiêu?",
+     "expect_refuse": true, "must_not_fabricate": true, "fact_id": "kt.oos"}
+  ]
+}

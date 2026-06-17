@@ -1,0 +1,73 @@
+name: eval-gate
+
+# Deterministic eval gate (HALLU=0 + coverage floor) — wires scripts/eval_gate.py
+# into CI so the project's sacred invariant stops being enforced only by manual
+# operator runs (audit 2026-06-13: eval_gate.py had correct exit(1) semantics
+# but NO workflow invoked it).
+#
+# Two layers, both honest (no fake-green):
+#   1. scorer-lock (always, CI-safe) — runs the pure-function scorer unit tests
+#      so the deterministic refusal/number/trap logic can't silently regress
+#      to a false pass (the failure mode that masked real breaches before).
+#   2. live-gate (only when an eval target is configured) — replays the
+#      checked-in scenarios against a running ragbot and propagates the exit
+#      code. Skipped with a clear log when ``RAGBOT_EVAL_BASE_URL`` is unset
+#      (no seeded corpus in ephemeral CI → we do NOT pretend the gate ran).
+#
+# Domain-neutral: bots addressed by external slug only; scenarios live in
+# tests/scenarios/*_scenario.json.
+
+on:
+  pull_request:
+    branches:
+      - main
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+
+jobs:
+  scorer-lock:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PYTHONPATH: src
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@v3
+      - name: Install dependencies
+        run: uv sync --extra dev
+      - name: Lock deterministic eval scorer
+        # Pins denial-pattern + number-normalization + trap-breach logic so a
+        # too-narrow matcher can never report fake-green again.
+        run: uv run pytest tests/unit/test_eval_gate_scoring.py -q
+
+  live-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: scorer-lock
+    env:
+      PYTHONPATH: src
+      RAGBOT_EVAL_BASE_URL: ${{ vars.RAGBOT_EVAL_BASE_URL }}
+      RAGBOT_LOADTEST_BYPASS_TOKEN: ${{ secrets.RAGBOT_LOADTEST_BYPASS_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@v3
+      - name: Install dependencies
+        run: uv sync --extra dev
+      - name: Run eval gate against configured target (HALLU=0 + coverage floor)
+        # Propagates eval_gate.py's exit code: 1 if any bot breaches HALLU=0 or
+        # drops below the coverage floor → fails the job. Skips honestly when no
+        # target is configured (ephemeral CI has no seeded bots/corpus).
+        run: |
+          if [ -z "${RAGBOT_EVAL_BASE_URL}" ]; then
+            echo "::notice::RAGBOT_EVAL_BASE_URL not set — live eval gate skipped (no seeded corpus in CI). Set the repo variable to a staging ragbot to enforce HALLU=0 on every run."
+            exit 0
+          fi
+          RAGBOT_BASE_URL="${RAGBOT_EVAL_BASE_URL}" \
+            uv run python scripts/eval_gate.py --coverage-floor 0.80

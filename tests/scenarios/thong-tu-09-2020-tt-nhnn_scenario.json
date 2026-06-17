@@ -1,0 +1,68 @@
+{
+  "bot_id": "thong-tu-09-2020-tt-nhnn",
+  "channel_type": "web",
+  "note": "Legal QA over Thông tư 09/2020/TT-NHNN (an toàn hệ thống thông tin ngân hàng). expect = literal in source.",
+  "questions": [
+    {
+      "id": "q01",
+      "flow": "pham_vi",
+      "q": "Thông tư 09/2020/TT-NHNN quy định về vấn đề gì?",
+      "expect": "an toàn"
+    },
+    {
+      "id": "q02",
+      "flow": "doi_tuong",
+      "q": "Đối tượng áp dụng của Thông tư này là ai?",
+      "expect": null
+    },
+    {
+      "id": "q03",
+      "flow": "dieu_khoan",
+      "q": "Điều 2 quy định nội dung gì?",
+      "expect": "Điều 2"
+    },
+    {
+      "id": "q04",
+      "flow": "dieu_khoan",
+      "q": "Điều 5 nói về phân loại hệ thống thông tin thế nào?",
+      "expect": "phân loại"
+    },
+    {
+      "id": "q05",
+      "flow": "giai_thich",
+      "q": "Hệ thống thông tin cấp độ 3 là gì?",
+      "expect": "cấp độ 3"
+    },
+    {
+      "id": "q06",
+      "flow": "tra_cuu",
+      "q": "Nguyên tắc bảo đảm an toàn thông tin gồm những gì?",
+      "expect": "nguyên tắc"
+    },
+    {
+      "id": "q07",
+      "flow": "tra_cuu",
+      "q": "Trách nhiệm của đơn vị vận hành hệ thống thông tin?",
+      "expect": null
+    },
+    {
+      "id": "q08",
+      "flow": "hieu_luc",
+      "q": "Thông tư này có hiệu lực từ ngày nào?",
+      "expect": null
+    },
+    {
+      "id": "q09",
+      "flow": "oos_trap",
+      "q": "Thông tư này quy định lãi suất tiết kiệm bao nhiêu?",
+      "expect": null
+    },
+    {
+      "id": "q10",
+      "flow": "hallu_trap",
+      "q": "Điều 99 của thông tư quy định gì?",
+      "expect": null
+    }
+  ],
+  "workspace_id": "legal"
+}

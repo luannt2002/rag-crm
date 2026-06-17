@@ -1,0 +1,1231 @@
+[
+{
+"bot_id": "test-spa-id",
+"type": "aggregation",
+"question": "Nếu một khách hàng muốn mua combo 10 buổi triệt lông cho 3 vùng: Nách, Mặt và Mép, tổng số tiền cần thanh toán là bao nhiêu?",
+"must_contain": [
+"1.199.000",
+"1.499.000",
+"899.000",
+"3.597.000"
+]
+},
+{
+"bot_id": "test-spa-id",
+"type": "comparison",
+"question": "So sánh tổng chi phí 1 buổi của dịch vụ Massage cổ vai gáy 90 phút với 1 buổi Thải độc đầu: dịch vụ nào đắt hơn và chênh lệch bao nhiêu?",
+"must_contain": [
+"500.000",
+"800.000",
+"Thải độc đầu",
+"300.000"
+]
+},
+{
+"bot_id": "test-spa-id",
+"type": "multi_hop",
+"question": "Gói Buffet CNC 7 triệu có bao gồm dịch vụ Peel trị thâm Inno A không? Nếu mua lẻ dịch vụ đó giá bao nhiêu, và tiết kiệm được bao nhiêu so với giá gói?",
+"must_contain": [
+"Peel trị thâm Inno A",
+"2.500.000"
+]
+},
+{
+"bot_id": "test-spa-id",
+"type": "aggregation",
+"question": "Nếu một khách đặt 1 buổi Tẩy da chết body và 1 buổi Tẩy da chết & ủ trắng body, tổng thời gian thực hiện và tổng chi phí là bao nhiêu?",
+"must_contain": [
+"450.000",
+"550.000",
+"1.000.000",
+"90 phút"
+]
+},
+{
+"bot_id": "thong-tu-09-2020-tt-nhnn",
+"type": "multi_hop",
+"question": "Thông tư 09/2020/TT-NHNN có hiệu lực từ ngày nào và thay thế văn bản nào? Điểm b khoản 4 Điều 20 có hiệu lực muộn hơn bao nhiêu tháng so với ngày hiệu lực chung?",
+"must_contain": [
+"01/01/2021",
+"18/2018/TT-NHNN",
+"01/01/2022"
+]
+},
+{
+"bot_id": "thong-tu-09-2020-tt-nhnn",
+"type": "comparison",
+"question": "Khi xảy ra sự cố an toàn thông tin, tổ chức phải báo cáo đến Ngân hàng Nhà nước trong bao nhiêu giờ? Và báo cáo hoàn thành khắc phục phải gửi trong bao lâu sau khi khắc phục xong?",
+"must_contain": [
+"24 giờ",
+"05 ngày làm việc"
+]
+},
+{
+"bot_id": "thong-tu-09-2020-tt-nhnn",
+"type": "conditional",
+"question": "Hệ thống thông tin cấp độ 3 có tiêu chí nào liên quan đến thời gian ngừng vận hành? Nếu một hệ thống nội bộ ngừng hoạt động 5 giờ liên tục mà không có kế hoạch trước, nó có đủ điều kiện xếp vào cấp độ 3 không?",
+"must_contain": [
+"cấp độ 3",
+"4 giờ"
+]
+},
+{
+"bot_id": "thong-tu-09-2020-tt-nhnn",
+"type": "comparison",
+"question": "Ngân hàng thương mại cần kiểm tra nội bộ an toàn thông tin tối thiểu mấy lần mỗi năm bởi bộ phận quản lý rủi ro, và bộ phận kiểm toán nội bộ phải thực hiện ít nhất mấy năm một lần?",
+"must_contain": [
+"một năm một lần",
+"ba năm một lần"
+]
+},
+{
+"bot_id": "luat-giao-thong",
+"type": "conditional",
+"question": "Nếu một người lái ô tô vượt đèn đỏ VÀ đồng thời có nồng độ cồn ở mức 2 (từ 50mg đến dưới 80mg/100ml máu), tổng mức phạt tiền tối thiểu và tối đa mà người đó phải chịu là bao nhiêu?",
+"must_contain": [
+"4.000.000",
+"6.000.000",
+"16.000.000",
+"18.000.000"
+]
+},
+{
+"bot_id": "luat-giao-thong",
+"type": "comparison",
+"question": "So sánh mức phạt vượt đèn đỏ giữa ô tô và xe máy: ô tô bị phạt cao hơn xe máy bao nhiêu lần (tính theo mức tối đa)?",
+"must_contain": [
+"6.000.000",
+"1.000.000",
+"6 lần"
+]
+},
+{
+"bot_id": "luat-giao-thong",
+"type": "aggregation",
+"question": "Một người lái xe máy vượt tốc độ 25km/h so với quy định và bị tước GPLX. Sau khi hết thời hạn tước, người đó lại vượt đèn đỏ. Tổng thời gian tước GPLX tối đa từ hai lần vi phạm này là bao nhiêu tháng?",
+"must_contain": [
+"1-3 tháng",
+"6 tháng"
+]
+},
+{
+"bot_id": "luat-giao-thong",
+"type": "comparison",
+"question": "Đối với hành vi vượt xe sai quy định, mức phạt tiền tối đa dành cho ô tô cao hơn xe máy bao nhiêu tiền? Và ô tô có thể bị tước GPLX bao lâu?",
+"must_contain": [
+"5.000.000",
+"800.000",
+"1-3 tháng"
+]
+},
+{
+"bot_id": "y-te-co-ban",
+"type": "multi_hop",
+"question": "Một bệnh nhân có huyết áp 145/92 mmHg và đường huyết lúc đói 128 mg/dL. Theo tiêu chuẩn chẩn đoán, người này mắc những bệnh gì, và mục tiêu huyết áp cần đạt khác người bình thường thế nào?",
+"must_contain": [
+"140",
+"126",
+"tiểu đường",
+"huyết áp"
+]
+},
+{
+"bot_id": "y-te-co-ban",
+"type": "comparison",
+"question": "So sánh triệu chứng điển hình của loét dạ dày và loét tá tràng về thời điểm đau liên quan đến bữa ăn, và nêu dấu hiệu nguy hiểm ở cả hai cần đi cấp cứu ngay.",
+"must_contain": [
+"đói",
+"nôn ra máu",
+"phân đen"
+]
+},
+{
+"bot_id": "y-te-co-ban",
+"type": "conditional",
+"question": "Nếu một người (nam) có vòng eo 95 cm, triglyceride 160 mg/dL, HDL 38 mg/dL, huyết áp 132/86 mmHg và đường huyết đói 105 mg/dL, người này có hội chứng chuyển hóa không? Hội chứng này tăng nguy cơ mắc bệnh gì?",
+"must_contain": [
+"hội chứng chuyển hóa",
+"tiểu đường",
+"tim mạch"
+]
+},
+{
+"bot_id": "y-te-co-ban",
+"type": "multi_hop",
+"question": "Bệnh nhân tiểu đường type 2 đang điều trị thuốc bỗng run tay, vã mồ hôi, đói cồn cào và nhìn mờ. Đây là biến chứng cấp tính nào và cần xử trí tức thời ra sao?",
+"must_contain": [
+"hạ đường huyết",
+"đường"
+]
+},
+{
+"bot_id": "vat-ly-11",
+"type": "multi_hop",
+"question": "Một electron bay vận tốc v vuông góc vào từ trường đều B. Giải thích tại sao lực Lorentz không sinh công, và thiết lập biểu thức bán kính quỹ đạo tròn của electron theo m, v, q, B.",
+"must_contain": [
+"không sinh công",
+"R = mv",
+"chuyển động tròn"
+]
+},
+{
+"bot_id": "vat-ly-11",
+"type": "synthesis",
+"question": "Mạch điện gồm nguồn E = 12 V, r = 1 Ω, R1 = 6 Ω nối tiếp với (R2 = 4 Ω song song R3 = 4 Ω). Tính cường độ dòng mạch chính và công suất toàn mạch.",
+"must_contain": [
+"2",
+"16 W"
+]
+},
+{
+"bot_id": "vat-ly-11",
+"type": "multi_hop",
+"question": "Một cuộn cảm L = 0,1 H mang dòng I = 2 A. Nếu dòng giảm đều về 0 trong 0,05 s, tính suất điện động tự cảm và năng lượng từ trường ban đầu. Giải thích chiều suất điện động theo định luật Lenz.",
+"must_contain": [
+"4 V",
+"0,2 J",
+"Lenz"
+]
+},
+{
+"bot_id": "vat-ly-11",
+"type": "multi_hop",
+"question": "Hai bản phẳng song song cách nhau 5 mm, hiệu điện thế 100 V. Tính cường độ điện trường giữa hai bản, và giải thích dấu công của lực điện khi electron di chuyển từ bản âm sang bản dương.",
+"must_contain": [
+"E = U/d",
+"V/m"
+]
+},
+{
+"bot_id": "hoa-hoc-10",
+"type": "comparison",
+"question": "So sánh kiểu lai hóa của nguyên tử carbon trong CH4 và C2H4: dạng hình học, góc liên kết và số orbital lai khác nhau thế nào? Ảnh hưởng ra sao đến bậc liên kết C–C?",
+"must_contain": [
+"sp3",
+"sp2",
+"109,5",
+"120"
+]
+},
+{
+"bot_id": "hoa-hoc-10",
+"type": "multi_hop",
+"question": "Trong pin Daniel (Zn|ZnSO4||CuSO4|Cu), xác định anode và cathode, viết nửa phản ứng, và giải thích vì sao pin tạo suất điện động 1,10 V dựa trên thế điện cực chuẩn của Zn và Cu.",
+"must_contain": [
+"anode",
+"cathode",
+"1,10 V"
+]
+},
+{
+"bot_id": "hoa-hoc-10",
+"type": "synthesis",
+"question": "Hiệu độ âm điện giữa Na (0,93) và Cl (3,16) là bao nhiêu? Dựa vào đó phân loại liên kết trong NaCl, rồi giải thích cơ chế hình thành liên kết theo nhường/nhận electron và quy tắc octet.",
+"must_contain": [
+"2,23",
+"ion",
+"octet"
+]
+},
+{
+"bot_id": "hoa-hoc-10",
+"type": "synthesis",
+"question": "Xét phản ứng Fe + CuSO4 → FeSO4 + Cu. Xác định chất oxi hóa và chất khử, và từ dãy điện hóa giải thích vì sao phản ứng xảy ra tự phát nhưng Cu + FeSO4 thì không.",
+"must_contain": [
+"chất khử",
+"chất oxi hóa",
+"Fe"
+]
+},
+{
+"bot_id": "toan-hoc-12",
+"type": "multi_hop",
+"question": "Hàm số y = (ax + b)/(cx + d) có đạo hàm y' = (ad - bc)/(cx + d)². Nếu ad - bc > 0 thì hàm đồng biến hay nghịch biến, và tại sao hàm này không bao giờ có cực trị?",
+"must_contain": [
+"ad - bc",
+"đồng biến",
+"không có cực trị"
+]
+},
+{
+"bot_id": "toan-hoc-12",
+"type": "multi_hop",
+"question": "Cho hàm bậc bốn trùng phương y = ax⁴ + bx² + c với a > 0 và b < 0. Hàm có bao nhiêu điểm cực trị, nằm ở đâu?",
+"must_contain": [
+"3 điểm cực trị",
+"x = 0"
+]
+},
+{
+"bot_id": "toan-hoc-12",
+"type": "comparison",
+"question": "So sánh tính đơn điệu của hàm mũ y = aˣ (a>1) với hàm logarit y = logₐ(x) (a>1): tập xác định, tập giá trị và chiều biến thiên mỗi hàm.",
+"must_contain": [
+"đồng biến",
+"(0; +∞)",
+"R"
+]
+},
+{
+"bot_id": "toan-hoc-12",
+"type": "multi_hop",
+"question": "Phương trình az² + bz + c = 0 (hệ số thực) có Δ < 0. Nghiệm là số phức dạng gì và hai nghiệm quan hệ gì? Minh họa z² + 2z + 5 = 0.",
+"must_contain": [
+"liên hợp",
+"-1 + 2i",
+"-1 - 2i"
+]
+},
+{
+"bot_id": "kinh-te-vi-mo",
+"type": "multi_hop",
+"question": "Khi ngân hàng trung ương giảm tỉ lệ dự trữ bắt buộc từ 10% xuống 5%, số nhân tiền tệ thay đổi thế nào, và tác động ra sao lên tổng cầu AD theo mô hình AD-AS?",
+"must_contain": [
+"số nhân",
+"cung tiền tăng",
+"AD"
+]
+},
+{
+"bot_id": "kinh-te-vi-mo",
+"type": "comparison",
+"question": "So sánh hiệu quả của chính sách tài khóa và tiền tệ trong hai chế độ tỉ giá hối đoái theo mô hình Mundell-Fleming, và giải thích vì sao có sự khác biệt.",
+"must_contain": [
+"Mundell-Fleming",
+"tỉ giá",
+"tiền tệ"
+]
+},
+{
+"bot_id": "kinh-te-vi-mo",
+"type": "synthesis",
+"question": "Nền kinh tế suy thoái với khe hẹp âm. Chính phủ tăng chi tiêu G thêm 100 tỷ, MPC = 0,8. GDP thực tế tăng thêm bao nhiêu và gọi là hiệu ứng gì?",
+"must_contain": [
+"số nhân",
+"500 tỷ",
+"số nhân"
+]
+},
+{
+"bot_id": "kinh-te-vi-mo",
+"type": "conditional",
+"question": "Trong mô hình Solow, điều gì xảy ra với tăng trưởng GDP bình quân đầu người dài hạn nếu chỉ tích lũy thêm vốn K mà không có tiến bộ công nghệ? Giải thích theo trạng thái bền vững.",
+"must_contain": [
+"bền vững",
+"công nghệ",
+"giảm dần"
+]
+},
+{
+"bot_id": "tin-hoc-co-ban",
+"type": "multi_hop",
+"question": "Trong Excel, để xếp loại: >=9 'Xuất sắc', >=7 'Khá', >=5 'Trung bình', còn lại 'Yếu', dùng hàm gì, cú pháp ra sao, và AND/OR có vai trò gì khi cần điều kiện kép?",
+"must_contain": [
+"IF",
+"AND",
+"OR"
+]
+},
+{
+"bot_id": "tin-hoc-co-ban",
+"type": "comparison",
+"question": "So sánh VLOOKUP và INDEX+MATCH trong Excel: giống nhau về mục đích, khác biệt về hướng tra cứu và tính linh hoạt, kèm cú pháp cơ bản từng hàm.",
+"must_contain": [
+"VLOOKUP",
+"INDEX",
+"MATCH",
+"sang trái"
+]
+},
+{
+"bot_id": "tin-hoc-co-ban",
+"type": "multi_hop",
+"question": "Giao thức HTTPS khác HTTP ở điểm gì, dùng cổng mặc định nào, hoạt động ở lớp nào trong mô hình OSI?",
+"must_contain": [
+"80",
+"443",
+"TLS"
+]
+},
+{
+"bot_id": "tin-hoc-co-ban",
+"type": "multi_hop",
+"question": "Trong Python, hàm có tham số mặc định hoạt động thế nào? Nếu def power(base, exp=2), gọi power(3) và power(3, 3) trả về bao nhiêu?",
+"must_contain": [
+"9",
+"27",
+"mặc định"
+]
+},
+{
+"bot_id": "sinh-hoc-12",
+"type": "multi_hop",
+"question": "Trong lai hai tính trạng của Mendel, tại sao F2 xuất hiện tỉ lệ 9:3:3:1 thay vì 3:1 như lai một tính trạng? Giải thích dựa trên quy luật phân li độc lập.",
+"must_contain": [
+"phân li độc lập",
+"9:3:3:1"
+]
+},
+{
+"bot_id": "sinh-hoc-12",
+"type": "comparison",
+"question": "So sánh hình thành loài bằng đa bội hóa với cách li sinh sản: vì sao con la (ngựa × lừa) lại bất thụ?",
+"must_contain": [
+"đa bội",
+"la",
+"bất thụ"
+]
+},
+{
+"bot_id": "sinh-hoc-12",
+"type": "conditional",
+"question": "Vì sao trong quần thể nhỏ, biến động di truyền có thể làm allele có hại lan rộng, trong khi quần thể lớn ở trạng thái Hardy-Weinberg duy trì tần số allele ổn định?",
+"must_contain": [
+"biến động di truyền",
+"Hardy-Weinberg",
+"tần số allele"
+]
+},
+{
+"bot_id": "sinh-hoc-12",
+"type": "synthesis",
+"question": "Một phụ nữ mang gen mù màu (XCXc) kết hôn với người đàn ông bình thường (XCY). Dự đoán kiểu gen, kiểu hình con cái, và giải thích vì sao mù màu biểu hiện chủ yếu ở nam giới.",
+"must_contain": [
+"mù màu",
+"nam",
+"lặn"
+]
+},
+{
+"bot_id": "dia-ly-vn",
+"type": "comparison",
+"question": "Đông Nam Bộ đóng góp hơn 30% GDP dù diện tích chỉ 23.605 km², nhỏ hơn Trung du và miền núi phía Bắc (101.559 km²). Phân tích nguyên nhân chênh lệch kinh tế dựa trên tài nguyên và hạ tầng hai vùng.",
+"must_contain": [
+"Đông Nam Bộ",
+"30%",
+"Trung du và miền núi phía Bắc"
+]
+},
+{
+"bot_id": "dia-ly-vn",
+"type": "synthesis",
+"question": "Việt Nam cam kết đạt Net Zero năm 2050, với tiềm năng điện gió 500-600 GW. Phân tích mối liên hệ giữa vị trí địa lý (khí hậu nhiệt đới gió mùa) và tiềm năng năng lượng tái tạo.",
+"must_contain": [
+"Net Zero",
+"2050",
+"điện gió"
+]
+},
+{
+"bot_id": "dia-ly-vn",
+"type": "conditional",
+"question": "Sông Mê Kông dài 4.880 km nhưng 60% lượng nước mặt Việt Nam phát sinh ngoài lãnh thổ. Điều này tạo thách thức gì cho Đồng bằng sông Cửu Long trong bối cảnh biến đổi khí hậu?",
+"must_contain": [
+"Mê Kông",
+"60%",
+"Đồng bằng sông Cửu Long"
+]
+},
+{
+"bot_id": "dia-ly-vn",
+"type": "comparison",
+"question": "Vịnh Hạ Long được UNESCO công nhận năm 1994, Phong Nha-Kẻ Bàng năm 2003. So sánh ý nghĩa hai di sản với du lịch biển và du lịch sinh thái trong hai vùng kinh tế khác nhau.",
+"must_contain": [
+"Hạ Long",
+"Phong Nha",
+"UNESCO"
+]
+},
+{
+"bot_id": "lich-su-vn",
+"type": "multi_hop",
+"question": "Lý Thường Kiệt đánh quân Tống 1075-1077 và viết 'Nam quốc sơn hà'. Hồ Chí Minh ra Lời kêu gọi toàn quốc kháng chiến đêm 19-12-1946. Phân tích điểm chung về ý chí giữ nước hai sự kiện.",
+"must_contain": [
+"Lý Thường Kiệt",
+"Nam quốc sơn hà",
+"19-12-1946"
+]
+},
+{
+"bot_id": "lich-su-vn",
+"type": "multi_hop",
+"question": "Trước Đổi Mới 1986, Việt Nam lạm phát 774,7% và nhập khẩu gạo. Sau Khoán 10 (1988), năm 1989 lại xuất khẩu 1,5 triệu tấn gạo. Phân tích chuỗi nhân quả từ kinh tế bao cấp đến Đổi Mới.",
+"must_contain": [
+"774,7%",
+"Khoán 10",
+"xuất khẩu",
+"1,5 triệu tấn"
+]
+},
+{
+"bot_id": "lich-su-vn",
+"type": "multi_hop",
+"question": "Từ Hiệp định Giơnevơ 1954 chia cắt tại vĩ tuyến 17, qua Tết Mậu Thân 1968, đến Chiến dịch Hồ Chí Minh kết thúc 30-4-1975 với Dương Văn Minh đầu hàng — trình bày hành trình từ chia cắt đến thống nhất.",
+"must_contain": [
+"vĩ tuyến 17",
+"Mậu Thân",
+"30-4-1975",
+"Dương Văn Minh"
+]
+},
+{
+"bot_id": "lich-su-vn",
+"type": "conditional",
+"question": "Tỷ lệ biết chữ Việt Nam tăng từ ~5% năm 1945 lên 95,8% năm 2020. Vì sao giáo dục phát triển vượt bậc sau 1986 so với thời bao cấp, và liên hệ thế nào với chính sách Đổi Mới?",
+"must_contain": [
+"1945",
+"95,8%",
+"Đổi Mới"
+]
+},
+{
+"bot_id": "test-spa-id",
+"type": "aggregation",
+"question": "Nếu một khách hàng mới muốn trải nghiệm dịch vụ triệt lông vùng Nách và sau đó muốn thêm dịch vụ Massage cổ vai gáy 60 phút, tổng chi phí ưu đãi cho khách hàng mới sẽ là bao nhiêu? Và nếu khách quyết định mua combo 10 buổi triệt lông Nách thay vì giá lẻ, khách tiết kiệm được bao nhiêu so với mua 10 buổi lẻ?",
+"must_contain": [
+"199.000",
+"1199000",
+"400.000",
+"99K"
+]
+},
+{
+"bot_id": "test-spa-id",
+"type": "comparison",
+"question": "Gói Buffet CNC 7 triệu bao gồm những dịch vụ nào mà Gói Buffet CNC 6 triệu không có? Trong các dịch vụ bổ sung đó, dịch vụ nào có giá lẻ cao nhất và giá bao nhiêu?",
+"must_contain": [
+"Gói Buffet CNC 7 triệu",
+"Peel trẻ hóa tái tạo tế bào Tretinoin",
+"2500000"
+]
+},
+{
+"bot_id": "test-spa-id",
+"type": "comparison",
+"question": "Dịch vụ Ấm nóng cổ tử cung đơn lẻ 60 phút và dịch vụ Ấm nóng cổ tử cung & thải độc bi 120 phút có mức giá khác nhau như thế nào? Nếu một khách muốn trải nghiệm liệu trình đầy đủ 120 phút thay vì 60 phút, khách phải trả thêm bao nhiêu tiền?",
+"must_contain": [
+"1200000",
+"3000000",
+"Ấm nóng cổ tử cung",
+"120 phút"
+]
+},
+{
+"bot_id": "test-spa-id",
+"type": "multi_hop",
+"question": "Khách hàng muốn triệt lông toàn thân và hỏi về combo 10 buổi. Nếu mua combo 10 buổi toàn thân, khách được tặng thêm bao nhiêu buổi và thời gian bảo hành là bao lâu?",
+"must_contain": [
+"11999000",
+"tặng thêm 5 buổi",
+"bảo hành 2 năm"
+]
+},
+{
+"bot_id": "test-spa-id",
+"type": "multi_hop",
+"question": "Nếu một khách hàng quan tâm dịch vụ trị nám/tàn nhang và muốn biết quy trình tư vấn, Dr. Medispa sẽ đề xuất gì trước khi lên phác đồ? Và địa chỉ cụ thể khách cần đến là ở đâu, tầng mấy?",
+"must_contain": [
+"soi da",
+"17 chỉ số",
+"102 Vũ Trọng Phụng",
+"tầng 2"
+]
+},
+{
+"bot_id": "test-spa-id",
+"type": "comparison",
+"question": "Dịch vụ chăm sóc da chuyên sâu có bao nhiêu bước quy trình chuẩn y khoa? So với dịch vụ trị mụn chuyên sâu cũng có 10 bước, hai dịch vụ này khác nhau về giá lẻ không? Giá ưu đãi khách mới của chăm sóc da chuyên sâu là bao nhiêu so với giá gốc?",
+"must_contain": [
+"10 bước chuẩn y khoa",
+"199k",
+"700K"
+]
+},
+{
+"bot_id": "thong-tu-09-2020-tt-nhnn",
+"type": "multi_hop",
+"question": "Khi một tổ chức phát hiện sự cố an toàn thông tin, trong vòng bao lâu phải báo cáo về Ngân hàng Nhà nước? Và sau khi hoàn thành khắc phục sự cố, báo cáo hoàn thành phải nộp trong vòng bao nhiêu ngày?",
+"must_contain": [
+"24 giờ",
+"05 ngày làm"
+]
+},
+{
+"bot_id": "thong-tu-09-2020-tt-nhnn",
+"type": "multi_hop",
+"question": "Hệ thống thông tin cấp độ 3 được xác định dựa trên tiêu chí nào? Nếu một hệ thống phục vụ hoạt động nội bộ hàng ngày không chấp nhận ngừng vận hành quá bao nhiêu giờ thì được xếp cấp độ 3?",
+"must_contain": [
+"cấp độ 3",
+"4 giờ làm việc"
+]
+},
+{
+"bot_id": "thong-tu-09-2020-tt-nhnn",
+"type": "multi_hop",
+"question": "Theo Điều 28, mã khóa bí mật phải có độ dài tối thiểu bao nhiêu ký tự và cấu tạo như thế nào?",
+"must_contain": [
+"sáu ký tự",
+"chữ hoa",
+"chữ thường",
+"ký tự đặc biệt"
+]
+},
+{
+"bot_id": "thong-tu-09-2020-tt-nhnn",
+"type": "aggregation",
+"question": "Khi một cá nhân trong tổ chức chấm dứt công việc, tổ chức phải thực hiện những bước nào theo Điều 16? Đồng thời theo Điều 15, tần suất tối thiểu phổ biến quy định an toàn thông tin cho nhân sự là bao lâu một lần?",
+"must_contain": [
+"Thu hồi",
+"quyền truy cập",
+"mỗi năm một lần"
+]
+},
+{
+"bot_id": "thong-tu-09-2020-tt-nhnn",
+"type": "comparison",
+"question": "Hợp đồng sử dụng dịch vụ điện toán đám mây với bên thứ ba cần có nội dung bổ sung gì? Bên thứ ba cung cấp dịch vụ điện toán đám mây phải đáp ứng điều kiện tối thiểu gì về tư cách pháp nhân?",
+"must_contain": [
+"báo cáo kiểm toán",
+"phải là doanh nghiệp"
+]
+},
+{
+"bot_id": "thong-tu-09-2020-tt-nhnn",
+"type": "multi_hop",
+"question": "Thông tư 09/2020/TT-NHNN có hiệu lực thi hành từ ngày nào và thay thế Thông tư nào trước đó? Cục Công nghệ thông tin có trách nhiệm báo cáo tình hình thực hiện lên Thống đốc với tần suất thế nào?",
+"must_contain": [
+"01 tháng 01 năm 2021",
+"18/2018/TT-NHNN",
+"hàng năm"
+]
+},
+{
+"bot_id": "luat-giao-thong",
+"type": "aggregation",
+"question": "Một tài xế ô tô vượt đèn đỏ và có nồng độ cồn mức 2 (từ 50mg đến dưới 80mg/100ml máu). Tổng mức phạt tiền tối thiểu và tối đa cho cả hai vi phạm là bao nhiêu? Ngoài phạt tiền còn bị xử lý thêm hình thức gì?",
+"must_contain": [
+"4.000.000",
+"6.000.000",
+"16.000.000",
+"18.000.000",
+"Tước"
+]
+},
+{
+"bot_id": "luat-giao-thong",
+"type": "comparison",
+"question": "So sánh mức phạt nồng độ cồn mức 3 (từ 80mg/100ml máu trở lên) giữa ô tô và xe máy: tiền phạt và thời gian tước GPLX khác nhau thế nào? Loại nào bị phạt nặng hơn?",
+"must_contain": [
+"30.000.000",
+"40.000.000",
+"6.000.000",
+"8.000.000"
+]
+},
+{
+"bot_id": "luat-giao-thong",
+"type": "multi_hop",
+"question": "Xe máy từ 50cc trở lên bắt buộc phải có loại GPLX nào? Nếu người điều khiển xe máy trên 50cc không có GPLX và đi không đúng làn đường, tổng mức phạt tối thiểu cho cả hai vi phạm là bao nhiêu?",
+"must_contain": [
+"A1",
+"1.000.000",
+"300.000"
+]
+},
+{
+"bot_id": "luat-giao-thong",
+"type": "multi_hop",
+"question": "Tại nơi giao nhau có vòng xuyến, xe nào được ưu tiên đi trước? Nếu tài xế ô tô vượt xe sai quy định và bị xử phạt, mức phạt tiền và hình thức bổ sung là gì?",
+"must_contain": [
+"vòng xuyến",
+"3.000.000",
+"5.000.000",
+"Tước"
+]
+},
+{
+"bot_id": "luat-giao-thong",
+"type": "aggregation",
+"question": "Đối với ô tô, nếu để người ngồi trên xe không thắt dây an toàn và đồng thời đỗ xe trên phần đường xe chạy gây cản trở, tổng mức phạt tối thiểu và tối đa cho cả hai vi phạm là bao nhiêu?",
+"must_contain": [
+"800.000",
+"1.000.000"
+]
+},
+{
+"bot_id": "luat-giao-thong",
+"type": "conditional",
+"question": "Xe máy có được phép đi trên đường cao tốc không? Nếu một người lái ô tô vượt tốc độ 35km/h trở lên trên cao tốc và dừng xe không đúng quy định, tổng mức phạt tối thiểu cho cả hai vi phạm là bao nhiêu?",
+"must_contain": [
+"KHÔNG",
+"cao tốc",
+"4.000.000",
+"6.000.000"
+]
+},
+{
+"bot_id": "y-te-co-ban",
+"type": "multi_hop",
+"question": "Một bệnh nhân nam vòng eo 95 cm, đường huyết đói 108 mg/dL, triglyceride 160 mg/dL, HDL 38 mg/dL, huyết áp 132/86 mmHg. Bệnh nhân có đủ điều kiện hội chứng chuyển hóa không? Mức đường huyết đói 108 mg/dL nói lên điều gì?",
+"must_contain": [
+"hội chứng chuyển hóa",
+"tiền đái tháo đường",
+"100-125"
+]
+},
+{
+"bot_id": "y-te-co-ban",
+"type": "comparison",
+"question": "Bệnh nhân đái tháo đường type 2 có HbA1c 8,2%, đường huyết sau ăn 2 giờ 210 mg/dL, huyết áp 145/92 mmHg. So với mục tiêu kiểm soát: mục tiêu nào chưa đạt? Huyết áp mục tiêu cho bệnh nhân tiểu đường là bao nhiêu, khác gì người không tiểu đường?",
+"must_contain": [
+"HbA1c <7%",
+"180",
+"130/80",
+"140/90"
+]
+},
+{
+"bot_id": "y-te-co-ban",
+"type": "multi_hop",
+"question": "Một người đang điều trị đái tháo đường type 2 đột ngột run tay, vã mồ hôi, đói cồn cào, chóng mặt. Đây là tình trạng gì? Quy trình xử trí tức thời (liều lượng cụ thể) và sau bao nhiêu phút kiểm tra lại?",
+"must_contain": [
+"hạ đường huyết",
+"15-20g",
+"15 phút"
+]
+},
+{
+"bot_id": "y-te-co-ban",
+"type": "multi_hop",
+"question": "Bệnh nhân đau vùng thượng vị tăng khi đói, giảm sau ăn — loại viêm loét nào thường gặp hơn? Phương pháp chẩn đoán chính xác nhất là gì và có những phương pháp kiểm tra H. pylori nào?",
+"must_contain": [
+"loét tá tràng",
+"nội soi",
+"H. pylori"
+]
+},
+{
+"bot_id": "y-te-co-ban",
+"type": "synthesis",
+"question": "Trước khi đo huyết áp tại nhà cần chuẩn bị thế nào? Nếu kết quả liên tục tâm thu 155 và tâm trương 95 mmHg thì thuộc phân loại nào, và biến chứng não nào có thể xảy ra nếu không kiểm soát?",
+"must_contain": [
+"nghỉ ngơi 5 phút",
+"tăng huyết áp",
+"đột quỵ"
+]
+},
+{
+"bot_id": "y-te-co-ban",
+"type": "conditional",
+"question": "Virus cúm có thời gian ủ bệnh bao lâu? Nếu một người trên 65 tuổi bị cúm và khó thở, đau ngực — thuộc nhóm nguy cơ nào và cần làm gì? Vaccine cúm khuyến cáo tiêm thời điểm nào?",
+"must_contain": [
+"1-4 ngày",
+"cao tuổi",
+"vaccine cúm hàng năm"
+]
+},
+{
+"bot_id": "vat-ly-11",
+"type": "multi_hop",
+"question": "Hai điện tích Q1=+4μC và Q2=-1μC cách nhau 30cm trong chân không. Tính lực Coulomb giữa chúng. Tìm điểm M trên đường thẳng nối Q1Q2 mà cường độ điện trường tổng bằng 0 — M cách Q1 và Q2 bao nhiêu, và vì sao M không nằm giữa hai điện tích?",
+"must_contain": [
+"F = k",
+"9.10^9",
+"M",
+"ngoài"
+]
+},
+{
+"bot_id": "vat-ly-11",
+"type": "multi_hop",
+"question": "Mạch điện R1=6Ω nối tiếp (R2=4Ω song song R3=4Ω), E=12V, r=1Ω. Tính: cường độ dòng mạch chính I; hiệu điện thế hai đầu nguồn U; công suất toàn mạch P; công suất tỏa nhiệt trên r và công suất có ích.",
+"must_contain": [
+"R23 = 2",
+"I = 4/3",
+"P = 16 W"
+]
+},
+{
+"bot_id": "vat-ly-11",
+"type": "multi_hop",
+"question": "Solenoid N=1000 vòng, dài l=0,5m, tiết diện S=10cm², lõi không khí, I=2A. Tính cảm ứng từ bên trong B=μ₀nI; hệ số tự cảm L=μ₀N²S/l; năng lượng từ trường W_L. Vì sao từ trường ngoài solenoid rất yếu?",
+"must_contain": [
+"B = ",
+"L = ",
+"W_L",
+"yếu"
+]
+},
+{
+"bot_id": "vat-ly-11",
+"type": "multi_hop",
+"question": "Proton q=+1,6×10⁻¹⁹C, m=1,67×10⁻²⁷kg bay vào từ trường đều B=0,2T với v=3×10⁶ m/s vuông góc B. Tính lực Lorentz; bán kính quỹ đạo R; chu kỳ T và vì sao T không phụ thuộc vận tốc?",
+"must_contain": [
+"F = ",
+"R = m",
+"T = 2",
+"không phụ thuộc"
+]
+},
+{
+"bot_id": "vat-ly-11",
+"type": "multi_hop",
+"question": "Vòng dây N=100 vòng, từ thông qua vòng dây thay đổi từ 0,05 Wb xuống 0,01 Wb trong 0,02s. Tính suất điện động cảm ứng trung bình theo Faraday. Theo định luật Lenz, dòng cảm ứng tạo từ trường chiều thế nào so với từ trường ngoài khi từ thông giảm?",
+"must_contain": [
+"e",
+"delta",
+"Lenz",
+"cùng chiều"
+]
+},
+{
+"bot_id": "vat-ly-11",
+"type": "synthesis",
+"question": "Hai bản phẳng cách nhau d=4mm, U=80V. Tính cường độ điện trường đều giữa hai bản. Một electron đi từ bản âm sang bản dương theo chiều điện trường, tính công của lực điện khi đi hết d. Nếu đặt thủy tinh (ε≈7) vào giữa, lực Coulomb thay đổi thế nào so với chân không?",
+"must_contain": [
+"E = U",
+"A = ",
+"ε"
+]
+},
+{
+"bot_id": "hoa-hoc-10",
+"type": "synthesis",
+"question": "Pin Daniel hoạt động thế nào? Tính suất điện động pin Daniel theo thế điện cực chuẩn. Nếu thay cực kẽm bằng nhôm (Al³⁺/Al), suất điện động pin thay đổi thế nào? Giải thích theo quy tắc alpha.",
+"must_contain": [
+"anode",
+"cathode",
+"1,10 V",
+"Al"
+]
+},
+{
+"bot_id": "hoa-hoc-10",
+"type": "comparison",
+"question": "So sánh liên kết trong NaCl và CH4: loại liên kết mỗi phân tử dựa vào hiệu độ âm điện (Na 0,93; Cl 3,16; C 2,55; H 2,20)? Dạng hình học CH4 theo VSEPR và góc liên kết? Lai hóa của carbon trong CH4?",
+"must_contain": [
+"ion",
+"tứ diện",
+"109,5",
+"sp3"
+]
+},
+{
+"bot_id": "hoa-hoc-10",
+"type": "multi_hop",
+"question": "Cân bằng Fe + CuSO4 → FeSO4 + Cu bằng thăng bằng electron. Xác định số oxi hóa Fe và Cu trước/sau, chất khử và chất oxi hóa. Vì sao Fe đẩy được Cu ra khỏi dung dịch CuSO4 dựa vào dãy điện hóa?",
+"must_contain": [
+"chất khử",
+"chất oxi hóa",
+"kim loại mạnh"
+]
+},
+{
+"bot_id": "hoa-hoc-10",
+"type": "synthesis",
+"question": "Nguyên tố X có cấu hình 1s²2s²2p⁶3s²3p⁵ (Z=17). Xác định vị trí X trong bảng tuần hoàn (chu kỳ, nhóm), X là kim loại/phi kim? So sánh bán kính nguyên tử X với S (Z=16) cùng chu kỳ và Br (Z=35) cùng nhóm. Độ âm điện Cl (3,16) so với F (3,98) phản ánh xu hướng gì theo chu kỳ?",
+"must_contain": [
+"phi kim",
+"bán kính giảm",
+"bán kính tăng"
+]
+},
+{
+"bot_id": "hoa-hoc-10",
+"type": "comparison",
+"question": "NH3 và BF3 đều có nguyên tử trung tâm liên kết 3 nguyên tử. Số cặp electron tự do trên nguyên tử trung tâm mỗi phân tử? Dạng hình học VSEPR và góc liên kết? Lai hóa của N trong NH3 và B trong BF3 khác nhau thế nào?",
+"must_contain": [
+"tam giác phẳng",
+"120",
+"sp2",
+"sp3"
+]
+},
+{
+"bot_id": "hoa-hoc-10",
+"type": "conditional",
+"question": "Liên kết hydrogen giải thích nhiệt độ sôi cao của H2O. Điều kiện tạo liên kết hydrogen là gì? Lai hóa của oxygen trong H2O và hình học VSEPR? Nếu thay H2O bằng CH4 — CH4 có tạo liên kết hydrogen không, nhiệt độ sôi cao hơn hay thấp hơn H2O?",
+"must_contain": [
+"liên kết hydrogen",
+"100",
+"sp3",
+"không"
+]
+},
+{
+"bot_id": "toan-hoc-12",
+"type": "multi_hop",
+"question": "Hàm số y = x⁴ - 8x² + 7 có bao nhiêu điểm cực trị? Xác định tọa độ các điểm cực tiểu và so sánh giá trị cực tiểu với giá trị hàm tại x=0 (cực đại).",
+"must_contain": [
+"3 điểm cực trị",
+"x = 0",
+"cực đại"
+]
+},
+{
+"bot_id": "toan-hoc-12",
+"type": "multi_hop",
+"question": "Cho z² + 2z + 5 = 0. Tính delta, tìm hai nghiệm phức z1 và z2, xác định module |z1| và kiểm tra z2 có phải liên hợp của z1.",
+"must_contain": [
+"delta",
+"-1 + 2i",
+"-1 - 2i",
+"liên hợp"
+]
+},
+{
+"bot_id": "toan-hoc-12",
+"type": "conditional",
+"question": "Hàm số y = (mx+1)/(x+m) là hàm phân thức bậc nhất hợp lệ khi nào? Nếu m thỏa điều kiện đó, xác định dấu của y' và kết luận hàm đồng biến hay nghịch biến trên mỗi khoảng xác định.",
+"must_contain": [
+"ad - bc",
+"đồng biến",
+"nghịch biến"
+]
+},
+{
+"bot_id": "toan-hoc-12",
+"type": "comparison",
+"question": "Hàm mũ f(x)=aˣ với 0<a<1 đơn điệu thế nào? Giải bất phương trình a^f(x) > a^g(x) với 0<a<1 thì so sánh f(x) và g(x) thay đổi thế nào so với trường hợp a>1?",
+"must_contain": [
+"nghịch biến",
+"f(x) < g(x)",
+"đảo chiều"
+]
+},
+{
+"bot_id": "toan-hoc-12",
+"type": "multi_hop",
+"question": "Dùng Newton-Leibniz, tính tích phân từ 0 đến 2 của (3x² - 2x + 1)dx. Giải thích ý nghĩa hình học của kết quả khi f(x)≥0 trên [0;2].",
+"must_contain": [
+"x^3 - x^2 + x",
+"6",
+"diện tích"
+]
+},
+{
+"bot_id": "toan-hoc-12",
+"type": "synthesis",
+"question": "Cho y = x³ - 3x² - 9x + 2. Tính y' và tìm các điểm cực trị. Nếu y' đổi dấu từ dương sang âm tại một điểm thì điểm đó là cực đại hay cực tiểu? Áp dụng xác định cực đại và cực tiểu của hàm.",
+"must_contain": [
+"x = 3",
+"x = -1",
+"cực đại",
+"cực tiểu"
+]
+},
+{
+"bot_id": "kinh-te-vi-mo",
+"type": "multi_hop",
+"question": "Chính phủ tăng chi tiêu thêm 100 tỷ, MPC=0,8, GDP tăng bao nhiêu theo hiệu ứng số nhân? Hiện tượng này có thể bị triệt tiêu bởi hiệu ứng nào nếu chính phủ vay nợ để tài trợ?",
+"must_contain": [
+"số nhân",
+"500 tỷ",
+"lấn át"
+]
+},
+{
+"bot_id": "kinh-te-vi-mo",
+"type": "synthesis",
+"question": "Trong suy thoái (GDP giảm ít nhất 2 quý liên tiếp), chính phủ áp dụng tài khóa mở rộng. Mô tả cơ chế tác động lên đường AD và vì sao tiền tệ mở rộng bổ trợ thêm.",
+"must_contain": [
+"2 quý",
+"G tăng",
+"AD dịch phải",
+"giảm lãi suất"
+]
+},
+{
+"bot_id": "kinh-te-vi-mo",
+"type": "multi_hop",
+"question": "Ngân hàng trung ương giảm tỉ lệ dự trữ bắt buộc từ 10% xuống 5%. Số nhân tiền tệ thay đổi thế nào? Nếu đồng thời bơm thêm 1.000 tỷ, cung tiền tối đa tăng thêm bao nhiêu sau khi đổi tỉ lệ dự trữ?",
+"must_contain": [
+"số nhân",
+"10",
+"20",
+"10.000 tỷ"
+]
+},
+{
+"bot_id": "kinh-te-vi-mo",
+"type": "comparison",
+"question": "So sánh hiệu quả chính sách tài khóa và tiền tệ trong hai chế độ tỉ giá theo Mundell-Fleming. Chế độ nào phù hợp hơn để chống lạm phát khi cả hai chính sách cùng thắt chặt?",
+"must_contain": [
+"Mundell-Fleming",
+"tỉ giá linh hoạt",
+"tỉ giá cố định"
+]
+},
+{
+"bot_id": "kinh-te-vi-mo",
+"type": "multi_hop",
+"question": "Theo phương trình Fisher M×V=P×Q, nếu V và Q không đổi, tăng cung tiền M dẫn đến gì với mức giá P? Hàm Cobb-Douglas Y=A·K^α·L^(1-α) giải thích vì sao dài hạn chỉ tiến bộ công nghệ A mới duy trì tăng trưởng GDP bình quân đầu người.",
+"must_contain": [
+"lạm phát",
+"Cobb-Douglas",
+"công nghệ"
+]
+},
+{
+"bot_id": "kinh-te-vi-mo",
+"type": "synthesis",
+"question": "Điều kiện Marshall-Lerner yêu cầu gì để phá giá đồng tiền cải thiện cán cân thương mại? Vì sao ngay sau khi phá giá, hiệu ứng đường cong J khiến cán cân thương mại xấu đi trước?",
+"must_contain": [
+"Marshall-Lerner",
+"đường cong J",
+"xấu đi trước"
+]
+},
+{
+"bot_id": "tin-hoc-co-ban",
+"type": "comparison",
+"question": "Hàm VLOOKUP tìm 'A001' trong $B$1:$D$100 trả về cột 3. Nếu thay bằng INDEX+MATCH, cú pháp thay đổi thế nào và ưu điểm INDEX+MATCH so với VLOOKUP khi cần tra cứu sang trái?",
+"must_contain": [
+"VLOOKUP",
+"INDEX",
+"MATCH",
+"sang trái"
+]
+},
+{
+"bot_id": "tin-hoc-co-ban",
+"type": "multi_hop",
+"question": "Viết công thức Excel xếp loại: >=9 'Xuất sắc', >=7 'Khá', >=5 'Trung bình', còn lại 'Yếu'. Sau đó dùng COUNTIF đếm số học sinh loại 'Khá' trong cột kết quả.",
+"must_contain": [
+"IF",
+"COUNTIF",
+"Khá"
+]
+},
+{
+"bot_id": "tin-hoc-co-ban",
+"type": "conditional",
+"question": "Trong Python, nếu mở file 'output.txt' chế độ 'w' và ghi nội dung, điều gì xảy ra với file cũ? Nếu muốn giữ nội dung cũ và chỉ thêm dòng mới, cần dùng chế độ nào và hàm nào?",
+"must_contain": [
+"w",
+"xóa",
+"a",
+"append"
+]
+},
+{
+"bot_id": "tin-hoc-co-ban",
+"type": "comparison",
+"question": "Router hoạt động ở lớp nào trong OSI và chức năng chính? So với Switch ở lớp 2 — khác biệt về xử lý dữ liệu là gì, và giao thức nào ở lớp 3 Router dùng để định tuyến?",
+"must_contain": [
+"lớp 3",
+"Switch",
+"lớp 2",
+"IP"
+]
+},
+{
+"bot_id": "tin-hoc-co-ban",
+"type": "multi_hop",
+"question": "Địa chỉ IP 192.168.1.100 với subnet 255.255.255.0 thuộc lớp nào IPv4? Là IP riêng hay công cộng? Vì sao không định tuyến trực tiếp trên Internet và giao thức nào tự động cấp IP này?",
+"must_contain": [
+"192.168",
+"Lớp C",
+"DHCP"
+]
+},
+{
+"bot_id": "tin-hoc-co-ban",
+"type": "synthesis",
+"question": "Mã hóa đối xứng (AES) và bất đối xứng (RSA) khác nhau ở cách dùng khóa thế nào? Tấn công Man-in-the-Middle ngăn chặn bằng cơ chế nào, và HTTPS dùng giao thức mã hóa gì để bảo vệ kết nối web?",
+"must_contain": [
+"1 khóa",
+"public key",
+"private key",
+"TLS"
+]
+},
+{
+"bot_id": "sinh-hoc-12",
+"type": "conditional",
+"question": "Lai P: AABB (trơn vàng) × aabb (nhăn xanh), F2 tỉ lệ 9:3:3:1. Điều kiện nào phải thỏa để tỉ lệ này đúng, và nếu hai gen nằm trên cùng một nhiễm sắc thể thì F2 thay đổi thế nào so với phân li độc lập?",
+"must_contain": [
+"phân li độc lập",
+"9:3:3:1",
+"liên kết gen"
+]
+},
+{
+"bot_id": "sinh-hoc-12",
+"type": "multi_hop",
+"question": "Quy tắc Bergmann: động vật máu nóng vùng lạnh có kích thước lớn hơn để giữ nhiệt. Liên hệ với chọn lọc tự nhiên của Darwin (1859) và giải thích vì sao đặc điểm đó duy trì qua các thế hệ.",
+"must_contain": [
+"chọn lọc tự nhiên",
+"1859",
+"biến dị"
+]
+},
+{
+"bot_id": "sinh-hoc-12",
+"type": "comparison",
+"question": "Tần số hoán vị 1% = 1cM. Nếu hai gen tần số hoán vị 20cM nằm cùng NST ở trạng thái AB/ab, so sánh tỉ lệ kiểu hình đời con trong lai phân tích với trường hợp phân li độc lập hoàn toàn.",
+"must_contain": [
+"hoán vị",
+"liên kết gen",
+"phân li độc lập"
+]
+},
+{
+"bot_id": "sinh-hoc-12",
+"type": "multi_hop",
+"question": "Lúa mì bánh mì (Triticum aestivum) dị lục bội 2n=42 hình thành qua lai xa + đa bội hóa. Theo Hardy-Weinberg quần thể lớn giao phối ngẫu nhiên duy trì tần số allele. Vì sao loài dị đa bội cách li sinh sản ngay với dạng lưỡng bội bố mẹ, và vi phạm điều kiện nào của Hardy-Weinberg?",
+"must_contain": [
+"đa bội",
+"Hardy-Weinberg",
+"cách li sinh sản"
+]
+},
+{
+"bot_id": "sinh-hoc-12",
+"type": "comparison",
+"question": "Bệnh mù màu do gen lặn trên X. Phụ nữ mang gen (XCXc) kết hôn với đàn ông bình thường (XCY): tỉ lệ con trai bị bệnh và con gái mang gen? So với bệnh máu khó đông (hemophilia) cơ chế tương tự — hai bệnh giống và khác nhau gì về biểu hiện theo giới tính?",
+"must_contain": [
+"mù màu",
+"hemophilia",
+"liên kết X"
+]
+},
+{
+"bot_id": "sinh-hoc-12",
+"type": "synthesis",
+"question": "Hiệu suất sinh thái trung bình giữa các bậc dinh dưỡng là 10%. Nếu sinh vật sản xuất bậc 1 tích lũy 10.000 kcal, tính năng lượng tối đa còn lại ở bậc 4. Vì sao rừng nhiệt đới dù nhiều tầng dinh dưỡng vẫn duy trì quần xã đỉnh cực bền vững?",
+"must_contain": [
+"10%",
+"rừng nhiệt đới",
+"bậc 4"
+]
+},
+{
+"bot_id": "dia-ly-vn",
+"type": "comparison",
+"question": "Đồng bằng sông Cửu Long ~40.000 km² là vùng lúa lớn nhất, Đông Nam Bộ chỉ 23.605 km² nhưng đóng góp hơn 30% GDP. So sánh lợi thế kinh tế hai vùng và vì sao vùng nhỏ hơn đóng góp GDP lớn hơn nhiều.",
+"must_contain": [
+"Đồng bằng sông Cửu Long",
+"Đông Nam Bộ",
+"30% GDP"
+]
+},
+{
+"bot_id": "dia-ly-vn",
+"type": "synthesis",
+"question": "Sông Mê Kông dài 4.880 km, lưu lượng trung bình ~13.800 m³/s tại Tân Châu Châu Đốc, 60% nước mặt Việt Nam phát sinh ngoài lãnh thổ. Phân tích rủi ro an ninh nguồn nước và tác động xâm nhập mặn đến đất lúa Đồng bằng sông Cửu Long trong bối cảnh biến đổi khí hậu.",
+"must_contain": [
+"Mê Kông",
+"4.880 km",
+"60%",
+"xâm nhập mặn"
+]
+},
+{
+"bot_id": "dia-ly-vn",
+"type": "multi_hop",
+"question": "Trung du và Miền núi phía Bắc diện tích lớn nhất (101.559 km²) nhưng GDP bình quân đầu người thấp nhất, dù giàu khoáng sản (than, sắt, đồng, apatit) và du lịch Sa Pa. Giải thích nghịch lý tài nguyên phong phú nhưng thu nhập thấp.",
+"must_contain": [
+"Trung du và Miền núi phía Bắc",
+"101.559 km²",
+"apatit"
+]
+},
+{
+"bot_id": "dia-ly-vn",
+"type": "synthesis",
+"question": "Việt Nam cam kết Net Zero 2050 (COP26) và giảm 9% phát thải vào 2030, tiềm năng điện gió 500-600 GW, nhưng là 1 trong 5 nước xả rác nhựa ra biển nhiều nhất. Phân tích mối liên hệ giữa cam kết khí hậu quốc tế và ô nhiễm biển hiện nay.",
+"must_contain": [
+"Net Zero",
+"2050",
+"500-600 GW",
+"rác nhựa"
+]
+},
+{
+"bot_id": "dia-ly-vn",
+"type": "comparison",
+"question": "Phong Nha-Kẻ Bàng (Quảng Bình, 123.326 ha) UNESCO công nhận 2003, Vịnh Hạ Long 1994. Bắc Trung Bộ và Duyên hải Miền Trung nổi tiếng du lịch biển (Hội An UNESCO). So sánh giá trị di sản hai khu vực và lợi thế du lịch đặc thù mỗi nơi.",
+"must_contain": [
+"Phong Nha",
+"Hạ Long",
+"Hội An",
+"UNESCO"
+]
+},
+{
+"bot_id": "dia-ly-vn",
+"type": "multi_hop",
+"question": "Mỏ dầu Bạch Hổ lớn nhất Việt Nam ngoài khơi Bà Rịa-Vũng Tàu thuộc Đông Nam Bộ — vùng đóng góp hơn 30% GDP. Phân tích tác động kép của ngành dầu khí: đóng góp kinh tế và nguy cơ ô nhiễm biển trong bối cảnh Việt Nam ký Thỏa thuận Paris (2015).",
+"must_contain": [
+"Bạch Hổ",
+"Bà Rịa-Vũng Tàu",
+"30% GDP"
+]
+},
+{
+"bot_id": "lich-su-vn",
+"type": "comparison",
+"question": "Lý Thường Kiệt đánh Tống 1075-1077 và viết 'Nam quốc sơn hà' — tuyên ngôn độc lập đầu tiên. Hơn 850 năm sau, Hồ Chí Minh ra Lời kêu gọi toàn quốc kháng chiến (19-12-1946). So sánh bối cảnh và ý nghĩa hai văn kiện/sự kiện trong khẳng định chủ quyền dân tộc.",
+"must_contain": [
+"Lý Thường Kiệt",
+"Nam quốc sơn hà",
+"19-12-1946"
+]
+},
+{
+"bot_id": "lich-su-vn",
+"type": "comparison",
+"question": "Khởi nghĩa Yên Bái (10-2-1930) do Nguyễn Thái Học lãnh đạo thất bại. Chiến dịch Điện Biên Phủ (1954) thắng lợi với tướng De Castries đầu hàng sau 56 ngày đêm. Phân tích khác biệt về tổ chức, lực lượng, kết quả giữa khởi nghĩa 1930 và chiến dịch 1954.",
+"must_contain": [
+"Yên Bái",
+"Nguyễn Thái Học",
+"Điện Biên Phủ",
+"De Castries"
+]
+},
+{
+"bot_id": "lich-su-vn",
+"type": "multi_hop",
+"question": "Trước Đổi Mới (1986) lạm phát 774,7% và nhập khẩu 1,5 triệu tấn gạo/năm. Sau Khoán 10 (1988), năm 1989 lần đầu xuất khẩu 1,5 triệu tấn gạo. Phân tích cơ chế nhân quả: Khoán 10 tác động đến sản xuất nông nghiệp thế nào để chuyển từ nhập khẩu sang xuất khẩu gạo chỉ trong một năm?",
+"must_contain": [
+"774,7%",
+"Khoán 10",
+"xuất khẩu",
+"1,5 triệu tấn"
+]
+},
+{
+"bot_id": "lich-su-vn",
+"type": "multi_hop",
+"question": "Tổng tiến công Tết Mậu Thân (30-1-1968) tấn công 44 tỉnh thành và đại sứ quán Mỹ; đỉnh cao quân Mỹ ở miền Nam 543.000 quân (1969). Chiến dịch Hồ Chí Minh kết thúc 30-4-1975 với Dương Văn Minh đầu hàng. Phân tích Tết Mậu Thân làm thay đổi chiến lược Mỹ thế nào và tạo tiền đề gì cho 30-4-1975.",
+"must_contain": [
+"Tết Mậu Thân",
+"44 tỉnh thành",
+"30-4-1975",
+"Dương Văn Minh"
+]
+},
+{
+"bot_id": "lich-su-vn",
+"type": "synthesis",
+"question": "Nhà Nguyễn (1802-1945): Gia Long thống nhất 1802 đặt tên Việt Nam, Bảo Đại thoái vị 25-8-1945. Tỉ lệ biết chữ 1945 chỉ ~5% nhưng đến 2020 đạt 95,8%. Tổng hợp: sự sụp đổ phong kiến Nhà Nguyễn và Cách mạng tháng Tám 1945 tạo thay đổi cơ bản gì về giáo dục, dân trí 75 năm tiếp theo?",
+"must_contain": [
+"Bảo Đại",
+"25-8-1945",
+"5%",
+"95,8%"
+]
+},
+{
+"bot_id": "lich-su-vn",
+"type": "conditional",
+"question": "Hiệp định Giơnevơ (20-7-1954) chia cắt Việt Nam ở vĩ tuyến 17, lấy sông Bến Hải làm ranh giới. Sau đó Mỹ chi 168 tỷ USD và mất 58.220 binh sĩ (1965-1975). Nếu Giơnevơ thi hành đúng hạn (tổng tuyển cử 1956), phân tích: liệu Việt Nam có tránh được 20 năm chiến tranh và chi phí nhân mạng đó không?",
+"must_contain": [
+"Giơnevơ",
+"vĩ tuyến 17",
+"Bến Hải",
+"58.220"
+]
+}
+]

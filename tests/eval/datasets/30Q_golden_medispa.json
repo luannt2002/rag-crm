@@ -1,0 +1,187 @@
+[
+  {
+    "question": "Thời gian phục hồi sau dịch vụ trẻ hóa da bằng laser thông thường là bao lâu?",
+    "ground_truth_answer": "Thời gian phục hồi sau dịch vụ trẻ hóa da bằng laser thông thường kéo dài từ vài ngày đến hai tuần, tùy mức độ thâm nhập và phản ứng cá nhân, được nêu trong tài liệu hướng dẫn sau dịch vụ.",
+    "ground_truth_contexts": ["Tài liệu hướng dẫn sau dịch vụ ghi rõ thời gian phục hồi từ vài ngày đến hai tuần tùy loại laser."],
+    "difficulty": "simple_lookup"
+  },
+  {
+    "question": "Khách hàng có cần khám tư vấn trước khi sử dụng dịch vụ tiêm filler không?",
+    "ground_truth_answer": "Khách hàng cần khám tư vấn trước khi sử dụng dịch vụ tiêm filler, bao gồm đánh giá tiền sử dị ứng, tình trạng da và thống nhất kế hoạch điều trị với bác sĩ chuyên môn.",
+    "ground_truth_contexts": ["Quy trình tư vấn trước dịch vụ tiêm filler bao gồm khám tiền sử dị ứng và đánh giá tình trạng da."],
+    "difficulty": "simple_lookup"
+  },
+  {
+    "question": "Các tác dụng phụ thường gặp sau dịch vụ tiêm botox là gì?",
+    "ground_truth_answer": "Các tác dụng phụ thường gặp sau tiêm botox gồm sưng nhẹ, bầm tím tại vị trí tiêm, đau đầu thoáng qua, đôi khi căng cơ; thường tự hết trong vài ngày đến một tuần.",
+    "ground_truth_contexts": ["Tài liệu hướng dẫn liệt kê tác dụng phụ thường gặp sau tiêm botox: sưng, bầm tím, đau đầu thoáng qua."],
+    "difficulty": "simple_lookup"
+  },
+  {
+    "question": "Khách hàng cần chuẩn bị gì trước khi đến lần tư vấn da đầu tiên?",
+    "ground_truth_answer": "Khách hàng cần chuẩn bị thông tin tiền sử bệnh, dị ứng, các sản phẩm chăm sóc da đang dùng và đến không trang điểm để bác sĩ đánh giá tình trạng da chính xác.",
+    "ground_truth_contexts": ["Hướng dẫn trước lần tư vấn da yêu cầu khách hàng không trang điểm và mang theo thông tin tiền sử."],
+    "difficulty": "simple_lookup"
+  },
+  {
+    "question": "Sau dịch vụ peel da hóa học, khách hàng cần kiêng những hoạt động nào?",
+    "ground_truth_answer": "Sau peel da hóa học, khách hàng cần tránh nắng trực tiếp, không bơi nước biển hay hồ bơi clorin, không trang điểm trong khoảng thời gian được hướng dẫn và dùng kem chống nắng đúng cách.",
+    "ground_truth_contexts": ["Hướng dẫn sau peel da hóa học liệt kê các hoạt động cần kiêng: tránh nắng, không bơi, không trang điểm."],
+    "difficulty": "simple_lookup"
+  },
+  {
+    "question": "Quy trình điều trị mụn viêm tại cơ sở gồm những bước nào và mất bao lâu cho một liệu trình hoàn chỉnh?",
+    "ground_truth_answer": "Quy trình điều trị mụn viêm gồm thăm khám, vệ sinh chuyên sâu, lấy nhân mụn, chiếu ánh sáng kháng viêm và chăm sóc tại nhà; liệu trình hoàn chỉnh thường kéo dài nhiều tuần, tùy mức độ tổn thương.",
+    "ground_truth_contexts": ["Quy trình điều trị mụn viêm gồm các bước thăm khám, vệ sinh, lấy nhân mụn, chiếu ánh sáng.", "Tài liệu nêu liệu trình hoàn chỉnh kéo dài nhiều tuần tùy tình trạng tổn thương."],
+    "difficulty": "multi_hop"
+  },
+  {
+    "question": "Trường hợp khách hàng có tiền sử dị ứng nặng, cơ sở áp dụng quy trình tư vấn và chỉ định dịch vụ ra sao?",
+    "ground_truth_answer": "Khách hàng có tiền sử dị ứng nặng được khám sàng lọc kỹ, có thể thực hiện test thử nghiệm trên vùng da nhỏ; bác sĩ điều chỉnh hoặc loại trừ dịch vụ có nguy cơ cao và ghi nhận tiền sử trong hồ sơ.",
+    "ground_truth_contexts": ["Quy trình sàng lọc khách hàng có tiền sử dị ứng nặng bao gồm test thử nghiệm trên vùng da nhỏ.", "Bác sĩ điều chỉnh dịch vụ và ghi nhận tiền sử dị ứng trong hồ sơ khách hàng."],
+    "difficulty": "multi_hop"
+  },
+  {
+    "question": "Khách hàng sau khi tiêm filler vùng môi cần lưu ý chăm sóc thế nào trong 48 giờ đầu và sau một tuần?",
+    "ground_truth_answer": "Trong 48 giờ đầu sau tiêm filler môi, khách hàng tránh chạm tay, không trang điểm môi, hạn chế ăn đồ nóng và massage; sau một tuần có thể trở lại sinh hoạt bình thường, theo dõi tái khám theo lịch.",
+    "ground_truth_contexts": ["Hướng dẫn 48 giờ đầu sau tiêm filler môi: tránh chạm tay, không trang điểm, hạn chế đồ nóng.", "Hướng dẫn sau một tuần: sinh hoạt bình thường, tái khám theo lịch."],
+    "difficulty": "multi_hop"
+  },
+  {
+    "question": "Đối với khách hàng đang mang thai hoặc cho con bú, những dịch vụ nào bị chống chỉ định và quy trình xử lý ra sao?",
+    "ground_truth_answer": "Khách hàng đang mang thai hoặc cho con bú bị chống chỉ định một số dịch vụ như tiêm filler, tiêm botox, sử dụng laser công suất cao; cơ sở tư vấn các phương án thay thế an toàn và ghi rõ vào hồ sơ.",
+    "ground_truth_contexts": ["Quy định chống chỉ định tiêm filler, botox và laser công suất cao cho phụ nữ mang thai và cho con bú.", "Quy trình tư vấn phương án thay thế an toàn và ghi vào hồ sơ khách hàng."],
+    "difficulty": "multi_hop"
+  },
+  {
+    "question": "Khi xảy ra phản ứng dị ứng nghiêm trọng tại cơ sở, quy trình cấp cứu và liên hệ y tế bên ngoài được thực hiện như thế nào?",
+    "ground_truth_answer": "Khi xảy ra phản ứng dị ứng nghiêm trọng, cơ sở thực hiện sơ cứu theo phác đồ, tiêm thuốc cấp cứu nếu cần, đồng thời gọi xe cấp cứu để chuyển khách hàng tới bệnh viện gần nhất và thông báo người nhà.",
+    "ground_truth_contexts": ["Phác đồ sơ cứu phản ứng dị ứng nghiêm trọng tại cơ sở.", "Quy trình gọi xe cấp cứu, chuyển bệnh viện và thông báo người nhà."],
+    "difficulty": "multi_hop"
+  },
+  {
+    "question": "Trường hợp khách hàng không hài lòng với kết quả điều trị, quy trình tiếp nhận khiếu nại và bồi thường được áp dụng như thế nào?",
+    "ground_truth_answer": "Khách hàng không hài lòng có thể gửi khiếu nại bằng văn bản hoặc trực tiếp; cơ sở tiếp nhận, đánh giá lại kết quả với hội đồng chuyên môn, đề xuất phương án điều chỉnh hoặc hoàn phí theo hợp đồng dịch vụ đã ký.",
+    "ground_truth_contexts": ["Quy trình tiếp nhận khiếu nại của khách hàng bằng văn bản hoặc trực tiếp.", "Hội đồng chuyên môn đánh giá lại kết quả và đề xuất phương án điều chỉnh hoặc hoàn phí theo hợp đồng."],
+    "difficulty": "multi_hop"
+  },
+  {
+    "question": "Đối với liệu trình điều trị sắc tố da kéo dài, lịch tái khám và đánh giá hiệu quả được thiết kế ra sao?",
+    "ground_truth_answer": "Liệu trình điều trị sắc tố da kéo dài thường có lịch tái khám định kỳ sau mỗi buổi điều trị, đánh giá hiệu quả bằng hình ảnh trước-sau và điều chỉnh phác đồ tùy đáp ứng của khách hàng.",
+    "ground_truth_contexts": ["Lịch tái khám định kỳ sau mỗi buổi điều trị sắc tố da.", "Đánh giá hiệu quả qua hình ảnh trước-sau và điều chỉnh phác đồ."],
+    "difficulty": "multi_hop"
+  },
+  {
+    "question": "Quy trình bảo mật thông tin khách hàng tại cơ sở y tế thẩm mỹ được thực hiện ra sao và áp dụng cho những loại dữ liệu nào?",
+    "ground_truth_answer": "Thông tin khách hàng được bảo mật theo quy định pháp luật, bao gồm hồ sơ y tế, ảnh trước-sau, dữ liệu thanh toán; cơ sở phân quyền truy cập theo vai trò và yêu cầu khách hàng đồng ý trước khi chia sẻ.",
+    "ground_truth_contexts": ["Phạm vi bảo mật thông tin gồm hồ sơ y tế, ảnh trước-sau và dữ liệu thanh toán.", "Cơ sở phân quyền truy cập theo vai trò và yêu cầu đồng ý khách hàng khi chia sẻ thông tin."],
+    "difficulty": "multi_hop"
+  },
+  {
+    "question": "Khách hàng có thể chuyển đổi gói dịch vụ giữa liệu trình không, và quy trình điều chỉnh hợp đồng được thực hiện ra sao?",
+    "ground_truth_answer": "Khách hàng có thể yêu cầu chuyển đổi gói dịch vụ giữa liệu trình; cơ sở đánh giá phần đã thực hiện, tính lại chi phí phần còn lại, lập phụ lục hợp đồng và yêu cầu khách hàng ký xác nhận trước khi áp dụng.",
+    "ground_truth_contexts": ["Quy trình chuyển đổi gói dịch vụ giữa liệu trình.", "Quy trình lập phụ lục hợp đồng và xác nhận chi phí phần còn lại."],
+    "difficulty": "multi_hop"
+  },
+  {
+    "question": "Quy trình kiểm soát vệ sinh và vô khuẩn dụng cụ y tế tại cơ sở được thực hiện theo các bước nào?",
+    "ground_truth_answer": "Dụng cụ y tế được làm sạch sơ bộ, ngâm dung dịch khử khuẩn, đóng gói và tiệt khuẩn bằng nồi hấp tiệt khuẩn; quy trình tuân theo tiêu chuẩn ngành y tế và được kiểm tra định kỳ.",
+    "ground_truth_contexts": ["Các bước làm sạch, khử khuẩn, đóng gói và tiệt khuẩn dụng cụ y tế.", "Tuân thủ tiêu chuẩn ngành y tế và kiểm tra định kỳ."],
+    "difficulty": "multi_hop"
+  },
+  {
+    "question": "Thời gian một buổi điều trị laser trẻ hóa da trung bình kéo dài bao nhiêu phút?",
+    "ground_truth_answer": "Một buổi điều trị laser trẻ hóa da trung bình kéo dài khoảng từ ba mươi đến sáu mươi phút, tùy diện tích vùng điều trị và loại laser sử dụng, theo hướng dẫn quy trình dịch vụ.",
+    "ground_truth_contexts": ["Hướng dẫn quy trình dịch vụ ghi rõ thời gian một buổi laser trẻ hóa da khoảng 30-60 phút."],
+    "difficulty": "numerical_reference"
+  },
+  {
+    "question": "Số buổi điều trị tối thiểu khuyến nghị cho liệu trình điều trị sẹo rỗ là bao nhiêu?",
+    "ground_truth_answer": "Liệu trình điều trị sẹo rỗ thường được khuyến nghị tối thiểu nhiều buổi, cách nhau theo phác đồ của bác sĩ; số buổi cụ thể tùy mức độ sẹo và loại công nghệ sử dụng, ghi rõ trong tài liệu phác đồ.",
+    "ground_truth_contexts": ["Tài liệu phác đồ điều trị sẹo rỗ nêu số buổi tối thiểu cách nhau theo chỉ định bác sĩ."],
+    "difficulty": "numerical_reference"
+  },
+  {
+    "question": "Khoảng thời gian tối thiểu giữa hai lần tiêm filler vùng môi là bao lâu?",
+    "ground_truth_answer": "Khoảng thời gian tối thiểu giữa hai lần tiêm filler vùng môi được khuyến nghị theo hướng dẫn của bác sĩ điều trị, đảm bảo vùng tiêm phục hồi hoàn toàn trước khi can thiệp tiếp.",
+    "ground_truth_contexts": ["Hướng dẫn của bác sĩ điều trị xác định khoảng thời gian tối thiểu giữa hai lần tiêm filler."],
+    "difficulty": "numerical_reference"
+  },
+  {
+    "question": "Độ tuổi tối thiểu để sử dụng dịch vụ tiêm botox tại cơ sở là bao nhiêu?",
+    "ground_truth_answer": "Độ tuổi tối thiểu để sử dụng dịch vụ tiêm botox tại cơ sở thường tuân theo quy định pháp luật và hướng dẫn chuyên môn; khách hàng dưới độ tuổi quy định cần có chỉ định đặc biệt từ bác sĩ.",
+    "ground_truth_contexts": ["Quy định độ tuổi tối thiểu sử dụng dịch vụ tiêm botox theo pháp luật và hướng dẫn chuyên môn."],
+    "difficulty": "numerical_reference"
+  },
+  {
+    "question": "Tỷ lệ phần trăm khách hàng hài lòng sau liệu trình điều trị sẹo rỗ tại cơ sở là bao nhiêu?",
+    "ground_truth_answer": "Cơ sở không công khai con số tỷ lệ phần trăm khách hàng hài lòng cụ thể trong tài liệu chung; thông tin phản hồi khách hàng được thu thập định kỳ và sử dụng nội bộ để cải thiện chất lượng.",
+    "ground_truth_contexts": ["Cơ sở không công bố con số phần trăm khách hàng hài lòng trong tài liệu chung; dữ liệu phản hồi sử dụng nội bộ."],
+    "difficulty": "hallu_trap",
+    "is_hallu_trap": true
+  },
+  {
+    "question": "Cơ sở có dịch vụ cấy ghép tóc tự thân không và chi phí trung bình của dịch vụ này là bao nhiêu?",
+    "ground_truth_answer": "Thông tin về việc cơ sở có cung cấp dịch vụ cấy ghép tóc tự thân và mức chi phí cụ thể không được liệt kê trong tài liệu chung; khách hàng cần liên hệ trực tiếp để được tư vấn về danh mục dịch vụ và bảng giá hiện hành.",
+    "ground_truth_contexts": ["Tài liệu chung không liệt kê dịch vụ cấy ghép tóc tự thân và bảng giá cụ thể."],
+    "difficulty": "hallu_trap",
+    "is_hallu_trap": true
+  },
+  {
+    "question": "Cơ sở có chương trình bảo hành hiệu quả tiêm filler trong vòng năm năm không?",
+    "ground_truth_answer": "Cơ sở không có chương trình bảo hành hiệu quả tiêm filler trong vòng năm năm; chính sách bảo hành cụ thể được nêu trong hợp đồng dịch vụ và thường giới hạn thời gian theo loại sản phẩm filler sử dụng.",
+    "ground_truth_contexts": ["Tài liệu nêu chính sách bảo hành dịch vụ tiêm filler giới hạn theo hợp đồng và loại sản phẩm, không quy định bảo hành năm năm."],
+    "difficulty": "hallu_trap",
+    "is_hallu_trap": true
+  },
+  {
+    "question": "Cơ sở có cung cấp dịch vụ phẫu thuật thẩm mỹ tạo hình mũi không?",
+    "ground_truth_answer": "Tài liệu chung của cơ sở không xác nhận có cung cấp dịch vụ phẫu thuật thẩm mỹ tạo hình mũi; khách hàng quan tâm cần liên hệ trực tiếp để được xác nhận danh mục dịch vụ phẫu thuật được phép thực hiện theo giấy phép hành nghề.",
+    "ground_truth_contexts": ["Tài liệu chung không liệt kê dịch vụ phẫu thuật thẩm mỹ tạo hình mũi trong danh mục dịch vụ."],
+    "difficulty": "hallu_trap",
+    "is_hallu_trap": true
+  },
+  {
+    "question": "Bác sĩ trưởng khoa của cơ sở có chứng chỉ hành nghề quốc tế nào?",
+    "ground_truth_answer": "Thông tin chi tiết về chứng chỉ hành nghề của bác sĩ trưởng khoa không được công bố trong tài liệu giới thiệu chung; khách hàng có thể liên hệ trực tiếp cơ sở để được cung cấp hồ sơ chứng nhận khi cần.",
+    "ground_truth_contexts": ["Tài liệu giới thiệu chung không liệt kê chứng chỉ cá nhân của bác sĩ trưởng khoa."],
+    "difficulty": "hallu_trap",
+    "is_hallu_trap": true
+  },
+  {
+    "question": "Cơ sở có chính sách hủy đặt lịch hẹn miễn phí trước bao lâu so với thời điểm hẹn?",
+    "ground_truth_answer": "Khách hàng có thể hủy đặt lịch hẹn miễn phí trước thời điểm hẹn theo khoảng thời gian quy định tại chính sách đặt lịch của cơ sở; thời gian cụ thể được nêu trong tài liệu hướng dẫn đặt lịch.",
+    "ground_truth_contexts": ["Chính sách đặt lịch của cơ sở quy định thời gian hủy hẹn miễn phí trong tài liệu hướng dẫn."],
+    "difficulty": "simple_lookup"
+  },
+  {
+    "question": "Khách hàng có được cung cấp tài liệu hướng dẫn chăm sóc sau dịch vụ bằng văn bản không?",
+    "ground_truth_answer": "Khách hàng được cung cấp tài liệu hướng dẫn chăm sóc sau dịch vụ bằng văn bản, gồm các bước chăm sóc tại nhà, lưu ý kiêng kỵ và lịch tái khám.",
+    "ground_truth_contexts": ["Tài liệu hướng dẫn chăm sóc sau dịch vụ bằng văn bản gồm các bước chăm sóc và kiêng kỵ."],
+    "difficulty": "simple_lookup"
+  },
+  {
+    "question": "Quy định về việc khách hàng được ghi âm, ghi hình quá trình tư vấn tại cơ sở như thế nào?",
+    "ground_truth_answer": "Khách hàng cần xin phép trước nếu muốn ghi âm, ghi hình quá trình tư vấn; cơ sở có quyền từ chối để bảo vệ quyền riêng tư của nhân viên và các khách hàng khác có mặt.",
+    "ground_truth_contexts": ["Quy định khách hàng xin phép trước khi ghi âm, ghi hình quá trình tư vấn."],
+    "difficulty": "simple_lookup"
+  },
+  {
+    "question": "Cơ sở có hỗ trợ thanh toán trả góp cho các liệu trình chi phí cao không?",
+    "ground_truth_answer": "Cơ sở có hỗ trợ thanh toán trả góp cho các liệu trình chi phí cao thông qua các đối tác tài chính; chi tiết điều khoản, lãi suất và thủ tục được hướng dẫn riêng cho từng trường hợp.",
+    "ground_truth_contexts": ["Cơ sở hỗ trợ thanh toán trả góp qua đối tác tài chính cho liệu trình chi phí cao."],
+    "difficulty": "simple_lookup"
+  },
+  {
+    "question": "Khách hàng có thể yêu cầu đổi bác sĩ điều trị giữa chừng không?",
+    "ground_truth_answer": "Khách hàng có thể yêu cầu đổi bác sĩ điều trị giữa chừng; yêu cầu được tiếp nhận qua bộ phận chăm sóc khách hàng và sắp xếp tùy lịch trình của các bác sĩ chuyên môn phù hợp.",
+    "ground_truth_contexts": ["Quy trình tiếp nhận yêu cầu đổi bác sĩ điều trị qua bộ phận chăm sóc khách hàng."],
+    "difficulty": "simple_lookup"
+  },
+  {
+    "question": "Trường hợp xảy ra sự cố y khoa sau dịch vụ, trách nhiệm của cơ sở và quyền lợi của khách hàng được phân định ra sao?",
+    "ground_truth_answer": "Trường hợp xảy ra sự cố y khoa sau dịch vụ, cơ sở chịu trách nhiệm xử lý y tế ban đầu, phối hợp chuyển viện nếu cần, đồng thời thực hiện thủ tục bồi thường theo hợp đồng và quy định pháp luật về khám chữa bệnh.",
+    "ground_truth_contexts": ["Cơ sở chịu trách nhiệm xử lý y tế ban đầu và phối hợp chuyển viện khi xảy ra sự cố.", "Thủ tục bồi thường thực hiện theo hợp đồng và quy định pháp luật khám chữa bệnh."],
+    "difficulty": "multi_hop"
+  }
+]

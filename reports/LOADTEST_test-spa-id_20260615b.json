@@ -1,0 +1,1251 @@
+{
+  "_description": "Load-test detail cho bot test-spa-id — evidence per câu, scoring để TRỐNG cho agent Claude đọc chấm.",
+  "_field_guide": {
+    "question": "Câu hỏi gửi tới bot.",
+    "reference_facts": "Keyword/số BẮT BUỘC phải có trong answer (golden must-contain, từ scenario.expect).",
+    "answer": "Câu BOT THỰC SỰ trả lời (output RAG).",
+    "answer_type": "blocked/cache_hit/... — loại output.",
+    "latency_ms": "Thời gian trả lời (ms).",
+    "tokens": "prompt/completion/cached + cache_hit_ratio (CR prompt-cache).",
+    "intent": "Intent pipeline phát hiện.",
+    "decomposed": "Multi-hop: câu có bị tách sub-query không.",
+    "cache_status": "hit/miss/bypassed (semantic cache).",
+    "n_chunks_used": "Số chunk graded đưa vào LLM.",
+    "score_max": "Score chunk cao nhất (chất lượng retrieval).",
+    "top_chunks_retrieved": "Chunk bot lấy về + đưa LLM (doc, chunk_index, score, preview) — NGUỒN câu trả lời.",
+    "answer_source_chunk": "Chunk trong CORPUS thật chứa đáp án (tìm qua DB). in_retrieved=có vào top-K không; in_corpus=corpus có không.",
+    "expect_in_answer": "reference_facts có trong answer không (PASS).",
+    "expect_in_retrieved": "reference_facts có trong chunk đưa LLM không.",
+    "prelim_verdict": "Verdict RULE-BASED sơ bộ (gợi ý, KHÔNG phải điểm cuối).",
+    "fail_step": "Tầng lỗi pin từ evidence (RETRIEVAL/FILTER/GENERATION/HALLU/DATA).",
+    "claude_verdict": "[TRỐNG] Agent Claude điền sau khi đọc: ✅CHUẨN/🟡GENERATION/🔴RETRIEVAL/🟠HALLU/⚪DATA.",
+    "claude_notes": "[TRỐNG] Agent Claude điền: mạnh/yếu, đúng/thiếu/sai, vì sao."
+  },
+  "verdict_legend": {
+    "✅ CHUẨN": "chunk retrieved + LLM answered correctly (đủ + đúng)",
+    "🟡 GENERATION": "chunk đúng vào LLM nhưng LLM trả thiếu/sai/lược bỏ fact",
+    "🔴 RETRIEVAL": "chunk chứa đáp án CÓ trong corpus nhưng KHÔNG vào top-K",
+    "🟠 HALLU": "bịa — claim không grounded (trap answered)",
+    "⚪ DATA": "corpus KHÔNG có chunk chứa đáp án (golden có thể stale)"
+  },
+  "bot": "test-spa-id",
+  "workspace_id": "spa",
+  "run": {
+    "stamp": "20260615b",
+    "n_questions": 18,
+    "prelim_coverage": 1.0,
+    "prelim_hallu": "0/2",
+    "p95_latency_ms": 13974,
+    "fail_step_rollup": {
+      "REFUSE": 1
+    }
+  },
+  "questions": [
+    {
+      "id": "q01",
+      "category": "hoi_tham",
+      "question": "Chào shop, cho mình hỏi thăm chút",
+      "reference_facts": null,
+      "is_trap": false,
+      "answer": "Dạ, em rất vui được hỗ trợ anh/chị ạ. Anh/chị cần tư vấn về dịch vụ hoặc thông tin gì tại Dr. Medispa ạ?",
+      "answer_type": "answered",
+      "latency_ms": 10529,
+      "tokens": {
+        "prompt": 1420,
+        "completion": 37,
+        "cached": 1024,
+        "cache_hit_ratio": null
+      },
+      "intent": "greeting",
+      "decomposed": false,
+      "cache_status": "bypassed",
+      "n_chunks_used": 1,
+      "top_k": 20,
+      "score_max": 0.7323,
+      "top_chunks_retrieved": [
+        {
+          "doc": "spa-4",
+          "chunk_id": "019ec1d8",
+          "score": 0.7323,
+          "preview": "<chunk_context>Hướng dẫn bước đầu chào hỏi và tư vấn khách hàng quan tâm dịch vụ chăm sóc da tại Dr. Medispa</chunk_context>  ,Câu hỏi/ tình huống,Câu trả lời khách,Chú ý\r Bước 1: Chào khách,,,\r 1,\"Khách chào hoặc chủ động inbox bằng những "
+        }
+      ],
+      "answer_source_chunk": {
+        "in_corpus": null,
+        "preview": "",
+        "in_retrieved": false
+      },
+      "expect_in_answer": false,
+      "expect_in_retrieved": false,
+      "prelim_verdict": "✅ CHUẨN",
+      "fail_step": "",
+      "claude_verdict": "",
+      "claude_notes": ""
+    },
+    {
+      "id": "q02",
+      "category": "liet_ke_dich_vu",
+      "question": "Spa có những dịch vụ gì, liệt kê tất cả giúp mình",
+      "reference_facts": "Laser Carbon",
+      "is_trap": false,
+      "answer": "Dạ, em gửi anh/chị danh sách dịch vụ spa tại Dr. Medispa như sau ạ:\n\n1. Chăm sóc da chuyên sâu và trẻ hóa da:\n- Chăm sóc da chuyên sâu: 700.000đ/buổi\n- Trị mụn chuyên sâu: 700.000đ/buổi\n- Chăm sóc da cấp ô xi tươi: 800.000đ/buổi\n- Chăm sóc da thải độc da: 800.000đ/buổi\n- Chăm sóc da cấp nước đa tầng: 800.000đ/buổi\n- Chăm sóc da nano kim cương: 1.500.000đ/buổi\n- Chăm sóc da nâng cơ 7 điểm vàng: 800.000đ/buổi\n- Chăm sóc da dưỡng sinh mắt: 800.000đ/buổi\n- Trẻ hóa IPL: 1.200.000đ/buổi\n- Laser carbon: 1.200.000đ/buổi\n- Peel trị thâm Inno A: 2.500.000đ/buổi\n- Vikim trẻ hóa (Ultra căng bóng da): 1.500.000đ/buổi\n- Peel điều trị mụn chuyên sâu: 2.500.000đ/buổi\n- Vikim medic (Nano màng sinh học): 1.800.000đ/buổi\n- Peel trẻ hóa tái tạo tế bào Tretinoin: 2.500.000đ/buổi\n- Peel trẻ hóa xóa nhăn Ribo: 2.500.000đ/buổi\n- Nano collagen trẻ hóa da: 2.500.000đ/buổi\n- Meso căng bóng trẻ hóa: 3.000.000đ/buổi\n\n2. Massage và dưỡng sinh:\n- Massage cổ vai gáy\n- Massage body: 60 phút giá ưu đãi 299.000đ (giá gốc 600.000đ)\n- Massage chân\n- Thải độc vùng đầu: 90 phút giá ưu đãi 299.000đ (giá gốc 800.000đ)\n- Ấm nóng cổ tử cung & thải độc bi: 120 phút giá ưu đãi 499.000đ (giá gốc 3.000.000đ)\n\n3. Dịch vụ tẩy da chết body:\n- Tẩy da chết body: 30 phút giá ưu đãi 199.000đ (giá gốc 450.000đ)\n\n4. Các liệu trình đặc biệt:\n- Hydra Ballet cấp ẩm đa tầng (quy trình 21 bước chuẩn y khoa)\n- Detox Ballet (quy trình 21 bước chuẩn y khoa)\n- Trẻ hóa da không xâm lấn (quy trình 16 bước chuẩn y khoa)\n\nKhi đến Dr. Medispa, anh/chị còn được soi da bằng công nghệ AI phân tích 17 chỉ số và tư vấn phác đồ điều trị riêng hoàn toàn miễn phí ạ.\n\nAnh/chị cần em hỗ trợ tư vấn hoặc đặt lịch dịch vụ nào ạ?",
+      "answer_type": "answered",
+      "latency_ms": 13974,
+      "tokens": {
+        "prompt": 5263,
+        "completion": 671,
+        "cached": 1024,
+        "cache_hit_ratio": null
+      },
+      "intent": "aggregation",
+      "decomposed": false,
+      "cache_status": "bypassed",
+      "n_chunks_used": 20,
+      "top_k": 37,
+      "score_max": 0.8389,
+      "top_chunks_retrieved": [
+        {
+          "doc": "spa-4",
+          "chunk_id": "019ec1d8",
+          "score": 0.8389,
+          "preview": "<chunk_context>Quy trình dịch vụ Hydra Ballet cấp ẩm đa tầng và tư vấn soi da công nghệ AI tại Dr. Medispa</chunk_context>  Quy trình bên em bao gồm 21 bước chuẩn y khoa: xịt thơm, kích thích dẫn lưu với đá nóng, thư giãn bó cơ tay chân và "
+        },
+        {
+          "doc": "spa-1",
+          "chunk_id": "019ec1d8",
+          "score": 0.7526,
+          "preview": "Dịch vụ,Giá lẻ (VND),Gói 6 triệu,Gói 7 triệu,Gói 10 triệu\r CSD Chuyên sâu,700000,x,x,x\r Trị mụn chuyên sâu,700000,x,x,x\r CSD Cấp oxi tươi,800000,x,x,x\r CSD Thải độc da,800000,x,x,x\r CSD Cấp nước đa tầng,800000,x,x,x\r CSD Nano kim cương,1500"
+        },
+        {
+          "doc": "spa-4",
+          "chunk_id": "019ec1d8",
+          "score": 0.791,
+          "preview": "<chunk_context>Dịch vụ trẻ hóa da tại Dr. Medispa – liệu pháp không xâm lấn, quy trình 16 bước chuẩn y khoa, ưu đãi khách mới, tư vấn soi da bằng AI</chunk_context>  ,trẻ hóa da / trẻ hóa,\"Dạ, dịch vụ trẻ hóa da Dr. Medi là dịch vụ đang đượ"
+        },
+        {
+          "doc": "spa-4",
+          "chunk_id": "019ec1d8",
+          "score": 0.7572,
+          "preview": "<chunk_context>Dịch vụ Detox Ballet tại Dr. Medispa cho da dầu mụn, nhạy cảm, dùng mỹ phẩm PAYOT và massage Gym Beauté® 42 bước, ưu đãi 699k/buổi cho khách mới</chunk_context>  ,Detox Ballet/ thanh lọc,\"Hiện tại dịch vụ Detox Ballet tại Dr."
+        },
+        {
+          "doc": "spa-4",
+          "chunk_id": "019ec1d8",
+          "score": 0.8267,
+          "preview": "<chunk_context>Quy trình dịch vụ Detox Ballet tại Dr. Medispa và tư vấn soi da bằng công nghệ AI</chunk_context>  Quy trình bên em bao gồm 21 bước chuẩn y khoa: xịt thơm, kích thích dẫn lưu với đá nóng, thư giãn bó cơ tay chân và điều hòa n"
+        },
+        {
+          "doc": "spa-4",
+          "chunk_id": "019ec1d8",
+          "score": 0.7982,
+          "preview": "<chunk_context>Dịch vụ chăm sóc da chuyên sâu tại Dr. Medispa - quy trình 10 bước chuẩn y khoa, ưu đãi khách mới, tư vấn và soi da công nghệ AI miễn phí</chunk_context>  ,chăm sóc da chuyên sâu,\"Hiện tại dịch vụ chăm sóc da chuyên sâu tại D"
+        },
+        {
+          "doc": "spa-4",
+          "chunk_id": "019ec1d8",
+          "score": 0.7384,
+          "preview": "<chunk_context>Tư vấn và nhắc khách dịch vụ thải độc vùng đầu, dịch vụ tẩy da chết body, ưu đãi cho khách mới - Dr. Medispa</chunk_context>  - Nếu khách không trả lời: => Sau 1 giờ chủ động nhắn cho khách: Chị ơi, không biết chị cần em hỗ t"
+        },
+        {
+          "doc": "spa-4",
+          "chunk_id": "019ec1d8",
+          "score": 0.7572,
+          "preview": "<chunk_context>Quy trình dịch vụ trẻ hóa da Ultherapy tại Dr. Medispa với 16 bước chuẩn y khoa và tư vấn soi da bằng công nghệ AI 17 chỉ số</chunk_context>  Quy trình bên em bao gồm 16 bước chuẩn y khoa: tẩy trang, rửa mặt, tẩy da chết, xôn"
+        }
+      ],
+      "answer_source_chunk": {
+        "in_corpus": true,
+        "preview": "Dịch vụ,Giá lẻ (VND),Gói 6 triệu,Gói 7 triệu,Gói 10 triệu\nCSD Chuyên sâu,700000,x,x,x\nTrị mụn chuyên sâu,700000,x,x,x\nCSD Cấp oxi tươi,800000,x,x,x\nCSD Thải độc da,800000,x,x,x\nCSD Cấp nước đa tầ",
+        "in_retrieved": true
+      },
+      "expect_in_answer": true,
+      "expect_in_retrieved": true,
+      "prelim_verdict": "✅ CHUẨN",
+      "fail_step": "",
+      "claude_verdict": "",
+      "claude_notes": ""
+    },
+    {
+      "id": "q03",
+      "category": "hoi_gia_san_pham",
+      "question": "Laser Carbon giá bao nhiêu?",
+      "reference_facts": "1200000",
+      "is_trap": false,
+      "answer": "Dạ, giá dịch vụ Laser Carbon tại Dr. Medispa là 1.200.000 đồng cho 1 buổi ạ.",
+      "answer_type": "answered",
+      "latency_ms": 6435,
+      "tokens": {
+        "prompt": 2771,
+        "completion": 30,
+        "cached": 1024,
+        "cache_hit_ratio": null
+      },
+      "intent": "aggregation",
+      "decomposed": false,
+      "cache_status": "bypassed",
+      "n_chunks_used": 16,
+      "top_k": 20,
+      "score_max": 0.8372,
+      "top_chunks_retrieved": [
+        {
+          "doc": "spa-2",
+          "chunk_id": "019ec1d8",
+          "score": 0.8372,
+          "preview": "STT,Tên dịch vụ,Giá 1 buổi,\r 10,Laser carbon,1.200.000,\r"
+        },
+        {
+          "doc": "spa-1",
+          "chunk_id": "019ec1d8",
+          "score": 0.8355,
+          "preview": "Dịch vụ,Giá lẻ (VND),Gói 6 triệu,Gói 7 triệu,Gói 10 triệu\r Laser Carbon,1200000,x,x,x\r"
+        },
+        {
+          "doc": "spa-3",
+          "chunk_id": "019ec1d8",
+          "score": 0.4317,
+          "preview": "STT,Vùng triệt,Giá buổi lẻ,Giá Combo 10 buổi\r 4,1/2 tay,349000,2399000\r"
+        },
+        {
+          "doc": "spa-1",
+          "chunk_id": "019ec1d8",
+          "score": 0.4233,
+          "preview": "Dịch vụ,Giá lẻ (VND),Gói 6 triệu,Gói 7 triệu,Gói 10 triệu\r CSD Chuyên sâu,700000,x,x,x\r"
+        },
+        {
+          "doc": "spa-3",
+          "chunk_id": "019ec1d8",
+          "score": 0.4359,
+          "preview": "STT,Vùng triệt,Giá buổi lẻ,Giá Combo 10 buổi\r 2,Mặt,249000,1499000\r"
+        },
+        {
+          "doc": "spa-3",
+          "chunk_id": "019ec1d8",
+          "score": 0.4214,
+          "preview": "STT,Vùng triệt,Giá buổi lẻ,Giá Combo 10 buổi\r 8,Lưng,699000,3999000\r"
+        },
+        {
+          "doc": "spa-3",
+          "chunk_id": "019ec1d8",
+          "score": 0.4179,
+          "preview": "STT,Vùng triệt,Giá buổi lẻ,Giá Combo 10 buổi\r 3,Nách,199000,1199000\r"
+        },
+        {
+          "doc": "spa-3",
+          "chunk_id": "019ec1d8",
+          "score": 0.4054,
+          "preview": "STT,Vùng triệt,Giá buổi lẻ,Giá Combo 10 buổi\r 7,Cả chân,699000,3999000\r"
+        }
+      ],
+      "answer_source_chunk": {
+        "in_corpus": true,
+        "preview": "Dịch vụ,Giá lẻ (VND),Gói 6 triệu,Gói 7 triệu,Gói 10 triệu\nCSD Chuyên sâu,700000,x,x,x\nTrị mụn chuyên sâu,700000,x,x,x\nCSD Cấp oxi tươi,800000,x,x,x\nCSD Thải độc da,800000,x,x,x\nCSD Cấp nước đa tầ",
+        "in_retrieved": true
+      },
+      "expect_in_answer": true,
+      "expect_in_retrieved": true,
+      "prelim_verdict": "✅ CHUẨN",
+      "fail_step": "",
+      "claude_verdict": "",
+      "claude_notes": ""
+    },
+    {
+      "id": "q04",
+      "category": "hoi_gia_san_pham",
+      "question": "Giá dịch vụ trị mụn chuyên sâu?",
+      "reference_facts": "700000",
+      "is_trap": false,
+      "answer": "Dịch vụ Trị mụn chuyên sâu có giá 700.000 đồng cho 1 buổi ạ.",
+      "answer_type": "answered",
+      "latency_ms": 6147,
+      "tokens": {
+        "prompt": 1810,
+        "completion": 25,
+        "cached": 1024,
+        "cache_hit_ratio": null
+      },
+      "intent": "factoid",
+      "decomposed": false,
+      "cache_status": "bypassed",
+      "n_chunks_used": 2,
+      "top_k": 20,
+      "score_max": 0.9267,
+      "top_chunks_retrieved": [
+        {
+          "doc": "spa-1",
+          "chunk_id": "019ec1d8",
+          "score": 0.9267,
+          "preview": "Dịch vụ,Giá lẻ (VND),Gói 6 triệu,Gói 7 triệu,Gói 10 triệu\r CSD Chuyên sâu,700000,x,x,x\r Trị mụn chuyên sâu,700000,x,x,x\r CSD Cấp oxi tươi,800000,x,x,x\r CSD Thải độc da,800000,x,x,x\r CSD Cấp nước đa tầng,800000,x,x,x\r CSD Nano kim cương,1500"
+        },
+        {
+          "doc": "spa-2",
+          "chunk_id": "019ec1d8",
+          "score": 0.925,
+          "preview": "STT,Tên dịch vụ,Giá 1 buổi,\r 2,Trị mụn chuyên sâu,700.000,\r"
+        }
+      ],
+      "answer_source_chunk": {
+        "in_corpus": true,
+        "preview": "Dịch vụ,Giá lẻ (VND),Gói 6 triệu,Gói 7 triệu,Gói 10 triệu\nCSD Chuyên sâu,700000,x,x,x\nTrị mụn chuyên sâu,700000,x,x,x\nCSD Cấp oxi tươi,800000,x,x,x\nCSD Thải độc da,800000,x,x,x\nCSD Cấp nước đa tầ",
+        "in_retrieved": true
+      },
+      "expect_in_answer": true,
+      "expect_in_retrieved": true,
+      "prelim_verdict": "✅ CHUẨN",
+      "fail_step": "",
+      "claude_verdict": "",
+      "claude_notes": ""
+    },
+    {
+      "id": "q05",
+      "category": "soi_san_pham",
+      "question": "Dịch vụ Nano kim cương là gì, có gì đặc biệt?",
+      "reference_facts": "Nano kim cương",
+      "is_trap": false,
+      "answer": "Dịch vụ Chăm sóc da nano kim cương tại Dr. Medispa có giá 1.500.000 đồng cho 1 buổi và cũng có trong các gói 6 triệu, 7 triệu và 10 triệu đồng. Tuy nhiên, hiện tại em chưa có thông tin chi tiết về đặc điểm hay điểm đặc biệt của dịch vụ này ạ. Anh/chị vui lòng liên hệ hotline để được tư vấn cụ thể hơn nhé.",
+      "answer_type": "answered",
+      "latency_ms": 10651,
+      "tokens": {
+        "prompt": 1965,
+        "completion": 94,
+        "cached": 1024,
+        "cache_hit_ratio": null
+      },
+      "intent": "factoid",
+      "decomposed": false,
+      "cache_status": "bypassed",
+      "n_chunks_used": 2,
+      "top_k": 20,
+      "score_max": 0.3983,
+      "top_chunks_retrieved": [
+        {
+          "doc": "spa-2",
+          "chunk_id": "019ec1d8",
+          "score": 0.3983,
+          "preview": "STT,Tên dịch vụ,Giá 1 buổi,\r 1,Chăm sóc da chuyên sâu,700.000,\r 2,Trị mụn chuyên sâu,700.000,\r 3,Chăm sóc da cấp ô xi tươi,800.000,\r 4,Chăm sóc da thải độc da,800.000,\r 5,Chăm sóc da cấp nước đa tầng,800.000,\r 6,Chăm sóc da nano kim cương,1"
+        },
+        {
+          "doc": "spa-1",
+          "chunk_id": "019ec1d8",
+          "score": 0.3968,
+          "preview": "Dịch vụ,Giá lẻ (VND),Gói 6 triệu,Gói 7 triệu,Gói 10 triệu\r CSD Nano kim cương,1500000,x,x,x\r"
+        }
+      ],
+      "answer_source_chunk": {
+        "in_corpus": true,
+        "preview": "Dịch vụ,Giá lẻ (VND),Gói 6 triệu,Gói 7 triệu,Gói 10 triệu\nCSD Chuyên sâu,700000,x,x,x\nTrị mụn chuyên sâu,700000,x,x,x\nCSD Cấp oxi tươi,800000,x,x,x\nCSD Thải độc da,800000,x,x,x\nCSD Cấp nước đa tầ",
+        "in_retrieved": true
+      },
+      "expect_in_answer": true,
+      "expect_in_retrieved": true,
+      "prelim_verdict": "✅ CHUẨN",
+      "fail_step": "",
+      "claude_verdict": "",
+      "claude_notes": ""
+    },
+    {
+      "id": "q06",
+      "category": "liet_ke_duoi_gia",
+      "question": "Có dịch vụ nào dưới 500 nghìn không?",
+      "reference_facts": "129000",
+      "is_trap": false,
+      "answer": "Dạ, tại Dr. Medispa hiện có các dịch vụ dưới 500 nghìn như sau ạ:\n\n- Chăm sóc da chuyên sâu ưu đãi khách mới: 199.000đ/buổi (giá gốc 700.000đ)  \n- Trị mụn chuyên sâu ưu đãi khách mới: 299.000đ/buổi (giá gốc 700.000đ)  \n- Chăm sóc da cấp nước đa tầng ưu đãi khách mới: 299.000đ/buổi (giá gốc 800.000đ)  \n\nDịch vụ triệt lông các vùng với giá buổi lẻ dưới 500 nghìn gồm:  \n- Mép: 129.000đ  \n- Mặt: 249.000đ  \n- Nách: 199.000đ  \n- 1/2 tay: 349.000đ  \n- Cả tay: 499.000đ  \n- Bikini (Bi): 499.000đ  \n\nAnh/chị cần tư vấn hoặc đặt lịch dịch vụ nào, em rất sẵn lòng hỗ trợ ạ!",
+      "answer_type": "answered",
+      "latency_ms": 7766,
+      "tokens": {
+        "prompt": 5353,
+        "completion": 237,
+        "cached": 1024,
+        "cache_hit_ratio": null
+      },
+      "intent": "aggregation",
+      "decomposed": false,
+      "cache_status": "bypassed",
+      "n_chunks_used": 20,
+      "top_k": 30,
+      "score_max": 0.9284,
+      "top_chunks_retrieved": [
+        {
+          "doc": "spa-4",
+          "chunk_id": "019ec1d8",
+          "score": 0.9284,
+          "preview": "<chunk_context>Dịch vụ chăm sóc da chuyên sâu tại Dr. Medispa - quy trình 10 bước chuẩn y khoa, ưu đãi khách mới, tư vấn và soi da công nghệ AI miễn phí</chunk_context>  ,chăm sóc da chuyên sâu,\"Hiện tại dịch vụ chăm sóc da chuyên sâu tại D"
+        },
+        {
+          "doc": "spa-4",
+          "chunk_id": "019ec1d8",
+          "score": 0.9119,
+          "preview": "<chunk_context>Dịch vụ trẻ hóa da tại Dr. Medispa – liệu pháp không xâm lấn, quy trình 16 bước chuẩn y khoa, ưu đãi khách mới, tư vấn soi da bằng AI</chunk_context>  ,trẻ hóa da / trẻ hóa,\"Dạ, dịch vụ trẻ hóa da Dr. Medi là dịch vụ đang đượ"
+        },
+        {
+          "doc": "spa-4",
+          "chunk_id": "019ec1d8",
+          "score": 0.9119,
+          "preview": "<chunk_context>Dịch vụ điều trị mụn chuẩn y khoa tại Dr. Medispa với quy trình 10 bước, ưu đãi giá trải nghiệm cho khách mới, tư vấn bằng công nghệ AI phân tích da 17 chỉ số.</chunk_context>  ,trị mụn/ lấy nhân mụn / lấy mụn / điều trị mụn,"
+        },
+        {
+          "doc": "spa-4",
+          "chunk_id": "019ec1d8",
+          "score": 0.8741,
+          "preview": "<chunk_context>Dịch vụ cấp nước đa tầng tại Dr. Medispa - mô tả, quy trình và ưu đãi khách hàng mới</chunk_context>  ,Cấp nước/ Cấp nước đa tầng/ cấp ẩm cho da,\"Dạ, dịch vụ cấp nước đa tầng là một trong những dịch vụ hot tại Dr. Medispa đượ"
+        },
+        {
+          "doc": "spa-3",
+          "chunk_id": "019ec1d8",
+          "score": 0.4256,
+          "preview": "STT,Vùng triệt,Giá buổi lẻ,Giá Combo 10 buổi\r 5,Cả tay,499000,2999000\r"
+        },
+        {
+          "doc": "spa-4",
+          "chunk_id": "019ec1d8",
+          "score": 0.5018,
+          "preview": "<chunk_context>Tư vấn dịch vụ chăm sóc da chuyên sâu tại Dr. Medispa, ưu đãi khách hàng mới</chunk_context>  Không biết chị cần em tư vấn hoặc giải đáp thêm gì về dịch vụ chăm sóc da chuyên sâu không ạ? Hiện tại bên em đang có nhiều quà tặn"
+        },
+        {
+          "doc": "spa-4",
+          "chunk_id": "019ec1d8",
+          "score": 0.4421,
+          "preview": "<chunk_context>Quy trình tư vấn dịch vụ chăm sóc da khi khách chưa trả lời cụ thể, Dr. Medispa</chunk_context>  - Nếu Khách trả lời cụ thể vấn đề => Đi vào tư vấn chi tiết của dịch vụ đó.  - Nếu Khách không trả lời => Sau 1 tiếng chủ động n"
+        },
+        {
+          "doc": "spa-2",
+          "chunk_id": "019ec1d8",
+          "score": 0.3494,
+          "preview": "STT,Tên dịch vụ,Giá 1 buổi,\r 1,Chăm sóc da chuyên sâu,700.000,\r 2,Trị mụn chuyên sâu,700.000,\r 3,Chăm sóc da cấp ô xi tươi,800.000,\r 4,Chăm sóc da thải độc da,800.000,\r 5,Chăm sóc da cấp nước đa tầng,800.000,\r 6,Chăm sóc da nano kim cương,1"
+        }
+      ],
+      "answer_source_chunk": {
+        "in_corpus": true,
+        "preview": "STT,Vùng triệt,Giá buổi lẻ,Giá Combo 10 buổi\n1,Mép,129000,899000\n2,Mặt,249000,1499000\n3,Nách,199000,1199000\n4,1/2 tay,349000,2399000\n5,Cả tay,499000,2999000\n6,1/2 chân,599000,2999000\n7,Cả chân,",
+        "in_retrieved": true
+      },
+      "expect_in_answer": true,
+      "expect_in_retrieved": true,
+      "prelim_verdict": "✅ CHUẨN",
+      "fail_step": "",
+      "claude_verdict": "",
+      "claude_notes": ""
+    },
+    {
+      "id": "q07",
+      "category": "liet_ke_tren_gia",
+      "question": "Liệt kê các dịch vụ trên 1 triệu",
+      "reference_facts": "2500000",
+      "is_trap": false,
+      "answer": "Dạ, các dịch vụ tại Dr. Medispa có giá lẻ trên 1 triệu đồng gồm:\n\n- Chăm sóc da nano kim cương: 1.500.000 VND  \n- Trẻ hóa IPL: 1.200.000 VND  \n- Laser Carbon: 1.200.000 VND  \n- Peel trị thâm Inno A: 2.500.000 VND  \n- Vikim trẻ hóa (Ultra căng bóng da): 1.500.000 VND  \n- Peel điều trị mụn chuyên sâu: 2.500.000 VND  \n- Vikim Medic (Nano màng sinh học): 1.800.000 VND  \n- Peel trẻ hóa tái tạo tế bào Tretinoin: 2.500.000 VND  \n- Peel trẻ hóa xóa nhăn Ribo: 2.500.000 VND  \n- Nano collagen trẻ hóa da: 2.500.000 VND  \n- Meso căng bóng trẻ hóa: 3.000.000 VND  \n\nAnh/chị cần tư vấn thêm dịch vụ nào, em rất sẵn lòng hỗ trợ ạ.",
+      "answer_type": "answered",
+      "latency_ms": 7500,
+      "tokens": {
+        "prompt": 4515,
+        "completion": 247,
+        "cached": 1024,
+        "cache_hit_ratio": null
+      },
+      "intent": "aggregation",
+      "decomposed": false,
+      "cache_status": "bypassed",
+      "n_chunks_used": 20,
+      "top_k": 30,
+      "score_max": 0.8311,
+      "top_chunks_retrieved": [
+        {
+          "doc": "spa-1",
+          "chunk_id": "019ec1d8",
+          "score": 0.8311,
+          "preview": "Dịch vụ,Giá lẻ (VND),Gói 6 triệu,Gói 7 triệu,Gói 10 triệu\r CSD Chuyên sâu,700000,x,x,x\r Trị mụn chuyên sâu,700000,x,x,x\r CSD Cấp oxi tươi,800000,x,x,x\r CSD Thải độc da,800000,x,x,x\r CSD Cấp nước đa tầng,800000,x,x,x\r CSD Nano kim cương,1500"
+        },
+        {
+          "doc": "spa-1",
+          "chunk_id": "019ec1d8",
+          "score": 0.657,
+          "preview": "Dịch vụ,Giá lẻ (VND),Gói 6 triệu,Gói 7 triệu,Gói 10 triệu\r Trẻ hóa IPL,1200000,x,x,x\r"
+        },
+        {
+          "doc": "spa-3",
+          "chunk_id": "019ec1d8",
+          "score": 0.5641,
+          "preview": "STT,Vùng triệt,Giá buổi lẻ,Giá Combo 10 buổi\r 1,Mép,129000,899000\r 2,Mặt,249000,1499000\r 3,Nách,199000,1199000\r 4,1/2 tay,349000,2399000\r 5,Cả tay,499000,2999000\r 6,1/2 chân,599000,2999000\r 7,Cả chân,699000,3999000\r 8,Lưng,699000,3999000\r 9"
+        },
+        {
+          "doc": "spa-1",
+          "chunk_id": "019ec1d8",
+          "score": 0.618,
+          "preview": "Dịch vụ,Giá lẻ (VND),Gói 6 triệu,Gói 7 triệu,Gói 10 triệu\r CSD Nâng cơ 7 điểm vàng,800000,x,x,x\r"
+        },
+        {
+          "doc": "spa-2",
+          "chunk_id": "019ec1d8",
+          "score": 0.6435,
+          "preview": "STT,Tên dịch vụ,Giá 1 buổi,\r 1,Chăm sóc da chuyên sâu,700.000,\r 2,Trị mụn chuyên sâu,700.000,\r 3,Chăm sóc da cấp ô xi tươi,800.000,\r 4,Chăm sóc da thải độc da,800.000,\r 5,Chăm sóc da cấp nước đa tầng,800.000,\r 6,Chăm sóc da nano kim cương,1"
+        },
+        {
+          "doc": "spa-1",
+          "chunk_id": "019ec1d8",
+          "score": 0.6305,
+          "preview": "Dịch vụ,Giá lẻ (VND),Gói 6 triệu,Gói 7 triệu,Gói 10 triệu\r Trị mụn chuyên sâu,700000,x,x,x\r"
+        },
+        {
+          "doc": "spa-1",
+          "chunk_id": "019ec1d8",
+          "score": 0.5828,
+          "preview": "Dịch vụ,Giá lẻ (VND),Gói 6 triệu,Gói 7 triệu,Gói 10 triệu\r CSD Nano kim cương,1500000,x,x,x\r"
+        },
+        {
+          "doc": "spa-1",
+          "chunk_id": "019ec1d8",
+          "score": 0.5783,
+          "preview": "Dịch vụ,Giá lẻ (VND),Gói 6 triệu,Gói 7 triệu,Gói 10 triệu\r CSD Thải độc da,800000,x,x,x\r"
+        }
+      ],
+      "answer_source_chunk": {
+        "in_corpus": true,
+        "preview": "Dịch vụ,Giá lẻ (VND),Gói 6 triệu,Gói 7 triệu,Gói 10 triệu\nCSD Chuyên sâu,700000,x,x,x\nTrị mụn chuyên sâu,700000,x,x,x\nCSD Cấp oxi tươi,800000,x,x,x\nCSD Thải độc da,800000,x,x,x\nCSD Cấp nước đa tầ",
+        "in_retrieved": true
+      },
+      "expect_in_answer": true,
+      "expect_in_retrieved": true,
+      "prelim_verdict": "✅ CHUẨN",
+      "fail_step": "",
+      "claude_verdict": "",
+      "claude_notes": ""
+    },
+    {
+      "id": "q08",
+      "category": "re_nhat",
+      "question": "Dịch vụ nào rẻ nhất ở spa?",
+      "reference_facts": "99000",
+      "is_trap": false,
+      "answer": "Dạ, dịch vụ spa rẻ nhất tại Dr. Medispa hiện là Massage chân với giá ưu đãi chỉ 99.000 đồng/buổi (giá gốc 350.000 đồng) trong 70 phút dành cho khách hàng mới ạ. Nếu anh/chị cần thêm thông tin hoặc muốn đặt lịch, em rất sẵn lòng hỗ trợ nhé!",
+      "answer_type": "answered",
+      "latency_ms": 9580,
+      "tokens": {
+        "prompt": 4814,
+        "completion": 78,
+        "cached": 1024,
+        "cache_hit_ratio": null
+      },
+      "intent": "aggregation",
+      "decomposed": false,
+      "cache_status": "bypassed",
+      "n_chunks_used": 21,
+      "top_k": 46,
+      "score_max": 0.9139,
+      "top_chunks_retrieved": [
+        {
+          "doc": "spa-4",
+          "chunk_id": "019ec1d8",
+          "score": 0.9139,
+          "preview": "<chunk_context>Dịch vụ chăm sóc da chuyên sâu tại Dr. Medispa - quy trình 10 bước chuẩn y khoa, ưu đãi khách mới, tư vấn và soi da công nghệ AI miễn phí</chunk_context>  ,chăm sóc da chuyên sâu,\"Hiện tại dịch vụ chăm sóc da chuyên sâu tại D"
+        },
+        {
+          "doc": "spa-4",
+          "chunk_id": "019ec1d8",
+          "score": 0.8795,
+          "preview": "<chunk_context>Tư vấn và ưu đãi dịch vụ massage cổ vai gáy tại Dr. Medispa</chunk_context>  ,cổ vai gáy/ massage cổ vai gáy / massage cvg / massage vai cổ gáy,\"Dạ, dịch vụ Massage cổ vai gáy bên em được thực hiện bởi chuyên viên kinh nghiệm"
+        },
+        {
+          "doc": "spa-4",
+          "chunk_id": "019ec1d8",
+          "score": 0.8713,
+          "preview": "<chunk_context>Tư vấn và đặt lịch dịch vụ massage chân tại Dr. Medispa, ưu đãi giá cho khách hàng mới</chunk_context>  - Nếu khách không trả lời: => Sau 1 giờ chủ động nhắn cho khách: Chị ơi, không biết chị cần em hỗ trợ, tư vấn thêm về dịc"
+        },
+        {
+          "doc": "spa-4",
+          "chunk_id": "019ec1d8",
+          "score": 0.8389,
+          "preview": "<chunk_context>Tư vấn và đặt lịch dịch vụ gội đầu dưỡng sinh tại Dr. Medispa, ưu đãi cho khách mới, quy trình và hỗ trợ khách hàng chưa phản hồi</chunk_context>  Em hỗ trợ mình đặt lịch [tên dịch vụ] tại Dr. Medispa nhé ạ?\",\r ,Gội đầu dưỡng"
+        },
+        {
+          "doc": "spa-4",
+          "chunk_id": "019ec1d8",
+          "score": 0.8157,
+          "preview": "<chunk_context>Tư vấn và đặt lịch dịch vụ ấm nóng cổ tử cung và thải độc bi tại Dr. Medispa, ưu đãi khách mới 499K/buổi (120 phút)</chunk_context>  - Nếu khách không trả lời: => Sau 1 giờ chủ động nhắn cho khách: Chị ơi, không biết chị cần "
+        },
+        {
+          "doc": "spa-4",
+          "chunk_id": "019ec1d8",
+          "score": 0.8355,
+          "preview": "<chunk_context>Dịch vụ cấp nước đa tầng tại Dr. Medispa - mô tả, quy trình và ưu đãi khách hàng mới</chunk_context>  ,Cấp nước/ Cấp nước đa tầng/ cấp ẩm cho da,\"Dạ, dịch vụ cấp nước đa tầng là một trong những dịch vụ hot tại Dr. Medispa đượ"
+        },
+        {
+          "doc": "spa-4",
+          "chunk_id": "019ec1d8",
+          "score": 0.8285,
+          "preview": "<chunk_context>Dịch vụ thải độc vùng đầu tại Dr. Medispa - tư vấn, ưu đãi và hỗ trợ đặt lịch massage chân và thải độc đầu cho khách mới.</chunk_context>  - Nếu khách không trả lời: => Sau 1 giờ chủ động nhắn cho khách: Chị ơi, không biết ch"
+        },
+        {
+          "doc": "spa-4",
+          "chunk_id": "019ec1d8",
+          "score": 0.8285,
+          "preview": "<chunk_context>Tư vấn và chốt lịch dịch vụ massage cổ vai gáy và massage body tại Dr. Medispa, ưu đãi cho khách hàng mới.</chunk_context>  - Nếu khách không trả lời: => Sau 1 giờ chủ động nhắn cho khách: Chị ơi, không biết chị cần em hỗ trợ"
+        }
+      ],
+      "answer_source_chunk": {
+        "in_corpus": true,
+        "preview": "STT,Tên dịch vụ,Giá 1 buổi,\n3,Nách,199.000,1199000",
+        "in_retrieved": true
+      },
+      "expect_in_answer": true,
+      "expect_in_retrieved": true,
+      "prelim_verdict": "✅ CHUẨN",
+      "fail_step": "",
+      "claude_verdict": "",
+      "claude_notes": ""
+    },
+    {
+      "id": "q09",
+      "category": "dat_nhat",
+      "question": "Dịch vụ nào đắt nhất?",
+      "reference_facts": "3000000",
+      "is_trap": false,
+      "answer": "Dịch vụ đắt nhất tại Dr. Medispa là Toàn thân với giá 2.499.000 đồng cho 1 buổi lẻ và 11.999.000 đồng cho combo 10 buổi. Nếu tính theo giá buổi lẻ, Meso căng bóng trẻ hóa có giá cao nhất là 3.000.000 đồng 1 buổi ạ.",
+      "answer_type": "answered",
+      "latency_ms": 7017,
+      "tokens": {
+        "prompt": 3573,
+        "completion": 82,
+        "cached": 1024,
+        "cache_hit_ratio": null
+      },
+      "intent": "aggregation",
+      "decomposed": false,
+      "cache_status": "bypassed",
+      "n_chunks_used": 20,
+      "top_k": 24,
+      "score_max": 0.867,
+      "top_chunks_retrieved": [
+        {
+          "doc": "spa-2",
+          "chunk_id": "019ec1d8",
+          "score": 0.867,
+          "preview": "STT,Tên dịch vụ,Giá 1 buổi,\r 2,Gói Buffet CNC 7 triệu,\"Tất cả dịch vụ của gói 6 triệu và peel điều trị mụn chuyên sâu, vikim medic (Nano màng sinh học), peel trẻ hóa tái tạo tế bào Tretinoin\",\r 3,Gói Buffet CNC 10 triệu,\"Tất cả dịch vụ của "
+        },
+        {
+          "doc": "spa-2",
+          "chunk_id": "019ec1d8",
+          "score": 0.7962,
+          "preview": "STT,Tên dịch vụ,Giá 1 buổi,\r 1,Chăm sóc da chuyên sâu,700.000,\r 2,Trị mụn chuyên sâu,700.000,\r 3,Chăm sóc da cấp ô xi tươi,800.000,\r 4,Chăm sóc da thải độc da,800.000,\r 5,Chăm sóc da cấp nước đa tầng,800.000,\r 6,Chăm sóc da nano kim cương,1"
+        },
+        {
+          "doc": "spa-2",
+          "chunk_id": "019ec1d8",
+          "score": 0.7773,
+          "preview": "STT,Tên dịch vụ,Giá 1 buổi,\r 3,Gói Buffet CNC 10 triệu,\"Tất cả dịch vụ của gói 7 triệu và peel trẻ hóa xóa nhăn Ribo, Nano collagen trẻ hóa da, Meso căng bóng trẻ hóa\",\r"
+        },
+        {
+          "doc": "spa-1",
+          "chunk_id": "019ec1d8",
+          "score": 0.7019,
+          "preview": "Dịch vụ,Giá lẻ (VND),Gói 6 triệu,Gói 7 triệu,Gói 10 triệu\r CSD Nano kim cương,1500000,x,x,x\r"
+        },
+        {
+          "doc": "spa-2",
+          "chunk_id": "019ec1d8",
+          "score": 0.6859,
+          "preview": "STT,Tên dịch vụ,Giá 1 buổi,\r 11,Toàn thân,2.499.000,11999000\r"
+        },
+        {
+          "doc": "spa-2",
+          "chunk_id": "019ec1d8",
+          "score": 0.6549,
+          "preview": "STT,Tên dịch vụ,Giá 1 buổi,\r 7,Cả chân,699.000,3999000\r"
+        },
+        {
+          "doc": "spa-2",
+          "chunk_id": "019ec1d8",
+          "score": 0.6225,
+          "preview": "STT,Tên dịch vụ,Giá 1 buổi,\r 9,Ngực & bụng,699.000,3999000\r"
+        },
+        {
+          "doc": "spa-2",
+          "chunk_id": "019ec1d8",
+          "score": 0.6099,
+          "preview": "STT,Tên dịch vụ,Giá 1 buổi,\r 8,Lưng,699.000,3999000\r"
+        }
+      ],
+      "answer_source_chunk": {
+        "in_corpus": true,
+        "preview": "Dịch vụ,Giá lẻ (VND),Gói 6 triệu,Gói 7 triệu,Gói 10 triệu\nCSD Chuyên sâu,700000,x,x,x\nTrị mụn chuyên sâu,700000,x,x,x\nCSD Cấp oxi tươi,800000,x,x,x\nCSD Thải độc da,800000,x,x,x\nCSD Cấp nước đa tầ",
+        "in_retrieved": true
+      },
+      "expect_in_answer": true,
+      "expect_in_retrieved": true,
+      "prelim_verdict": "✅ CHUẨN",
+      "fail_step": "",
+      "claude_verdict": "",
+      "claude_notes": ""
+    },
+    {
+      "id": "q10",
+      "category": "ngan_sach",
+      "question": "Mình có 2 triệu thì làm được những dịch vụ nào?",
+      "reference_facts": null,
+      "is_trap": false,
+      "answer": "Dạ, các dịch vụ tại Dr. Medispa có giá dưới 2 triệu đồng gồm:\n\n- Chăm sóc da chuyên sâu: 700.000 VND  \n- Trị mụn chuyên sâu: 700.000 VND  \n- Chăm sóc da cấp ô xi tươi: 800.000 VND  \n- Chăm sóc da thải độc da: 800.000 VND  \n- Chăm sóc da cấp nước đa tầng: 800.000 VND  \n- Chăm sóc da nâng cơ 7 điểm vàng: 800.000 VND  \n- Chăm sóc da dưỡng sinh mắt: 800.000 VND  \n- Trẻ hóa IPL: 1.200.000 VND  \n- Laser carbon: 1.200.000 VND  \n- Chăm sóc da nano kim cương: 1.500.000 VND  \n- Vikim trẻ hóa (Ultra căng bóng da): 1.500.000 VND  \n- Vikim medic (Nano màng sinh học): 1.800.000 VND  \n\nAnh/chị cần tư vấn thêm dịch vụ nào, em rất sẵn lòng hỗ trợ ạ.",
+      "answer_type": "answered",
+      "latency_ms": 9633,
+      "tokens": {
+        "prompt": 4154,
+        "completion": 248,
+        "cached": 1024,
+        "cache_hit_ratio": null
+      },
+      "intent": "aggregation",
+      "decomposed": false,
+      "cache_status": "bypassed",
+      "n_chunks_used": 21,
+      "top_k": 30,
+      "score_max": 0.6833,
+      "top_chunks_retrieved": [
+        {
+          "doc": "spa-2",
+          "chunk_id": "019ec1d8",
+          "score": 0.6833,
+          "preview": "STT,Tên dịch vụ,Giá 1 buổi,\r 9,Trẻ hóa IPL,1.200.000,\r"
+        },
+        {
+          "doc": "spa-2",
+          "chunk_id": "019ec1d8",
+          "score": 0.5915,
+          "preview": "STT,Tên dịch vụ,Giá 1 buổi,\r 1,Chăm sóc da chuyên sâu,700.000,\r 2,Trị mụn chuyên sâu,700.000,\r 3,Chăm sóc da cấp ô xi tươi,800.000,\r 4,Chăm sóc da thải độc da,800.000,\r 5,Chăm sóc da cấp nước đa tầng,800.000,\r 6,Chăm sóc da nano kim cương,1"
+        },
+        {
+          "doc": "spa-2",
+          "chunk_id": "019ec1d8",
+          "score": 0.6464,
+          "preview": "STT,Tên dịch vụ,Giá 1 buổi,\r 7,Chăm sóc da nâng cơ 7 điểm vàng,800.000,\r"
+        },
+        {
+          "doc": "spa-2",
+          "chunk_id": "019ec1d8",
+          "score": 0.6584,
+          "preview": "STT,Tên dịch vụ,Giá 1 buổi,\r 6,Chăm sóc da nano kim cương,1.500.000,\r"
+        },
+        {
+          "doc": "spa-2",
+          "chunk_id": "019ec1d8",
+          "score": 0.6363,
+          "preview": "STT,Tên dịch vụ,Giá 1 buổi,\r 2,Trị mụn chuyên sâu,700.000,\r"
+        },
+        {
+          "doc": "spa-2",
+          "chunk_id": "019ec1d8",
+          "score": 0.6143,
+          "preview": "STT,Tên dịch vụ,Giá 1 buổi,\r 3,Chăm sóc da cấp ô xi tươi,800.000,\r"
+        },
+        {
+          "doc": "spa-3",
+          "chunk_id": "019ec1d8",
+          "score": 0.413,
+          "preview": "STT,Vùng triệt,Giá buổi lẻ,Giá Combo 10 buổi\r 2,Mặt,249000,1499000\r"
+        },
+        {
+          "doc": "spa-2",
+          "chunk_id": "019ec1d8",
+          "score": 0.5552,
+          "preview": "STT,Tên dịch vụ,Giá 1 buổi,\r 8,Chăm sóc da dưỡng sinh mắt,800.000,\r"
+        }
+      ],
+      "answer_source_chunk": {
+        "in_corpus": null,
+        "preview": "",
+        "in_retrieved": false
+      },
+      "expect_in_answer": false,
+      "expect_in_retrieved": false,
+      "prelim_verdict": "✅ CHUẨN",
+      "fail_step": "",
+      "claude_verdict": "",
+      "claude_notes": ""
+    },
+    {
+      "id": "q11",
+      "category": "khuyen_mai",
+      "question": "Hiện có dịch vụ nào đang khuyến mãi / combo không?",
+      "reference_facts": "Combo",
+      "is_trap": false,
+      "answer": "Dạ, hiện Dr. Medispa có nhiều dịch vụ triệt lông đang áp dụng giá combo 10 buổi với mức ưu đãi như sau ạ:\n\n- Mép: 899.000 đồng (buổi lẻ 129.000 đồng)\n- Mặt: 1.499.000 đồng (buổi lẻ 249.000 đồng)\n- Nách: 1.199.000 đồng (buổi lẻ 199.000 đồng)\n- 1/2 tay: 2.399.000 đồng (buổi lẻ 349.000 đồng)\n- Cả tay: 2.999.000 đồng (buổi lẻ 499.000 đồng)\n- 1/2 chân: 2.999.000 đồng (buổi lẻ 599.000 đồng)\n- Cả chân: 3.999.000 đồng (buổi lẻ 699.000 đồng)\n- Lưng: 3.999.000 đồng (buổi lẻ 699.000 đồng)\n- Ngực & bụng: 3.999.000 đồng (buổi lẻ 699.000 đồng)\n- Bikini: 2.999.000 đồng (buổi lẻ 499.000 đồng)\n- Toàn thân: 11.999.000 đồng (buổi lẻ 2.499.000 đồng)\n- Râu (nam): 1.499.000 đồng (buổi lẻ 249.000 đồng)\n\nAnh/chị quan tâm dịch vụ nào để em tư vấn chi tiết hơn ạ?",
+      "answer_type": "answered",
+      "latency_ms": 8617,
+      "tokens": {
+        "prompt": 1780,
+        "completion": 331,
+        "cached": 1024,
+        "cache_hit_ratio": null
+      },
+      "intent": "factoid",
+      "decomposed": false,
+      "cache_status": "bypassed",
+      "n_chunks_used": 1,
+      "top_k": 20,
+      "score_max": 0.809,
+      "top_chunks_retrieved": [
+        {
+          "doc": "spa-3",
+          "chunk_id": "019ec1d8",
+          "score": 0.809,
+          "preview": "STT,Vùng triệt,Giá buổi lẻ,Giá Combo 10 buổi\r 1,Mép,129000,899000\r 2,Mặt,249000,1499000\r 3,Nách,199000,1199000\r 4,1/2 tay,349000,2399000\r 5,Cả tay,499000,2999000\r 6,1/2 chân,599000,2999000\r 7,Cả chân,699000,3999000\r 8,Lưng,699000,3999000\r 9"
+        }
+      ],
+      "answer_source_chunk": {
+        "in_corpus": true,
+        "preview": "STT,Vùng triệt,Giá buổi lẻ,Giá Combo 10 buổi\n1,Mép,129000,899000\n2,Mặt,249000,1499000\n3,Nách,199000,1199000\n4,1/2 tay,349000,2399000\n5,Cả tay,499000,2999000\n6,1/2 chân,599000,2999000\n7,Cả chân,",
+        "in_retrieved": true
+      },
+      "expect_in_answer": true,
+      "expect_in_retrieved": true,
+      "prelim_verdict": "✅ CHUẨN",
+      "fail_step": "",
+      "claude_verdict": "",
+      "claude_notes": ""
+    },
+    {
+      "id": "q12",
+      "category": "so_sanh",
+      "question": "So sánh Laser Carbon với Trẻ hóa IPL",
+      "reference_facts": null,
+      "is_trap": false,
+      "answer": "Dạ, em so sánh giúp anh/chị như sau ạ:\n\n- Giá dịch vụ: cả Laser Carbon và Trẻ hóa IPL đều có giá 1.200.000 VND/buổi.\n- Trẻ hóa IPL là liệu pháp trẻ hóa da không xâm lấn, quy trình chuẩn y khoa gồm 16 bước như tẩy trang, rửa mặt, tẩy da chết, xông hơi, massage nâng cơ, lấy mụn, sát khuẩn bằng tia điện tím, điện di tinh chất làm dịu da, laser se khít lỗ chân lông, điện di lạnh, đắp mặt nạ, chiếu ánh sáng blue light, thoa serum, kem dưỡng, kem chống nắng. Khách còn được soi da bằng công nghệ AI phân tích 17 chỉ số và tư vấn phác đồ riêng miễn phí.\n\n- Về Laser Carbon, tài liệu chưa cung cấp chi tiết quy trình hay đặc điểm cụ thể.\n\nAnh/chị cần em tư vấn thêm hoặc hỗ trợ đặt lịch trải nghiệm dịch vụ nào ạ?",
+      "answer_type": "answered",
+      "latency_ms": 9397,
+      "tokens": {
+        "prompt": 3055,
+        "completion": 221,
+        "cached": 1024,
+        "cache_hit_ratio": null
+      },
+      "intent": "comparison",
+      "decomposed": false,
+      "cache_status": "bypassed",
+      "n_chunks_used": 6,
+      "top_k": 20,
+      "score_max": 0.4914,
+      "top_chunks_retrieved": [
+        {
+          "doc": "spa-1",
+          "chunk_id": "019ec1d8",
+          "score": 0.4914,
+          "preview": "Dịch vụ,Giá lẻ (VND),Gói 6 triệu,Gói 7 triệu,Gói 10 triệu\r CSD Chuyên sâu,700000,x,x,x\r Trị mụn chuyên sâu,700000,x,x,x\r CSD Cấp oxi tươi,800000,x,x,x\r CSD Thải độc da,800000,x,x,x\r CSD Cấp nước đa tầng,800000,x,x,x\r CSD Nano kim cương,1500"
+        },
+        {
+          "doc": "spa-4",
+          "chunk_id": "019ec1d8",
+          "score": 0.2533,
+          "preview": "<chunk_context>Dịch vụ trẻ hóa da tại Dr. Medispa – liệu pháp không xâm lấn, quy trình 16 bước chuẩn y khoa, ưu đãi khách mới, tư vấn soi da bằng AI</chunk_context>  ,trẻ hóa da / trẻ hóa,\"Dạ, dịch vụ trẻ hóa da Dr. Medi là dịch vụ đang đượ"
+        },
+        {
+          "doc": "spa-2",
+          "chunk_id": "019ec1d8",
+          "score": 0.2955,
+          "preview": "STT,Tên dịch vụ,Giá 1 buổi,\r 9,Trẻ hóa IPL,1.200.000,\r"
+        },
+        {
+          "doc": "spa-1",
+          "chunk_id": "019ec1d8",
+          "score": 0.3074,
+          "preview": "Dịch vụ,Giá lẻ (VND),Gói 6 triệu,Gói 7 triệu,Gói 10 triệu\r Trẻ hóa IPL,1200000,x,x,x\r"
+        },
+        {
+          "doc": "spa-2",
+          "chunk_id": "019ec1d8",
+          "score": 0.2521,
+          "preview": "STT,Tên dịch vụ,Giá 1 buổi,\r 10,Laser carbon,1.200.000,\r"
+        },
+        {
+          "doc": "spa-1",
+          "chunk_id": "019ec1d8",
+          "score": 0.2304,
+          "preview": "Dịch vụ,Giá lẻ (VND),Gói 6 triệu,Gói 7 triệu,Gói 10 triệu\r Laser Carbon,1200000,x,x,x\r"
+        }
+      ],
+      "answer_source_chunk": {
+        "in_corpus": null,
+        "preview": "",
+        "in_retrieved": false
+      },
+      "expect_in_answer": false,
+      "expect_in_retrieved": false,
+      "prelim_verdict": "⚪ DATA",
+      "fail_step": "REFUSE",
+      "claude_verdict": "",
+      "claude_notes": ""
+    },
+    {
+      "id": "q13",
+      "category": "triet_long",
+      "question": "Triệt lông nách giá combo 10 buổi bao nhiêu?",
+      "reference_facts": "1199000",
+      "is_trap": false,
+      "answer": "Dạ, giá combo 10 buổi triệt lông nách tại Dr. Medispa là 1.199.000 đồng ạ. Khi mua combo 10 buổi, anh/chị sẽ được tặng thêm 5 buổi và bảo hành 2 năm ạ. Anh/chị cần em hỗ trợ đặt lịch không ạ?",
+      "answer_type": "answered",
+      "latency_ms": 6172,
+      "tokens": {
+        "prompt": 3346,
+        "completion": 74,
+        "cached": 0,
+        "cache_hit_ratio": null
+      },
+      "intent": "aggregation",
+      "decomposed": false,
+      "cache_status": "bypassed",
+      "n_chunks_used": 15,
+      "top_k": 20,
+      "score_max": 0.8991,
+      "top_chunks_retrieved": [
+        {
+          "doc": "spa-3",
+          "chunk_id": "019ec1d8",
+          "score": 0.8991,
+          "preview": "STT,Vùng triệt,Giá buổi lẻ,Giá Combo 10 buổi\r 3,Nách,199000,1199000\r"
+        },
+        {
+          "doc": "spa-4",
+          "chunk_id": "019ec1d8",
+          "score": 0.8754,
+          "preview": "<chunk_context>Tư vấn giá và công nghệ triệt lông cụ thể tại Dr. Medispa</chunk_context>  ,Triệt lông vùng cụ thể,\"Dạ triệt lông [tên vùng cụ thể] có giá [thay giá cụ thể]/buổi, nếu chị mua 10 buổi chỉ còn [thay giá sale] thôi ạ. Ngoài ra n"
+        },
+        {
+          "doc": "spa-2",
+          "chunk_id": "019ec1d8",
+          "score": 0.824,
+          "preview": "STT,Tên dịch vụ,Giá 1 buổi,\r STT,Vùng triệt,Giá buổi lẻ,Giá Combo 10 buổi\r 1,Mép,129.000,899000\r 2,Mặt,249.000,1499000\r 3,Nách,199.000,1199000\r 4,1/2 tay,349.000,2399000\r 5,Cả tay,499.000,2999000\r 6,1/2 chân,599.000,2999000\r 7,Cả chân,699.0"
+        },
+        {
+          "doc": "spa-3",
+          "chunk_id": "019ec1d8",
+          "score": 0.8597,
+          "preview": "STT,Vùng triệt,Giá buổi lẻ,Giá Combo 10 buổi\r 1,Mép,129000,899000\r 2,Mặt,249000,1499000\r 3,Nách,199000,1199000\r 4,1/2 tay,349000,2399000\r 5,Cả tay,499000,2999000\r 6,1/2 chân,599000,2999000\r 7,Cả chân,699000,3999000\r 8,Lưng,699000,3999000\r 9"
+        },
+        {
+          "doc": "spa-3",
+          "chunk_id": "019ec1d8",
+          "score": 0.7972,
+          "preview": "STT,Vùng triệt,Giá buổi lẻ,Giá Combo 10 buổi\r 6,1/2 chân,599000,2999000\r"
+        },
+        {
+          "doc": "spa-3",
+          "chunk_id": "019ec1d8",
+          "score": 0.694,
+          "preview": "STT,Vùng triệt,Giá buổi lẻ,Giá Combo 10 buổi\r 11,Toàn thân,2499000,11999000\r"
+        },
+        {
+          "doc": "spa-3",
+          "chunk_id": "019ec1d8",
+          "score": 0.6839,
+          "preview": "STT,Vùng triệt,Giá buổi lẻ,Giá Combo 10 buổi\r 8,Lưng,699000,3999000\r"
+        },
+        {
+          "doc": "spa-3",
+          "chunk_id": "019ec1d8",
+          "score": 0.5645,
+          "preview": "STT,Vùng triệt,Giá buổi lẻ,Giá Combo 10 buổi\r 9,Ngực & bụng,699000,3999000\r"
+        }
+      ],
+      "answer_source_chunk": {
+        "in_corpus": true,
+        "preview": "STT,Tên dịch vụ,Giá 1 buổi,\n3,Nách,199.000,1199000",
+        "in_retrieved": true
+      },
+      "expect_in_answer": true,
+      "expect_in_retrieved": true,
+      "prelim_verdict": "✅ CHUẨN",
+      "fail_step": "",
+      "claude_verdict": "",
+      "claude_notes": ""
+    },
+    {
+      "id": "q14",
+      "category": "tu_van_quy_trinh",
+      "question": "Quy trình chăm sóc da chuyên sâu gồm các bước nào?",
+      "reference_facts": null,
+      "is_trap": false,
+      "answer": "Quy trình chăm sóc da chuyên sâu tại Dr. Medispa gồm 10 bước chuẩn y khoa: tẩy trang, rửa mặt, tẩy da chết, hút dầu mụn, lấy nhân mụn chuẩn y khoa, massage, điện di lạnh tinh chất, đắp mặt nạ, kem dưỡng, kem chống nắng, và massage vai gáy ạ. Khi đến, chị còn được soi da bằng công nghệ AI phân tích 17 chỉ số và tư vấn phác đồ điều trị riêng miễn phí ạ.",
+      "answer_type": "answered",
+      "latency_ms": 6054,
+      "tokens": {
+        "prompt": 2512,
+        "completion": 112,
+        "cached": 1024,
+        "cache_hit_ratio": null
+      },
+      "intent": "factoid",
+      "decomposed": false,
+      "cache_status": "bypassed",
+      "n_chunks_used": 3,
+      "top_k": 20,
+      "score_max": 0.9215,
+      "top_chunks_retrieved": [
+        {
+          "doc": "spa-4",
+          "chunk_id": "019ec1d8",
+          "score": 0.9215,
+          "preview": "<chunk_context>Dịch vụ chăm sóc da chuyên sâu tại Dr. Medispa - quy trình 10 bước chuẩn y khoa, ưu đãi khách mới, tư vấn và soi da công nghệ AI miễn phí</chunk_context>  ,chăm sóc da chuyên sâu,\"Hiện tại dịch vụ chăm sóc da chuyên sâu tại D"
+        },
+        {
+          "doc": "spa-4",
+          "chunk_id": "019ec1d8",
+          "score": 0.8656,
+          "preview": "<chunk_context>Quy trình dịch vụ Hydra Ballet cấp ẩm đa tầng và tư vấn soi da công nghệ AI tại Dr. Medispa</chunk_context>  Quy trình bên em bao gồm 21 bước chuẩn y khoa: xịt thơm, kích thích dẫn lưu với đá nóng, thư giãn bó cơ tay chân và "
+        },
+        {
+          "doc": "spa-4",
+          "chunk_id": "019ec1d8",
+          "score": 0.8231,
+          "preview": "<chunk_context>Quy trình dịch vụ trẻ hóa da Ultherapy tại Dr. Medispa với 16 bước chuẩn y khoa và tư vấn soi da bằng công nghệ AI 17 chỉ số</chunk_context>  Quy trình bên em bao gồm 16 bước chuẩn y khoa: tẩy trang, rửa mặt, tẩy da chết, xôn"
+        }
+      ],
+      "answer_source_chunk": {
+        "in_corpus": null,
+        "preview": "",
+        "in_retrieved": false
+      },
+      "expect_in_answer": false,
+      "expect_in_retrieved": false,
+      "prelim_verdict": "✅ CHUẨN",
+      "fail_step": "",
+      "claude_verdict": "",
+      "claude_notes": ""
+    },
+    {
+      "id": "q15",
+      "category": "dat_lich",
+      "question": "Mình muốn đặt lịch khám da mặt",
+      "reference_facts": null,
+      "is_trap": false,
+      "answer": "Dạ, anh/chị vui lòng cho em xin họ tên, số điện thoại và thời gian anh/chị muốn đến khám da mặt để em hỗ trợ đặt lịch ạ.",
+      "answer_type": "answered",
+      "latency_ms": 5093,
+      "tokens": {
+        "prompt": 2253,
+        "completion": 37,
+        "cached": 0,
+        "cache_hit_ratio": null
+      },
+      "intent": "factoid",
+      "decomposed": false,
+      "cache_status": "bypassed",
+      "n_chunks_used": 4,
+      "top_k": 20,
+      "score_max": 0.8859,
+      "top_chunks_retrieved": [
+        {
+          "doc": "spa-4",
+          "chunk_id": "019ec1d8",
+          "score": 0.8859,
+          "preview": "<chunk_context>Tư vấn và chốt lịch dịch vụ chăm sóc da chuyên sâu tại Dr. Medispa, yêu cầu thông tin khách hàng để đặt lịch</chunk_context>  Không biết chị cần em tư vấn hoặc giải đáp thêm gì về dịch vụ chăm sóc da chuyên sâu không ạ? Hiện "
+        },
+        {
+          "doc": "spa-4",
+          "chunk_id": "019ec1d8",
+          "score": 0.8372,
+          "preview": "<chunk_context>Dịch vụ điều trị mụn chuẩn y khoa tại Dr. Medispa với quy trình 10 bước, ưu đãi giá trải nghiệm cho khách mới, tư vấn bằng công nghệ AI phân tích da 17 chỉ số.</chunk_context>  ,trị mụn/ lấy nhân mụn / lấy mụn / điều trị mụn,"
+        },
+        {
+          "doc": "spa-4",
+          "chunk_id": "019ec1d8",
+          "score": 0.809,
+          "preview": "<chunk_context>Dịch vụ trẻ hóa da tại Dr. Medispa – liệu pháp không xâm lấn, quy trình 16 bước chuẩn y khoa, ưu đãi khách mới, tư vấn soi da bằng AI</chunk_context>  ,trẻ hóa da / trẻ hóa,\"Dạ, dịch vụ trẻ hóa da Dr. Medi là dịch vụ đang đượ"
+        },
+        {
+          "doc": "spa-4",
+          "chunk_id": "019ec1d8",
+          "score": 0.7729,
+          "preview": "<chunk_context>Tư vấn dịch vụ trị thâm mụn tại Dr. Medispa, bao gồm soi da bằng công nghệ AI và tư vấn phác đồ điều trị cá nhân.</chunk_context>  ,trị thâm mụn,\"Dạ, hiện tại Dr. Medispa có bác sĩ da liễu và chuyên gia tư vấn phác đồ điều tr"
+        }
+      ],
+      "answer_source_chunk": {
+        "in_corpus": null,
+        "preview": "",
+        "in_retrieved": false
+      },
+      "expect_in_answer": false,
+      "expect_in_retrieved": false,
+      "prelim_verdict": "✅ CHUẨN",
+      "fail_step": "",
+      "claude_verdict": "",
+      "claude_notes": ""
+    },
+    {
+      "id": "q16",
+      "category": "dat_lich_slot",
+      "question": "Tên mình là Lan, sđt 0901234567, hẹn 9h sáng mai, đi 2 người",
+      "reference_facts": null,
+      "is_trap": false,
+      "answer": "Chị Lan thân mến, em đã nhận thông tin đặt lịch 9h sáng mai, số điện thoại 0901234567, cho 2 người rồi ạ. Chị vui lòng cho em biết dịch vụ mà hai chị muốn trải nghiệm để em xác nhận và chốt lịch giúp mình nhé!",
+      "answer_type": "answered",
+      "latency_ms": 8542,
+      "tokens": {
+        "prompt": 2312,
+        "completion": 64,
+        "cached": 0,
+        "cache_hit_ratio": null
+      },
+      "intent": "factoid",
+      "decomposed": true,
+      "cache_status": "bypassed",
+      "n_chunks_used": 3,
+      "top_k": 20,
+      "score_max": 0.6654,
+      "top_chunks_retrieved": [
+        {
+          "doc": "spa-4",
+          "chunk_id": "019ec1d8",
+          "score": 0.6654,
+          "preview": "<chunk_context>Chốt lịch hẹn dịch vụ tại Dr. Medispa - xác nhận tên, số điện thoại, thời gian, dịch vụ và địa chỉ spa</chunk_context>  ,\"Sau khi khách trả lời đủ ngày, giờ cụ thể, bot chốt lịch cho khách \",\"Dr. Medispa xác nhận lịch hẹn của"
+        },
+        {
+          "doc": "spa-4",
+          "chunk_id": "019ec1d8",
+          "score": 0.4725,
+          "preview": "<chunk_context>Hướng dẫn nhắc nhở và yêu cầu bổ sung thông tin khi khách không trả lời hoặc cung cấp thiếu thông tin đặt lịch tại Dr. Medispa</chunk_context>  ,Nếu khách không trả lời thì remind nhắc lại,\"Dạ, chị [tên khách] ơi, để em hỗ tr"
+        },
+        {
+          "doc": "spa-4",
+          "chunk_id": "019ec1d8",
+          "score": 0.3746,
+          "preview": "<chunk_context>Tư vấn và đặt lịch dịch vụ gội đầu dưỡng sinh tại Dr. Medispa, ưu đãi cho khách mới, quy trình và hỗ trợ khách hàng chưa phản hồi</chunk_context>  Em hỗ trợ mình đặt lịch [tên dịch vụ] tại Dr. Medispa nhé ạ?\",\r ,Gội đầu dưỡng"
+        }
+      ],
+      "answer_source_chunk": {
+        "in_corpus": null,
+        "preview": "",
+        "in_retrieved": false
+      },
+      "expect_in_answer": false,
+      "expect_in_retrieved": false,
+      "prelim_verdict": "✅ CHUẨN",
+      "fail_step": "",
+      "claude_verdict": "",
+      "claude_notes": ""
+    },
+    {
+      "id": "q17",
+      "category": "oos_trap",
+      "question": "Spa có bán xe máy không?",
+      "reference_facts": null,
+      "is_trap": true,
+      "answer": "Dạ, hiện tại Dr. Medispa không bán xe máy ạ. Không biết anh/chị cần em tư vấn hoặc giải đáp thêm gì về dịch vụ chăm sóc da không ạ? Hiện tại bên em đang có nhiều quà tặng đặc biệt cho khách hàng mới, em mời anh/chị sắp xếp thời gian qua spa chăm sóc và thư giãn nhé ạ!",
+      "answer_type": "answered",
+      "latency_ms": 7459,
+      "tokens": {
+        "prompt": 1699,
+        "completion": 84,
+        "cached": 1024,
+        "cache_hit_ratio": null
+      },
+      "intent": "factoid",
+      "decomposed": false,
+      "cache_status": "bypassed",
+      "n_chunks_used": 2,
+      "top_k": 20,
+      "score_max": 0.1496,
+      "top_chunks_retrieved": [
+        {
+          "doc": "spa-4",
+          "chunk_id": "019ec1d8",
+          "score": 0.1496,
+          "preview": "<chunk_context>Câu trả lời tư vấn thêm dịch vụ với lời mời khách hàng đến spa tại Dr. Medispa</chunk_context>  Không biết chị cần em tư vấn hoặc giải đáp thêm gì về dịch vụ [thay tên dịch vụ] không ạ? Hiện tại bên em đang có nhiều quà tặng "
+        },
+        {
+          "doc": "spa-1",
+          "chunk_id": "019ec1d8",
+          "score": 0.1496,
+          "preview": "Dịch vụ,Giá lẻ (VND),Gói 6 triệu,Gói 7 triệu,Gói 10 triệu\r CSD Cấp oxi tươi,800000,x,x,x\r"
+        }
+      ],
+      "answer_source_chunk": {
+        "in_corpus": null,
+        "preview": "",
+        "in_retrieved": false
+      },
+      "expect_in_answer": false,
+      "expect_in_retrieved": false,
+      "prelim_verdict": "✅ CHUẨN",
+      "fail_step": "",
+      "claude_verdict": "",
+      "claude_notes": ""
+    },
+    {
+      "id": "q18",
+      "category": "hallu_trap",
+      "question": "Dịch vụ cấy chỉ collagen vàng 24k giá bao nhiêu?",
+      "reference_facts": null,
+      "is_trap": true,
+      "answer": "Em chưa có thông tin chính xác về vấn đề này. Anh/chị vui lòng liên hệ trực tiếp để được hỗ trợ ạ.",
+      "answer_type": "blocked",
+      "latency_ms": 6743,
+      "tokens": {
+        "prompt": 3161,
+        "completion": 45,
+        "cached": 1024,
+        "cache_hit_ratio": null
+      },
+      "intent": "aggregation",
+      "decomposed": false,
+      "cache_status": "bypassed",
+      "n_chunks_used": 17,
+      "top_k": 20,
+      "score_max": 0.5158,
+      "top_chunks_retrieved": [
+        {
+          "doc": "spa-1",
+          "chunk_id": "019ec1d8",
+          "score": 0.5158,
+          "preview": "Dịch vụ,Giá lẻ (VND),Gói 6 triệu,Gói 7 triệu,Gói 10 triệu\r Nano collagen trẻ hóa da,2500000,,,x\r"
+        },
+        {
+          "doc": "spa-1",
+          "chunk_id": "019ec1d8",
+          "score": 0.4866,
+          "preview": "Dịch vụ,Giá lẻ (VND),Gói 6 triệu,Gói 7 triệu,Gói 10 triệu\r CSD Chuyên sâu,700000,x,x,x\r"
+        },
+        {
+          "doc": "spa-2",
+          "chunk_id": "019ec1d8",
+          "score": 0.449,
+          "preview": "STT,Tên dịch vụ,Giá 1 buổi,\r 17,Nano collagen trẻ hóa da,2.500.000,\r"
+        },
+        {
+          "doc": "spa-2",
+          "chunk_id": "019ec1d8",
+          "score": 0.4271,
+          "preview": "STT,Tên dịch vụ,Giá 1 buổi,\r 2,Mặt,249.000,1499000\r"
+        },
+        {
+          "doc": "spa-1",
+          "chunk_id": "019ec1d8",
+          "score": 0.3761,
+          "preview": "Dịch vụ,Giá lẻ (VND),Gói 6 triệu,Gói 7 triệu,Gói 10 triệu\r Vikim trẻ hóa (Ultra căng bóng da),1500000,,x,x\r"
+        },
+        {
+          "doc": "spa-2",
+          "chunk_id": "019ec1d8",
+          "score": 0.3659,
+          "preview": "STT,Tên dịch vụ,Giá 1 buổi,\r 1,Chăm sóc da chuyên sâu,700.000,\r 2,Trị mụn chuyên sâu,700.000,\r 3,Chăm sóc da cấp ô xi tươi,800.000,\r 4,Chăm sóc da thải độc da,800.000,\r 5,Chăm sóc da cấp nước đa tầng,800.000,\r 6,Chăm sóc da nano kim cương,1"
+        },
+        {
+          "doc": "spa-1",
+          "chunk_id": "019ec1d8",
+          "score": 0.3579,
+          "preview": "Dịch vụ,Giá lẻ (VND),Gói 6 triệu,Gói 7 triệu,Gói 10 triệu\r CSD Nâng cơ 7 điểm vàng,800000,x,x,x\r"
+        },
+        {
+          "doc": "spa-1",
+          "chunk_id": "019ec1d8",
+          "score": 0.3388,
+          "preview": "Dịch vụ,Giá lẻ (VND),Gói 6 triệu,Gói 7 triệu,Gói 10 triệu\r Meso căng bóng trẻ hóa,3000000,,,x"
+        }
+      ],
+      "answer_source_chunk": {
+        "in_corpus": null,
+        "preview": "",
+        "in_retrieved": false
+      },
+      "expect_in_answer": false,
+      "expect_in_retrieved": false,
+      "prelim_verdict": "✅ CHUẨN",
+      "fail_step": "",
+      "claude_verdict": "",
+      "claude_notes": ""
+    }
+  ]
+}

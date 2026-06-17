@@ -1,0 +1,154 @@
+# Prometheus alert rules — Ragbot SLA monitoring (Phase D Stream D3)
+#
+# Admin deploys this YAML alongside the Prometheus server. Numeric
+# thresholds mirror the defaults declared in
+# ``src/ragbot/shared/constants.py``:
+#
+#   DEFAULT_SLA_P95_WARN_SECONDS         = 10.0
+#   DEFAULT_SLA_P95_CRITICAL_SECONDS     = 15.0
+#   DEFAULT_SLA_ERROR_RATE_WARN          = 0.05
+#   DEFAULT_SLA_ERROR_RATE_CRITICAL      = 0.10
+#   DEFAULT_SLA_CACHE_HIT_RATIO_WARN     = 0.20
+#   DEFAULT_SLA_CIRCUIT_OPEN_DURATION_S  = 600
+#   DEFAULT_SLA_BREACH_WINDOW_S          = 300  (rule `for:` clause)
+#
+# When you change a constant, regenerate this file — the Python module
+# ``sla_metrics.sla_threshold_snapshot()`` is the single SSoT.
+#
+# Metric source names are the existing collectors in
+# ``ragbot.infrastructure.observability.metrics``.
+
+groups:
+  - name: ragbot_sla_latency
+    rules:
+      - alert: RagbotP95LatencyWarn
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum by (le) (rate(request_duration_seconds_bucket[5m]))
+          ) >= 10
+        for: 5m
+        labels:
+          severity: warning
+          stream: ragbot_sla
+        annotations:
+          summary: "Ragbot p95 chat latency above warn threshold"
+          description: |
+            End-to-end p95 chat latency has been >= 10 seconds for 5
+            minutes. Investigate retrieval / rerank / LLM provider
+            health.
+
+      - alert: RagbotP95LatencyCritical
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum by (le) (rate(request_duration_seconds_bucket[5m]))
+          ) >= 15
+        for: 5m
+        labels:
+          severity: critical
+          stream: ragbot_sla
+        annotations:
+          summary: "Ragbot p95 chat latency above critical threshold"
+          description: |
+            End-to-end p95 chat latency has been >= 15 seconds for 5
+            minutes. Page on-call — user-visible SLA breach.
+
+      - alert: RagbotP99OutlierSpike
+        expr: |
+          rate(ragbot_chat_p99_outlier_total[5m]) > 0
+        for: 5m
+        labels:
+          severity: warning
+          stream: ragbot_sla
+        annotations:
+          summary: "Ragbot p99 outliers detected"
+          description: |
+            One or more chat requests exceeded
+            DEFAULT_P99_OUTLIER_THRESHOLD_S in the last 5 min. Tail
+            latency regression candidate — inspect intent label.
+
+  - name: ragbot_sla_error_rate
+    rules:
+      - alert: RagbotChatErrorRateWarn
+        expr: |
+          (
+            sum(rate(request_total{status="error"}[5m]))
+            /
+            sum(rate(request_total[5m]))
+          ) >= 0.05
+        for: 5m
+        labels:
+          severity: warning
+          stream: ragbot_sla
+        annotations:
+          summary: "Ragbot chat error rate >= 5%"
+          description: |
+            5xx / pipeline error ratio crossed the warn threshold.
+            Inspect upstream LLM / DB / Redis health.
+
+      - alert: RagbotChatErrorRateCritical
+        expr: |
+          (
+            sum(rate(request_total{status="error"}[5m]))
+            /
+            sum(rate(request_total[5m]))
+          ) >= 0.10
+        for: 5m
+        labels:
+          severity: critical
+          stream: ragbot_sla
+        annotations:
+          summary: "Ragbot chat error rate >= 10%"
+          description: |
+            Critical error rate — page on-call. Likely upstream
+            provider outage or circuit breakers stuck open.
+
+  - name: ragbot_sla_cache_circuit
+    rules:
+      - alert: RagbotCacheHitRatioLow
+        expr: |
+          (
+            sum(rate(cache_hit_total[30m]))
+            /
+            sum(rate(request_total[30m]))
+          ) < 0.20
+        for: 30m
+        labels:
+          severity: warning
+          stream: ragbot_sla
+        annotations:
+          summary: "Ragbot cache hit ratio below 20%"
+          description: |
+            Cache hit ratio under the warn floor for 30 min — cost /
+            latency regression risk. Inspect semantic + exact cache
+            health.
+
+      - alert: RagbotCircuitBreakerStuckOpen
+        expr: |
+          max by (provider) (ragbot_circuit_breaker_state) == 2
+        for: 10m
+        labels:
+          severity: critical
+          stream: ragbot_sla
+        annotations:
+          summary: "Ragbot circuit breaker stuck OPEN for {{ $labels.provider }}"
+          description: |
+            Circuit breaker has been OPEN (state == 2) for 10 min on
+            provider {{ $labels.provider }}. Rotate API keys or swap
+            binding.
+
+  - name: ragbot_sla_hallu
+    rules:
+      - alert: RagbotGroundingFailSpike
+        expr: |
+          rate(grounding_fail_total[5m]) > 0
+        for: 5m
+        labels:
+          severity: critical
+          stream: ragbot_sla
+        annotations:
+          summary: "Ragbot grounding / citation failures detected"
+          description: |
+            One or more answers failed grounding check in the last 5
+            min. HALLU=0 is sacred — page on-call immediately.

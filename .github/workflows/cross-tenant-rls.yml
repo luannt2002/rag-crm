@@ -1,0 +1,110 @@
+name: cross-tenant-rls
+
+# Cross-tenant Row-Level Security integration smoke test.
+#
+# Goal: prove tenant A's session cannot see / mutate tenant B's rows once
+# RLS policies are enabled on the schema. The integration test file
+# tests/integration/test_rls_cross_tenant.py exercises the policy itself
+# (not the application filter): a SELECT bound to tenant A must return
+# only tenant A's rows, a DELETE on tenant B's row must affect 0 rows,
+# child-table policies must inherit parent tenancy, and an unbound
+# session must see 0 rows (fail-closed).
+#
+# Depends on the alembic migration that creates the non-superuser
+# ragbot_app role (tracked separately as the role-creation migration);
+# without that role PostgreSQL superuser bypasses RLS even with
+# FORCE ROW LEVEL SECURITY set, so this workflow gates on
+# RAGBOT_RLS_TEST_USER pointing at ragbot_app.
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  rls-smoke:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: ragbot
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/ragbot
+      DATABASE_URL_APP: postgresql+asyncpg://ragbot_app:ragbot_app_ci@localhost:5432/ragbot
+      REDIS_URL: redis://localhost:6379/0
+      RAGBOT_RLS_TEST_USER: ragbot_app
+      PYTHONPATH: src
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Install dependencies
+        run: uv sync --extra dev
+
+      - name: Wait for PostgreSQL
+        run: |
+          for _ in $(seq 1 30); do
+            if pg_isready -h localhost -U postgres; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "postgres did not become ready" >&2
+          exit 1
+        env:
+          PGPASSWORD: postgres
+
+      - name: Run alembic migrations (admin DSN)
+        run: uv run alembic upgrade head
+
+      - name: Verify ragbot_app role exists and set password
+        # The role-creation migration ships ragbot_app NOSUPERUSER NOBYPASSRLS
+        # with a password lifted from the app.ragbot_app_password GUC. In CI
+        # we set the password explicitly so the non-superuser DSN can log in.
+        run: |
+          PGPASSWORD=postgres psql -h localhost -U postgres -d ragbot -v ON_ERROR_STOP=1 <<'SQL'
+          DO $$
+          BEGIN
+            IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'ragbot_app') THEN
+              RAISE EXCEPTION 'ragbot_app role missing — alembic role-creation migration did not run';
+            END IF;
+          END
+          $$;
+          ALTER ROLE ragbot_app WITH LOGIN PASSWORD 'ragbot_app_ci';
+          SQL
+
+      - name: Run cross-tenant RLS integration tests
+        run: |
+          uv run pytest tests/integration/test_rls_cross_tenant.py \
+            --run-integration -v

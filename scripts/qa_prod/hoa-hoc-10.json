@@ -1,0 +1,28 @@
+{
+  "bot_id": "hoa-hoc-10",
+  "archetype": "academic-tutor",
+  "questions": [
+    {"id": "hoa-L1-1", "level": "L1", "nghiep_vu": "tra_cuu", "category": "factoid",
+     "question": "Cấu hình electron của nguyên tử Na (Z=11) là gì?",
+     "must_contain": ["1s2", "2s2", "2p6", "3s1"], "fact_id": "hoa.na_config"},
+    {"id": "hoa-L1-2", "level": "L1", "nghiep_vu": "tra_cuu", "category": "factoid",
+     "question": "Năm nào Mendeleev đề xuất bảng tuần hoàn đầu tiên?",
+     "must_contain": ["1869"], "fact_id": "hoa.mendeleev"},
+    {"id": "hoa-L1-3", "level": "L1", "nghiep_vu": "tra_cuu", "category": "factoid",
+     "question": "Chu kỳ 4 của bảng tuần hoàn có bao nhiêu nguyên tố?",
+     "must_contain": ["18"], "fact_id": "hoa.chuky4"},
+    {"id": "hoa-L2-1", "level": "L2", "nghiep_vu": "tra_cuu", "category": "factoid_filter",
+     "question": "Cấu hình electron của Fe (Z=26) — viết đầy đủ.",
+     "must_contain": ["3d6", "4s2"], "fact_id": "hoa.fe_config"},
+    {"id": "hoa-L3-1", "level": "L3", "nghiep_vu": "so_sanh", "category": "comparison",
+     "question": "Chu kỳ 2 và chu kỳ 6 mỗi chu kỳ có bao nhiêu nguyên tố, và chu kỳ 6 nhiều hơn chu kỳ 2 bao nhiêu nguyên tố?",
+     "must_contain": ["8", "32", "24"], "expected_compute": "32-8=24",
+     "fact_ref": ["hoa.chuky2", "hoa.chuky6"]},
+    {"id": "hoa-L4-1", "level": "L4", "nghiep_vu": "khai_niem", "category": "multi_hop",
+     "question": "Trong một chu kỳ đi từ trái sang phải, bán kính nguyên tử tăng hay giảm, và vì sao?",
+     "must_contain": ["giảm", "lực hút"], "fact_ref": ["hoa.bankinh"]},
+    {"id": "hoa-L0-1", "level": "L0", "nghiep_vu": "oos", "category": "refusal_trap",
+     "question": "Viết phương trình phản ứng hữu cơ điều chế etanol từ etilen giúp em.",
+     "expect_refuse": true, "must_not_fabricate": true, "fact_id": "hoa.oos"}
+  ]
+}

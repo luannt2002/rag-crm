@@ -1,0 +1,603 @@
+{
+  "_description": "Load-test detail cho bot thong-tu-09-2020-tt-nhnn — evidence per câu, scoring để TRỐNG cho agent Claude đọc chấm.",
+  "_field_guide": {
+    "question": "Câu hỏi gửi tới bot.",
+    "reference_facts": "Keyword/số BẮT BUỘC phải có trong answer (golden must-contain, từ scenario.expect).",
+    "answer": "Câu BOT THỰC SỰ trả lời (output RAG).",
+    "answer_type": "blocked/cache_hit/... — loại output.",
+    "latency_ms": "Thời gian trả lời (ms).",
+    "tokens": "prompt/completion/cached + cache_hit_ratio (CR prompt-cache).",
+    "intent": "Intent pipeline phát hiện.",
+    "decomposed": "Multi-hop: câu có bị tách sub-query không.",
+    "cache_status": "hit/miss/bypassed (semantic cache).",
+    "n_chunks_used": "Số chunk graded đưa vào LLM.",
+    "score_max": "Score chunk cao nhất (chất lượng retrieval).",
+    "top_chunks_retrieved": "Chunk bot lấy về + đưa LLM (doc, chunk_index, score, preview) — NGUỒN câu trả lời.",
+    "answer_source_chunk": "Chunk trong CORPUS thật chứa đáp án (tìm qua DB). in_retrieved=có vào top-K không; in_corpus=corpus có không.",
+    "expect_in_answer": "reference_facts có trong answer không (PASS).",
+    "expect_in_retrieved": "reference_facts có trong chunk đưa LLM không.",
+    "prelim_verdict": "Verdict RULE-BASED sơ bộ (gợi ý, KHÔNG phải điểm cuối).",
+    "fail_step": "Tầng lỗi pin từ evidence (RETRIEVAL/FILTER/GENERATION/HALLU/DATA).",
+    "claude_verdict": "[TRỐNG] Agent Claude điền sau khi đọc: ✅CHUẨN/🟡GENERATION/🔴RETRIEVAL/🟠HALLU/⚪DATA.",
+    "claude_notes": "[TRỐNG] Agent Claude điền: mạnh/yếu, đúng/thiếu/sai, vì sao."
+  },
+  "verdict_legend": {
+    "✅ CHUẨN": "chunk retrieved + LLM answered correctly (đủ + đúng)",
+    "🟡 GENERATION": "chunk đúng vào LLM nhưng LLM trả thiếu/sai/lược bỏ fact",
+    "🔴 RETRIEVAL": "chunk chứa đáp án CÓ trong corpus nhưng KHÔNG vào top-K",
+    "🟠 HALLU": "bịa — claim không grounded (trap answered)",
+    "⚪ DATA": "corpus KHÔNG có chunk chứa đáp án (golden có thể stale)"
+  },
+  "bot": "thong-tu-09-2020-tt-nhnn",
+  "workspace_id": "legal",
+  "run": {
+    "stamp": "run",
+    "n_questions": 10,
+    "prelim_coverage": 1.0,
+    "prelim_hallu": "0/2",
+    "p95_latency_ms": 10938,
+    "fail_step_rollup": {}
+  },
+  "questions": [
+    {
+      "id": "q01",
+      "category": "pham_vi",
+      "question": "Thông tư 09/2020/TT-NHNN quy định về vấn đề gì?",
+      "reference_facts": "an toàn",
+      "is_trap": false,
+      "answer": "Thông tư 09/2020/TT-NHNN quy định về an toàn hệ thống thông tin trong hoạt động ngân hàng, bao gồm các quy định về bảo đảm hoạt động liên tục của hệ thống thông tin, phân tích tác động, đánh giá rủi ro, xây dựng quy trình và kịch bản bảo đảm hoạt động liên tục, cũng như yêu cầu về tính sẵn sàng cao và hệ thống dự phòng thảm họa cho các hệ thống thông tin từ cấp độ 3 trở lên (Nguồn: đoạn 019ed03d-3f17-7080-b2b2-11867898cb0d và đoạn 019ed03d-3f85-7473-a161-fcf30cdc2676).",
+      "answer_type": "answered",
+      "latency_ms": 9716,
+      "tokens": {
+        "prompt": 2567,
+        "completion": 156,
+        "cached": 1024,
+        "cache_hit_ratio": null
+      },
+      "intent": "factoid",
+      "decomposed": false,
+      "cache_status": "bypassed",
+      "n_chunks_used": 2,
+      "top_k": 20,
+      "score_max": 0.9385,
+      "top_chunks_retrieved": [
+        {
+          "doc": "thongtu-09-2020",
+          "chunk_id": "019ed03d",
+          "score": 0.9385,
+          "preview": "Tài liệu: thongtu-09-2020. Đoạn đầu.  ﻿NGÂN HÀNG NHÀ NƯỚC\r VIỆT NAM\r  \r \r Số: 09/2020/TT-NHNN\r  \r \r Hà Nội, ngày 21 tháng 10 năm 2020\r  \r \r \r \r THÔNG TƯ\r Quy định về an toàn hệ thống thông tin trong hoạt động ngân hàng\r \r \r Căn cứ Luật Ngân"
+        },
+        {
+          "doc": "thongtu-09-2020",
+          "chunk_id": "019ed03d",
+          "score": 0.7274,
+          "preview": "Tài liệu: thongtu-09-2020. Đoạn giữa (phần 65/80).  [Chương 2 > Mục 9] BẢO ĐẢM HOẠT ĐỘNG LIÊN TỤC CỦA HỆ THỐNG THÔNG TIN [Chương 2 > Mục 9 > Điều 49. Nguyên tắc bảo đảm hoạt động liên tục] 1. Tổ chức thực hiện các yêu cầu tối thiểu sau:\r a)"
+        }
+      ],
+      "answer_source_chunk": {
+        "in_corpus": true,
+        "preview": "Tài liệu: thongtu-09-2020. Đoạn đầu.\n\n﻿NGÂN HÀNG NHÀ NƯỚC\nVIỆT NAM\n \n\nSố: 09/2020/TT-NHNN\n \n\nHà Nội, ngày 21 tháng 10 năm 2020\n \n\n\n\nTHÔNG TƯ\nQuy định về an toàn hệ thống thông tin trong h",
+        "in_retrieved": true
+      },
+      "expect_in_answer": true,
+      "expect_in_retrieved": true,
+      "prelim_verdict": "✅ CHUẨN",
+      "fail_step": "",
+      "claude_verdict": "",
+      "claude_notes": ""
+    },
+    {
+      "id": "q02",
+      "category": "doi_tuong",
+      "question": "Đối tượng áp dụng của Thông tư này là ai?",
+      "reference_facts": null,
+      "is_trap": false,
+      "answer": "Đối tượng áp dụng của Thông tư 09/2020/TT-NHNN là các tổ chức tín dụng, chi nhánh ngân hàng nước ngoài, các tổ chức cung ứng dịch vụ trung gian thanh toán, công ty thông tin tín dụng, Công ty Cổ phần Thanh toán Quốc gia Việt Nam, Công ty Quản lý tài sản của các tổ chức tín dụng Việt Nam, Nhà máy in tiền quốc gia, Bảo hiểm tiền gửi Việt Nam, có thiết lập và sử dụng hệ thống thông tin phục vụ cho một hoặc nhiều hoạt động kỹ thuật, nghiệp vụ của tổ chức (Chương 1, Điều 1, Khoản 2).",
+      "answer_type": "answered",
+      "latency_ms": 5036,
+      "tokens": {
+        "prompt": 2483,
+        "completion": 137,
+        "cached": 0,
+        "cache_hit_ratio": null
+      },
+      "intent": "factoid",
+      "decomposed": false,
+      "cache_status": "bypassed",
+      "n_chunks_used": 2,
+      "top_k": 20,
+      "score_max": 0.9608,
+      "top_chunks_retrieved": [
+        {
+          "doc": "thongtu-09-2020",
+          "chunk_id": "019ed03d",
+          "score": 0.9608,
+          "preview": "Tài liệu: thongtu-09-2020. Đoạn giữa (phần 2/80).  [Chương 1] QUY ĐỊNH CHUNG [Chương 1 > Điều 1. Phạm vi điều chỉnh và đối tượng áp dụng] 1. Thông tư này quy định những yêu cầu tối thiểu về bảo đảm an toàn hệ thống thông tin trong hoạt động"
+        },
+        {
+          "doc": "thongtu-09-2020",
+          "chunk_id": "019ed03d",
+          "score": 0.6723,
+          "preview": "Tài liệu: thongtu-09-2020. Đoạn giữa (phần 52/80).  [Chương 2 > Mục 6 > Điều 36. Trách nhiệm của tổ chức trong quá trình sử dụng dịch vụ của bên thứ ba] Khi sử dụng dịch vụ của bên thứ ba, tổ chức có trách nhiệm sau:\r 1. Cung cấp, thông báo"
+        }
+      ],
+      "answer_source_chunk": {
+        "in_corpus": null,
+        "preview": "",
+        "in_retrieved": false
+      },
+      "expect_in_answer": false,
+      "expect_in_retrieved": false,
+      "prelim_verdict": "✅ CHUẨN",
+      "fail_step": "",
+      "claude_verdict": "",
+      "claude_notes": ""
+    },
+    {
+      "id": "q03",
+      "category": "dieu_khoan",
+      "question": "Điều 2 quy định nội dung gì?",
+      "reference_facts": "Điều 2",
+      "is_trap": false,
+      "answer": "Điều 2 quy định về giải thích các thuật ngữ liên quan đến an toàn hệ thống thông tin trong Thông tư, cụ thể gồm:\n\n1. Rủi ro công nghệ thông tin là khả năng xảy ra tổn thất khi thực hiện các hoạt động liên quan đến hệ thống thông tin, bao gồm quản lý, sử dụng phần cứng, phần mềm, truyền thông, giao diện hệ thống, vận hành và con người.\n\n2. Sự cố an toàn thông tin là việc thông tin số, hệ thống thông tin bị tấn công hoặc bị gây nguy hại, ảnh hưởng tới tính nguyên vẹn, bảo mật hoặc khả dụng của thông tin.\n\n3. Điểm yếu về mặt kỹ thuật là thành phần trong hệ thống thông tin dễ bị khai thác, lợi dụng khi bị tấn công hoặc xâm nhập bất hợp pháp.\n\n4. Trung tâm dữ liệu bao gồm hạ tầng kỹ thuật (nhà trạm, hệ thống cáp) và hệ thống máy tính cùng các thiết bị phụ trợ được lắp đặt để xử lý, lưu trữ, trao đổi và quản lý tập trung dữ liệu.\n\n(Trích Điều 2, Chương 1, Thông tư 09/2020/TT-NHNN)",
+      "answer_type": "answered",
+      "latency_ms": 5762,
+      "tokens": {
+        "prompt": 2204,
+        "completion": 259,
+        "cached": 0,
+        "cache_hit_ratio": null
+      },
+      "intent": "factoid",
+      "decomposed": false,
+      "cache_status": "bypassed",
+      "n_chunks_used": 1,
+      "top_k": 1,
+      "score_max": 0.9047,
+      "top_chunks_retrieved": [
+        {
+          "doc": "thongtu-09-2020",
+          "chunk_id": "019ed03d",
+          "score": 0.9047,
+          "preview": "Vị trí: Chương 1, Điều 2, phần giải thích từ ngữ. Nội dung: Định nghĩa các thuật ngữ liên quan đến an toàn hệ thống thông tin trong Thông tư.  [Chương 1 > Điều 2. Giải thích từ ngữ] Trong Thông tư này, các từ ngữ dưới đây được hiểu như sau:"
+        }
+      ],
+      "answer_source_chunk": {
+        "in_corpus": true,
+        "preview": "Vị trí: Chương 1, Điều 2, phần giải thích từ ngữ. Nội dung: Định nghĩa các thuật ngữ liên quan đến an toàn hệ thống thông tin trong Thông tư.\n\n[Chương 1 > Điều 2. Giải thích từ ngữ]\nTrong Thông tư này",
+        "in_retrieved": true
+      },
+      "expect_in_answer": true,
+      "expect_in_retrieved": true,
+      "prelim_verdict": "✅ CHUẨN",
+      "fail_step": "",
+      "claude_verdict": "",
+      "claude_notes": ""
+    },
+    {
+      "id": "q04",
+      "category": "dieu_khoan",
+      "question": "Điều 5 nói về phân loại hệ thống thông tin thế nào?",
+      "reference_facts": "phân loại",
+      "is_trap": false,
+      "answer": "Điều 5 Thông tư 09/2020/TT-NHNN quy định phân loại hệ thống thông tin trong ngành Ngân hàng theo các cấp độ, trong đó:\n\n- Hệ thống thông tin cấp độ 4 bao gồm:\n  c) Hệ thống thông tin quốc gia trong ngành Ngân hàng, yêu cầu vận hành 24/7 và không chấp nhận ngừng vận hành mà không có kế hoạch trước;\n  d) Các hệ thống thanh toán quan trọng trong ngành Ngân hàng theo quy định của Ngân hàng Nhà nước;\n  đ) Hệ thống cơ sở hạ tầng thông tin dùng chung phục vụ hoạt động của ngành Ngân hàng, yêu cầu vận hành 24/7 và không chấp nhận ngừng vận hành mà không có kế hoạch trước.\n\n- Hệ thống thông tin cấp độ 5 là hệ thống có một trong các tiêu chí sau:\n  a) Xử lý thông tin bí mật nhà nước ở cấp độ Tuyệt Mật;\n  b) Hệ thống thông tin quốc gia trong ngành Ngân hàng phục vụ kết nối liên thông hoạt động của Việt Nam với quốc tế;\n  c) Hệ thống cơ sở hạ tầng thông tin quốc gia trong ngành Ngân hàng phục vụ kết nối liên thông hoạt động của Việt Nam với quốc tế.\n\nĐây là các tiêu chí phân loại hệ thống thông tin theo cấp độ 4 và 5 trong ngành Ngân hàng theo Điều 5 (Chương 1) Thông tư 09/2020/TT-NHNN. Nếu anh/chị cần thông tin về các cấp độ khác hoặc toàn bộ phân loại, em có thể hỗ trợ thêm ạ.",
+      "answer_type": "answered",
+      "latency_ms": 10938,
+      "tokens": {
+        "prompt": 2272,
+        "completion": 347,
+        "cached": 0,
+        "cache_hit_ratio": null
+      },
+      "intent": "factoid",
+      "decomposed": false,
+      "cache_status": "bypassed",
+      "n_chunks_used": 1,
+      "top_k": 1,
+      "score_max": 0.9348,
+      "top_chunks_retrieved": [
+        {
+          "doc": "thongtu-09-2020",
+          "chunk_id": "019ed03d",
+          "score": 0.9348,
+          "preview": "Vị trí: Chương 1, Điều 5, phần phân loại hệ thống thông tin. Nội dung: Mô tả các tiêu chí phân loại hệ thống thông tin cấp độ 4 và bắt đầu cấp độ 5 trong ngành Ngân hàng.  [Chương 1 > Điều 5. Phân loại hệ thống thông tin] c) Hệ thống thông "
+        }
+      ],
+      "answer_source_chunk": {
+        "in_corpus": true,
+        "preview": "Tài liệu: thongtu-09-2020. Đoạn giữa (phần 7/80).\n\n[Chương 1 > Điều 3. Nguyên tắc chung]\n1. Tổ chức có trách nhiệm bảo đảm an toàn thông tin theo nguyên tắc xác định rõ quyền hạn, trách nhiệm từng bộ",
+        "in_retrieved": true
+      },
+      "expect_in_answer": true,
+      "expect_in_retrieved": true,
+      "prelim_verdict": "✅ CHUẨN",
+      "fail_step": "",
+      "claude_verdict": "",
+      "claude_notes": ""
+    },
+    {
+      "id": "q05",
+      "category": "giai_thich",
+      "question": "Hệ thống thông tin cấp độ 3 là gì?",
+      "reference_facts": "cấp độ 3",
+      "is_trap": false,
+      "answer": "Hệ thống thông tin cấp độ 3 là hệ thống thông tin có một trong các tiêu chí sau:  \na) Xử lý thông tin bí mật nhà nước ở cấp độ Mật;  \nb) Phục vụ hoạt động nội bộ hàng ngày của tổ chức và không chấp nhận ngừng vận hành quá 4 giờ làm việc kể từ thời điểm ngừng vận hành;  \nc) Phục vụ khách hàng yêu cầu vận hành 24/7 và không chấp nhận ngừng vận hành mà không có kế hoạch trước;  \nd) Các hệ thống thanh toán sử dụng của bên thứ ba dùng để thanh toán ngoài hệ thống của tổ chức;  \nđ) Hệ thống cơ sở hạ tầng thông tin dùng chung phục vụ hoạt động của tổ chức và của ngành Ngân hàng.  \n(Theo Điều 5, Khoản 4 Thông tư 09/2020/TT-NHNN)",
+      "answer_type": "answered",
+      "latency_ms": 5662,
+      "tokens": {
+        "prompt": 2130,
+        "completion": 190,
+        "cached": 1024,
+        "cache_hit_ratio": null
+      },
+      "intent": "factoid",
+      "decomposed": false,
+      "cache_status": "bypassed",
+      "n_chunks_used": 5,
+      "top_k": 20,
+      "score_max": 0.97,
+      "top_chunks_retrieved": [
+        {
+          "doc": "thongtu-09-2020",
+          "chunk_id": "019ed03d",
+          "score": 0.97,
+          "preview": "Chương 1, Điều 5 quy định về phân loại hệ thống thông tin theo cấp độ, trong đó cấp độ 3 gồm các hệ thống có tiêu chí đặc biệt về bảo mật và vận hành liên tục.  [Chương 1 > Điều 5. Phân loại hệ thống thông tin] 4. Hệ thống thông tin cấp độ "
+        },
+        {
+          "doc": "thongtu-09-2020",
+          "chunk_id": "019ed03d",
+          "score": 0.8213,
+          "preview": "Tài liệu: thongtu-09-2020. Đoạn giữa (phần 31/80).  [Chương 2 > Mục 4 > Điều 20. Trách nhiệm quản lý và quy trình vận hành của tổ chức] 1. Tổ chức ban hành các quy trình, tài liệu vận hành đối với hệ thống thông tin từ cấp độ 3 trở lên, tối"
+        },
+        {
+          "doc": "thongtu-09-2020",
+          "chunk_id": "019ed03d",
+          "score": 0.6893,
+          "preview": "Tài liệu: thongtu-09-2020. Đoạn giữa (phần 47/80).  [Chương 2 > Mục 6 > Điều 33. Các yêu cầu khi sử dụng dịch vụ của bên thứ ba] Trước khi sử dụng dịch vụ của bên thứ ba triển khai cho các hệ thống thông tin từ cấp độ 3 trở lên và các hệ th"
+        },
+        {
+          "doc": "thongtu-09-2020",
+          "chunk_id": "019ed03d",
+          "score": 0.6605,
+          "preview": "Tài liệu: thongtu-09-2020. Đoạn giữa (phần 58/80).  [Chương 2 > Mục 7 > Điều 42. Kiểm tra, đánh giá an toàn thông tin] 1. Nội dung kiểm tra, đánh giá an toàn thông tin tối thiểu phải bao gồm các nội dung sau:\r a) Kiểm tra việc tuân thủ quy "
+        },
+        {
+          "doc": "thongtu-09-2020",
+          "chunk_id": "019ed03d",
+          "score": 0.6442,
+          "preview": "Tài liệu: thongtu-09-2020. Đoạn giữa (phần 63/80).  [Chương 2 > Mục 8 > Điều 47. Trung tâm Điều hành an ninh mạng] 1. Tổ chức quản lý trực tiếp hệ thống thông tin từ cấp độ 3 trở lên phải thành lập hoặc chỉ định bộ phận chuyên trách để quản"
+        }
+      ],
+      "answer_source_chunk": {
+        "in_corpus": true,
+        "preview": "Chương 1, Điều 5 quy định về phân loại hệ thống thông tin theo cấp độ, trong đó cấp độ 3 gồm các hệ thống có tiêu chí đặc biệt về bảo mật và vận hành liên tục.\n\n[Chương 1 > Điều 5. Phân loại hệ thống",
+        "in_retrieved": true
+      },
+      "expect_in_answer": true,
+      "expect_in_retrieved": true,
+      "prelim_verdict": "✅ CHUẨN",
+      "fail_step": "",
+      "claude_verdict": "",
+      "claude_notes": ""
+    },
+    {
+      "id": "q06",
+      "category": "tra_cuu",
+      "question": "Nguyên tắc bảo đảm an toàn thông tin gồm những gì?",
+      "reference_facts": "nguyên tắc",
+      "is_trap": false,
+      "answer": "Nguyên tắc bảo đảm an toàn thông tin theo Thông tư 09/2020/TT-NHNN gồm các điểm chính sau (Chương 1, Điều 3):\n\n1. Tổ chức có trách nhiệm bảo đảm an toàn thông tin theo nguyên tắc xác định rõ quyền hạn, trách nhiệm từng bộ phận và cá nhân trong tổ chức.\n2. Hệ thống thông tin được phân loại theo cấp độ quy định tại Điều 5 Thông tư và áp dụng chính sách an toàn thông tin phù hợp.\n3. Các rủi ro công nghệ thông tin có thể xảy ra trong tổ chức được nhận biết, phân loại, đánh giá kịp thời và xử lý có hiệu quả.\n4. Việc xây dựng, triển khai quy chế an toàn thông tin được thực hiện trên cơ sở các quy định tại Thông tư và hài hòa giữa lợi ích, chi phí và cấp độ chấp nhận rủi ro của tổ chức.\n\nAnh/chị có thể tham khảo chi tiết tại Điều 3, Chương 1 Thông tư 09/2020/TT-NHNN.",
+      "answer_type": "answered",
+      "latency_ms": 9722,
+      "tokens": {
+        "prompt": 4477,
+        "completion": 232,
+        "cached": 1024,
+        "cache_hit_ratio": null
+      },
+      "intent": "aggregation",
+      "decomposed": false,
+      "cache_status": "bypassed",
+      "n_chunks_used": 21,
+      "top_k": 33,
+      "score_max": 0.9491,
+      "top_chunks_retrieved": [
+        {
+          "doc": "thongtu-09-2020",
+          "chunk_id": "019ed03d",
+          "score": 0.9491,
+          "preview": "Tài liệu: thongtu-09-2020. Đoạn giữa (phần 7/80).  [Chương 1 > Điều 3. Nguyên tắc chung] 1. Tổ chức có trách nhiệm bảo đảm an toàn thông tin theo nguyên tắc xác định rõ quyền hạn, trách nhiệm từng bộ phận và cá nhân trong tổ chức.\r 2. Hệ th"
+        },
+        {
+          "doc": "thongtu-09-2020",
+          "chunk_id": "019ed03d",
+          "score": 0.9478,
+          "preview": "Tài liệu: thongtu-09-2020. Đoạn giữa (phần 58/80).  [Chương 2 > Mục 7 > Điều 42. Kiểm tra, đánh giá an toàn thông tin] 1. Nội dung kiểm tra, đánh giá an toàn thông tin tối thiểu phải bao gồm các nội dung sau:\r a) Kiểm tra việc tuân thủ quy "
+        },
+        {
+          "doc": "thongtu-09-2020",
+          "chunk_id": "019ed03d",
+          "score": 0.9472,
+          "preview": "Tài liệu: thongtu-09-2020. Đoạn giữa (phần 36/80).  [Chương 2 > Mục 4 > Điều 25. Quản lý hệ thống thông tin cung cấp dịch vụ giao dịch trực tuyến] 1. Hệ thống thông tin cung cấp dịch vụ trực tuyến cho khách hàng phải tuân thủ tiêu chuẩn TCV"
+        },
+        {
+          "doc": "thongtu-09-2020",
+          "chunk_id": "019ed03d",
+          "score": 0.9036,
+          "preview": "Tài liệu: thongtu-09-2020. Đoạn giữa (phần 28/80).  [Chương 2 > Mục 3 > Điều 18. Yêu cầu đối với trung tâm dữ liệu] Ngoài việc bảo đảm yêu cầu tại Điều 17 Thông tư này, trung tâm dữ liệu phải bảo đảm các yêu cầu sau:\r 1. Cổng vào ra tòa nhà"
+        },
+        {
+          "doc": "thongtu-09-2020",
+          "chunk_id": "019ed03d",
+          "score": 0.9317,
+          "preview": "Tài liệu: thongtu-09-2020. Đoạn giữa (phần 52/80).  [Chương 2 > Mục 6 > Điều 36. Trách nhiệm của tổ chức trong quá trình sử dụng dịch vụ của bên thứ ba] Khi sử dụng dịch vụ của bên thứ ba, tổ chức có trách nhiệm sau:\r 1. Cung cấp, thông báo"
+        },
+        {
+          "doc": "thongtu-09-2020",
+          "chunk_id": "019ed03d",
+          "score": 0.9348,
+          "preview": "Tài liệu: thongtu-09-2020. Đoạn giữa (phần 31/80).  [Chương 2 > Mục 4 > Điều 20. Trách nhiệm quản lý và quy trình vận hành của tổ chức] 1. Tổ chức ban hành các quy trình, tài liệu vận hành đối với hệ thống thông tin từ cấp độ 3 trở lên, tối"
+        },
+        {
+          "doc": "thongtu-09-2020",
+          "chunk_id": "019ed03d",
+          "score": 0.9433,
+          "preview": "Tài liệu: thongtu-09-2020. Đoạn giữa (phần 13/80).  [Chương 1 > Điều 6. Quy chế an toàn thông tin] 1. Tổ chức xây dựng quy chế an toàn thông tin phù hợp với hệ thống thông tin, cơ cấu tổ chức, yêu cầu quản lý và hoạt động của tổ chức. Quy c"
+        },
+        {
+          "doc": "thongtu-09-2020",
+          "chunk_id": "019ed03d",
+          "score": 0.925,
+          "preview": "Tài liệu: thongtu-09-2020. Đoạn giữa (phần 34/80).  [Chương 2 > Mục 4 > Điều 23. Quản lý an toàn, bảo mật hệ thống mạng] Tổ chức thực hiện quản lý an toàn, bảo mật hệ thống mạng như sau:\r 1. Xây dựng quy định về quản lý an toàn, bảo mật hệ "
+        }
+      ],
+      "answer_source_chunk": {
+        "in_corpus": true,
+        "preview": "Tài liệu: thongtu-09-2020. Đoạn giữa (phần 7/80).\n\n[Chương 1 > Điều 3. Nguyên tắc chung]\n1. Tổ chức có trách nhiệm bảo đảm an toàn thông tin theo nguyên tắc xác định rõ quyền hạn, trách nhiệm từng bộ",
+        "in_retrieved": true
+      },
+      "expect_in_answer": true,
+      "expect_in_retrieved": true,
+      "prelim_verdict": "✅ CHUẨN",
+      "fail_step": "",
+      "claude_verdict": "",
+      "claude_notes": ""
+    },
+    {
+      "id": "q07",
+      "category": "tra_cuu",
+      "question": "Trách nhiệm của đơn vị vận hành hệ thống thông tin?",
+      "reference_facts": null,
+      "is_trap": false,
+      "answer": "Trách nhiệm của đơn vị vận hành hệ thống thông tin cấp độ 3 trở lên bao gồm:\n\n- Ban hành các quy trình, tài liệu vận hành tối thiểu gồm: quy trình bật, tắt hệ thống; sao lưu, phục hồi dữ liệu; vận hành ứng dụng; xử lý sự cố; giám sát và ghi nhật ký hoạt động hệ thống, trong đó xác định rõ phạm vi, trách nhiệm của người sử dụng và vận hành hệ thống. Định kỳ ít nhất mỗi năm một lần rà soát, cập nhật, bổ sung các quy trình để phù hợp thực tế.\n\n- Triển khai các quy trình đến toàn bộ đối tượng tham gia vận hành và giám sát việc tuân thủ các quy trình đã ban hành.\n\n- Đảm bảo môi trường vận hành tách biệt với môi trường phát triển, kiểm tra, thử nghiệm; áp dụng các giải pháp bảo đảm an toàn thông tin; không cài đặt công cụ phát triển ứng dụng; loại bỏ hoặc tắt các tính năng, phần mềm tiện ích không sử dụng trên hệ thống.\n\n- Đối với hệ thống thông tin xử lý giao dịch khách hàng, phải đảm bảo không để một cá nhân đồng thời thực hiện khởi tạo và phê duyệt giao dịch; áp dụng xác thực đa yếu tố khi phê duyệt giao dịch tài chính chuyển tiền điện tử liên ngân hàng từ 100 triệu đồng trở lên; bảo đảm tính toàn vẹn dữ liệu giao dịch; lưu vết mọi thao tác trên hệ thống để sẵn sàng kiểm tra, kiểm soát khi cần thiết.\n\n(Trích Điều 20, Thông tư 09/2020/TT-NHNN)",
+      "answer_type": "answered",
+      "latency_ms": 7728,
+      "tokens": {
+        "prompt": 2428,
+        "completion": 345,
+        "cached": 1024,
+        "cache_hit_ratio": null
+      },
+      "intent": "factoid",
+      "decomposed": false,
+      "cache_status": "bypassed",
+      "n_chunks_used": 5,
+      "top_k": 20,
+      "score_max": 0.9618,
+      "top_chunks_retrieved": [
+        {
+          "doc": "thongtu-09-2020",
+          "chunk_id": "019ed03d",
+          "score": 0.9618,
+          "preview": "Tài liệu: thongtu-09-2020. Đoạn giữa (phần 31/80).  [Chương 2 > Mục 4 > Điều 20. Trách nhiệm quản lý và quy trình vận hành của tổ chức] 1. Tổ chức ban hành các quy trình, tài liệu vận hành đối với hệ thống thông tin từ cấp độ 3 trở lên, tối"
+        },
+        {
+          "doc": "thongtu-09-2020",
+          "chunk_id": "019ed03d",
+          "score": 0.934,
+          "preview": "Tài liệu: thongtu-09-2020. Đoạn giữa (phần 52/80).  [Chương 2 > Mục 6 > Điều 36. Trách nhiệm của tổ chức trong quá trình sử dụng dịch vụ của bên thứ ba] Khi sử dụng dịch vụ của bên thứ ba, tổ chức có trách nhiệm sau:\r 1. Cung cấp, thông báo"
+        },
+        {
+          "doc": "thongtu-09-2020",
+          "chunk_id": "019ed03d",
+          "score": 0.8795,
+          "preview": "Tài liệu: thongtu-09-2020. Đoạn giữa (phần 68/80).  [Chương 2 > Mục 9 > Điều 52. Tổ chức triển khai bảo đảm hoạt động liên tục] 1. Tổ chức phải có kế hoạch và tổ chức triển khai bảo đảm hoạt động liên tục hệ thống thông tin (ngoại trừ các h"
+        },
+        {
+          "doc": "thongtu-09-2020",
+          "chunk_id": "019ed03d",
+          "score": 0.8933,
+          "preview": "Tài liệu: thongtu-09-2020. Đoạn giữa (phần 13/80).  [Chương 1 > Điều 6. Quy chế an toàn thông tin] 1. Tổ chức xây dựng quy chế an toàn thông tin phù hợp với hệ thống thông tin, cơ cấu tổ chức, yêu cầu quản lý và hoạt động của tổ chức. Quy c"
+        },
+        {
+          "doc": "thongtu-09-2020",
+          "chunk_id": "019ed03d",
+          "score": 0.8754,
+          "preview": "Tài liệu: thongtu-09-2020. Đoạn giữa (phần 58/80).  [Chương 2 > Mục 7 > Điều 42. Kiểm tra, đánh giá an toàn thông tin] 1. Nội dung kiểm tra, đánh giá an toàn thông tin tối thiểu phải bao gồm các nội dung sau:\r a) Kiểm tra việc tuân thủ quy "
+        }
+      ],
+      "answer_source_chunk": {
+        "in_corpus": null,
+        "preview": "",
+        "in_retrieved": false
+      },
+      "expect_in_answer": false,
+      "expect_in_retrieved": false,
+      "prelim_verdict": "✅ CHUẨN",
+      "fail_step": "",
+      "claude_verdict": "",
+      "claude_notes": ""
+    },
+    {
+      "id": "q08",
+      "category": "hieu_luc",
+      "question": "Thông tư này có hiệu lực từ ngày nào?",
+      "reference_facts": null,
+      "is_trap": false,
+      "answer": "Thông tư 09/2020/TT-NHNN có hiệu lực thi hành kể từ ngày 01 tháng 01 năm 2021, trừ điểm b khoản 4 Điều 20 có hiệu lực từ ngày 01 tháng 01 năm 2022 (theo Điều 56).",
+      "answer_type": "answered",
+      "latency_ms": 5354,
+      "tokens": {
+        "prompt": 2040,
+        "completion": 61,
+        "cached": 1024,
+        "cache_hit_ratio": null
+      },
+      "intent": "factoid",
+      "decomposed": false,
+      "cache_status": "bypassed",
+      "n_chunks_used": 2,
+      "top_k": 20,
+      "score_max": 0.9317,
+      "top_chunks_retrieved": [
+        {
+          "doc": "thongtu-09-2020",
+          "chunk_id": "019ed03d",
+          "score": 0.9317,
+          "preview": "Tài liệu: thongtu-09-2020. Đoạn giữa (phần 74/80).  [Chương 3 > Điều 56. Hiệu lực thi hành] 1. Thông tư này có hiệu lực thi hành kể từ ngày 01 tháng 01 năm 2021 trừ trường hợp quy định tại khoản 2 Điều này và thay thế Thông tư 18/2018/TT-NH"
+        },
+        {
+          "doc": "thongtu-09-2020",
+          "chunk_id": "019ed03d",
+          "score": 0.4271,
+          "preview": "Tài liệu: thongtu-09-2020. Đoạn giữa (phần 75/80).  [Chương 3 > Điều 57. Tổ chức thực hiện] Cục trưởng Cục Công nghệ thông tin, Thủ trưởng các đơn vị liên quan thuộc Ngân hàng Nhà nước, Giám đốc Ngân hàng Nhà nước chi nhánh tỉnh, thành phố "
+        }
+      ],
+      "answer_source_chunk": {
+        "in_corpus": null,
+        "preview": "",
+        "in_retrieved": false
+      },
+      "expect_in_answer": false,
+      "expect_in_retrieved": false,
+      "prelim_verdict": "✅ CHUẨN",
+      "fail_step": "",
+      "claude_verdict": "",
+      "claude_notes": ""
+    },
+    {
+      "id": "q09",
+      "category": "oos_trap",
+      "question": "Thông tư này quy định lãi suất tiết kiệm bao nhiêu?",
+      "reference_facts": null,
+      "is_trap": true,
+      "answer": "Thông tư 09/2020/TT-NHNN không quy định về lãi suất tiết kiệm mà quy định về an toàn hệ thống thông tin trong hoạt động ngân hàng (Điều 1). Anh/chị vui lòng tham khảo các văn bản khác của Ngân hàng Nhà nước về lãi suất tiết kiệm ạ.",
+      "answer_type": "answered",
+      "latency_ms": 9105,
+      "tokens": {
+        "prompt": 3312,
+        "completion": 70,
+        "cached": 1024,
+        "cache_hit_ratio": null
+      },
+      "intent": "aggregation",
+      "decomposed": false,
+      "cache_status": "bypassed",
+      "n_chunks_used": 7,
+      "top_k": 22,
+      "score_max": 0.4111,
+      "top_chunks_retrieved": [
+        {
+          "doc": "thongtu-09-2020",
+          "chunk_id": "019ed03d",
+          "score": 0.4111,
+          "preview": "Tài liệu: thongtu-09-2020. Đoạn giữa (phần 74/80).  [Chương 3 > Điều 56. Hiệu lực thi hành] 1. Thông tư này có hiệu lực thi hành kể từ ngày 01 tháng 01 năm 2021 trừ trường hợp quy định tại khoản 2 Điều này và thay thế Thông tư 18/2018/TT-NH"
+        },
+        {
+          "doc": "thongtu-09-2020",
+          "chunk_id": "019ed03d",
+          "score": 0.3834,
+          "preview": "Tài liệu: thongtu-09-2020. Đoạn cuối.  [Chương 3 > Điều 57. Tổ chức thực hiện] (ký, ghi rõ họ tên, đóng dấu)"
+        },
+        {
+          "doc": "thongtu-09-2020",
+          "chunk_id": "019ed03d",
+          "score": 0.336,
+          "preview": "Tài liệu: thongtu-09-2020. Đoạn giữa (phần 73/80).  [Chương 3 > Điều 55. Trách nhiệm của các đơn vị thuộc Ngân hàng Nhà nước] 1. Cục Công nghệ thông tin có trách nhiệm:\r a) Theo dõi, tổng hợp báo cáo Thống đốc Ngân hàng Nhà nước hàng năm tì"
+        },
+        {
+          "doc": "thongtu-09-2020",
+          "chunk_id": "019ed03d",
+          "score": 0.3472,
+          "preview": "Tài liệu: thongtu-09-2020. Đoạn giữa (phần 75/80).  [Chương 3 > Điều 57. Tổ chức thực hiện] Cục trưởng Cục Công nghệ thông tin, Thủ trưởng các đơn vị liên quan thuộc Ngân hàng Nhà nước, Giám đốc Ngân hàng Nhà nước chi nhánh tỉnh, thành phố "
+        },
+        {
+          "doc": "thongtu-09-2020",
+          "chunk_id": "019ed03d",
+          "score": 0.336,
+          "preview": "Tài liệu: thongtu-09-2020. Đoạn đầu.  ﻿NGÂN HÀNG NHÀ NƯỚC\r VIỆT NAM\r  \r \r Số: 09/2020/TT-NHNN\r  \r \r Hà Nội, ngày 21 tháng 10 năm 2020\r  \r \r \r \r THÔNG TƯ\r Quy định về an toàn hệ thống thông tin trong hoạt động ngân hàng\r \r \r Căn cứ Luật Ngân"
+        },
+        {
+          "doc": "thongtu-09-2020",
+          "chunk_id": "019ed03d",
+          "score": 0.2665,
+          "preview": "Tài liệu: thongtu-09-2020. Đoạn giữa (phần 2/80).  [Chương 1] QUY ĐỊNH CHUNG [Chương 1 > Điều 1. Phạm vi điều chỉnh và đối tượng áp dụng] 1. Thông tư này quy định những yêu cầu tối thiểu về bảo đảm an toàn hệ thống thông tin trong hoạt động"
+        },
+        {
+          "doc": "thongtu-09-2020",
+          "chunk_id": "019ed03d",
+          "score": 0.2714,
+          "preview": "Tài liệu: thongtu-09-2020. Đoạn giữa (phần 30/80).  [Chương 2 > Mục 4] QUẢN LÝ VẬN HÀNH VÀ TRAO ĐỔI THÔNG TIN"
+        }
+      ],
+      "answer_source_chunk": {
+        "in_corpus": null,
+        "preview": "",
+        "in_retrieved": false
+      },
+      "expect_in_answer": false,
+      "expect_in_retrieved": false,
+      "prelim_verdict": "✅ CHUẨN",
+      "fail_step": "",
+      "claude_verdict": "",
+      "claude_notes": ""
+    },
+    {
+      "id": "q10",
+      "category": "hallu_trap",
+      "question": "Điều 99 của thông tư quy định gì?",
+      "reference_facts": null,
+      "is_trap": true,
+      "answer": "Dạ, trong Thông tư 09/2020/TT-NHNN không có quy định về Điều 99. Thông tư này chỉ có các điều được trích dẫn đến khoảng Điều 12 trong phần tài liệu được cung cấp. Anh/chị vui lòng kiểm tra lại số điều hoặc tham khảo văn bản gốc để được hỗ trợ chính xác ạ.",
+      "answer_type": "answered",
+      "latency_ms": 6733,
+      "tokens": {
+        "prompt": 2063,
+        "completion": 77,
+        "cached": 1024,
+        "cache_hit_ratio": null
+      },
+      "intent": "factoid",
+      "decomposed": false,
+      "cache_status": "bypassed",
+      "n_chunks_used": 2,
+      "top_k": 20,
+      "score_max": 0.2348,
+      "top_chunks_retrieved": [
+        {
+          "doc": "thongtu-09-2020",
+          "chunk_id": "019ed03d",
+          "score": 0.2348,
+          "preview": "Tài liệu: thongtu-09-2020. Đoạn giữa (phần 2/80).  [Chương 1] QUY ĐỊNH CHUNG [Chương 1 > Điều 1. Phạm vi điều chỉnh và đối tượng áp dụng] 1. Thông tư này quy định những yêu cầu tối thiểu về bảo đảm an toàn hệ thống thông tin trong hoạt động"
+        },
+        {
+          "doc": "thongtu-09-2020",
+          "chunk_id": "019ed03d",
+          "score": 0.2049,
+          "preview": "Tài liệu: thongtu-09-2020. Đoạn giữa (phần 18/80).  [Chương 2 > Mục 1 > Điều 9. Quản lý tài sản vật lý] 1. Tài sản vật lý là thiết bị di động, vật mang tin, ngoài các quy định tại Điều này, phải được quản lý theo quy định tại Điều 11, Điều "
+        }
+      ],
+      "answer_source_chunk": {
+        "in_corpus": null,
+        "preview": "",
+        "in_retrieved": false
+      },
+      "expect_in_answer": false,
+      "expect_in_retrieved": false,
+      "prelim_verdict": "✅ CHUẨN",
+      "fail_step": "",
+      "claude_verdict": "",
+      "claude_notes": ""
+    }
+  ]
+}

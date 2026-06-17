@@ -1,0 +1,188 @@
+[
+  {
+    "question": "Thông tư 09/2020/TT-BGTVT có hiệu lực thi hành từ ngày nào?",
+    "ground_truth_answer": "Thông tư 09/2020/TT-BGTVT của Bộ Giao thông Vận tải có hiệu lực thi hành từ ngày 01 tháng 7 năm 2020 theo Điều khoản về hiệu lực thi hành ghi trong văn bản.",
+    "ground_truth_contexts": ["Điều khoản hiệu lực thi hành quy định Thông tư có hiệu lực kể từ ngày 01/7/2020."],
+    "difficulty": "simple_lookup"
+  },
+  {
+    "question": "Phạm vi điều chỉnh của Thông tư 09/2020 bao gồm những nội dung gì?",
+    "ground_truth_answer": "Thông tư 09/2020 điều chỉnh các quy định về kiểm soát tải trọng xe trên đường bộ, gồm cân kiểm tra, xử lý vi phạm và phối hợp giữa các lực lượng kiểm soát.",
+    "ground_truth_contexts": ["Điều 1 quy định phạm vi điều chỉnh là kiểm soát tải trọng xe trên đường bộ."],
+    "difficulty": "simple_lookup"
+  },
+  {
+    "question": "Đối tượng áp dụng của Thông tư 09/2020 gồm những ai?",
+    "ground_truth_answer": "Đối tượng áp dụng gồm cơ quan, tổ chức, cá nhân liên quan đến kiểm soát tải trọng xe trên đường bộ, bao gồm chủ phương tiện, lái xe, đơn vị vận tải và lực lượng chức năng.",
+    "ground_truth_contexts": ["Điều 2 nêu đối tượng áp dụng là cơ quan, tổ chức, cá nhân liên quan đến hoạt động kiểm soát tải trọng xe."],
+    "difficulty": "simple_lookup"
+  },
+  {
+    "question": "Cơ quan nào có thẩm quyền chủ trì kiểm soát tải trọng xe trên đường bộ?",
+    "ground_truth_answer": "Tổng cục Đường bộ Việt Nam chủ trì, phối hợp với các Sở Giao thông Vận tải và lực lượng cảnh sát giao thông trong kiểm soát tải trọng xe trên đường bộ.",
+    "ground_truth_contexts": ["Quy định về trách nhiệm cơ quan ghi rõ Tổng cục Đường bộ Việt Nam là cơ quan chủ trì."],
+    "difficulty": "simple_lookup"
+  },
+  {
+    "question": "Thiết bị cân kiểm tra tải trọng xe phải đáp ứng tiêu chuẩn nào?",
+    "ground_truth_answer": "Thiết bị cân kiểm tra tải trọng xe phải được kiểm định theo quy định pháp luật về đo lường, có tem kiểm định còn hiệu lực và được công nhận đạt chuẩn.",
+    "ground_truth_contexts": ["Quy định yêu cầu thiết bị cân tải trọng được kiểm định theo Luật Đo lường và có tem kiểm định hợp lệ."],
+    "difficulty": "simple_lookup"
+  },
+  {
+    "question": "Trình tự kiểm soát tải trọng xe tại trạm cân cố định gồm mấy bước và là những bước nào?",
+    "ground_truth_answer": "Trình tự kiểm soát tải trọng tại trạm cân cố định gồm các bước: tín hiệu dừng xe, cân kiểm tra, lập biên bản nếu vi phạm, xử lý hạ tải nếu quá tải, và cho phương tiện tiếp tục hành trình.",
+    "ground_truth_contexts": ["Quy định trình tự kiểm soát mô tả các bước từ dừng xe, cân, lập biên bản đến xử lý vi phạm.", "Điều khoản về xử lý hạ tải quy định buộc dỡ phần hàng vượt quá tải trọng cho phép."],
+    "difficulty": "multi_hop"
+  },
+  {
+    "question": "Khi phát hiện xe quá tải trọng, biên bản vi phạm hành chính phải có những thông tin nào và do ai ký?",
+    "ground_truth_answer": "Biên bản vi phạm hành chính ghi rõ thông tin phương tiện, lái xe, tải trọng đo được, mức vượt tải, do người có thẩm quyền lập và yêu cầu chữ ký của lái xe hoặc đại diện chủ phương tiện.",
+    "ground_truth_contexts": ["Quy định nội dung biên bản gồm thông tin xe, lái xe, kết quả cân tải trọng.", "Người có thẩm quyền lập biên bản theo Luật Xử lý vi phạm hành chính."],
+    "difficulty": "multi_hop"
+  },
+  {
+    "question": "Trường hợp xe vượt quá tải trọng cho phép, lái xe và chủ phương tiện chịu trách nhiệm xử lý hậu quả như thế nào?",
+    "ground_truth_answer": "Lái xe và chủ phương tiện phải tổ chức hạ tải phần hàng vượt quá tải trọng cho phép, tự chịu chi phí bốc xếp, bảo quản hàng và bị xử phạt hành chính theo quy định.",
+    "ground_truth_contexts": ["Quy định buộc lái xe, chủ phương tiện hạ tải phần hàng vượt quá tải trọng.", "Quy định về chi phí bốc xếp, bảo quản hàng do chủ phương tiện chịu."],
+    "difficulty": "multi_hop"
+  },
+  {
+    "question": "Trạm kiểm tra tải trọng xe lưu động được bố trí ở vị trí nào và ai có thẩm quyền chỉ đạo hoạt động?",
+    "ground_truth_answer": "Trạm kiểm tra tải trọng xe lưu động được bố trí trên các tuyến đường có nguy cơ quá tải cao, do Sở Giao thông Vận tải địa phương chỉ đạo, phối hợp với cảnh sát giao thông.",
+    "ground_truth_contexts": ["Quy định vị trí đặt trạm cân lưu động trên tuyến có lưu lượng và rủi ro quá tải cao.", "Quy định thẩm quyền Sở Giao thông Vận tải phối hợp với cảnh sát giao thông."],
+    "difficulty": "multi_hop"
+  },
+  {
+    "question": "Cơ chế phối hợp giữa Cảnh sát giao thông và Thanh tra giao thông trong kiểm soát tải trọng xe được quy định ra sao?",
+    "ground_truth_answer": "Cảnh sát giao thông và Thanh tra giao thông phối hợp tuần tra, dừng xe, kiểm tra giấy tờ và cân tải trọng theo kế hoạch chung; quyền xử phạt thuộc về lực lượng chủ trì tại hiện trường.",
+    "ground_truth_contexts": ["Quy định về phối hợp lực lượng nêu rõ Cảnh sát giao thông và Thanh tra giao thông cùng tham gia kiểm tra.", "Quy định thẩm quyền xử phạt căn cứ vào lực lượng chủ trì tại hiện trường."],
+    "difficulty": "multi_hop"
+  },
+  {
+    "question": "Khi có khiếu nại về kết quả cân tải trọng xe, chủ phương tiện thực hiện thủ tục khiếu nại theo trình tự nào?",
+    "ground_truth_answer": "Chủ phương tiện gửi đơn khiếu nại tới cơ quan có thẩm quyền trong thời hạn quy định, kèm chứng cứ; cơ quan thẩm quyền xem xét, có thể yêu cầu cân kiểm tra lại trước khi ra quyết định giải quyết.",
+    "ground_truth_contexts": ["Quy định trình tự khiếu nại nêu chủ phương tiện gửi đơn kèm chứng cứ tới cơ quan có thẩm quyền.", "Quy định cơ chế cân kiểm tra lại làm căn cứ giải quyết khiếu nại."],
+    "difficulty": "multi_hop"
+  },
+  {
+    "question": "Trường hợp người vi phạm không hợp tác ký biên bản, biện pháp xử lý tiếp theo và quyền hạn của người lập biên bản là gì?",
+    "ground_truth_answer": "Nếu người vi phạm không hợp tác ký biên bản, người lập biên bản ghi rõ lý do, mời người chứng kiến ký xác nhận hoặc lập biên bản với hai cán bộ chứng kiến và tiếp tục xử lý vi phạm theo quy định.",
+    "ground_truth_contexts": ["Quy định trường hợp người vi phạm từ chối ký biên bản, phải có người làm chứng.", "Quy định người lập biên bản ghi rõ lý do và tiếp tục thủ tục xử phạt."],
+    "difficulty": "multi_hop"
+  },
+  {
+    "question": "Báo cáo định kỳ về công tác kiểm soát tải trọng xe được gửi tới cơ quan nào và bao gồm các nội dung nào?",
+    "ground_truth_answer": "Báo cáo định kỳ được gửi tới Tổng cục Đường bộ Việt Nam và Bộ Giao thông Vận tải, gồm số liệu kiểm tra, số vụ vi phạm, số tiền phạt, tình hình phối hợp lực lượng và đề xuất giải pháp.",
+    "ground_truth_contexts": ["Quy định cơ quan nhận báo cáo gồm Tổng cục Đường bộ Việt Nam và Bộ Giao thông Vận tải.", "Nội dung báo cáo gồm số liệu kiểm tra, vi phạm, xử phạt và đề xuất giải pháp."],
+    "difficulty": "multi_hop"
+  },
+  {
+    "question": "Quy trình lưu trữ dữ liệu cân tải trọng điện tử được quy định gồm những yêu cầu nào?",
+    "ground_truth_answer": "Dữ liệu cân tải trọng điện tử phải được lưu trữ trên hệ thống an toàn, không sửa đổi, gắn dấu thời gian, đảm bảo truy xuất phục vụ kiểm tra và xử lý khiếu nại theo thời hạn quy định.",
+    "ground_truth_contexts": ["Quy định yêu cầu lưu trữ dữ liệu cân điện tử trên hệ thống an toàn và không sửa đổi.", "Quy định thời hạn lưu trữ phục vụ kiểm tra và giải quyết khiếu nại."],
+    "difficulty": "multi_hop"
+  },
+  {
+    "question": "Trách nhiệm của Sở Giao thông Vận tải cấp tỉnh trong tổ chức kiểm soát tải trọng xe được phân định như thế nào so với Tổng cục Đường bộ?",
+    "ground_truth_answer": "Sở Giao thông Vận tải cấp tỉnh tổ chức kiểm soát tải trọng trên các tuyến đường thuộc địa phương quản lý, trong khi Tổng cục Đường bộ Việt Nam điều phối toàn quốc và quản lý các tuyến quốc lộ.",
+    "ground_truth_contexts": ["Quy định trách nhiệm Sở Giao thông Vận tải cấp tỉnh quản lý kiểm soát trên tuyến địa phương.", "Quy định trách nhiệm Tổng cục Đường bộ Việt Nam điều phối toàn quốc và quản lý quốc lộ."],
+    "difficulty": "multi_hop"
+  },
+  {
+    "question": "Sai số cho phép của thiết bị cân kiểm tra tải trọng xe được quy định là bao nhiêu phần trăm?",
+    "ground_truth_answer": "Sai số cho phép của thiết bị cân kiểm tra tải trọng xe theo quy định pháp luật về đo lường, thường nằm trong giới hạn quy định bởi cơ quan có thẩm quyền về đo lường, chi tiết tra tại quy chuẩn đo lường áp dụng.",
+    "ground_truth_contexts": ["Quy định viện dẫn quy chuẩn đo lường để xác định sai số cho phép của thiết bị cân."],
+    "difficulty": "numerical_reference"
+  },
+  {
+    "question": "Thời hạn lưu trữ hồ sơ vi phạm tải trọng xe tối thiểu là bao nhiêu năm theo quy định liên quan?",
+    "ground_truth_answer": "Thời hạn lưu trữ hồ sơ vi phạm tải trọng xe được quy định theo Luật Lưu trữ và Luật Xử lý vi phạm hành chính, chi tiết về số năm được nêu trong văn bản liên quan, không thấp hơn thời hạn xử lý vi phạm.",
+    "ground_truth_contexts": ["Quy định viện dẫn Luật Lưu trữ và Luật Xử lý vi phạm hành chính cho thời hạn lưu hồ sơ."],
+    "difficulty": "numerical_reference"
+  },
+  {
+    "question": "Theo Thông tư 09/2020, mức quá tải bao nhiêu phần trăm thì buộc phải hạ tải tại chỗ?",
+    "ground_truth_answer": "Việc buộc hạ tải tại chỗ áp dụng khi xe vi phạm mức quá tải theo ngưỡng quy định tại văn bản và Nghị định xử phạt vi phạm hành chính trong lĩnh vực giao thông đường bộ; chi tiết ngưỡng % nằm trong quy định cụ thể.",
+    "ground_truth_contexts": ["Quy định viện dẫn Nghị định xử phạt vi phạm hành chính lĩnh vực giao thông đường bộ về ngưỡng quá tải buộc hạ tải."],
+    "difficulty": "numerical_reference"
+  },
+  {
+    "question": "Khoảng cách tối đa giữa hai trạm cân lưu động trên cùng một tuyến quốc lộ được quy định là bao nhiêu km?",
+    "ground_truth_answer": "Thông tư 09/2020 không quy định cụ thể khoảng cách tối đa giữa hai trạm cân lưu động trên cùng một tuyến quốc lộ; việc bố trí được căn cứ vào kế hoạch kiểm soát của cơ quan có thẩm quyền.",
+    "ground_truth_contexts": ["Thông tư 09/2020 không có điều khoản quy định khoảng cách giữa hai trạm cân lưu động."],
+    "difficulty": "numerical_reference",
+    "is_hallu_trap": true
+  },
+  {
+    "question": "Thời hạn cụ thể giải quyết khiếu nại về kết quả cân tải trọng là bao nhiêu ngày làm việc?",
+    "ground_truth_answer": "Thời hạn giải quyết khiếu nại về kết quả cân tải trọng xe được thực hiện theo Luật Khiếu nại; chi tiết số ngày làm việc căn cứ theo loại khiếu nại và cấp giải quyết.",
+    "ground_truth_contexts": ["Quy định viện dẫn Luật Khiếu nại cho thời hạn giải quyết khiếu nại."],
+    "difficulty": "numerical_reference"
+  },
+  {
+    "question": "Mức phạt tiền tối đa cho hành vi chở quá tải trọng theo Thông tư 09/2020 là bao nhiêu đồng?",
+    "ground_truth_answer": "Thông tư 09/2020 không quy định trực tiếp mức phạt tiền cho hành vi chở quá tải trọng; mức phạt được quy định tại Nghị định xử phạt vi phạm hành chính trong lĩnh vực giao thông đường bộ, không nằm trong văn bản này.",
+    "ground_truth_contexts": ["Thông tư 09/2020 không trực tiếp quy định mức phạt tiền; viện dẫn Nghị định xử phạt vi phạm hành chính lĩnh vực giao thông đường bộ."],
+    "difficulty": "hallu_trap",
+    "is_hallu_trap": true
+  },
+  {
+    "question": "Thông tư 09/2020 có quy định việc miễn phạt cho xe chở hàng cứu trợ thiên tai vượt tải trọng không?",
+    "ground_truth_answer": "Thông tư 09/2020 không có điều khoản miễn phạt cho xe chở hàng cứu trợ thiên tai vượt tải trọng; các trường hợp đặc biệt được xử lý theo quy định pháp luật xử phạt vi phạm hành chính khác.",
+    "ground_truth_contexts": ["Thông tư 09/2020 không có quy định miễn phạt cho xe cứu trợ thiên tai vượt tải trọng."],
+    "difficulty": "hallu_trap",
+    "is_hallu_trap": true
+  },
+  {
+    "question": "Bộ trưởng Bộ Giao thông Vận tải đã ký ban hành Thông tư 09/2020 vào ngày nào?",
+    "ground_truth_answer": "Thông tin về ngày ký ban hành Thông tư 09/2020 được nêu tại phần mở đầu của văn bản; chi tiết ngày tháng cụ thể tra tại bản gốc Thông tư.",
+    "ground_truth_contexts": ["Phần mở đầu Thông tư ghi ngày ký ban hành của Bộ trưởng Bộ Giao thông Vận tải."],
+    "difficulty": "hallu_trap",
+    "is_hallu_trap": true
+  },
+  {
+    "question": "Thông tư 09/2020 có cho phép sử dụng máy bay không người lái (UAV) trong kiểm soát tải trọng xe không?",
+    "ground_truth_answer": "Thông tư 09/2020 không có quy định về việc sử dụng máy bay không người lái (UAV) trong kiểm soát tải trọng xe; các biện pháp kiểm soát chính là trạm cân cố định và lưu động.",
+    "ground_truth_contexts": ["Thông tư 09/2020 quy định biện pháp kiểm soát chính là trạm cân cố định và lưu động, không nhắc tới UAV."],
+    "difficulty": "hallu_trap",
+    "is_hallu_trap": true
+  },
+  {
+    "question": "Khi có Thông tư mới thay thế Thông tư 09/2020, hiệu lực của các biên bản vi phạm đã lập trước đó được xử lý ra sao?",
+    "ground_truth_answer": "Câu hỏi này không nằm trong phạm vi quy định của Thông tư 09/2020; việc xử lý biên bản vi phạm khi văn bản pháp luật thay đổi tuân theo nguyên tắc áp dụng pháp luật tại thời điểm xảy ra hành vi, theo Luật Ban hành văn bản quy phạm pháp luật.",
+    "ground_truth_contexts": ["Thông tư 09/2020 không quy định việc xử lý biên bản vi phạm khi có Thông tư thay thế."],
+    "difficulty": "hallu_trap",
+    "is_hallu_trap": true
+  },
+  {
+    "question": "Quyền hạn của lực lượng Thanh tra giao thông trong dừng xe kiểm tra tải trọng được quy định ra sao?",
+    "ground_truth_answer": "Lực lượng Thanh tra giao thông có thẩm quyền dừng phương tiện để kiểm tra tải trọng trên các tuyến đường bộ theo kế hoạch kiểm tra hoặc khi có dấu hiệu vi phạm.",
+    "ground_truth_contexts": ["Quy định thẩm quyền Thanh tra giao thông dừng phương tiện kiểm tra tải trọng theo kế hoạch hoặc dấu hiệu vi phạm."],
+    "difficulty": "simple_lookup"
+  },
+  {
+    "question": "Phương thức công khai kết quả kiểm soát tải trọng xe ra công chúng được quy định như thế nào?",
+    "ground_truth_answer": "Kết quả kiểm soát tải trọng xe được công khai trên cổng thông tin điện tử của cơ quan có thẩm quyền theo định kỳ, gồm số liệu thống kê và các vụ vi phạm điển hình.",
+    "ground_truth_contexts": ["Quy định công khai kết quả kiểm soát tải trọng trên cổng thông tin điện tử của cơ quan có thẩm quyền."],
+    "difficulty": "simple_lookup"
+  },
+  {
+    "question": "Người điều khiển xe có quyền yêu cầu cân kiểm tra lại trong trường hợp nghi ngờ kết quả cân không chính xác không?",
+    "ground_truth_answer": "Người điều khiển xe có quyền yêu cầu cân kiểm tra lại nếu nghi ngờ kết quả cân không chính xác; yêu cầu được ghi nhận và thực hiện theo trình tự quy định trước khi lập biên bản chính thức.",
+    "ground_truth_contexts": ["Quy định quyền yêu cầu cân kiểm tra lại của người điều khiển xe khi nghi ngờ kết quả."],
+    "difficulty": "simple_lookup"
+  },
+  {
+    "question": "Quy định về trang phục và phù hiệu của cán bộ thực hiện kiểm soát tải trọng tại trạm cân được nêu trong điều khoản nào?",
+    "ground_truth_answer": "Cán bộ thực hiện kiểm soát tải trọng tại trạm cân phải mặc trang phục, đeo phù hiệu, biển hiệu theo quy định của ngành, đảm bảo nhận diện rõ ràng và đúng thẩm quyền.",
+    "ground_truth_contexts": ["Quy định trang phục, phù hiệu của cán bộ thực hiện kiểm soát tải trọng theo quy định ngành."],
+    "difficulty": "simple_lookup"
+  },
+  {
+    "question": "Trách nhiệm xử lý của cán bộ kiểm soát tải trọng khi phát hiện hành vi cản trở, chống đối từ người vi phạm là gì?",
+    "ground_truth_answer": "Khi phát hiện hành vi cản trở, chống đối, cán bộ kiểm soát tải trọng phải lập biên bản, báo cáo cấp có thẩm quyền, đồng thời phối hợp với lực lượng công an để xử lý theo quy định pháp luật.",
+    "ground_truth_contexts": ["Quy định cán bộ kiểm soát phối hợp với lực lượng công an khi gặp hành vi cản trở, chống đối.", "Quy định lập biên bản và báo cáo cấp có thẩm quyền."],
+    "difficulty": "multi_hop"
+  }
+]

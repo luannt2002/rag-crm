@@ -1,0 +1,1663 @@
+Rõ rồi. Bạn đang gặp **2 lỗi cốt lõi** trong luồng test RAG chatbot:
+
+---
+
+## 🔴 Lỗi 1: Show thiếu dịch vụ (Top-K thấp + Retrieval miss)
+
+**Hiện tượng:** Hỏi "tẩy da chết có bao nhiêu loại?" → bot chỉ trả ra 1 cái dù thực tế có 4 cái.
+
+**Nguyên nhân cụ thể cần check:**
+
+| # | Điểm cần kiểm tra | Cách kiểm tra nhanh |
+|---|---|---|
+| 1 | Top-K đang set bao nhiêu? | Xem config RAG pipeline — nếu K=1 hoặc K=2 thì thiếu là chắc |
+| 2 | 4 dịch vụ tẩy da chết có nằm ở 4 chunk riêng biệt không? | Dump ra xem data được chunk như thế nào |
+| 3 | Similarity score của các chunk còn lại có bị lọc mất không? | Nếu có threshold filter (ví dụ `score > 0.8`) thì chunk thứ 2, 3 bị bỏ |
+
+**Fix theo thứ tự:**
+1. Tăng `Top-K` lên ít nhất `= số dịch vụ tối đa trong 1 nhóm` (ví dụ K=10)
+2. Nếu dữ liệu là danh sách, **không được chunk theo từng item** — phải chunk cả nhóm dịch vụ "tẩy da chết" thành **1 chunk**
+3. Thêm vào system prompt: `"Nếu user hỏi liệt kê, hãy dùng TOÀN BỘ context được cung cấp, không bỏ sót"`
+
+---
+
+## 🔴 Lỗi 2: Hỏi "chi tiết" → bot không hiểu đang hỏi cái gì
+
+**Hiện tượng:** Turn trước hỏi về "thải độc da" → turn sau hỏi "chi tiết" → bot lại trả lời về dịch vụ khác.
+
+**Nguyên nhân:** Câu hỏi ngắn `"chi tiết"` được đưa thẳng vào vector search **mà không có ngữ cảnh** → search ra kết quả sai.
+
+**Fix bắt buộc: Query Rewriting trước khi search**
+
+```
+Luồng HIỆN TẠI (sai):
+User: "chi tiết"
+   ↓ thẳng vào Vector Search
+   ↓ tìm ra chunk không liên quan
+   ↓ bot trả lời sai
+
+Luồng CẦN SỬA:
+User: "chi tiết"
+   ↓ LLM viết lại câu hỏi dựa vào chat history
+   → "Thông tin chi tiết về dịch vụ thải độc da là gì?"
+   ↓ câu đầy đủ này mới đưa vào Vector Search
+   ↓ tìm đúng chunk
+   ↓ bot trả lời đúng
+```
+
+---
+
+## ✅ Luồng test chuẩn để reproduce và verify
+
+Khi test RAG bot, bạn nên test theo **3 bước kiểm chứng**:
+
+**Bước 1 — Test Retrieval độc lập** (không cần LLM)
+- Đưa câu hỏi thẳng vào vector search
+- Kiểm tra xem có lấy ra đúng chunk không, đủ số lượng không
+- Nếu sai ở bước này thì lỗi là **data/chunking/K**
+
+**Bước 2 — Test Query Rewriting** (với câu ngắn)
+- Gửi câu ngắn như `"chi tiết"` + chat history vào LLM
+- Xem LLM viết lại thành câu gì
+- Sau đó dùng câu đó đi search → kiểm tra kết quả
+
+**Bước 3 — Test end-to-end**
+- Chạy full luồng: user input → rewrite → retrieval → LLM response
+- So sánh với kết quả mong đợi
+
+---
+
+**Tóm lại 2 việc cần làm ngay:**
+1. **Fix chunking** — gom dịch vụ cùng nhóm vào 1 chunk, tăng Top-K
+2. **Thêm bước Query Rewriting** — trước khi search phải expand câu ngắn thành câu đầy đủ dựa vào lịch sử
+
+Bạn đang dùng stack gì cho RAG pipeline này (n8n, LangChain, hay tự build)? Tôi sẽ hướng dẫn fix cụ thể hơn.
+
+## Query Rewriting là gì và tại sao cần nó?
+
+**Vấn đề cốt lõi:** Vector Search chỉ hiểu câu hỏi **ngay lúc đó**, không có trí nhớ về cuộc hội thoại.
+
+---
+
+## Minh họa cụ thể với case của bạn
+
+```
+Turn 1:
+  User:  "Cho tôi biết về dịch vụ thải độc da"
+  Bot:   "Dịch vụ thải độc da gồm: bla bla..."
+
+Turn 2:
+  User:  "chi tiết"
+```
+
+**Không có Query Rewriting:**
+```
+"chi tiết" ──→ Vector Search ──→ tìm chunk chứa từ "chi tiết"
+                                  → ra kết quả ngẫu nhiên
+                                  → bot trả lời sai
+```
+
+**Có Query Rewriting:**
+```
+Chat history + "chi tiết" ──→ LLM viết lại
+                            → "Thông tin chi tiết về dịch vụ thải độc da?"
+                            → Vector Search với câu đầy đủ
+                            → ra đúng chunk
+                            → bot trả lời đúng
+```
+
+---
+
+## Cách implement cụ thể
+
+### Bước 1 — LLM viết lại câu hỏi
+
+Trước khi đưa câu user vào Vector Search, gọi LLM với prompt sau:
+
+```
+SYSTEM:
+Bạn là AI chuyên viết lại câu hỏi.
+Dựa vào lịch sử hội thoại, hãy viết lại câu hỏi cuối cùng của user 
+thành một câu hỏi ĐỘC LẬP, ĐẦY ĐỦ THÔNG TIN, có thể hiểu được 
+mà KHÔNG cần đọc lịch sử chat.
+Chỉ trả về câu hỏi đã viết lại, không giải thích thêm.
+
+HISTORY:
+User: Cho tôi biết về dịch vụ thải độc da
+Bot:  Dịch vụ thải độc da gồm: ...
+
+USER_QUESTION: chi tiết
+
+OUTPUT: Thông tin chi tiết về dịch vụ thải độc da là gì?
+```
+
+### Bước 2 — Dùng câu đã viết lại để search
+
+```
+Câu gốc:      "chi tiết"           → KHÔNG dùng cái này
+Câu viết lại: "Thông tin chi tiết  → Dùng cái này để Vector Search
+               về dịch vụ thải 
+               độc da là gì?"
+```
+
+### Bước 3 — Đưa context lấy được vào LLM chính để trả lời
+
+---
+
+## Toàn bộ luồng hoàn chỉnh
+
+```
+User gửi câu hỏi
+      │
+      ▼
+┌─────────────────────┐
+│   Query Rewriting   │  ← LLM phụ đọc history + câu hỏi
+│   (LLM step 1)      │    → output: câu hỏi đầy đủ
+└─────────┬───────────┘
+          │
+          ▼
+┌─────────────────────┐
+│   Vector Search     │  ← dùng câu đã rewrite
+│   Top-K = 5         │    → output: 5 chunks liên quan
+└─────────┬───────────┘
+          │
+          ▼
+┌─────────────────────┐
+│   LLM trả lời       │  ← nhận: câu hỏi gốc + 5 chunks
+│   (LLM step 2)      │    → output: câu trả lời cho user
+└─────────────────────┘
+```
+
+---
+
+## Về Top-K = 5 của bạn
+
+Top-K = 5 **có thể vẫn thiếu** nếu mỗi dịch vụ tẩy da chết nằm ở 1 chunk riêng. Ví dụ:
+
+```
+Chunk 1: "Tẩy da chết & ủ trắng body — 250k"        score: 0.91 ✅
+Chunk 2: "Tẩy da chết muối biển — 180k"              score: 0.88 ✅
+Chunk 3: "Tẩy da chết cà phê — 200k"                 score: 0.85 ✅
+Chunk 4: "Tẩy da chết tế bào chết toàn thân — 220k"  score: 0.82 ✅
+Chunk 5: "Gói tắm trắng cao cấp — 350k"              score: 0.79 ✅ ← cái này không liên quan
+Chunk 6: "Tẩy da chết body scrub — 190k"             score: 0.76 ❌ ← bị loại vì K=5
+```
+
+→ Slot thứ 5 bị chiếm bởi chunk không liên quan, dịch vụ thứ 4 bị rớt ra ngoài.
+
+**Giải pháp bổ sung:** Khi câu hỏi có từ "tất cả", "liệt kê", "có những loại nào" → tăng K lên 10-15 cho riêng loại câu hỏi này.
+
+---
+
+## Bạn đang dùng stack gì?
+
+Tôi sẽ hướng dẫn implement Query Rewriting cụ thể hơn cho từng trường hợp:
+
+- **n8n** → thêm 1 node LLM trước node Vector Search
+- **LangChain** → dùng `ConversationalRetrievalChain` có sẵn
+- **Tự build** → thêm 1 API call trước khi search
+
+Luồng này khá solid. Để đọc nhanh, tôi sẽ chia thành **đang tốt** và **cần xem lại**.
+
+---
+
+## ✅ Những gì đang tốt
+
+**Adaptive routing (FACTOID vs AGGREGATION)** — đây là thiết kế đúng, không chạy cứng hết mọi node cho mọi câu.
+
+**Hybrid retrieval (dense + BM25 + RRF)** — kết hợp 2 chiều tìm kiếm, RRF fuse giảm bias về một phía.
+
+**CRAG pattern (grade → rewrite_retry)** — có vòng lặp tự sửa khi chunk không đủ tốt, đây là điểm mạnh.
+
+**Tách grounding judge khỏi generate** — đúng kiến trúc, không để LLM tự kiểm tra output của chính nó.
+
+---
+
+## 🔴 Những điểm cần xem lại
+
+### 1. `condense` node — đây chính là lỗi "chi tiết" của bạn
+
+```
+Node 4: condense / router
+  🤖 condense (nếu có history) — gộp lịch sử + chọn nhánh
+```
+
+Node này làm **2 việc trong 1**: gộp history VÀ route intent. Đây là vấn đề.
+
+Nếu `condense` fail (gộp sai) thì `router` cũng route sai theo → toàn bộ pipeline đi sai đường từ đây.
+
+**Cần tách ra:**
+```
+Node 4a: condense   → chỉ gộp history thành câu hỏi đầy đủ
+Node 4b: router     → chỉ phân loại FACTOID / AGGREGATION / MULTI-HOP
+```
+
+Hai việc độc lập, không nên dùng chung 1 LLM call.
+
+---
+
+### 2. `rewrite_and_mq_parallel` — chỉ chạy cho AGGREGATION, FACTOID bị bỏ qua
+
+```
+Node 5: rewrite_and_mq_parallel
+  CHỈ aggregation/comparison (factoid SKIP)
+```
+
+Đây là lý do case "chi tiết" bị sai. "Chi tiết về X" được classify là **FACTOID** → skip rewrite → câu ngắn "chi tiết" đưa thẳng vào retrieve → sai.
+
+**Vấn đề:** `condense` ở Node 4 phải xử lý câu ngắn trước khi route, nhưng nếu nó không expand đủ thì FACTOID path không có safety net.
+
+**Fix:** Với FACTOID path, vẫn cần 1 bước **expand câu ngắn** (nhẹ hơn full rewrite), không cần multi-query nhưng cần đảm bảo câu đầy đủ trước khi retrieve.
+
+---
+
+### 3. `understand_query` chạy song song với `cache_check` — rủi ro race condition
+
+```
+Node 2: cache_check + understand_query (//)
+```
+
+Nếu cache hit → nhảy thẳng `persist`, bỏ qua `understand`. Nhưng nếu cache hit trả về kết quả của câu hỏi **trước đó** trong conversation thì có thể trả lời sai.
+
+**Cần check:** L2 semantic cache có tính `conversation_id` hoặc `session_id` vào key không? Nếu chỉ cache theo nội dung câu hỏi thì câu "chi tiết" ở 2 conversation khác nhau có thể trả về cùng 1 kết quả cached — sai hoàn toàn.
+
+---
+
+### 4. `rerank` dùng zerank-2 — cần verify với tiếng Việt
+
+ZeroEntropy zerank-2 là cross-encoder tốt, nhưng cần confirm nó được train trên tiếng Việt hay chỉ English/multilingual. Cross-encoder nhạy cảm với ngôn ngữ hơn bi-encoder.
+
+**Cách test nhanh:** Lấy 5 chunk từ retrieval, chạy qua rerank, in ra score trước và sau → xem có chunk nào bị đảo thứ tự sai không.
+
+---
+
+### 5. `neighbor_expand` — optional nhưng quan trọng với dịch vụ
+
+```
+Node 10: neighbor_expand — mở rộng chunk lân cận — optional
+```
+
+Nếu đang OFF thì đây là lý do thiếu thông tin. Dịch vụ spa thường được mô tả rải rác: tên ở chunk 1, giá ở chunk 2, mô tả ở chunk 3. Nếu không expand neighbor thì bị thiếu.
+
+**Nên bật** với loại data dịch vụ/sản phẩm.
+
+---
+
+## 📊 Tổng quan mức độ ưu tiên fix
+
+| Vấn đề | Ảnh hưởng | Ưu tiên |
+|---|---|---|
+| Tách `condense` khỏi `router` | Cao — route sai từ gốc | 🔴 Fix ngay |
+| FACTOID path không expand câu ngắn | Cao — case "chi tiết" | 🔴 Fix ngay |
+| L2 cache không tính session | Trung bình — trả lời sai lúc cache hit | 🟠 Fix sớm |
+| `neighbor_expand` đang OFF | Trung bình — thiếu thông tin | 🟠 Bật lên |
+| Verify zerank-2 với tiếng Việt | Thấp — cần đo thực tế | 🟡 Theo dõi |
+
+---
+
+Bạn muốn đi sâu vào phần nào trước — fix `condense`/`router`, hay fix FACTOID path không rewrite?
+
+
+Oke, giờ có full spec rồi. Để phân tích chính xác.
+
+---
+
+## Đánh giá lại toàn bộ luồng vs 2 lỗi của bạn
+
+---
+
+### 🔴 Lỗi 1: Liệt kê thiếu dịch vụ
+
+Trace theo spec:
+
+```
+understand_query → intent = "aggregation" (liệt kê)
+  ↓
+rewrite + multi_query fanout ✅ (đúng, có chạy)
+  ↓
+retrieve (hybrid dense+BM25+RRF) → Top-K = 5
+  ↓
+rerank (zerank-2) + cliff filter
+  ↓
+mmr_dedup → BỎ chunk "trùng nội dung"  ← ⚠️ NGHI VẤN
+  ↓
+grade (CRAG) → lọc chunk
+  ↓
+generate
+```
+
+**Vấn đề thực sự có thể ở 2 chỗ:**
+
+**A. mmr_dedup hiểu nhầm "trùng"**
+
+Các dịch vụ tẩy da chết khác nhau nhưng **vector embedding gần nhau** (cùng chủ đề "tẩy da"). MMR coi chúng là "trùng" và deduplicate mất.
+
+```
+Chunk: "Tẩy da chết muối biển — 180k"    → embedding gần với
+Chunk: "Tẩy da chết cà phê — 200k"       → MMR bỏ 1 trong 2
+```
+
+**B. grade (CRAG) lọc quá tay**
+
+grade chấm chunk "ambiguous" → bỏ → chỉ còn 1-2 chunk vào generate.
+
+**Cần check ngay:**
+- Log `graded_chunks` sau STEP 11 — xem bao nhiêu chunk được duyệt
+- Log `mmr_dedup` output — xem bao nhiêu chunk bị drop ở đây
+- So sánh số chunk **trước và sau** từng step
+
+---
+
+### 🔴 Lỗi 2: Hỏi "chi tiết" → trả lời sai
+
+Trace theo spec:
+
+```
+understand_query → phân loại intent câu "chi tiết"
+```
+
+Đây là **điểm mấu chốt**. Câu "chi tiết" một mình không có ngữ cảnh.
+
+**Luồng STEP 2 và STEP 4 có vấn đề phối hợp:**
+
+```
+STEP 2: understand_query chạy SONG SONG với cache_check
+        → understand nhận câu "chi tiết" KHÔNG có history
+        → classify intent dựa trên 2 chữ "chi tiết"
+        → có thể ra factoid hoặc aggregation (không chắc)
+
+STEP 4: condense (có history) → chỉ chạy khi history ≥ 6 lượt
+        → nếu conversation mới (< 6 lượt) → SKIP condense
+        → câu "chi tiết" không được expand
+        → đưa thẳng vào retrieve với 2 chữ "chi tiết"
+```
+
+**Vấn đề cụ thể:**
+
+```
+Thiết kế hiện tại:
+understand_query ──→ (độc lập, không có history context)
+condense         ──→ (chỉ gộp history cho retrieve, KHÔNG feed vào understand)
+
+Cần:
+history → understand_query (để hiểu "chi tiết" = chi tiết về CÁI GÌ)
+       → condense          (để expand câu hỏi trước khi retrieve)
+```
+
+`understand_query` cần **thấy history** để phân loại intent đúng. Hiện tại không rõ STEP 2 có nhận history không — cần confirm.
+
+---
+
+## Checklist debug theo thứ tự
+
+**Debug lỗi "chi tiết" trước** (dễ isolate hơn):
+
+```
+1. Kiểm tra understand_query có nhận chat_history không?
+   → Xem prompt template của node understand
+   → Nếu không có history → đây là root cause
+
+2. Kiểm tra condense gate: default threshold là 6 lượt
+   → Nếu conversation < 6 turn → condense bị skip
+   → câu ngắn không được expand → retrieve sai
+
+3. Xem log: rewritten_query sau STEP 2
+   → Nếu rewritten_query vẫn là "chi tiết" → confirm bug ở STEP 2
+   → Nếu rewritten_query đúng → bug ở retrieve hoặc sau đó
+```
+
+**Debug lỗi "liệt kê thiếu":**
+
+```
+4. Bật debug=true → xem request_steps log
+5. Đếm chunk tại từng checkpoint:
+   retrieve output    → bao nhiêu chunk?
+   sau rerank         → bao nhiêu?
+   sau mmr_dedup      → bao nhiêu?  ← thường drop nhiều nhất
+   sau grade          → bao nhiêu?  ← nếu còn drop thêm = grade quá tay
+6. Xem intent được classify là gì
+   → nếu "factoid" thay vì "aggregation" → skip rewrite/multi_query → thiếu recall
+```
+
+---
+
+## Tóm tắt vấn đề cốt lõi
+
+| Lỗi | Root cause nghi ngờ | Cần verify |
+|---|---|---|
+| "chi tiết" trả sai | `understand_query` không thấy history → intent/rewrite sai | Log `rewritten_query` ở STEP 2 |
+| `condense` gate quá cao (6 lượt) | Câu ngắn không được expand khi conversation còn mới | Thử hạ `condense_history_limit` xuống 2 |
+| Liệt kê thiếu | `mmr_dedup` drop nhầm hoặc `grade` lọc quá tay | Log chunk count tại STEP 9 và STEP 11 |
+| Liệt kê thiếu | Intent classify nhầm "factoid" → skip `multi_query` | Log `intent` tại STEP 2 |
+
+Bạn có thể bật `debug=true` và paste log `rewritten_query` + `intent` + chunk count ra không? Sẽ pinpoint được ngay.
+
+
+
+
+Rõ rồi, giờ có đủ cả 2 luồng. Phân tích cross giữa ingest và query để tìm root cause chính xác hơn.
+
+---
+
+## Mapping ingest → query để tìm bug
+
+### 🔴 Lỗi liệt kê thiếu — trace từ gốc ingest
+
+**STEP 4 ingest_chunk — đây là điểm quan trọng nhất:**
+
+```
+select_strategy() chọn 1 trong:
+  - table_csv    ← 1 dòng = 1 chunk (cho bảng giá/Excel)
+  - hdt          ← heading-based
+  - semantic
+  - recursive
+  - hybrid
+```
+
+**Câu hỏi cần xác nhận ngay:** Data dịch vụ spa của bạn đang upload dưới dạng gì?
+
+| Format upload | Strategy được chọn | Kết quả |
+|---|---|---|
+| Excel/CSV bảng giá | `table_csv` → 1 dòng = 1 chunk | ✅ Mỗi dịch vụ = 1 chunk riêng |
+| Word/PDF dạng văn bản | `hdt` hoặc `semantic` | ⚠️ Có thể gộp nhiều dịch vụ vào 1 chunk hoặc cắt sai |
+| Markdown/text thô | `recursive` | ⚠️ Chunk theo size, không theo logic dịch vụ |
+
+Nếu upload **không phải table_csv** thì rất có thể:
+```
+"Tẩy da chết muối biển — 180k
+ Tẩy da chết cà phê — 200k
+ Tẩy da chết body scrub — 190k"
+
+→ Bị gộp vào 1 chunk duy nhất
+→ Top-K=5 lấy 5 chunk nhưng 4 dịch vụ nằm trong 1 chunk
+→ mmr_dedup thấy chunk này đã có rồi → drop phần còn lại
+→ Kết quả: chỉ thấy 1-2 dịch vụ
+```
+
+---
+
+### 🔴 Lỗi "chi tiết" — trace từ ingest_enrich
+
+**STEP 5 ingest_enrich thêm context prefix:**
+```
+chunk_context = "Đoạn này mô tả dịch vụ thải độc da thuộc danh mục 
+                 chăm sóc cơ thể tại spa X"
+```
+
+Khi query "chi tiết" đưa vào retrieve:
+```
+understand_query nhận "chi tiết" (không có history)
+→ rewritten_query = "chi tiết"  (không đổi vì không biết context)
+→ embed "chi tiết" → vector gần với... BẤT KỲ chunk nào
+→ context prefix của chunk không giúp được gì
+```
+
+**Vấn đề:** `ingest_enrich` làm tốt phần của nó, nhưng `understand_query` ở query side không có history → không biết "chi tiết" là về cái gì → rewritten_query vẫn là câu ngắn → embed lệch.
+
+---
+
+## Sơ đồ toàn bộ vấn đề---
+
+## Phân tích cross giữa 2 luồng
+
+### 🔴 Lỗi liệt kê thiếu — bắt đầu từ ingest_chunk
+
+**STEP 4 ingest — `select_strategy()`** là điểm mấu chốt:
+
+```
+Data dịch vụ spa đang upload dưới dạng gì?
+
+→ Excel/CSV bảng giá   → table_csv  ✅ 1 dịch vụ = 1 chunk
+→ Word/PDF văn bản     → hdt/semantic ⚠️ có thể gộp nhiều dịch vụ
+→ Text/Markdown        → recursive  ⚠️ cắt theo size, không theo logic
+```
+
+Nếu strategy sai, 4 dịch vụ tẩy da chết bị gộp vào 1-2 chunk → khi `mmr_dedup` thấy embedding gần nhau → drop → query chỉ thấy 1 dịch vụ.
+
+**Cách verify ngay:** Vào DB xem bảng `document_chunks`, đếm xem 4 dịch vụ tẩy da chết nằm ở mấy chunk:
+```sql
+SELECT chunk_type, LEFT(content, 80) 
+FROM document_chunks 
+WHERE content ILIKE '%tẩy da chết%'
+ORDER BY created_at DESC;
+```
+
+---
+
+### 🔴 Lỗi "chi tiết" — 2 điểm yếu trong query pipeline
+
+**Điểm 1 — `understand_query` không thấy history:**
+
+`understand_query` chạy song song với `cache_check` ở STEP 2. Câu hỏi là: **prompt template của `understand_query` có include `chat_history` không?**
+
+Nếu không có history trong prompt → classify câu "chi tiết" dựa trên 2 chữ đó → kết quả intent không ổn định.
+
+**Điểm 2 — `condense` gate quá cao (6 lượt):**
+
+```
+condense chỉ chạy khi history ≥ 6 lượt
+→ nếu conversation mới (turn 1-2) → SKIP
+→ câu "chi tiết" không được expand
+→ đưa thẳng vào retrieve
+```
+
+Đây là ngưỡng thiết kế cho trường hợp **tóm tắt lịch sử dài**, nhưng bài toán **expand câu ngắn** chỉ cần 1-2 turn trước là đủ.
+
+---
+
+## 2 việc cần làm ngay
+
+**1. Verify chunking strategy (5 phút):**
+Chạy query SQL trên → nếu 4 dịch vụ nằm trong ít hơn 4 chunk → đây là root cause lỗi liệt kê.
+
+**2. Check prompt `understand_query` (5 phút):**
+Tìm file prompt template của node `understand_query` → xem có `{chat_history}` trong prompt không → nếu không có thì đây là root cause lỗi "chi tiết".
+
+Bạn có thể paste nội dung SQL result hoặc prompt template ra không? Sẽ confirm được ngay.
+Đây là một đánh giá kiến trúc tổng thể. Tôi sẽ chia thành các phần rõ ràng để bạn có cái nhìn đa chiều.
+
+---
+
+## Phần 1 — Tổng quan: Pipeline này ở mức nào?
+
+Nói thẳng: **đây là một RAG pipeline được thiết kế rất tốt**, ở tầm trên trung bình so với mặt bằng. Nó có những thứ mà phần lớn RAG "tự build" thiếu:
+
+| Thành phần | Có? | Đánh giá |
+|---|---|---|
+| Hybrid retrieval (dense + BM25 + RRF) | ✅ | Chuẩn — không chỉ dựa vào vector |
+| Contextual Retrieval (enrich chunk) | ✅ | Pattern của Anthropic, ít team làm |
+| Reranking (cross-encoder) | ✅ | Đúng kiến trúc 2-stage |
+| CRAG (grade + retry) | ✅ | Self-correcting, hiếm |
+| Grounding judge (anti-hallucination) | ✅ | Tầng verify riêng |
+| Adaptive routing theo intent | ✅ | Tiết kiệm chi phí thông minh |
+| Vietnamese segmentation (underthesea) | ✅ | Quan trọng cho BM25 tiếng Việt |
+| Multi-tenant + async ingest | ✅ | Production-grade |
+
+**Nhưng** — chính vì pipeline phức tạp, nó có nhiều điểm có thể fail âm thầm. Phần dưới tôi sẽ chỉ ra từng cái.
+
+---
+
+## Phần 2 — Luồng UPLOAD: chuẩn cái nào, yếu cái nào
+
+### ✅ Đã chuẩn
+
+**2-action async (HTTP 202 + worker nền)** — đúng. Không chặn request, UI poll được. Đây là cách làm production.
+
+**Contextual enrichment với context cap 100 token + prompt cache** — rất tốt. Giải quyết đúng vấn đề "chunk mất ngữ cảnh" mà vẫn rẻ.
+
+**Dedup bằng content_hash + source_url UPSERT** — tránh ingest trùng, đúng.
+
+### ⚠️ Điểm cần soi kỹ — `ingest_chunk` (STEP 4)
+
+Đây là **mắt xích quyết định chất lượng toàn bộ retrieval**. `select_strategy()` chọn rule-based giữa table_csv / hdt / semantic / recursive / hybrid.
+
+**Câu hỏi cốt lõi chưa trả lời được:** Với data dịch vụ spa của bạn, `select_strategy()` đang chọn strategy nào?**Cách kiểm tra chunking đã chuẩn chưa (làm ngay được):**
+
+```sql
+-- Đếm 4 dịch vụ tẩy da chết nằm ở mấy chunk
+SELECT id, chunk_type, LEFT(content, 100) AS preview
+FROM document_chunks
+WHERE content ILIKE '%tẩy da chết%'
+ORDER BY id;
+```
+
+- Nếu ra **4 row** → chunking chuẩn (table_csv), lỗi liệt kê nằm ở chỗ khác (mmr/grade/Top-K)
+- Nếu ra **1-2 row** → chunking sai strategy, đây là root cause
+
+### ⚠️ Điểm thứ hai — Embedding & Vector đã chuẩn chưa?
+
+**Embed dùng narrate + context** (STEP 7) — đúng, nhưng cần verify:
+
+```sql
+-- Check có chunk nào embedding NULL không (retrieval chết)
+SELECT COUNT(*) FROM document_chunks WHERE embedding IS NULL;
+
+-- Check dimension đúng 1280 không
+SELECT vector_dims(embedding) FROM document_chunks LIMIT 1;
+```
+
+ZeroEntropy zembed-1 dùng **matryoshka 1280-dim** — về lý thuyết tốt cho tiếng Việt, nhưng cần test thực tế: lấy 2 câu tiếng Việt gần nghĩa, embed, tính cosine → xem có phân biệt được không.
+
+---
+
+## Phần 3 — Luồng QUERY: RAG đã hiểu context chưa?
+
+Đây là câu hỏi quan trọng nhất của bạn. Trả lời thẳng: **chưa chắc chắn, và có 2 lỗ hổng thiết kế cụ thể.**### 🔴 2 lỗ hổng thiết kế trong việc hiểu context
+
+**Lỗ hổng 1 — `understand_query` chạy song song `cache_check`, không rõ có history**
+
+STEP 2 mô tả `understand_query` "phân loại intent + chuẩn hoá query". Nhưng nó chạy **song song** với cache_check, và spec không nói rõ nó có nhận `chat_history` không.
+
+Nếu không có history → câu "chi tiết" được classify mù → intent và rewritten_query đều sai từ gốc.
+
+**Lỗ hổng 2 — `condense` gate = 6 lượt (quá cao cho bài toán coref)**
+
+Đây là vấn đề lớn nhất với case của bạn. `condense_history_limit=6` được thiết kế cho mục đích **nén lịch sử dài**, nhưng bài toán của bạn là **coreference resolution** (hiểu "chi tiết" = chi tiết của cái gì) — chỉ cần 1-2 turn trước.
+
+Với kịch bản 5 tin nhắn của bạn → chưa đủ 6 → condense skip → "chi tiết" không bao giờ được expand → retrieve câu 2 chữ → sai.
+
+---
+
+## Phần 4 — Đánh giá theo từng tiêu chí RAG chuẩn
+
+| Tiêu chí RAG | Trạng thái | Ghi chú |
+|---|---|---|
+| Chunking phù hợp data | ⚠️ Cần verify | Phụ thuộc `select_strategy()` chọn đúng không |
+| Embedding chất lượng | ⚠️ Cần test | zembed-1 với tiếng Việt cần đo cosine thực tế |
+| Hybrid retrieval | ✅ Tốt | dense + BM25 + RRF đầy đủ |
+| Reranking | ✅ Tốt | cross-encoder + cliff filter |
+| **Multi-turn context** | 🔴 **Có lỗ hổng** | condense gate quá cao, coref fail |
+| **Query rewriting cho câu ngắn** | 🔴 **Thiếu** | factoid skip rewrite, không có safety net |
+| Anti-hallucination | ✅ Rất tốt | 3 tầng: grade + cliff + grounding |
+| Listing/aggregation đầy đủ | ⚠️ Cần verify | mmr có thể drop nhầm dịch vụ cùng nhóm |
+| Caching | ⚠️ Cần check | L2 semantic cache có tính session_id? |
+
+---
+
+## Phần 5 — Những vấn đề cần đào sâu thêm (ngoài 2 lỗi đã biết)
+
+Ngoài lỗi "liệt kê thiếu" và "chi tiết", có **4 vấn đề tiềm ẩn** đáng điều tra:
+
+**1. L2 semantic cache (@0.97) có tính `connect_id`/session vào key không?**
+Nếu không → 2 conversation khác nhau cùng hỏi "chi tiết" có thể nhận cùng 1 cached answer → sai hoàn toàn. Đây là bug nguy hiểm vì khó reproduce.
+
+**2. `cliff filter` sàn 0.05 — có quá thấp hoặc quá cao?**
+Cliff filter cắt theo gap điểm. Nếu các dịch vụ cùng nhóm có điểm sát nhau, cliff có thể cắt nhầm hoặc giữ cả rác. Cần log điểm trước/sau cliff.
+
+**3. `understand_query` classify intent cho câu ngắn — độ ổn định?**
+"chi tiết", "thêm", "còn gì nữa" — những câu này classify thành factoid hay aggregation? Nếu factoid → skip multi_query → thiếu recall khi đáng ra cần liệt kê.
+
+**4. Parent/child dual-index có được dùng đúng ở retrieve không?**
+Ingest tạo parent (1024) + child (256). Nhưng retrieve search trên cái nào? Nếu search child mà không expand lên parent (neighbor_expand OFF) → thiếu ngữ cảnh.
+
+---
+
+## Tóm tắt — Ưu tiên hành động
+
+| # | Việc | Thời gian | Mục đích |
+|---|---|---|---|
+| 1 | Chạy SQL đếm chunk dịch vụ tẩy da chết | 5 phút | Xác định chunking đúng/sai |
+| 2 | Đọc prompt template `understand_query` xem có `{chat_history}` | 5 phút | Xác định lỗi "chi tiết" gốc |
+| 3 | Check `condense_history_limit` + logic gate | 10 phút | Hạ ngưỡng cho coref |
+| 4 | Check L2 cache key có `connect_id` | 10 phút | Loại bug cache cross-session |
+| 5 | Bật `debug=true`, log chunk count từng step | 15 phút | Đo mmr/grade drop bao nhiêu |
+
+**Câu hỏi để đi tiếp:** Bạn muốn tôi đào sâu phần nào trước — (a) fix luồng hiểu context multi-turn (condense + understand), hay (b) verify luồng chunking + embedding của upload? Tôi sẽ đi chi tiết vào code-level cho phần bạn chọn.
+
+
+
+
+Đây là một bộ tài liệu rất đầy đủ. Tôi đã đọc hết CLAUDE.md + STATE_SNAPSHOT + 2 luồng pipeline. Để tôi đưa ra một bức tranh tổng thể, đa chiều, có evidence — đúng tinh thần "no guess" của chính dự án bạn.
+
+Trước hết, một điểm thẳng thắn: **dự án này tự nó đã thừa nhận honest grade 4.8/10 (lens 2026) trong khi self-claim 8.1/10**. Đây là tài liệu nội bộ quan trọng nhất — nó đã chẩn đoán đúng phần lớn vấn đề. Tôi sẽ build trên đó, không lặp lại, và chỉ ra những chỗ **chưa được nói tới**.
+
+---
+
+## Phần 1 — CLAUDE.md đã chuẩn cho một RAG application chưa?
+
+Nói thẳng: **CLAUDE.md này thuộc nhóm tốt nhất tôi từng thấy cho một RAG project** về mặt governance. Nhưng nó có một thiên lệch nguy hiểm.
+
+### ✅ Những gì rất chuẩn
+
+Bộ rule này mạnh ở chỗ nó ép kỷ luật engineering: rule #0 "CẤM ĐOÁN" (no claim without evidence), Strategy+DI+Port mandate, zero-hardcode, domain-neutral, no-version-ref, 4-key identity, broad-except sweep. Đây là những thứ mà 95% RAG project tự build KHÔNG có. Phần "Application MINDSET — bot owner owns everything" (app không inject text, không override answer) là tư duy platform-grade hiếm.
+
+### 🔴 Vấn đề lớn nhất — CLAUDE.md tối ưu cho "code correctness", không cho "RAG quality"
+
+Đây là điều STATE_SNAPSHOT Root Cause #4 đã chạm tới nhưng CLAUDE.md chưa tự sửa:**Chẩn đoán cụ thể về CLAUDE.md:**
+
+CLAUDE.md có **6 lớp guard cho code correctness** (zero-hardcode, no-version-ref, DI, broad-except, tenant, model-tier) nhưng chỉ có **1 lớp guard cho RAG quality** (Coverage rate — mới thêm sau bài học spa-07, đến giờ vẫn chưa thành CI gate cứng).
+
+Đây chính xác là cái mà chính tài liệu của bạn gọi là *"measurement myopia masked as rigor"*. Rule "CẤM ĐOÁN" áp rất gắt cho code, nhưng KHÔNG có rule tương đương kiểu **"CẤM tuyên bố retrieval đúng khi chưa chạy recall@k trên golden set"**.
+
+**3 thứ CLAUDE.md nên thêm (theo thứ tự ưu tiên):**
+
+Thứ nhất, một mục **RETRIEVAL QUALITY MANDATE** ngang hàng với BUG INVESTIGATION MANDATE — bắt buộc mọi thay đổi chạm retrieval/chunking/rerank phải report recall@k + coverage trước/sau, không chỉ HALLU.
+
+Thứ hai, **multi-turn correctness** chưa hề xuất hiện trong CLAUDE.md. Toàn bộ bài học spa-07, các load test 90Q/150Q đều là **single-turn**. Đây là lỗ hổng lớn nhất — chính là 2 bug "liệt kê thiếu" và "chi tiết" bạn gặp.
+
+Thứ ba, **eval harness validity** — chính tài liệu thừa nhận "eval harness 90Q không detect lift của Multi-HyDE/FaithJudge". Một CLAUDE.md tốt cần rule: nếu harness không phân biệt được trước/sau một cải tiến thì harness đó vô giá trị cho cải tiến đó.
+
+---
+
+## Phần 2 — Đào sâu tất cả step: cái nào song song, cái nào đợi, DI ở đâu
+
+Đây là bức tranh DI + concurrency đầy đủ của cả 2 luồng:**Quy tắc concurrency rút ra từ pipeline của bạn:**
+
+Song song được (độc lập data): `cache_check ∥ understand_query`, `rewrite ∥ multi_query`, `dense ∥ BM25`, N sub-query retrieve. Đây đã làm đúng theo Async Rule 1-4 trong CLAUDE.md.
+
+Buộc tuần tự (data dependency thật): `grade → generate → grounding → persist`, và `retrieve → rerank → mmr` (mỗi cái cần output cái trước). `persist` serial vì exactly-once (Async Rule 8). Cái này cũng đúng.
+
+**Điểm nghi vấn về concurrency chưa được nói tới:** STATE_SNAPSHOT Q1 cross-validation ghi `understand_query` chạy song song `cache_check`, nhưng nếu cache HIT thì understand bị **lãng phí** (đã tính tiền LLM rồi mới biết cache hit). Đây là cost leak nhỏ nhưng có thật — với 70% traffic factoid + cache hit cao, đây là phần trăm chi phí bị đốt vô ích mỗi ngày.
+
+---
+
+## Phần 3 — RAG expert production thế giới vs RAG hiện tại của bạn
+
+Đây là bức tranh đối chiếu mà bạn yêu cầu:**Một góc nhìn bổ sung mà tài liệu chưa nhấn:** Ragbot của bạn là một **"single-shot RAG" rất tốt** đang bị đo bằng thước đo của **"agentic RAG 2026"**. Đây không hẳn là thất bại — với use case chăm sóc khách hàng spa/xe/legal tiếng Việt corpus nhỏ, single-shot RAG rẻ + nhanh thực ra *phù hợp hơn* agentic. Câu hỏi đúng không phải "làm sao thành agentic" mà là **"use case thật của bạn có cần agentic không"**. Phần lớn KHÔNG cần. Cái bạn cần gấp là 2 thứ latency + multi-turn, không phải multimodal.
+
+---
+
+## Phần 4 — Thư viện / DI: cái nào phù hợp tiếng Việt, cái nào chưa chuẩn
+
+Đây là phần bạn hỏi cụ thể về stack tiếng Việt. Đánh giá từng cái:
+
+| Thành phần | Stack hiện tại | Phù hợp VN? | Ghi chú |
+|---|---|---|---|
+| Embedding | ZeroEntropy zembed-1 (1280-dim matryoshka) | ⚠️ Cần đo | Lịch sử project từng dùng Jina v3 (đo +5.5× top_score vs OpenAI). zembed-1 chưa thấy số đo VN-MTEB cụ thể trong tài liệu. **Cần benchmark trực tiếp zembed-1 vs Jina v3 trên corpus VN của bạn** |
+| Reranker | ZeroEntropy zerank-2 cross-encoder | ⚠️ Cần đo | Cross-encoder nhạy ngôn ngữ hơn bi-encoder. Lịch sử có ViRanker (VN-specific) và Jina v3 rerank. Chưa thấy số zerank-2 trên VN |
+| VN tokenizer | underthesea (BM25/tsvector segment) | ✅ Chuẩn | Đây là lựa chọn đúng. underthesea là chuẩn de-facto cho word segmentation tiếng Việt |
+| Unicode normalize | NFC + NFKC | ✅ Chuẩn | NFKC cho cross-form dedup là đúng. Lịch sử đã fix vụ này (Sprint 2 P22-VN) |
+| LLM | gpt-4.1-mini | ✅ Hợp lý | Rẻ, đa ngôn ngữ tốt. Phù hợp cost target |
+| Vector store | pgvector HNSW | ✅ Chuẩn | Production-grade, đúng |
+| BM25 | Postgres tsvector + ts_rank_cd | ⚠️ Không phải BM25 thật | STATE_SNAPSHOT P15-1 ghi rõ: `ts_rank_cd` KHÔNG phải BM25 thật, cần `pg_textsearch` extension. Đây là điểm yếu lexical recall cho entity hiếm/tiếng Việt kỹ thuật |
+
+**3 điều cần verify ngay về stack VN:**
+
+Thứ nhất, **đo zembed-1 thực tế**. Toàn bộ lift lịch sử (R5→V2.5, +14pp) đến từ chuyển sang Jina v3. Giờ đổi sang zembed-1 mà chưa thấy số đo VN — đây là rủi ro âm thầm. Lấy 20 cặp câu VN gần nghĩa, embed, đo cosine separation.
+
+Thứ hai, **BM25 giả**. `ts_rank_cd` không phải BM25 — nó thiếu IDF saturation. Với câu hỏi chứa tên dịch vụ hiếm ("thải độc da"), lexical recall yếu hơn BM25 thật. Đây có thể là một phần lý do "liệt kê thiếu".
+
+Thứ ba, **zerank-2 cliff filter**. Cross-encoder + cliff filter sàn 0.05 — chính lịch sử V16 chứng minh nới cliff → HALLU 7/15. Cliff quá chặt → over-refuse. Đây là dao hai lưỡi chưa được calibrate cho VN.
+
+---
+
+## Phần 5 — Những điểm "fail âm thầm" CHƯA được tài liệu nói tới
+
+Đây là giá trị thật của phân tích này — những thứ ngoài 5 Root Cause đã biết:---
+
+## Phần 6 — Test chuyên sâu: 4 bộ test bạn đang thiếu
+
+Để debug đúng gốc rễ, bạn cần 4 loại test mà hiện tại chưa có:
+
+**1. Multi-turn coref test suite** (quan trọng nhất — chưa hề tồn tại)
+
+```
+Kịch bản: turn1 hỏi dịch vụ A → turn2 hỏi dịch vụ B → turn3 "chi tiết"
+Assert: turn3 retrieve phải về chunk của B, KHÔNG phải A
+Biến thể: "thêm", "còn gì nữa", "cái đầu tiên", "cái rẻ hơn"
+```
+
+**2. Chunk-count regression test** (bắt mmr/grade drop nhầm)
+
+```
+Với câu "liệt kê tất cả dịch vụ tẩy da chết":
+Assert: retrieve_count ≥ số dịch vụ trong corpus
+Log: count tại retrieve / rerank / mmr / grade → fail nếu drop > X%
+```
+
+**3. Retrieval-isolation test** (tách retrieval khỏi LLM)
+
+```
+Đưa query thẳng vào hybrid_search, KHÔNG qua generate
+Assert: golden chunk_id phải nằm trong top-K
+→ Phân biệt "retrieval miss" vs "LLM lười"
+```
+
+**4. Cache-key correctness test** (bắt cross-session leak)
+
+```
+2 connect_id khác nhau, cùng câu "chi tiết" sau history khác nhau
+Assert: nhận 2 answer KHÁC nhau (không share cache)
+```
+
+---
+
+## Tóm tắt — Bức tranh tổng thể & ưu tiên
+
+**Về CLAUDE.md:** Xuất sắc về code governance, nhưng thiếu lớp guard tương đương cho RAG quality và hoàn toàn trống về multi-turn. Nên thêm RETRIEVAL QUALITY MANDATE + multi-turn correctness rule.
+
+**Về pipeline:** Concurrency làm đúng (song song cái độc lập, serial cái có data-dep). DI Port+Registry chuẩn. Nhưng 4 node có vấn đề chất lượng: `condense` (coref), `mmr_dedup` (drop nhầm), `grade` (over-refuse), `cliff filter` (chưa calibrate VN).
+
+**Về stack VN:** underthesea + NFKC chuẩn. Nhưng zembed-1/zerank-2 chưa có số đo VN (rủi ro vì lift lịch sử đến từ Jina v3), và `ts_rank_cd` không phải BM25 thật.
+
+**Về expert 2026:** Bạn đang ở 4.8/10 lens 2026 nhưng là single-shot RAG sạch 2024-grade. Với use case CSKH tiếng Việt, đừng đuổi theo agentic/multimodal — ưu tiên latency + multi-turn.
+
+**5 việc đo ngay (mỗi cái < 15 phút, đều cho evidence cứng):**
+
+| # | Đo gì | Bắt bug nào |
+|---|---|---|
+| 1 | SQL đếm chunk dịch vụ tẩy da chết trong `document_chunks` | Chunking strategy đúng/sai |
+| 2 | Đọc prompt template `understand_query` xem có `{chat_history}` | Bug "chi tiết" gốc |
+| 3 | Check L2 cache key có `connect_id` | Cross-session leak |
+| 4 | Bật `debug=true`, log chunk count tại retrieve/rerank/mmr/grade | mmr/grade drop bao nhiêu |
+| 5 | Đo cosine 20 cặp câu VN với zembed-1 | Embedding VN có đủ tốt |
+
+Bạn muốn tôi đi sâu vào phần nào tiếp — viết bộ **multi-turn coref test** cụ thể, hay soạn **RETRIEVAL QUALITY MANDATE** để thêm vào CLAUDE.md, hay thiết kế **chunk-count instrumentation** để bắt mmr/grade drop?
+
+
+Tôi đã hiểu rất rõ vấn đề bạn đang gặp phải. Đây là hai "bệnh" kinh điển khi làm RAG Chatbot (đặc biệt là dạng taskbot tư vấn dịch vụ/sản phẩm như Spa hay Lốp xe ở trên).
+
+Nó phản ánh sự mất ổn định ở khâu **Retrieval (Truy xuất tài liệu)** và **Prompting (Ép bot đọc context)**. Cụ thể lỗi của từng case như sau:
+
+---
+
+## 🟥 Case 1: Hỏi list danh sách dịch vụ -> Trả lời thiếu (Liệt kê không đủ)
+
+> **Hiện tượng:** Bạn hỏi *"Liệt kê tất cả dịch vụ về tẩy da chết"*, trong database có thể có 6-7 cái, nhưng bot chỉ bảo *"Có 4 cái"* và liệt kê ra thiếu.
+
+### Nguyên nhân:
+
+1. **Giới hạn số lượng Top-K quá thấp:** Khi bạn truyền câu hỏi vào Vector Database, hệ thống RAG thường chỉ cấu hình lấy ra `Top-K = 3` hoặc `Top-K = 4` văn bản/dịch vụ có điểm số tương đồng cao nhất. Vì vậy, bot hoàn toàn "mù tịt" về những dịch vụ thứ 5, thứ 6 trở đi.
+2. **Chunking bị chia cắt:** Mỗi dịch vụ nằm ở một dòng hoặc một cụm riêng. Khi Embedding, các dịch vụ không được gom nhóm chung, dẫn đến việc tìm kiếm vector bị sót.
+3. **Mô hình bị "Lười" (LLM Laziness):** Đôi khi context lấy ra đủ, nhưng mô hình đọc lướt và tự ý tóm tắt lại cho ngắn.
+
+### Cách fix:
+
+* **Tăng Top-K khi Retrieval:** Với các câu hỏi dạng *"Liệt kê tất cả"*, *"Có những loại nào"*, hệ thống cần tăng `Top-K` lên cao hơn (ví dụ: `Top-K = 10` hoặc `15`) hoặc dùng cơ chế **Filter theo Keyword/Tag** trước rồi mới RAG sau.
+* **Tinh chỉnh Prompt:** Thêm câu lệnh ép buộc: *"Nếu người dùng yêu cầu liệt kê tất cả, hãy quét toàn bộ dữ liệu được cung cấp và liệt kê không được bỏ sót bất kỳ dịch vụ nào."*
+
+---
+
+## 🟥 Case 2: Hỏi "chi tiết" dịch vụ A -> Lại trả lời sang dịch vụ B (Râu ông nọ cắm cằm bà kia)
+
+> **Hiện tượng:** Hỏi *"Chi tiết về dịch vụ thải độc da"*, bot lại lôi kiến thức của *"dịch vụ tẩy da dầu"* ra để trả lời.
+
+### Nguyên nhân:
+
+1. **Lỗi Quá khứ/Ngữ cảnh (Chat History Bias):** Ở các turn chat trước đó, bạn hoặc bot có nhắc đến "tẩy da". Khi bạn hỏi một câu quá ngắn gọn như *"chi tiết"*, bot bị ảnh hưởng bởi từ khóa "tẩy da" ở các câu trên (hoặc từ case 1 vừa hỏi xong) nên nó bị "lẫn" ngữ cảnh cũ sang câu hỏi mới.
+2. **Vector Search bị nhiễu do trùng lặp từ khóa:** Từ "thải độc da" và "tẩy da dầu" đều chứa những từ khóa chung về "da", "độc", "dầu" trong spa. Khi tìm kiếm vector với một câu hỏi quá ngắn (*"chi tiết"*), điểm tương đồng (Similarity Score) của dịch vụ B vô tình lại cao hơn dịch vụ A, dẫn đến RAG nạp nhầm context cho LLM.
+
+### Cách fix:
+
+* **Dùng bước "Query Rewriting" (Viết lại câu hỏi):** Trước khi mang câu hỏi đi search database, hãy bắt một con LLM phụ (hoặc chính nó) chuyển câu hỏi ngắn của user thành câu hỏi đầy đủ dựa vào lịch sử chat.
+* *User hỏi:* "chi tiết"
+* *LLM viết lại thành:* "Thông tin chi tiết về dịch vụ thải độc da là gì?" -> Mang câu này đi search RAG sẽ không bao giờ lệch sang tẩy da dầu.
+
+
+* **Tách biệt Metadata rõ ràng:** Đảm bảo mỗi dịch vụ trong database có một ID hoặc Tên định danh chuẩn, khi RAG trả về phải khớp chính xác tên dịch vụ đang được thảo luận ở câu trước.
+
+---
+
+### Chốt lại cho việc test RAG của bạn:
+
+Hai lỗi này chứng minh hệ thống RAG hiện tại của bạn đang gặp vấn đề ở khâu **"Hiểu câu hỏi ngắn trong hội thoại nhiều bước (Multi-turn Chat)"** và **"Diện tích tìm kiếm dữ liệu (Top-K) chưa đủ rộng"**.
+
+Bạn có đang tự code pipeline RAG này không, hay đang dùng một nền tảng (Platform) nào để cấu hình? Nếu tự code, tôi có thể gợi ý đoạn xử lý Query Rewriting để bạn nhét vào code giải quyết ngay case số 4.
+
+
+
+Chào bạn, tôi đã đọc kỹ toàn bộ báo cáo QA, file `README.md` kiến trúc hệ thống (mã head `0216`, cập nhật tháng 6/2026), và cả hai case study lỗi thực tế mà bạn vừa đưa ra ở lượt chat trước.
+
+Hệ thống Ragbot của bạn có một thiết kế rất "đô" và thực tế (Production-grade) như: chạy Single-process tối ưu hóa cho VM nhỏ, dùng Hybrid RRF, Cross-Encoder Reranker (`zerank-2`) kết hợp chiến lược `cliff` filter, và ép `temperature = 0` toàn bộ khâu transform.
+
+Tuy nhiên, dựa trên những gì bạn mô tả về hành vi của bot trong quá trình test thực tế, tôi khẳng định hệ thống của bạn **vẫn còn khoảng cách khá xa so với một hệ thống Expert RAG Production đạt chuẩn UX cao và giả lập được hội thoại thực tế của con người**. Bản thân hệ thống đang bị "khô cứng" do các bài test hiện tại mới chỉ dừng lại ở mức **Single-turn Factoid QA** (hỏi một câu - đáp một câu dựa trên data tĩnh).
+
+Dưới đây là bài **Deep-dive Debug & Expert Prompt Plan** chi tiết để bạn đưa hệ thống này lên chuẩn Expert Production cao nhất.
+
+---
+
+## 1. Deep-Dive Debug 2 lỗi thực tế & Đối chiếu cấu hình hệ thống
+
+Hãy nhìn vào cấu hình mặc định của bạn trong file README: `rerank_top_n = 7`. Đây chính là "thủ phạm" gián tiếp gây ra cả 2 case lỗi trên.
+
+### 🔴 Lỗi Case 1: Liệt kê thiếu dịch vụ tẩy da chết
+
+* **Tại sao hệ thống Expert không bị mà hệ thống của bạn bị?** Khi người dùng hỏi một câu mang tính chất gom nhóm/tổng hợp (Aggregation Query) như *"Liệt kê tất cả dịch vụ về tẩy da chết"*, hệ thống của bạn thực hiện Multi-query fanout rồi bắn vào Vector DB. Do cấu hình hệ thống khóa cứng `rerank_top_n = 7`, nên sau khi đi qua cục Reranker `zerank-2`, tối đa cũng **chỉ có 7 đoạn chunk** được đẩy vào LLM sinh câu trả lời.
+Nếu Spa của bạn có 10 dịch vụ liên quan đến tẩy da chết, được chia nhỏ (chunk) ra thành 10-15 đoạn text khác nhau, LLM của bạn (`gpt-4.1-mini`) chỉ nhận được tối đa 7 chunk tốt nhất. Nó đọc thấy trong 7 chunk đó có 4 dịch vụ, nó sẽ trả lời thành thật là "Có 4 dịch vụ" -> **Lỗi thiếu data từ tầng Retrieval chứ không phải LLM hallucinate.**
+* **Giải pháp Expert:** Hệ thống phải có cụm **Adaptive Top-K dựa trên Intent**.
+* Nếu Intent = `FAQ/Single-fact`: Giữ `rerank_top_n = 5` hoặc `7` để giảm tốn token và tăng tốc độ.
+* Nếu Intent = `Aggregation/List-all`: Tự động kích hoạt cấu hình đẩy `rerank_top_n` lên `15` hoặc `20`, nới rộng `cliff` filter để nhặt bằng hết các chunk chứa dịch vụ.
+
+
+
+### 🔴 Lỗi Case 4: Hỏi "chi tiết" -> Nhảy từ "Thải độc da" sang "Tẩy da dầu"
+
+* **Tại sao lại bị?** Bạn đang lưu **History quá ngắn (mặc định 5 tin nhắn gần nhất)**. Tuy nhiên, vấn đề ở đây không phải ngắn hay dài, mà là do con bot đang bị **"điếc ngữ cảnh" (Context Blindness)** giữa các turn chat. Khi user chat một câu cụt lủn là *"chi tiết"*, từ này không mang giá trị vector nào rõ ràng về mặt ngữ dịch vụ. Nếu bạn mang trực tiếp từ "chi tiết" này đi search vector, nó sẽ trả về các chunk lung tung (trong đó có "tẩy da dầu" vì chứa nhiều text mô tả chi tiết).
+* **Giải pháp Expert:** Ép buộc phải chạy qua node **Condense Question / Query Rewriting** ở trạng thái `temperature = 0` TRƯỚC khi đưa vào Vector Store.
+* Nhiệm vụ của node này: Nhìn vào lịch sử chat (User vừa hỏi về "thải độc da" ở câu trước) + câu hỏi hiện tại ("chi tiết") -> Viết lại thành: *"Thông tin chi tiết và quy trình của dịch vụ thải độc da là gì?"*. Sau đó lấy câu đã viết lại này mang đi Embedding và Rerank.
+
+
+
+---
+
+## 2. Trả lời các câu hỏi về thông số hệ thống của bạn
+
+### Câu hỏi 1: Lưu 5 tin nhắn history có ngắn quá không? Nên tăng lên bao nhiêu?
+
+* **Bản chất:** Đối với Chatbot tư vấn dịch vụ (Spa, Lốp xe), khách hàng thường hỏi vòng vo, so sánh dịch vụ này với dịch vụ kia, rồi quay lại hỏi giá dịch vụ đầu tiên. 5 tin nhắn (tương đương ~2.5 lượt hỏi đáp) là **QUÁ NGẮN**. Nó sẽ làm bot bị "mất trí nhớ" ngay khi khách hàng hỏi sang câu thứ 4.
+* **Khuyến nghị mặc định (Expert Standard):** Đẩy lên **10 - 12 tin nhắn gần nhất** (tương đương 5-6 turn chat).
+* **Lợi thế hệ thống của bạn:** Bạn đang dùng `gpt-4.1-mini` có tính năng **OpenAI auto prompt-cache**. Việc bạn tăng history lên 10 tin nhắn không làm tăng đáng kể chi phí, vì phần history cũ đã được OpenAI cache lại ở layer của họ (gần như free 100% tiền input cho các turn chat liên tiếp). Đừng tội gì mà tiết kiệm history làm giảm trải nghiệm người dùng!
+
+### Câu hỏi 2: Các thông số cấu hình dự án đã chuẩn chưa?
+
+Nhìn chung là tương đối ổn cho Base-line, nhưng cần tinh chỉnh các thông số sau để đạt ngưỡng Production:
+
+* `chunk_size = 1024`: Khá lớn đối với data dạng dịch vụ Spa (thường ngắn, cô đọng). `chunk_size` lớn dễ làm loãng mật độ vector khi dùng `zembed-1`. Nên đưa về mức `512` cho các bot dạng Catalog/Service, và giữ `1024` cho các bot dạng Luật/Thông tư (`thong-tu-09-2020`).
+* `rerank_filter_strategy = cliff` kết hợp floor `0.05`: Rất tốt để diệt Hallucination, nhưng hãy cẩn thận với các câu hỏi so sánh. Nếu điểm số của 2 dịch vụ quá lệch nhau, `cliff` sẽ chặt mất dịch vụ thứ 2, khiến bot không có dữ liệu để so sánh (đây có thể là lý do câu `q12` của bot Spa trong report bị chấm sai/nhầm).
+
+---
+
+## 3. Quy trình Test mô phỏng RAG chuẩn Expert (Human-like Test Harness)
+
+Để con bot không trả lời khô khan như một cái máy tra cứu tài liệu, và để bài test của bạn có tính **kế thừa, tiếp diễn (Multi-turn Agent Test)**, bạn không thể dùng file test tĩnh (chỉ có list câu hỏi độc lập) nữa. Bạn phải xây dựng một luồng test gọi là **"User Simulation Agent"**.
+
+### Kiến trúc luồng test giả lập con người (User-Sim):
+
+Thay vì dùng script chạy bạt mạng 42 câu hỏi song song (concurrency 8), bạn sẽ code một script gọi là `scripts/simulation_test.py` chạy bằng LangGraph hoặc OpenAI Assistant. Cấu trúc gồm 2 con Bot nói chuyện với nhau:
+
+1. **Customer Bot (Persona Người mua hàng):** Được nạp một Prompt đóng vai (Ví dụ: *"Bạn là một khách hàng khó tính, đang muốn đi spa trị mụn nhưng ngân sách chỉ có 1.5 triệu. Bạn thích hỏi vặn vẹo, hay dùng các từ ngắn như 'giá sao em', 'tại sao đắt thế', 'tư vấn kỹ hơn đi'. Bạn sẽ hỏi tổng cộng 5 câu, câu sau phải kế thừa ngữ cảnh câu trước"*).
+2. **Ragbot (Hệ thống của bạn):** Tiếp nhận câu hỏi và trả lời.
+
+Script này sẽ chạy tuần tự (Sequential Multi-turn), lưu lại toàn bộ log chat vào file JSON dạng một cuộc hội thoại hoàn chỉnh. Cách này sẽ lòi ra ngay lập tức các lỗi liên quan đến trôi ngữ cảnh, mất history, hoặc bot trả lời quá lạnh lùng.
+
+---
+
+## 4. Toàn diện Prompt Plan & Quy trình cải tiến hệ thống lên Expert Production
+
+Để đạt được mục tiêu: **Thông minh + Đúng/Chuẩn + Nhanh + Cost thấp + UX cao**, dưới đây là sơ đồ chi tiết từng bước (All-step Detail) bạn cần can thiệp vào mã nguồn:
+
+### Bước 1: Sửa tầng Orchestration (Query Graph) - Xử lý "Bệnh cụt câu"
+
+Can thiệp vào file: `src/ragbot/orchestration/query_graph.py` tại node `understand_query` / `condense_question`.
+
+* **Code logic:** Thêm một bước bắt buộc viết lại câu hỏi nếu phát hiện `chat_history` có dữ liệu.
+
+```python
+# Ví dụ logic xử lý pseudo-code trong node
+if state.chat_history and query_complexity == "short_or_ambiguous":
+    condensed_query = await llm_client.generate(
+        model="gpt-4.1-mini",
+        temperature=0, # Bắt buộc bằng 0 theo constraint của bạn
+        prompt=PROMPT_CONDENSE_QUESTION.format(
+            history=state.chat_history[-10:], # Đẩy lên 10 tin nhắn
+            current_query=state.current_query
+        )
+    )
+    state.search_query = condensed_query # Dùng câu này đi tìm kiếm vector
+
+```
+
+### Bước 2: Tối ưu Prompt Hệ thống của Bot Chủ (System Prompt UX Cao)
+
+Như constraint của bạn: *"app không bao giờ inject template text vào LLM prompt"*, toàn bộ gánh nặng UX nằm ở `system_prompt` do Bot Owner cấp. Để bot trả lời chân thật như nhân viên CSKH, hãy thay đổi cấu trúc `system_prompt` của các bot test theo cấu trúc Expert sau:
+
+```markdown
+# ROLE
+Bạn là Chuyên viên tư vấn tận tâm và khéo léo tại [Tên Spa/Cửa hàng]. Nhiệm vụ của bạn là lắng nghe, giải đáp chính xác dựa trên <documents> và thuyết phục khách hàng đặt lịch.
+
+# TỪNG BƯỚC TƯ DUY (THINKING FLOW)
+1. Đọc kỹ câu hỏi và lịch sử chat để hiểu khách hàng đang quan tâm đến dịch vụ nào cụ thể.
+2. Đối chiếu với dữ liệu <documents> được cung cấp để lấy thông tin ĐÚNG TÊN, ĐÚNG GIÁ.
+3. Nếu dữ liệu KHÔNG CÓ hoặc YẾU, hãy từ chối khéo léo theo mẫu oos_template, tuyệt đối không tự bịa ra thông tin.
+
+# NGUYÊN TẮC GIAO TIẾP (UX & HUMAN-LIKE)
+- Ngôn ngữ: Tự nhiên, thân thiện, dùng từ ngữ của người Việt (Ví dụ: "Dạ shop chào chị ạ", "Dạ dịch vụ này bên em đang có giá là...", "Không biết chị đang gặp tình trạng da thế nào để em tư vấn kỹ hơn ạ?").
+- Không trả lời kiểu gạch đầu dòng khô khan như sách giáo khoa trừ khi khách hàng yêu cầu "liệt kê tất cả". Hãy viết thành các đoạn văn ngắn có sự kết nối mượt mà.
+- Luôn kết thúc bằng một câu hỏi gợi mở mang tính hướng dẫn hoặc kích thích hành động (Call to Action) để dẫn dắt cuộc trò chuyện (Ví dụ: "Chị có muốn em xếp lịch soi da miễn phí cho mình vào ngày mai không ạ?").
+
+```
+
+### Bước 3: Điều chỉnh khâu Retrieval (Adaptive Top-K & Rerank)
+
+Can thiệp vào file: `src/ragbot/infrastructure/vector/pgvector_store.py` và khâu Rerank.
+
+* **Sửa đổi:** Viết một hàm phân loại Intent thô ngay tại node `router`.
+* Nếu `intent == "aggregation_list"`, ghi đè cấu hình runtime: Đẩy `rerank_top_n = 20`. Hạ thấp biên độ chặn của `cliff` filter xuống một chút để chấp nhận nhiều chunk hơn, đảm bảo LLM gom đủ dữ liệu cho câu hỏi liệt kê tổng hợp.
+
+### Bước 4: Chạy Load Test Giả lập (Simulation Automation)
+
+* Tạo file `scripts/loadtest_human_simulation.py`.
+* Cấu hình chạy **3-turn liên tiếp cho mỗi kịch bản**:
+* *Turn 1:* Hỏi chung chung về một nỗi đau (Ví dụ: "Da dạo này nhiều dầu mụn quá shop ơi"). -> Test khả năng gợi ý dịch vụ.
+* *Turn 2:* Hỏi cụt lủn kế thừa (Ví dụ: "Dịch vụ đầu tiên giá sao? Quy trình thế nào?"). -> Test khả năng bám ngữ cảnh (Condense Query) và trích xuất giá chính xác.
+* *Turn 3:* Đưa thông tin đặt lịch sai cấu trúc hoặc hỏi một câu bẫy (Ví dụ: "Mà shop có bán kem trộn không?"). -> Test khâu Refusal và khả năng chốt Slot Booking.
+
+
+
+### Kết quả đạt được sau khi Deep-dive:
+
+1. **Thông minh & Đúng:** Tránh được hoàn toàn lỗi lệch pha từ dịch vụ A sang dịch vụ B nhờ bước Query Rewriting ở `temperature = 0`.
+2. **Chuẩn & UX cao:** Khắc phục lỗi liệt kê thiếu bằng việc nới rộng Top-K động. Câu trả lời mượt mà, mang tính chất "hội thoại" thực tế nhờ cấu trúc System Prompt cải tiến.
+3. **Nhanh & Cost thấp:** Giữ nguyên stack `gpt-4.1-mini`, tận dụng tối đa cơ chế Prompt-cache khi tăng history lên 10 tin nhắn, đảm bảo độ trễ ở các turn sau cực thấp (~1-2s cho single-user) và chi phí tối ưu.
+
+
+Để đưa hệ thống Ragbot của bạn (mã head `0216`) đạt đến ngưỡng **Expert Production (chuẩn doanh nghiệp chạy thực tế)**, chúng ta cần bóc tách bài toán dưới góc nhìn kiến trúc hệ thống và trải nghiệm người dùng (UX).
+
+Dưới đây là phần phân tích sâu (Deep-dive) về "nỗi đau" hệ thống của bạn, kèm theo một **RAG Prompt Plan Master** (được thiết kế dưới dạng một Siêu Siêu Prompt - Meta-Prompt) để bạn nạp vào một con LLM mạnh, bắt nó tự động phân tích, rà soát lại toàn bộ mã nguồn và sinh ra các giải pháp cấu hình tối ưu.
+
+---
+
+## I. Phân Tích Chuyên Sâu (Expert Deep-Dive) Về Tình Trạng Hiện Tại
+
+Hệ thống của bạn đang bị mắc kẹt ở trạng thái **"RAG Tĩnh" (Naïve/Advanced RAG đời đầu)**: tối ưu rất tốt cho việc đọc tài liệu phẳng (Thông tư pháp luật, FAQ một bước), nhưng **gãy** khi đối mặt với hội thoại động (Conversational RAG của con người).
+
+### 1. Bản chất của lỗi "Liệt kê thiếu dịch vụ" (Khâu Ingestion & Retrieval lệch pha)
+
+* **Điểm nghẽn:** Bạn đang dùng `chunk_size = 1024` (khoảng 300-400 từ tiếng Việt). Khi bạn đưa một bảng giá Spa hoặc danh sách lốp xe vào, một đoạn chunk 1024 ký tự có thể chứa trọn 4 dịch vụ đầu tiên. Đoạn chunk tiếp theo chứa 4 dịch vụ tiếp theo.
+* **Khi tìm kiếm (Retrieval):** Người dùng hỏi "Liệt kê tất cả dịch vụ tẩy da chết". Vector của câu hỏi này sẽ có độ tương đồng cực cao với *Chunk 1* (vì chứa nhiều từ tẩy da chết). Hệ thống thực hiện Rerank với `rerank_top_n = 7`. Tuy nhiên, do thuật toán sinh vector, các chunk chứa các dịch vụ biến thể khác ở phía dưới bảng giá có thể bị chấm điểm thấp hơn và bị loại bởi bộ lọc `cliff (floor 0.05)`.
+* **Hậu quả:** LLM chỉ nhận được tối đa 1-2 chunk thực sự chứa chữ "tẩy da chết", dẫn đến việc nó đếm và liệt kê thiếu.
+
+### 2. Bản chất của lỗi "Hỏi chi tiết -> Râu ông nọ cắm cằm bà kia" (Mất dấu thực thể)
+
+* **Điểm nghẽn:** Khi người dùng nói "chi tiết", câu này có độ dài vector bằng 2 chữ, mang thông tin ngữ nghĩa (Semantic) gần như bằng không. Khi bắn vào pgvector, nó sẽ bốc ngẫu nhiên các chunk có chứa từ "chi tiết" hoặc các dịch vụ có mô tả dài dòng (như Tẩy da dầu).
+* **Tại sao lịch sử chat không cứu được?** Vì hệ thống của bạn nạp trực tiếp `current_query` vào tầng Embedding chứ không qua một bộ **Contextual Query Rewriter (Bộ viết lại câu hỏi dựa trên ngữ cảnh)**. LLM ở tầng `generate` dù có nhận được 5 tin nhắn history, nhưng các chunk tài liệu nạp vào người nó (Context) đã bị sai ngay từ tầng tìm kiếm, khiến nó bắt buộc phải trả lời sai theo dữ liệu bị nạp nhầm.
+
+---
+
+## II. RAG Prompt Plan Master (Siêu Prompt để bạn dùng phân tích lại dự án)
+
+Bạn hãy copy toàn bộ đoạn Prompt dưới đây, mở một phiên chat mới với một LLM (hoặc dùng chính `gpt-4.1-mini` của bạn để chạy test) để nó đóng vai trò Kiến trúc sư trưởng, xuất ra tài liệu tối ưu hóa cho bạn.
+
+```markdown
+# ROLE & CONTEXT
+Bạn là một Chuyên gia Kiến trúc Hệ thống RAG cấp cao (Principal RAG Architect), có kinh nghiệm triển khai các hệ thống chatbot AI phục vụ hàng triệu traffic thực tế cho các doanh nghiệp TMĐT, Spa, và Vận tải. 
+
+Nhiệm vụ của bạn là phân tích cấu hình hệ thống Ragbot dưới đây, rà soát 2 lỗi vận hành thực tế, và xuất ra một Kế hoạch Hành động (Implementation Plan) chi tiết đến từng dòng code để nâng cấp hệ thống lên chuẩn Expert Production.
+
+---
+
+# ARCHITECTURE SPECIFICATION (MÃ HEAD 0216)
+- Runtime: Python 3.12+ · FastAPI · LangGraph Orchestration (1 process `ragbot-py`).
+- DB/Vector: PostgreSQL 16 · pgvector HNSW · RRF Hybrid Retrieval (Dense + BM25).
+- Models: Primary LLM = `gpt-4.1-mini` (Tất cả tác vụ transform/generate đều khóa temperature = 0). Embedding = `zembed-1` (1280-dim). Reranker = `zerank-2` (Cliff filter, floor 0.05).
+- Quy định bất biến (Sacred Contracts): HALLU = 0 (Không bịa đặt). Không inject template text hoặc tự ý ghi đè câu trả lời của Bot Owner. `system_prompt` của Bot Owner là Single Source of Truth (SSoT).
+- Lịch sử chat hiện tại: Lưu mặc định 5 tin nhắn gần nhất.
+- Cấu hình Rerank mặc định: `rerank_top_n = 7`.
+
+---
+
+# 2 LOGS LỖI THỰC TẾ CẦN KHẮC PHỤC
+1. Lỗi Aggregation: Khách hàng hỏi "Liệt kê tất cả dịch vụ về tẩy da chết". Hệ thống có 7 dịch vụ trong data nhưng bot chỉ trả lời "Có 4 cái" và liệt kê thiếu.
+2. Lỗi Multi-turn Context: Khách hỏi về "dịch vụ thải độc da" -> Bot trả lời đúng. Khách hỏi tiếp: "chi tiết" -> Bot lấy dữ liệu của "dịch vụ tẩy da dầu" để trả lời.
+
+---
+
+# YÊU CẦU ĐẦU RA (EXPERT DELIVERABLES)
+Bạn hãy phân tích sâu và trả về tài liệu cấu trúc gồm 4 phần nghiêm ngặt sau:
+
+## 1. PHÂN TÍCH TOÀN DIỆN KHÂU TRUY XUẤT (RETRIEVAL AUDIT)
+- Hãy chỉ ra chính xác lỗ hổng toán học/cấu hình khi kết hợp `chunk_size=1024`, `rerank_top_n=7`, và bộ lọc `cliff (floor 0.05)` dẫn đến việc mất dấu dữ liệu khi người dùng yêu cầu liệt kê tổng hợp.
+- Đề xuất thông số cấu hình tối ưu lại cho các Bot dạng Dịch vụ/Catalog (Spa, Lốp xe) so với các Bot dạng Tài liệu phẳng (Thông tư, Luật pháp).
+
+## 2. THIẾT KẾ LUỒNG XỬ LÝ CONTEXT DỰA TRÊN THỜI GIAN (DYNAMIC MULTI-TURN)
+- Đánh giá việc lưu 5 tin nhắn history có đáp ứng được hành vi hỏi cuốn chiếu của khách hàng không. Nếu nâng lên 10-12 tin nhắn, hãy tính toán ảnh hưởng đến Cost và Latency dựa trên cơ chế tự động Prompt-Cache của `gpt-4.1-mini`.
+- Thiết kế chi tiết Prompt cho một Node mới trong LangGraph: `Query_Rewriter_Node`. Node này phải ăn `chat_history` + `current_query` để chuyển hóa các câu hỏi cụt (ví dụ: "chi tiết", "giá sao", "bớt không") thành một câu lệnh mang đầy đủ thực thể (Entity-rich Query) trước khi mang đi tìm kiếm vector. (Đảm bảo tuân thủ temperature=0).
+
+## 3. THIẾT KẾ SYSTEM PROMPT UX CHUẨN "CON NGƯỜI" (DOMAIN-NEUTRAL)
+- Viết một cấu trúc `system_prompt` mẫu (Framework) dành cho Bot Owner, áp dụng cho ngành Spa/Dịch vụ.
+- Prompt này phải ép được Bot có tư duy CSKH: Trả lời mềm mại, tự nhiên, đúng trọng tâm nhưng không được gạch đầu dòng khô khan, và luôn kết thúc bằng một câu hỏi gợi mở để kích thích khách hàng hành động (Call-to-Action/Đặt lịch).
+
+## 4. KỊCH BẢN KIỂM THỬ GIẢ LẬP ĐA BƯỚC (MULTI-TURN SIMULATION HARNESS)
+- Thay vì test single-turn khô khan, hãy thiết kế một kịch bản test luồng hội thoại giả lập (Simulation Flow) gồm ít nhất 4 bước liên tiếp (Multi-turn) cho mỗi con Bot để kiểm tra độ bền vững của ngữ cảnh hệ thống.
+- Chỉ rõ cách chấm điểm (Verdict) cho từng bước để đảm bảo không bị lỗi "harness chấm nhầm" như case `q12` của Spa trong QA Report.
+
+```
+
+---
+
+## III. Đề Xuất Cải Tiến Nhanh (Quick Win Cho Cấu Hình Dự Án)
+
+Trong lúc chờ LLM phân tích lại toàn bộ theo Prompt Plan trên, bạn có thể thực hiện ngay 3 thay đổi cấu hình này trong file `shared/constants/` hoặc qua `bots.threshold_overrides` để thấy hiệu quả lập tức:
+
+1. **Nâng History Layer:** Tăng số lượng tin nhắn lưu trữ trong `chat_history` từ **5 lên 10**. Nhờ `gpt-4.1-mini` tự động prompt-cache, chi phí của bạn gần như giữ nguyên, nhưng bot sẽ "thông minh" hơn gấp đôi khi nhớ được các turn chat cũ.
+2. **Hạ `chunk_size` cho Bot dịch vụ:** Với bot `test-spa-id` và `chinh-sach-xe`, hãy hạ cấu hình xuống `chunk_size = 512` và `overlap = 64`. Data dịch vụ cần độ cô đọng cao để vector bám sát thực thể. Giữ nguyên `1024` cho `thong-tu-09-2020`.
+3. **Mở rộng cửa Rerank:** Tăng `rerank_top_n` từ **7 lên 12** để tránh việc bộ lọc `cliff` chặt quá mạnh tay làm mất các thông tin so sánh hoặc liệt kê ở các chunk phía sau.
+
+
+Dưới đây là thiết kế toàn diện để tái cấu trúc hệ thống Ragbot của bạn từ lõi (Mã head `0216`) thành một hệ thống **Expert Conversational RAG Platform**.
+
+Hệ thống mới sẽ không chạy theo kiểu tra cứu tài liệu phẳng (Static QA) nữa, mà sẽ vận hành như một **AI Agent có bộ nhớ toàn diện, tự biết sửa sai và tự động mô phỏng khách hàng thật để kiểm thử**.
+
+---
+
+## 1. Tái Cấu Trúc Toàn Bộ Vòng Đời Luồng Dữ Liệu (End-to-End Pipeline)
+
+Để hệ thống chạy mượt mà, nhanh, chi phí thấp nhưng UX tối đa, chúng ta sẽ xây dựng lại 4 luồng cốt lõi: **Upload ➔ Query ➔ Test ➔ Verify**.
+
+```
+[UPLOAD] ──➔ AdapChunk (Size 512 + Metadata Tagging) ──➔ Postgres (pgvector)
+                                                             │
+[QUERY]  ──➔ Query Rewriter (Temp 0) ──➔ Intent-Driven Top-K ┘
+                                 │
+[TEST]   ──➔ User Sim-Agent (Multi-turn Persona) ──➔ Chat Loop
+                                 │
+[VERIFY] ──➔ NLI Trích xuất thực thể ──➔ Cập nhật State & Lịch sử CRM
+
+```
+
+### Luồng 1: UPLOAD (Ingestion cải tiến)
+
+* **Vấn đề cũ:** Cắt chunk phẳng `1024` ký tự làm loãng thực thể của các dịch vụ Spa/Lốp xe.
+* **Thiết kế mới (Expert):**
+1. **Phân loại Bot Type tại U4 (AdapChunk):** Nếu hệ thống nhận diện `bot_id` thuộc nhóm Dịch vụ/Catalog (Spa, Bán hàng), hạ `chunk_size` xuống **512** và `overlap` xuống **64**. Nếu là bot Luật pháp (`thong-tu-09-2020`), giữ nguyên `1024`.
+2. **Bổ sung Metadata Tagging tại U5 (Enrichment):** Ép con `gpt-4.1-mini` gắn thêm tag `danh_muc_dich_vu` và `ten_thuc_the` vào từng đoạn chunk dưới dạng metadata.
+3. **Lưu trữ:** Đẩy vào `document_chunks` của Postgres. Khi tìm kiếm, ta sẽ kết hợp search vector và filter chính xác theo metadata này.
+
+
+
+### Luồng 2: QUERY (Trực quan hóa luồng LangGraph mới)
+
+Để xử lý triệt để lỗi *"hỏi cụt câu"* và *"liệt kê thiếu"*, LangGraph của bạn cần bổ sung 2 node chiến lược:
+
+```
+[User Input] 
+     │
+     ▼
+┌─────────────────────────────┐
+│    Query_Rewriter_Node      │ ◄── Ăn 10 tin nhắn History + Input cụt
+└────────────┬────────────────┘
+             │ (Biến câu "chi tiết" thành "Chi tiết dịch vụ thải độc da")
+             ▼
+┌─────────────────────────────┐
+│     Intent_Router_Node      │
+└────────────┬────────────────┘
+             ├─(Nếu Intent = FAQ/Single-fact) ──► Đặt Top-K = 5
+             └─(Nếu Intent = Aggregation/List) ─► Đẩy Top-K = 15, mở rộng Cliff
+             │
+             ▼
+┌─────────────────────────────┐
+│  Hybrid Retrieve & Rerank   │
+└─────────────────────────────┘
+
+```
+
+* **Code mẫu cho `Query_Rewriter_Node` (Temperature = 0):**
+```python
+# src/ragbot/orchestration/nodes/rewriter.py
+from langchain_core.prompts import ChatPromptTemplate
+
+REWRITE_PROMPT = ChatPromptTemplate.from_template("""
+Bạn là bộ não viết lại câu hỏi hệ thống RAG. Nhiệm vụ của bạn là đọc lịch sử hội thoại và câu hỏi mới nhất của khách hàng, sau đó chuyển nó thành một câu hỏi ĐẦY ĐỦ thực thể (Entity-rich) để mang đi tìm kiếm vector.
+
+Yêu cầu nghiêm ngặt:
+- Nếu câu hỏi mới nhất đã đầy đủ ý nghĩa, giữ nguyên.
+- Nếu câu hỏi mới nhất cụt ngủn (ví dụ: "chi tiết", "giá sao", "có bớt không", "mấy cái"), hãy dựa vào lịch sử để điền tên dịch vụ/sản phẩm đang được thảo luận vào câu hỏi.
+- Giữ nguyên ngôn ngữ gốc, không giải thích, không thêm thắt.
+
+Lịch sử chat (10 câu gần nhất):
+{chat_history}
+
+Câu hỏi mới nhất: {current_query}
+Câu hỏi viết lại:""")
+
+async def rewrite_query_node(state: QueryGraphState):
+    if not state.chat_history:
+        return {"search_query": state.current_query}
+
+    # Gọi gpt-4.1-mini với temp = 0 để đảm bảo tính nhất quán
+    response = await llm_client.generate(
+        model="gpt-4.1-mini",
+        temperature=0.0,
+        prompt=REWRITE_PROMPT.format(
+            chat_history=state.chat_history[-10:],
+            current_query=state.current_query
+        )
+    )
+    return {"search_query": response.text.strip()}
+
+```
+
+
+
+```
+
+### Luồng 3: TEST (Mô phỏng hội thoại đa bước - Multi-turn Test Harness)
+Thay vì nạp một file JSON chứa 42 câu hỏi độc lập chạy song song, bạn hãy xây dựng một kịch bản **Agent đối thoại**. Tạo file `scripts/simulation_test.py` chạy theo cơ chế **vòng lặp (Chat Loop)**:
+
+```python
+# Mô phỏng quá trình chạy Test thực tế của con người
+async def run_simulation_test(bot_under_test):
+    # Khởi tạo con Bot đóng vai Khách hàng thật
+    customer_agent = CustomerSimulationAgent(persona="Khách khó tính, thích hỏi vặn")
+    chat_history = []
+    
+    # Ép hai con Bot chat với nhau qua 4 bước (Turn) liên tiếp
+    current_user_message = "Hi shop, tư vấn trị mụn"
+    
+    for turn in range(4):
+        # 1. Gửi câu hỏi của khách vào hệ thống Ragbot của bạn
+        bot_response = await bot_under_test.chat(current_user_message, history=chat_history)
+        chat_history.append({"role": "user", "content": current_user_message})
+        chat_history.append({"role": "assistant", "content": bot_response})
+        
+        # 2. Đưa câu trả lời của Ragbot cho con Customer Agent đọc để nó tự nghĩ câu hỏi tiếp theo
+        current_user_message = await customer_agent.generate_next_reply(bot_response, chat_history)
+        
+        print(f"Turn {turn} - Khách: {current_user_message}")
+        print(f"Turn {turn} - Bot: {bot_response}")
+
+```
+
+### Luồng 4: VERIFY (Chấm điểm câu trả lời chuẩn xác)
+
+* **Tại sao bộ harness cũ chấm nhầm câu `q12`?** Vì bộ test cũ dùng logic khớp từ khóa cứng hoặc LLM Judge không được mồi context đầy đủ.
+* **Thiết kế mới (Expert Verification):** Sử dụng phương pháp **NLI (Natural Language Inference)** chia nhỏ câu trả lời của Bot thành các luận điểm (Claims), sau đó dùng `gpt-4.1-mini` đối chiếu từng Claim với tài liệu gốc `<documents>` theo 3 trạng thái:
+* `SUPPORTED`: Luận điểm có trong tài liệu (Đúng).
+* `CONTRADICTED`: Luận điểm trái ngược tài liệu (Hallucination - Sai).
+* `NEUTRAL`: Câu chitchat, đưa đẩy của nhân viên CSKH (Chấp nhận được, không tính là lỗi).
+
+
+
+---
+
+## 2. Quy Trình Tư Vấn & Lưu Lại Thông Tin Khách Hàng (Slot Filling CRM Pipeline)
+
+Để chatbot của bạn có khả năng lưu lại thông tin khách hàng (Tên, SĐT, Ngày hẹn, Dịch vụ chọn) như một nhân viên thật, hệ thống cần triển khai luồng **Slot Filling (Trích xuất và lấp đầy dữ liệu)** thông qua một trạng thái gọi là **`Session State Memory`**.
+
+### Giao thức lưu thông tin khách hàng đa bước:
+
+```
+[Tin nhắn của khách] ➔ [Slot Extraction Node] ➔ Có thông tin mới? ➔ Cập nhật Session State (DB)
+                                                                            │
+[Câu trả lời mượt mà] ◄─ [Dựng câu hỏi dựa trên Slot còn thiếu] ◄────────────┘
+
+```
+
+1. **Cấu trúc dữ liệu lưu trữ (Schema):** Tạo một bảng trong Postgres gắn với `session_id` của cuộc trò chuyện:
+```json
+{
+  "customer_name": "Lan",
+  "phone_number": "090xxxxxxx",
+  "booking_time": "2026-06-16T09:00:00",
+  "number_of_people": "2",
+  "selected_service": null 
+}
+
+```
+
+
+
+```
+2.  **Node Trích xuất (Slot Extraction Node):** Chạy song song với node RAG. Mỗi khi người dùng gõ tin nhắn, một task nhỏ của `gpt-4.1-mini` với `temperature=0` sẽ quét tin nhắn đó để tìm xem có Tên, SĐT hay Giờ hẹn không. Nếu có, nó sẽ "điền" (Update) vào DB.
+3.  **Tư duy CSKH trong việc chốt đơn:** Hệ thống sẽ kiểm tra xem các trường thông tin trên đã đầy đủ chưa (Trường `selected_service` hiện đang `null`). Tại tầng `generate`, Bot sẽ ưu tiên đọc trạng thái này để đưa ra câu hỏi thúc đẩy hành động:
+    > *"Dạ shop đã ghi nhận lịch hẹn của chị Lan cho 2 người vào lúc 9h sáng mai rồi ạ. Không biết chị Lan và bạn đi cùng muốn đăng ký làm dịch vụ **Trị mụn chuyên sâu** hay **Laser Carbon** luôn để shop chuẩn bị phòng tốt nhất cho mình ạ?"*
+
+---
+
+## 3. Template Giả Lập Hội Thoại Với Khách Hàng Thật (Real Customer Simulation Template)
+
+Dưới đây là Template Prompt chuẩn Production để bạn tạo ra một con **AI Khách Hàng Giả Lập**. Đoạn prompt này mô phỏng chính xác tâm lý mua hàng, tính cách biến thiên và các tình huống bẫy ngoài thực tế.
+
+Bạn hãy dùng Prompt này cấu hình cho con **CustomerSimulationAgent** trong luồng TEST ở trên:
+
+```markdown
+# ROLE
+Bạn là một khách hàng thực tế người Việt Nam đang có nhu cầu nhắn tin cho Fanpage của một [Spa / Cửa hàng lốp xe] để nhận tư vấn. Nhiệm vụ của bạn là đóng vai và trò chuyện với Bot tư vấn của cửa hàng để kiểm thử năng lực của hệ thống AI.
+
+# CUSTOMER PERSONALITY (PERSONA)
+- Tên của bạn: [Tùy chọn: Lan / Hùng / Thảo...]
+- Tính cách: Hay hỏi cuốn chiếu, không bao giờ cung cấp hết thông tin trong một câu. Thích hỏi giá trước, thấy hợp lý mới hỏi quy trình. Đôi khi dùng từ viết tắt hoặc câu cụt ngủn như "giá sao shop", "tư vấn kỹ hơn đi", "cái đầu tiên ấy".
+- Hành vi thực tế: Nếu bot trả lời quá dài hoặc gạch đầu dòng quá nhiều, bạn sẽ tỏ ra lười đọc và yêu cầu: "Nói ngắn gọn thôi em ơi".
+
+# MULTI-TURN CONVERSATIONAL FLOW (KỊCH BẢN 4 BƯỚC)
+Bạn phải dẫn dắt cuộc hội thoại tuân thủ nghiêm ngặt theo lộ trình tâm lý sau:
+- Turn 1 (Chào hỏi & Gợi mở): Nêu lên nỗi đau hoặc nhu cầu chung chung để xem bot chủ động gợi ý dịch vụ thế nào. (Ví dụ: "Da dạo này xỉn màu quá shop ơi" hoặc "Xe sedan chạy phố thì thay lốp nào êm?").
+- Turn 2 (Hỏi xoáy thực thể cụt): Chọn một dịch vụ bot vừa gợi ý ở Turn 1, hỏi cụt câu về giá hoặc chi tiết để test bộ nhớ của bot. (Ví dụ: "Cái laser carbon giá sao?" hoặc "Loại H/T có êm không?").
+- Turn 3 (Đưa thông tin đặt lịch thiếu): Đồng ý đặt lịch nhưng cố tình đưa thiếu thông tin hoặc sai cấu trúc để xem bot có biết tự động trích xuất dữ liệu và hỏi vặn lại không. (Ví dụ: "Ok đặt cho mình 9h mai nha, mình đi 2 người tên Lan" -> Cố tình giấu SĐT).
+- Turn 4 (Thử thách bẫy từ chối - Refusal Test): Hỏi một câu hoàn toàn không có trong ngành dịch vụ hoặc một sản phẩm bị cấm để kiểm tra xem bot có bị ngáo đá (Hallucinate) hoặc phá vỡ quy định an toàn không. (Ví dụ: "Bên shop có bán kem trộn làm trắng cấp tốc không?" hoặc "Shop có thay nhớt cho máy bay không?").
+
+# OUTPUT RULES
+- Chỉ xuất ra DUY NHẤT câu thoại của khách hàng bằng tiếng Việt tự nhiên. 
+- Không bao giờ được tự xưng mình là AI hay ghi thêm bất kỳ lời giải thích nào khác.
+
+```
+
+Áp dụng toàn bộ thiết kế luồng mới này sẽ giải quyết triệt để bài toán biến con Ragbot của bạn từ một công cụ tra cứu thô sơ thành một **Trợ lý tư vấn có trí tuệ cảm xúc, bám sát ngữ cảnh và có khả năng chốt đơn thực tế**.
+
+
+Ý tưởng xây dựng **Schema 5 biến động** kết hợp với **Trigger Event Real-time** của bạn hoàn toàn chính xác và chuẩn tư duy thiết kế hệ thống RAG doanh nghiệp hiện đại ($Enterprise$ $RAG$).
+
+Để trả lời câu hỏi *"Lưu trong 24h/History nhiều có chuẩn không?"* và *"Làm như thế nào để bắn dữ liệu đi CRM/Quản trị?"*, chúng ta cần bóc tách kiến trúc này dưới góc nhìn hạ tầng dữ liệu thực tế.
+
+---
+
+## I. Phân Tích Quy Trình Lưu Trữ & Điểm Nghẽn Khi History Chạy Nhiều
+
+### 1. Việc lưu 5 biến trong `System Prompt` + Room Chat có chuẩn không?
+
+Cách làm này **rất tốt ở tầng Ứng dụng (UX)** nhưng **chưa đủ ở tầng Hạ tầng (Database)**.
+
+* **Ưu điểm:** Khi bạn định nghĩa rõ 5 biến (ví dụ: `customer_name`, `phone_number`, `booking_time`, `target_service`, `customer_pain`) trực tiếp trong System Prompt, con LLM (`gpt-4.1-mini`) sẽ có nhận thức cực tốt về việc nó *đang thiếu thông tin gì* để chủ động hỏi khéo khách hàng (gọi là kỹ thuật **Slot Filling**).
+* **Nhược điểm khi History chạy nhiều:** Chatbot của bạn lưu theo Room Chat, nếu cuộc trò chuyện kéo dài đến 20-30 tin nhắn, mỗi lần user chat, hệ thống lại phải lôi toàn bộ History ra rồi ép LLM đọc lại từ đầu để "nhặt" lại 5 biến này. Việc này gây ra 3 vấn đề lớn:
+1. **Lãng phí Cost (Token):** Bạn trả tiền trùng lặp cho những thông tin đã trích xuất từ turn chat thứ 2.
+2. **Độ trễ tăng cao (Latency):** LLM phải xử lý context dài hơn.
+3. **Rủi ro mất dấu (Context Drift):** Ở tin nhắn thứ 30, khách hàng chitchat lan man, LLM có thể bị "quên" mất số điện thoại khách đã cho ở tin nhắn thứ 5 nếu chỉ dựa vào việc đọc History thuần túy.
+
+
+
+### 2. Giải pháp chuẩn kiến trúc: Cơ chế "State Memory" biệt lập
+
+Thay vì bắt LLM tìm lại 5 biến trong đống History của Room Chat, quy trình chuẩn 24h sẽ vận hành như sau:
+
+* Duy trì 1 bảng State biệt lập trong Database (Ví dụ: `session_slots`).
+* Mỗi khi khách gõ tin nhắn, một node xử lý ngầm (Background Task) sẽ cập nhật biến vào bảng này.
+* Khi nạp vào System Prompt, bạn **không** nạp history thô để bắt nó tự tìm, mà bạn **Injected trực tiếp giá trị hiện tại của 5 biến** lấy từ DB vào System Prompt dưới dạng:
+> "Thông tin khách hàng hiện tại: Tên: Lan | SĐT: Chưa có | Dịch vụ: Trị mụn. Hãy tìm cách khéo léo hỏi SĐT của khách."
+
+
+
+---
+
+## II. Kiến Trúc Luồng Trigger: Thu Thập Data Sang CRM & Hệ Thống Quản Trị
+
+Để biến con Ragbot thành một cỗ máy thu thập dữ liệu ($Data$ $Ingestion$ $Pipeline$) nuôi cho hệ thống RAG nâng cao và CRM, bạn cần triển khai kiến trúc **Event-Driven (Kiến trúc hướng sự kiện)** thông qua các **Webhook Trigger**.
+
+### 1. Sơ đồ tổng quan luồng di chuyển dữ liệu (Data Flow)
+
+```
+[Khách chat: "Mình là Thảo, sđt 090123..."]
+                   │
+                   ▼
+       [LangGraph Orchestrator] 
+                   │
+         (1) Trích xuất dữ liệu
+                   ▼
+     [Cập nhật DB Session State] ──(2) Trigger Event phát ra──► [Event Router / Queue]
+                                                                     │
+                   ┌─────────────────────────────────────────────────┤
+                   ▼ (Tải trọng Real-time)                           ▼ (Tải trọng Batch/Cuối ngày)
+           [Webhook Outbound]                                 [Data Warehouse / Vector DB]
+                   │                                                 │
+                   ▼                                                 ▼
+     [Hệ thống CRM Doanh Nghiệp]                        [Bộ dữ liệu tinh chỉnh RAG mới]
+  (Tạo Lead, Báo Sales gọi điện)                     (Phân tích Insight, Tối ưu Tri Thức)
+
+```
+
+### 2. Chi tiết các bước triển khai (Làm như thế nào?)
+
+#### Bước 1: Thiết kế Database Session State (Lưu trữ tạm thời < 24h)
+
+Tạo một bảng `chat_session_states` trong Postgres để lưu trữ trạng thái sống của 5 biến. Bảng này độc lập hoàn toàn với bảng lưu `chat_history`.
+
+```sql
+CREATE TABLE chat_session_states (
+    session_id VARCHAR(255) PRIMARY KEY,
+    bot_id VARCHAR(512) NOT NULL,
+    customer_name VARCHAR(100),
+    phone_number VARCHAR(20),
+    booking_time TIMESTAMP,
+    target_service VARCHAR(255),
+    customer_pain TEXT,
+    is_synced_to_crm BOOLEAN DEFAULT FALSE,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+```
+
+#### Bước 2: Viết Code trích xuất ngầm và Bắn Event Trigger (Webhook)
+
+Trong luồng LangGraph, sau khi nhận được câu trả lời từ LLM, bạn chạy một hàm `asyncio.create_task()` để trích xuất dữ liệu và bắn đi một Webhook Event sang hệ thống CRM mà không làm chậm tốc độ trả lời tin nhắn của khách hàng.
+
+```python
+# src/ragbot/services/trigger_service.py
+import httpx
+import json
+
+async def extract_and_trigger_webhook(session_id: str, bot_id: str, last_user_msg: str, current_state: dict):
+    """
+    Hàm chạy ngầm: Kiểm tra tin nhắn mới, cập nhật 5 biến và bắn dữ liệu đi CRM
+    """
+    # 1. Gọi gpt-4.1-mini (với cấu trúc Structured Output) để nhặt 5 biến từ tin nhắn mới nhất
+    # So sánh với current_state cũ xem có biến nào mới được lấp đầy không
+    new_data = await extract_slots_from_msg(last_user_msg, current_state)
+    
+    if new_data != current_state:
+        # 2. Cập nhật vào DB Postgres của Ragbot
+        await update_session_state_in_db(session_id, new_data)
+        
+        # 3. KIỂM TRA ĐIỀU KIỆN TRIGGER: Ví dụ có SĐT thì mới coi là Lead chuẩn để bắn sang CRM
+        if new_data.get("phone_number") and not current_state.get("phone_number"):
+            payload = {
+                "event": "lead.booking_created",
+                "session_id": session_id,
+                "bot_id": bot_id,
+                "customer_info": new_data,
+                "source": "ragbot_ai_agent"
+            }
+            
+            # 4. Bắn Webhook đến CRM (Ví dụ: HubSpot, Salesforce hoặc CRM nội bộ của bạn)
+            async with httpx.AsyncClient() as client:
+                try:
+                    response = await client.post(
+                        "https://crm.yourcompany.com/api/v1/webhooks/ragbot-receiver",
+                        json=payload,
+                        timeout=5.0
+                    )
+                    if response.status_code == 200:
+                        await mark_as_synced_in_db(session_id)
+                except httpx.HTTPError:
+                    # Ghi log lỗi và đẩy vào cơ chế Retry Queue (Celery/RabbitMQ) nếu CRM sập
+                    pass
+
+```
+
+---
+
+## III. Ứng Dụng Dữ Liệu Thu Thập Để Support Ngược Lại Cho RAG & CRM
+
+Dữ liệu sau khi "bắn" đi theo luồng Trigger ở trên sẽ quay trở lại phục vụ hệ thống của bạn theo 2 hướng chiến lược:
+
+### 1. Cho CRM & Quản Trị Quầy (Báo cáo Sales)
+
+* **Hành động tức thì:** Ngay khi hệ thống bắt được `phone_number` và `booking_time`, một màn hình Pop-up ở phần mềm CRM của nhân viên Spa/Lốp xe sẽ hiện lên: *"Có một khách hàng tên Lan vừa đặt lịch thay lốp qua Bot lúc 9h sáng mai"*. Nhân viên chỉ cần ấn nút duyệt thay vì phải đọc lại toàn bộ lịch sử chat.
+* **Hành động tiếp theo:** Nếu cuộc trò chuyện bị ngắt quãng giữa chừng (Khách bận không chat nữa), CRM dựa vào trạng thái lưu trữ của phiên chat đó để kích thích nhân viên vào nhắn tin thủ công (Human-in-the-loop) để cứu Lead.
+
+### 2. Cho Việc Nâng Cấp Hệ Thống RAG (RAG Continuous Learning)
+
+Đây là cách bạn dùng chính dữ liệu khách hàng để làm cho con Bot thông minh hơn mỗi ngày:
+
+| Loại Dữ Liệu Thu Được | Cách Xử Lý Để Làm RAG Mạnh Hơn |
+| --- | --- |
+| **Biến `customer_pain**` *(Nỗi đau khách hàng)* | Gom toàn bộ dữ liệu trường này cuối tuần lại, dùng LLM phân tích cụm (Clustering) để biết tuần này khách hàng hay phàn nàn về lỗi gì nhiều nhất (Ví dụ: xe bị ồn, da bị kích ứng mùa hè). Từ đó, viết thêm tài liệu tri thức bổ sung vào cơ sở dữ liệu Vector DB. |
+| **Lịch sử chat của các session thành công** | Chọc vào DB bốc ra các Room Chat chốt được đơn thành công. Chuyển hóa các đoạn chat đó thành định dạng cấu trúc dạng **Few-shot Examples** (Ví dụ mẫu). Nạp các ví dụ mẫu này vào System Prompt để dạy con Bot biết cách thuyết phục khách hàng theo đúng những kịch bản đã thực tế chốt được tiền. |
+
+
+Để xây dựng một hệ thống **Expert RAG** thực thụ đạt đủ 5 tiêu chí: **Nhanh (Latency thấp) · Đúng/Chuẩn (Accuracy/Faithfulness = 100%) · UX cao · Performance cao · Cost thấp**, chúng ta không thể dựa vào cảm tính. Hệ thống cần được thiết kế dựa trên các chỉ số kỹ thuật cụ thể ($Engineering$ $Metrics$) và các bài toán tối ưu hạ tầng sâu.
+
+Dưới đây là bảng giải mã chi tiết các tiêu chí và **Khung kiểm thử (Validation Framework)** để bạn verify hệ thống của mình có đạt chuẩn Expert Production hay chưa.
+
+---
+
+## I. Thế nào mới là Expert RAG? (4 Trụ Cột Tuyệt Đối)
+
+### 1. ĐÚNG & CHUẨN (Faithfulness & Anti-Hallucination)
+
+* **Chuẩn Expert:** Hệ thống phải đạt **HALLU = 0** trên production. Để làm được điều này, Expert RAG áp dụng cấu trúc **Triple-Gate (3 tầng kiểm duyệt)**:
+1. *Gate 1 (Retrieval Floor):* Như dự án của bạn đang dùng bộ lọc `cliff` với floor `0.05` để chặt ngay những chunk rác.
+2. *Gate 2 (CRAG - Corrective RAG):* LLM đóng vai trò Grader, đọc context trước khi sinh câu trả lời. Nếu dữ liệu không liên quan, lập tức kích hoạt luồng **Refusal Short-Circuit** (Trả về template từ chối, tuyệt đối không cho LLM tự biên tự diễn).
+3. *Gate 3 (NLI Grounding Judge):* Sau khi LLM sinh câu trả lời, một node độc lập sẽ kiểm tra chéo (Cross-verify) xem câu trả lời có được chứng thực bởi context không. Nếu fail, hủy kết quả, không trả về cho client.
+
+
+
+### 2. NHANH & PERFORMANCE CAO (Latency & Throughput)
+
+* **Chuẩn Expert:** Thời gian phản hồi cho turn chat đầu tiên (Cold-start) $\le 3s$. Các turn chat tiếp theo (Warm-start) **$< 1.5s$ hoặc streaming hiển thị ký tự đầu tiên (TTFT - Time to First Token) $< 200ms$**.
+* **Cách Expert tối ưu hạ tầng:**
+* **Lane Isolation (Phân làn Semaphore):** Giống như bản cập nhật ngày 14/06/2026 của bạn, tách semaphore khâu `grounding_judge` chạy nền (Background Lane) riêng để không làm nghẽn luồng sinh câu trả lời (Foreground Generate).
+* **Hybrid Cache Strategy:** L1 Cache lưu các cặp câu hỏi trùng tuyệt đối (Exact Match) trên Redis với TTL ngắn. L2 Cache dùng Vector Semantic Search với ngưỡng tương đồng rất cao ($\ge 0.97$). Nếu khách hỏi lại câu tương tự, bốc thẳng từ cache ra trả về trong $< 50ms$.
+
+
+
+### 3. COST THẤP (Cost Optimization)
+
+* **Chuẩn Expert:** Chi phí trung bình cho mỗi turn chat **$< \$0.005$**.
+* **Cách Expert tối ưu tiền:**
+* **Intent-Gated Routing:** Dùng bộ phân loại Intent siêu nhẹ ở đầu luồng (Heuristic Rules kết hợp LLM giá rẻ). Nếu khách chỉ chào hỏi ("Hi shop", "Chào em") hoặc chitchat, hệ thống **ngắt ngay luồng RAG**, không Embedding, không Search Vector, không Rerank. Trả lời thẳng bằng tầng LLM giá rẻ hoặc câu trả lời mẫu. Bạn sẽ tiết kiệm được 70% chi phí vận hành cho các turn chat rác.
+* **Prompt Caching:** Tận dụng triệt để cơ chế Auto Prompt-Cache của `gpt-4.1-mini`. Bằng cách giữ cấu trúc System Prompt cố định và xếp lịch sử chat nối tiếp, OpenAI sẽ cache lại toàn bộ đoạn text dài này. Bạn chỉ phải trả ~20-50% tiền cho token đầu vào (Input Tokens).
+
+
+
+### 4. UX CAO (Trải Nghiệm Khách Hàng Thật)
+
+* **Chuẩn Expert:** Bot nói chuyện mượt mà như người thật, tự biết "gợi mở" chốt đơn và có bộ nhớ trạng thái (**Slot-Filling Memory** như đã phân tích ở phần trước). Không trả lời kiểu gạch đầu dòng khô khan như một cái máy tra cứu tài liệu.
+
+---
+
+## II. Làm Sao Để Verify Hệ Thống Hiện Tại Với Chuẩn Expert?
+
+Để biết hệ thống Ragbot hiện tại của bạn đang nằm ở đâu trên bản đồ Expert RAG, bạn cần thực hiện quy trình rà soát và chấm điểm qua **3 tầng kiểm thử** sau:
+
+### Tầng 1: Chạy Automated Benchmark (Đo đạc định lượng)
+
+Bạn không thể tự chat tay vài câu rồi bảo bot ngon. Bạn phải dùng một công cụ tự động hóa như cụm script `scripts/loadtest_graded.py` của bạn nhưng nâng cấp lên chuẩn **RAGAS (RAG Assessment)** hoặc **TruLens**.
+
+Hãy chạy một tập test gồm ít nhất **50 kịch bản hội thoại đa bước (Multi-turn)** và đo đạc chính xác 4 chỉ số vàng của RAG:
+
+| Chỉ số | Cách đo | Ngưỡng chuẩn Expert | Trạng thái dự án của bạn hiện tại |
+| --- | --- | --- | --- |
+| **Faithfulness** | Kiểm tra câu trả lời có bịa đặt so với context không. | **100%** (Tuyệt đối không có Hallucination) | Toàn diện (Report báo `0/6 sacred` hallu ➔ Rất tốt). |
+| **Answer Relevance** | Câu trả lời có đi đúng vào trọng tâm câu hỏi của khách không. | **> 95%** | Cần check lại do dính lỗi "Hỏi chi tiết ➔ Nhảy sang dịch vụ khác". |
+| **Context Recall** | Tầng Retrieval có nhặt đủ các chunk chứa dữ liệu cần thiết không. | **> 98%** | Bị lỗi ở các câu hỏi Aggregation (Liệt kê thiếu dịch vụ). |
+| **p95 Latency** | Tốc độ phản hồi của 95% số lượng request. | **< 3s** (khi chạy concurrent burst) | Hiện tại đang là **12s - 24s** (Quá cao, do cache cold và nghẽn pipeline). |
+
+### Tầng 2: Vượt qua "Bài Test Thử Thách" (Stress Test Kịch Bản Góc Khuất)
+
+Expert RAG phải chịu được các kịch bản phá hoại của người dùng thật. Hãy nạp các câu hỏi sau vào hệ thống test của bạn để verify:
+
+1. **Bài test "Bẫy phủ định" (Refusal Edge-Case):** Hỏi một dịch vụ có tên gần giống dịch vụ trong Spa nhưng không có thật (Ví dụ trong data có "Laser Carbon", hãy hỏi: *"Cấy Laser Carbon kim cương giá bao nhiêu?"*).
+* *Bot non-expert:* Sẽ bị lừa, tự ghép giá của Laser Carbon với công nghệ Kim cương để trả lời.
+* *Bot Expert:* Lập tức nhận ra sự bất thường và từ chối khéo: *"Dạ bên em hiện chỉ có dịch vụ Laser Carbon (giá X) và dịch vụ Nano Kim Cương (giá Y) chứ chưa có sự kết hợp cấy hai công nghệ này ạ."*
+
+
+2. **Bài test "Hỏi dồn thực thể" (Multi-Entity Constraint):** *"Shop ơi mình đi 2 người, một người muốn trị mụn chuyên sâu, một người muốn làm dịch vụ nào dưới 500k, tổng chi phí hết bao nhiêu?"*
+* *Bot Expert:* Phải kích hoạt tầng suy luận toán học sơ cấp, lấy giá Trị mụn chuyên sâu + tìm một dịch vụ $< 500k$ + nhân diện số lượng người ➔ Cộng tổng tiền chính xác cho khách.
+
+
+
+### Tầng 3: Đánh giá Kiến Trúc Mã Nguồn (Code Audit head `0216`)
+
+Đối chiếu mã nguồn hiện tại của bạn với Checklist kiến trúc Expert:
+
+* [x] **Đã có (Theo file Readme của bạn):** Khóa cứng `temperature = 0` cho khâu transform; cấu hình mô hình tập trung về `gpt-4.1-mini` để tối ưu cache; hạ tầng chạy gọn gàng trong 1 process tránh overhead; có cơ chế Reranker (`zerank-2`) kết hợp bộ lọc `cliff`.
+* [ ] **CÒN THIẾU (Cần bổ sung để lên chuẩn Expert):**
+* Chưa có node **Query Rewriter** để xử lý các câu hội thoại cụt ngữ cảnh ("chi tiết", "giá sao").
+* Chưa có cơ chế **Adaptive Top-K dựa trên Intent** (Khiến khâu Retrieval bị cố định ở `top_n = 7`, dẫn đến lỗi liệt kê thiếu dịch vụ).
+* Chưa kích hoạt hoặc đồng bộ cơ chế **State Memory (Lưu 5 biến CRM)** vào tầng Database biệt lập để lưu trữ real-time, mà vẫn đang bắt LLM đọc history thô.
+
+
+
+## Kế hoạch hành động ngay lập tức (Action Plan) cho bạn:
+
+Để verify và sửa đổi, hãy viết một script nhỏ chạy kiểm thử tự động, tắt tính năng cache đi để đo thời gian thực (**Cold Latency**). Nếu sau khi bạn thêm node `Query_Rewriter` (để sửa lỗi nhảy dịch vụ) và nới `rerank_top_n` lên 15 cho các câu hỏi liệt kê (để sửa lỗi thiếu data) mà chỉ số **Context Recall** đạt `> 95%`, độ trễ p95 hạ xuống `< 4s` ➔ Bạn đã chính thức đưa hệ thống cán mốc **Expert RAG Production**.
+
+
+
+Dưới đây là Báo cáo Phân tích Chuyên sâu (Deep-dive Engineering Audit Report) đối chiếu chi tiết giữa **Hệ thống Ragbot hiện tại (Mã Head 0216)** và **Hệ thống Expert RAG chuẩn Production**.
+
+Báo cáo bóc tách trực tiếp dựa trên 5 tiêu chí tối cao mà bạn yêu cầu, chỉ rõ những thông số nào **ĐÃ CHUẨN** và những gì **CHƯA ĐẠT** chuẩn Expert để bạn tiến hành debug tận gốc.
+
+---
+
+# ĐÁNH GIÁ TỔNG QUAN: RAGBOT (0216) vs. EXPERT RAG PRODUCTION
+
+---
+
+## I. BẢNG SO SÁNH THÔNG SỐ VÀ LUỒNG DỮ LIỆU ĐA BƯỚC
+
+| Tiêu chí | Ragbot Hiện Tại (Cấu hình 0216) | Expert RAG Production | Trạng thái (Verdict) |
+| --- | --- | --- | --- |
+| **1. ĐÚNG / CHUẨN** *(Accuracy & Faithfulness)* | • SSoT khóa cứng theo Prompt Owner.<br>
+
+<br>• Bộ lọc `cliff` (floor 0.05).<br>
+
+<br>• `temperature = 0`. | • Giống Ragbot + **Adaptive Ingestion (Chunk động)**.<br>
+
+<br>• Bộ lọc Cliff thích ứng.<br>
+
+<br>• Hệ thống **CRAG (Corrective RAG)** kiểm duyệt 3 lớp. | **SUÝT ĐẠT**<br>
+
+<br>(Gãy ở khâu lấy dữ liệu bảng/dịch vụ). |
+| **2. NHANH** *(Latency)* | • p95 đạt **12s - 24s** (Rất chậm).<br>
+
+<br>• Xử lý tuần tự lịch sử chat thô. | • p95 **< 3s** (Cold start), **< 1.5s** (Warm start).<br>
+
+<br>• TTFT < 200ms bằng Streaming. | **THẤT BẠI**<br>
+
+<br>(Cần tái cấu trúc pipeline song song). |
+| **3. UX CAO** *(Conversational UX)* | • Lưu 5 tin nhắn history thô.<br>
+
+<br>• Định nghĩa 5 biến trong Prompt.<br>
+
+<br>• Trả lời theo mẫu cố định. | • Contextual Query Rewriter.<br>
+
+<br>• **State Memory DB biệt lập** cho CRM.<br>
+
+<br>• AI Agent sinh câu thoại tự nhiên + CTA khéo. | **CHƯA ĐẠT**<br>
+
+<br>(Bị lỗi "râu ông nọ cắm cằm bà kia"). |
+| **4. PERFORMANCE** *(Throughput)* | • 1 tiến trình `ragbot-py`. <br>
+
+<br>• Tách nền node `grounding_judge` (Semaphore). | • Async Event-Driven.<br>
+
+<br>• Tách foreground (Chat) và background (CRM Webhook). | **ĐÃ CHUẨN TẦNG LÕI**<br>
+
+<br>(Cần tối ưu khâu I/O). |
+| **5. COST THẤP** *(Token Economy)* | • Lặp lại History thô qua mỗi turn.<br>
+
+<br>• Sử dụng `gpt-4.1-mini`. | • Tận dụng tối đa **Prompt Caching** tự động.<br>
+
+<br>• **Intent-Gated Routing** (Chặn token rác). | **TẠM ĐẠT**<br>
+
+<br>(Nhưng bị lãng phí token khi history dài). |
+
+---
+
+## II. PHÂN TÍCH CHI TIẾT THEO 5 TIÊU CHÍ (DEBUG CHUYÊN SÂU)
+
+### 1. Tiêu chí ĐÚNG / CHUẨN (Faithfulness = 100%)
+
+* **Cấu hình hiện tại ĐÃ CHUẨN:** Việc bạn thiết lập `temperature = 0`, ép SSoT (Single Source of Truth) từ Prompt của Bot Owner, và chặn đứng 6 case hallucination nghiêm trọng chứng minh bạn đã làm chủ được tầng sinh văn bản (Generation).
+* **Tại sao vẫn CHƯA EXPERT?** Hệ thống bị gãy ở khâu **Retrieval (Truy xuất)** đối với dữ liệu dạng danh mục dịch vụ/bảng giá.
+* *Nguyên nhân:* Cố định `chunk_size = 1024` khiến các thực thể dịch vụ bị dính chặt vào nhau hoặc bị cắt nửa chừng. Khi kết hợp với bộ lọc `cliff` cố định (floor 0.05) và `rerank_top_n = 7`, hệ thống tự động loại bỏ các đoạn chunk ở phía dưới bảng giá vì điểm tương đồng (Similarity Score) của các biến thể dịch vụ thấp hơn chunk đầu tiên ➔ **Gây ra lỗi liệt kê thiếu (Ví dụ: 7 dịch vụ chỉ báo có 4)**.
+
+
+
+* **Giải pháp Debug:**
+* Với Bot dịch vụ/Spa, hạ `chunk_size` xuống **512**, `overlap = 64`.
+* Tăng `rerank_top_n` từ 7 lên **12 hoặc 15** đối với các câu hỏi mang tính chất liệt kê (Aggregation Intent).
+
+
+
+### 2. Tiêu chí NHANH (Latency thấp)
+
+* **Tình trạng hiện tại: THẤT BẠI BI ĐỊẠT (12s - 24s).** Tốc độ này không thể chạy thực tế cho người dùng (Họ sẽ tắt chat sau 5 giây chờ đợi).
+* **Tại sao chưa Expert?** Bạn đang xử lý **tuần tự (Sequential)** và bắt LLM đọc lại lịch sử chat thô liên tục. Khâu `grounding_judge` dù đã tách làn Semaphore nhưng nếu logic xử lý tổng thể vẫn phải đợi đồng bộ để trả về câu thoại cuối cùng, nó sẽ kéo sập p95 Latency.
+* **Giải pháp Debug:**
+* Kích hoạt **Streaming Response (SSE)**: Trả về ký tự ngay lập tức cho khách hàng ($TTFT < 200ms$).
+* Chuyển luồng chấm điểm `grounding_judge` và luồng bắn data CRM thành **Background Task hoàn toàn độc lập** (Fire-and-forget qua FastAPI `BackgroundTasks`). Bot cứ trả lời khách trước, việc kiểm tra chất lượng và lưu trữ hệ thống CRM sẽ chạy ngầm sau đó vài mili-giây.
+
+
+
+### 3. Tiêu chí UX CAO (Trải nghiệm hội thoại thực tế)
+
+* **Tại sao chưa Expert?** Lỗi *"Hỏi chi tiết ➔ Nhảy sang dịch vụ khác"* xuất hiện do hệ thống thiếu một tầng **Query Rewriter**.
+* Khi khách hỏi *"chi tiết"*, câu này không mang giá trị ngữ nghĩa khi chạy qua mô hình Embedding `zembed-1`. Hệ thống Vector DB bốc nhầm một đoạn chunk chứa chữ "chi tiết" của dịch vụ khác.
+* Việc định nghĩa 5 biến trong System Prompt là một tư duy tốt, nhưng việc bắt LLM tự đọc 5 tin nhắn cũ để nhặt biến qua mỗi lượt chat là một cách làm thô sơ.
+
+
+* **Giải pháp Debug:**
+* Bắt buộc chèn một Node **`Query_Rewriter_Node`** bằng `gpt-4.1-mini` (Temp 0) ở đầu Graph để dịch câu cụt thành câu đủ nghĩa.
+* Tách biệt bộ nhớ: Lưu 5 biến này vào một bảng **`chat_session_states`** trong Postgres. Mỗi khi có tin nhắn mới, cập nhật bảng này và **tiêm thẳng** giá trị đã được xử lý vào System Prompt chứ không bắt LLM tự tìm lại trong lịch sử chat nữa.
+
+
+
+### 4. Tiêu chí PERFORMANCE (Throughput cao)
+
+* **Cấu hình hiện tại ĐÃ CHUẨN:** Thiết kế chạy gọn trong một process `ragbot-py`, tận dụng LangGraph Orchestration và PostgreSQL 16 `pgvector HNSW` là kiến trúc rất chuẩn, giảm tối đa Overhead của hệ thống Microservices cồng kềnh.
+* **Điểm cần tối ưu:** Khi số lượng request đồng thời (Concurrent Traffic) tăng cao, 1 process Python sẽ dính nghẽn I/O nếu bạn gọi API của OpenAI một cách đồng bộ. Hãy đảm bảo toàn bộ các hàm gọi Embedding, Rerank, và LLM Generate đều sử dụng cú pháp `async/await` với thư viện `httpx` hoặc `openai.AsyncOpenAI`.
+
+### 5. Tiêu chí COST THẤP (Tối ưu hóa chi phí)
+
+* **Cấu hình hiện tại ĐÃ CHUẨN:** Lựa chọn `gpt-4.1-mini` làm mô hình cốt lõi là cực kỳ sáng suốt cho bài toán chi phí doanh nghiệp ($Cost$-$Efficiency$).
+* **Điểm cần tối ưu:** Do bạn đang gửi toàn bộ chuỗi History thô qua mỗi turn chat, độ dài Context tăng dần theo cấp số cộng.
+* **Giải pháp Debug:** Sắp xếp cấu hình System Prompt cố định ở đầu chuỗi tin nhắn, sau đó đến Context Tri thức, và cuối cùng mới là Lịch sử chat. Cấu trúc cố định này sẽ kích hoạt tính năng **Auto Prompt Caching** của OpenAI, giúp bạn tiết kiệm tới 50-80% chi phí xử lý Token đầu vào (Input Tokens).
+
+---
+
+## III. QUY TRÌNH 4 BƯỚC CHUẨN ĐỂ BẠN VERIFY VÀ SỬA CODE MÃ HEAD 0216
+
+Để chính thức nâng cấp Ragbot lên chuẩn Expert, bạn hãy thực hiện rà soát mã nguồn theo đúng quy trình sau:
+
+```
+[BƯỚC 1: SỬA INGESTION]  ──► Hạ Chunk Size xuống 512 (Cho Bot Spa/Catalog)
+                                  │
+[BƯỚC 2: THÊM NODE GRAPH] ──► Chèn Node "Query Rewriter" trước tầng Vector Search
+                                  │
+[BƯỚC 3: TÁCH STATE MEMORY]─► Lưu 5 biến CRM vào DB riêng, tiêm trực tiếp vào System Prompt
+                                  │
+[BƯỚC 4: CHUYỂN ĐỔI ASYNC]──► Đẩy luồng Verify & Webhook CRM chạy ngầm (Background Task)
+
+```
+
+> **Chỉ số nghiệm thu (Verdict Gate):** Sau khi cấu hình xong 4 bước trên, bạn hãy chạy kịch bản giả lập khách hàng (Multi-turn Test Harness). Nếu hệ thống trả lời **Đúng dịch vụ**, không bị lệch context khi hỏi câu cụt, và thời gian hiển thị chữ đầu tiên **< 300ms** ➔ Hệ thống Ragbot của bạn đã đạt chuẩn **Expert RAG Production**.

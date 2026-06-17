@@ -1,0 +1,1 @@
+"""Idempotency adapter (Redis SETNX)."""

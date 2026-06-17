@@ -1,0 +1,73 @@
+name: audit-agent-diff
+
+# Auditor-Chief pre-merge gate for coder / agent branches.
+#
+# Runs scripts/audit_agent_diff.sh in --regression-only mode, comparing
+# the PR head to the PR base. The script wraps four standing guards:
+#
+#   1. scripts/anti_hardcode_check.sh
+#        zero-hardcode + version-ref + model-name + mock fixture +
+#        delegates to scripts/grep_domain_literals.sh for brand /
+#        industry literals.
+#
+#   2. scripts/audit_resolver_fallback.sh
+#        every per-bot resolver under
+#        src/ragbot/application/services/*resolver*.py that queries
+#        bot_model_bindings MUST also fall back to system_config /
+#        ai_models. Closes the bug class behind feedback memory
+#        "Resolver MUST fallback system_config" (2026-05-14).
+#
+#   3. scripts/audit_domain_neutral.sh
+#        VN diacritics in logic code (non-comment, non-docstring) =
+#        domain-coupling violation.
+#
+#   4. tenant-literal scan (inline in audit_agent_diff.sh)
+#        DSN with embedded password, brand hostname, IPv4 literal
+#        in src/ragbot/.
+#
+# Mode is --regression-only: the job fails only when the feature
+# branch's hit count for any guard is STRICTLY higher than the base
+# branch's. Pre-existing violations are tolerated. Once the baseline
+# is clean, the workflow can be flipped to --strict by changing the
+# script invocation below.
+#
+# Triggers on every pull_request to main and to any coder/agent
+# campaign branch (matches the project's "coder-260518-*" /
+# "agent-260518-*" naming convention but is wildcard-tolerant for
+# future campaigns).
+
+on:
+  pull_request:
+    branches:
+      - main
+      - "coder-*"
+      - "agent-*"
+      - "mom-*"
+  workflow_dispatch:
+
+jobs:
+  audit-agent-diff:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout (full history)
+        uses: actions/checkout@v4
+        with:
+          # Fetch the entire history so the script can resolve both
+          # PR base and PR head as full commits + run git worktree.
+          fetch-depth: 0
+
+      - name: Fetch PR base
+        # GitHub Actions exposes the PR base ref as github.base_ref but
+        # not as a local branch. Fetch it explicitly so resolve_ref()
+        # inside the script finds it.
+        run: |
+          git fetch --no-tags --prune origin \
+            "+refs/heads/${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}"
+
+      - name: Run audit_agent_diff (regression-only)
+        run: |
+          bash scripts/audit_agent_diff.sh \
+            --regression-only \
+            "${{ github.event.pull_request.head.sha }}" \
+            "origin/${{ github.base_ref }}"

@@ -1,0 +1,92 @@
+{
+  "bot_id": "chinh-sach-xe",
+  "channel_type": "web",
+  "note": "CS tire/vehicle consulting flows mirroring spa. expect = substring a correct chunk should contain.",
+  "questions": [
+    {
+      "id": "q01",
+      "flow": "hoi_tham",
+      "q": "Chào shop, tư vấn giúp mình với",
+      "expect": null
+    },
+    {
+      "id": "q02",
+      "flow": "liet_ke_san_pham",
+      "q": "Shop có những loại lốp nào, liệt kê giúp mình",
+      "expect": "CITYTRAXX"
+    },
+    {
+      "id": "q03",
+      "flow": "soi_san_pham",
+      "q": "Lốp CITYTRAXX H/T có đặc điểm gì?",
+      "expect": "CITYTRAXX"
+    },
+    {
+      "id": "q04",
+      "flow": "hoi_theo_size",
+      "q": "Có lốp size 185/55R16 không?",
+      "expect": "185/55R16"
+    },
+    {
+      "id": "q05",
+      "flow": "hoi_theo_size",
+      "q": "Lốp cho xe size 225/45ZR18 có mẫu nào?",
+      "expect": "225/45ZR18"
+    },
+    {
+      "id": "q06",
+      "flow": "hoi_hang",
+      "q": "Hãng LANDSPIDER có những dòng lốp gì?",
+      "expect": "LANDSPIDER"
+    },
+    {
+      "id": "q07",
+      "flow": "liet_ke_kho",
+      "q": "Kho còn những mã lốp nào của loại WILDTRAXX?",
+      "expect": "WILDTRAXX"
+    },
+    {
+      "id": "q08",
+      "flow": "tu_van_xe",
+      "q": "Xe sedan gầm thấp thì nên dùng lốp gì?",
+      "expect": null
+    },
+    {
+      "id": "q09",
+      "flow": "so_sanh",
+      "q": "So sánh lốp H/T và H/P khác nhau thế nào?",
+      "expect": null
+    },
+    {
+      "id": "q10",
+      "flow": "hoi_ngay_ve",
+      "q": "Lốp 195/65R15 ngày nào về hàng?",
+      "expect": "tháng 11"
+    },
+    {
+      "id": "q11",
+      "flow": "dat_lich",
+      "q": "Mình muốn đặt mua lốp, cần làm gì?",
+      "expect": null
+    },
+    {
+      "id": "q12",
+      "flow": "dat_lich_slot",
+      "q": "Tên Hùng, sđt 0912345678, địa chỉ 12 Lê Lợi, xe Mazda 3, cần lốp 205/55R16",
+      "expect": null
+    },
+    {
+      "id": "q13",
+      "flow": "oos_trap",
+      "q": "Shop có bán dầu nhớt không?",
+      "expect": null
+    },
+    {
+      "id": "q14",
+      "flow": "hallu_trap",
+      "q": "Lốp bay MICHELIN PILOT phản lực giá bao nhiêu?",
+      "expect": null
+    }
+  ],
+  "workspace_id": "xe"
+}

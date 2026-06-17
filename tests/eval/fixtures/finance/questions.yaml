@@ -1,0 +1,92 @@
+vertical: finance
+language: en
+description: >
+  Generic retail-banking customer-service questions. Brand-neutral via the
+  <brand> placeholder. Topics: account opening, ATM/withdrawal limits,
+  card replacement, wire-transfer fees, statements, dispute & fraud,
+  branch hours, mobile-banking enrollment, term-deposit rates, credit
+  limit increases, out-of-scope refusal, clarification, monthly fees,
+  identification requirements. No real bank name appears anywhere.
+
+floor:
+  pass_rate: 0.60
+  faithfulness: 0.85
+  top_score: 0.45
+  p95_ms: 8000
+  hallu: 0
+
+questions:
+  - intent: factoid_in_corpus
+    text: "What's the daily ATM withdrawal limit for premium tier?"
+    expected_keywords_any: ["limit", "withdrawal", "daily"]
+    must_not_contain: []
+
+  - intent: factoid_in_corpus
+    text: "How do I replace a lost debit card with <brand>?"
+    expected_keywords_any: ["replacement", "lost", "card"]
+    must_not_contain: []
+
+  - intent: factoid_in_corpus
+    text: "What documents are needed to open a savings account?"
+    expected_keywords_any: ["document", "open", "account"]
+    must_not_contain: []
+
+  - intent: factoid_in_corpus
+    text: "What's the wire transfer fee for international payments?"
+    expected_keywords_any: ["fee", "wire", "transfer"]
+    must_not_contain: []
+
+  - intent: factoid_in_corpus
+    text: "How can I download my monthly account statement?"
+    expected_keywords_any: ["statement", "download", "month"]
+    must_not_contain: []
+
+  - intent: factoid_in_corpus
+    text: "How do I dispute an unauthorized transaction?"
+    expected_keywords_any: ["unauthorized", "report", "transaction"]
+    must_not_contain: []
+
+  - intent: factoid_in_corpus
+    text: "What are the branch operating hours on weekends?"
+    expected_keywords_any: ["branch", "hours", "weekend"]
+    must_not_contain: []
+
+  - intent: factoid_in_corpus
+    text: "How do I enroll in mobile banking?"
+    expected_keywords_any: ["enroll", "mobile", "banking"]
+    must_not_contain: []
+
+  - intent: factoid_in_corpus
+    text: "What's the current rate for a 12-month term deposit?"
+    expected_keywords_any: ["rate", "deposit", "term"]
+    must_not_contain: []
+
+  - intent: factoid_in_corpus
+    text: "How do I request a credit limit increase?"
+    expected_keywords_any: ["increase", "limit", "credit"]
+    must_not_contain: []
+
+  - intent: greeting
+    text: "Hi, I'm new — where do I start?"
+    expected_keywords_any: ["welcome", "help", "start"]
+    must_not_contain: []
+
+  - intent: out_of_scope
+    text: "What is the personal phone number of your CEO?"
+    expected_keywords_any: ["sorry", "cannot", "unable"]
+    must_not_contain: ["phone:", "+1-555"]
+
+  - intent: clarification_needed
+    text: "I have a question about my account"
+    expected_keywords_any: ["which", "what", "more"]
+    must_not_contain: []
+
+  - intent: factoid_in_corpus
+    text: "Are there monthly fees on the basic checking account?"
+    expected_keywords_any: ["monthly", "fee", "checking"]
+    must_not_contain: []
+
+  - intent: factoid_in_corpus
+    text: "What identification is required for a wire transfer?"
+    expected_keywords_any: ["identification", "wire", "transfer"]
+    must_not_contain: []

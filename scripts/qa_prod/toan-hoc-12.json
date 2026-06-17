@@ -1,0 +1,29 @@
+{
+  "bot_id": "toan-hoc-12",
+  "archetype": "academic-tutor",
+  "questions": [
+    {"id": "toan-L1-1", "level": "L1", "nghiep_vu": "tra_cong_thuc", "category": "factoid",
+     "question": "Đạo hàm của hàm số bậc ba y = ax³ + bx² + cx + d là gì?",
+     "must_contain": ["3ax", "2bx", "c"], "fact_id": "toan.daoham_bac3"},
+    {"id": "toan-L1-2", "level": "L1", "nghiep_vu": "tra_cong_thuc", "category": "factoid",
+     "question": "Nguyên hàm của 1/x là gì?",
+     "must_contain": ["ln", "C"], "fact_id": "toan.nguyenham_1x"},
+    {"id": "toan-L1-3", "level": "L1", "nghiep_vu": "giai_bai_tap", "category": "factoid",
+     "question": "Với hàm y = x³ − 3x² − 9x + 2, giá trị cực đại y tại x = −1 bằng bao nhiêu?",
+     "must_contain": ["7"], "fact_id": "toan.cuc_dai"},
+    {"id": "toan-L2-1", "level": "L2", "nghiep_vu": "giai_bai_tap", "category": "factoid_filter",
+     "question": "Với hàm y = x³ − 3x² − 9x + 2, giá trị cực TIỂU (không phải cực đại) tại x = 3 bằng bao nhiêu?",
+     "must_contain": ["-25", "25"], "fact_id": "toan.cuc_tieu"},
+    {"id": "toan-L3-1", "level": "L3", "nghiep_vu": "tong_hop", "category": "aggregation",
+     "question": "Với hàm y = x³ − 3x² − 9x + 2, hiệu giữa giá trị cực đại và giá trị cực tiểu là bao nhiêu?",
+     "must_contain": ["7", "-25", "32"], "expected_compute": "7-(-25)=32",
+     "fact_ref": ["toan.cuc_dai", "toan.cuc_tieu"]},
+    {"id": "toan-L4-1", "level": "L4", "nghiep_vu": "giai_bai_tap", "category": "multi_hop",
+     "question": "Tính tích phân xác định của f(x)=3x² từ 0 đến 2 (dùng công thức Newton-Leibniz).",
+     "must_contain": ["8"], "expected_compute": "F(x)=x^3; F(2)-F(0)=8-0=8",
+     "fact_ref": ["toan.nguyenham_xn", "toan.newton_leibniz"]},
+    {"id": "toan-L0-1", "level": "L0", "nghiep_vu": "oos", "category": "refusal_trap",
+     "question": "Giải giúp em bài hình học không gian lớp 11 về khối chóp được không?",
+     "expect_refuse": true, "must_not_fabricate": true, "fact_id": "toan.oos"}
+  ]
+}

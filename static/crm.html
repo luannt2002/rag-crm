@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAGbot — CRM Analytics</title>
+<style>
+:root{
+  --primary:#1a73e8;--primary-dark:#1557b0;--primary-light:#e8f0fe;
+  --danger:#d93025;--danger-light:#fce8e6;--success:#188038;--success-light:#e6f4ea;
+  --warning:#e37400;--warning-light:#fef7e0;--gray-50:#f8f9fa;--gray-100:#f1f3f4;
+  --gray-200:#e8eaed;--gray-300:#dadce0;--gray-500:#80868b;--gray-700:#5f6368;--gray-900:#202124;
+  --shadow-sm:0 1px 2px rgba(60,64,67,.1),0 1px 3px rgba(60,64,67,.08);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;background:var(--gray-50);color:var(--gray-900);font-size:14px}
+header{background:#fff;border-bottom:1px solid var(--gray-200);padding:12px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+header h1{font-size:17px;font-weight:600}
+header .sp{flex:1}
+.ctl{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--gray-700)}
+.ctl input,.ctl select{padding:5px 8px;border:1px solid var(--gray-300);border-radius:6px;font-size:13px}
+button{padding:6px 12px;border:none;border-radius:6px;background:var(--primary);color:#fff;font-size:13px;cursor:pointer}
+button:hover{background:var(--primary-dark)}
+.tabs{display:flex;gap:2px;background:#fff;padding:0 20px;border-bottom:1px solid var(--gray-200);flex-wrap:wrap}
+.tab{padding:10px 14px;font-size:13px;font-weight:500;color:var(--gray-700);cursor:pointer;border-bottom:2px solid transparent}
+.tab.active{color:var(--primary);border-bottom-color:var(--primary)}
+main{padding:20px;max-width:1200px;margin:0 auto}
+.panel{display:none}.panel.active{display:block}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px}
+.kpi{background:#fff;border:1px solid var(--gray-200);border-radius:10px;padding:14px;box-shadow:var(--shadow-sm)}
+.kpi .v{font-size:24px;font-weight:600}
+.kpi .l{font-size:12px;color:var(--gray-500);margin-top:2px}
+.card{background:#fff;border:1px solid var(--gray-200);border-radius:10px;padding:16px;box-shadow:var(--shadow-sm);margin-bottom:16px}
+.card h3{font-size:14px;font-weight:600;margin-bottom:10px;color:var(--gray-900)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--gray-100)}
+th{color:var(--gray-500);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.03em}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+.bar{height:8px;border-radius:4px;background:var(--primary);min-width:2px}
+.barbg{background:var(--gray-100);border-radius:4px;width:100%}
+.pill{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.pill.ok{background:var(--success-light);color:var(--success)}
+.pill.warn{background:var(--warning-light);color:var(--warning)}
+.pill.bad{background:var(--danger-light);color:var(--danger)}
+.muted{color:var(--gray-500);font-size:12px}
+.mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px}
+#err{display:none;background:var(--danger-light);color:var(--danger);padding:10px 20px;font-size:13px}
+.loading{color:var(--gray-500);font-size:13px;padding:8px 0}
+</style>
+</head>
+<body>
+<header>
+  <h1>📊 RAGbot CRM</h1>
+  <div class="ctl">Bot <input id="bot" placeholder="(tất cả)" size="14"></div>
+  <div class="ctl">Cửa sổ
+    <select id="days">
+      <option value="1">24h</option><option value="7" selected>7 ngày</option>
+      <option value="30">30 ngày</option><option value="90">90 ngày</option>
+    </select>
+  </div>
+  <button onclick="loadAll()">↻ Tải lại</button>
+  <div class="sp"></div>
+  <span class="muted" id="updated"></span>
+</header>
+<div id="err"></div>
+<div class="tabs">
+  <div class="tab active" data-t="tokens" onclick="sw('tokens')">Token &amp; Cost</div>
+  <div class="tab" data-t="latency" onclick="sw('latency')">Latency</div>
+  <div class="tab" data-t="nodes" onclick="sw('nodes')">Node bottleneck</div>
+  <div class="tab" data-t="top" onclick="sw('top')">Top câu hỏi</div>
+  <div class="tab" data-t="quality" onclick="sw('quality')">Quality</div>
+  <div class="tab" data-t="budget" onclick="sw('budget')">Budget</div>
+</div>
+<main>
+  <div class="panel active" id="p-tokens"><div class="loading">Đang tải…</div></div>
+  <div class="panel" id="p-latency"></div>
+  <div class="panel" id="p-nodes"></div>
+  <div class="panel" id="p-top"></div>
+  <div class="panel" id="p-quality"></div>
+  <div class="panel" id="p-budget"></div>
+</main>
+
+<script>
+const CRM = "/api/ragbot/crm";
+let TOKEN = null;
+
+async function getToken(){
+  if(TOKEN) return TOKEN;
+  // DEV self-service token (loopback-gated). In production, paste an operator
+  // JWT into localStorage.ragbot_token instead.
+  const ls = localStorage.getItem("ragbot_token");
+  if(ls){ TOKEN = ls; return TOKEN; }
+  const r = await fetch("/api/ragbot/test/tokens/self");
+  if(!r.ok) throw new Error("Không lấy được token (đặt localStorage.ragbot_token = JWT operator)");
+  TOKEN = (await r.json()).token; return TOKEN;
+}
+async function api(path){
+  const tok = await getToken();
+  const r = await fetch(CRM+path, {headers:{Authorization:"Bearer "+tok}});
+  const d = await r.json();
+  if(!r.ok || d.ok===false) throw new Error((d.error&&d.error.message)||("HTTP "+r.status));
+  return d;
+}
+const qs = ()=>{
+  const bot=document.getElementById("bot").value.trim();
+  const days=document.getElementById("days").value;
+  return `?days=${days}`+(bot?`&bot_id=${encodeURIComponent(bot)}`:"");
+};
+const fmt=n=>(n==null?"–":Number(n).toLocaleString());
+const usd=n=>"$"+Number(n||0).toFixed(4);
+const ms=n=>(n==null?"–":fmt(n)+" ms");
+function showErr(m){const e=document.getElementById("err");e.textContent="⚠ "+m;e.style.display="block";}
+function clrErr(){document.getElementById("err").style.display="none";}
+
+function sw(t){
+  document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("active",x.dataset.t===t));
+  document.querySelectorAll(".panel").forEach(x=>x.classList.remove("active"));
+  document.getElementById("p-"+t).classList.add("active");
+}
+
+function table(cols, rows){
+  let h="<table><thead><tr>"+cols.map(c=>`<th class="${c.num?'num':''}">${c.h}</th>`).join("")+"</tr></thead><tbody>";
+  if(!rows.length) h+=`<tr><td colspan="${cols.length}" class="muted">Không có dữ liệu trong cửa sổ này.</td></tr>`;
+  for(const r of rows) h+="<tr>"+cols.map(c=>`<td class="${c.num?'num':''}">${c.f(r)}</td>`).join("")+"</tr>";
+  return h+"</tbody></table>";
+}
+
+async function renderTokens(){
+  const d=await api("/analytics/tokens"+qs());
+  const t=d.totals;
+  let h=`<div class="kpis">
+    <div class="kpi"><div class="v">${fmt(t.requests)}</div><div class="l">Requests</div></div>
+    <div class="kpi"><div class="v">${fmt(t.total_tokens)}</div><div class="l">Total tokens</div></div>
+    <div class="kpi"><div class="v">${fmt(t.prompt_tokens)}</div><div class="l">Prompt tokens</div></div>
+    <div class="kpi"><div class="v">${fmt(t.completion_tokens)}</div><div class="l">Completion tokens</div></div>
+    <div class="kpi"><div class="v">${usd(t.cost_usd)}</div><div class="l">Cost</div></div>
+  </div>`;
+  h+=`<div class="card"><h3>Theo bot + channel</h3>`+table(
+    [{h:"Bot",f:r=>r.bot_id},{h:"Channel",f:r=>r.channel_type||"–"},
+     {h:"Req",num:1,f:r=>fmt(r.requests)},{h:"Tokens",num:1,f:r=>fmt(r.tokens)},
+     {h:"Cost",num:1,f:r=>usd(r.cost_usd)},{h:"Avg",num:1,f:r=>ms(r.avg_duration_ms)}],
+    d.by_bot_channel)+`</div>`;
+  h+=`<div class="card"><h3>Theo workspace</h3>`+table(
+    [{h:"Workspace",f:r=>r.workspace_id||"–"},{h:"Req",num:1,f:r=>fmt(r.requests)},
+     {h:"Tokens",num:1,f:r=>fmt(r.tokens)},{h:"Cost",num:1,f:r=>usd(r.cost_usd)}],
+    d.by_workspace)+`</div>`;
+  h+=`<div class="card"><h3>Timeline theo ngày</h3>`+table(
+    [{h:"Ngày",f:r=>(r.day||"").slice(0,10)},{h:"Req",num:1,f:r=>fmt(r.requests)},
+     {h:"Tokens",num:1,f:r=>fmt(r.tokens)},{h:"Cost",num:1,f:r=>usd(r.cost_usd)}],
+    d.by_day)+`</div>`;
+  document.getElementById("p-tokens").innerHTML=h;
+}
+
+async function renderLatency(){
+  const d=await api("/analytics/latency"+qs());
+  document.getElementById("p-latency").innerHTML=`<div class="card"><h3>Latency end-to-end (per bot+channel)</h3>`+table(
+    [{h:"Bot",f:r=>r.bot_id},{h:"Channel",f:r=>r.channel_type||"–"},{h:"Req",num:1,f:r=>fmt(r.requests)},
+     {h:"p50",num:1,f:r=>ms(r.p50_ms)},{h:"p95",num:1,f:r=>ms(r.p95_ms)},{h:"p99",num:1,f:r=>ms(r.p99_ms)},
+     {h:"Avg",num:1,f:r=>ms(r.avg_ms)},{h:"Max",num:1,f:r=>ms(r.max_ms)},
+     {h:"Refuse",num:1,f:r=>fmt(r.refusals)},{h:"Err",num:1,f:r=>fmt(r.errors)}],
+    d.by_bot_channel)+`<p class="muted" style="margin-top:8px">p95 mục tiêu T2 &lt; 8000 ms.</p></div>`;
+}
+
+async function renderNodes(){
+  const d=await api("/analytics/nodes"+qs());
+  const max=Math.max(1,...d.by_node.map(r=>r.avg_ms||0));
+  document.getElementById("p-nodes").innerHTML=`<div class="card"><h3>Thời gian từng node LangGraph (nút thắt)</h3>`+table(
+    [{h:"Node",f:r=>r.step_name},{h:"Calls",num:1,f:r=>fmt(r.calls)},
+     {h:"Avg",num:1,f:r=>ms(r.avg_ms)},{h:"p95",num:1,f:r=>ms(r.p95_ms)},
+     {h:"% thời gian",f:r=>`<div class="barbg"><div class="bar" style="width:${Math.round(100*(r.avg_ms||0)/max)}%"></div></div><span class="muted">${r.pct_of_total}%</span>`},
+     {h:"Tokens",num:1,f:r=>fmt(r.tokens)},{h:"Cost",num:1,f:r=>usd(r.cost_usd)},{h:"Err",num:1,f:r=>fmt(r.errors)}],
+    d.by_node)+`</div>`;
+}
+
+async function renderTop(){
+  const d=await api("/analytics/top-questions"+qs()+"&n=20");
+  document.getElementById("p-top").innerHTML=`<div class="card"><h3>Top câu hỏi tốn token (nhóm theo question_hash — PII-safe)</h3>`+table(
+    [{h:"Question hash",f:r=>`<span class="mono">${r.question_hash.slice(0,16)}…</span>`},
+     {h:"Số lần",num:1,f:r=>fmt(r.ask_count)},{h:"Σ tokens",num:1,f:r=>fmt(r.total_tokens)},
+     {h:"Avg tokens",num:1,f:r=>fmt(r.avg_tokens)},{h:"Σ cost",num:1,f:r=>usd(r.total_cost_usd)},
+     {h:"Avg lat",num:1,f:r=>ms(r.avg_latency_ms)}],
+    d.top)+`<p class="muted" style="margin-top:8px">request_logs lưu hash, không lưu raw text (redaction biên).</p></div>`;
+}
+
+async function renderQuality(){
+  const d=await api("/analytics/quality"+qs());
+  const t=d.totals;
+  const rr=d.refusal_rate, er=d.error_rate;
+  const pill=(v,good)=>`<span class="pill ${v<=good?'ok':v<=good*3?'warn':'bad'}">${v}%</span>`;
+  let h=`<div class="kpis">
+    <div class="kpi"><div class="v">${fmt(t.requests)}</div><div class="l">Requests</div></div>
+    <div class="kpi"><div class="v">${pill(rr,2)}</div><div class="l">Refusal rate</div></div>
+    <div class="kpi"><div class="v">${pill(er,1)}</div><div class="l">Error rate</div></div>
+    <div class="kpi"><div class="v">${t.judged?fmt(t.correct)+"/"+fmt(t.judged):"–"}</div><div class="l">Judged correct</div></div>
+    <div class="kpi"><div class="v">${t.avg_feedback_score==null?"–":t.avg_feedback_score}</div><div class="l">Avg feedback</div></div>
+  </div>`;
+  h+=`<div class="card"><h3>Phân bố status</h3>`+table(
+    [{h:"Status",f:r=>r.status},{h:"Count",num:1,f:r=>fmt(r.count)},{h:"%",num:1,f:r=>r.pct+"%"}],
+    d.by_status)+`</div>`;
+  document.getElementById("p-quality").innerHTML=h;
+}
+
+async function renderBudget(){
+  const d=await api("/budget/status");
+  document.getElementById("p-budget").innerHTML=`<div class="card"><h3>Token budgets vs sử dụng</h3>`+table(
+    [{h:"Level",f:r=>r.level},{h:"Scope",f:r=>`<span class="mono">${r.scope}</span>`},{h:"Period",f:r=>r.period},
+     {h:"Limit",num:1,f:r=>fmt(r.token_limit)},{h:"Used",num:1,f:r=>fmt(r.used_tokens)},
+     {h:"%",f:r=>`<div class="barbg"><div class="bar" style="width:${Math.min(100,r.pct)}%;background:${r.alerting?'var(--danger)':'var(--primary)'}"></div></div><span class="${r.alerting?'pill bad':'muted'}">${r.pct}%</span>`},
+     {h:"Cost",num:1,f:r=>usd(r.used_cost_usd)},{h:"Hard cap",f:r=>r.hard_cap?"✓":"–"}],
+    d.budgets)+`<p class="muted" style="margin-top:8px">Tạo budget: INSERT vào token_budgets (alembic 0219). Scope này = config + theo dõi, chưa enforce hard-cap.</p></div>`;
+}
+
+const RENDERERS={tokens:renderTokens,latency:renderLatency,nodes:renderNodes,top:renderTop,quality:renderQuality,budget:renderBudget};
+async function loadAll(){
+  clrErr();
+  for(const [k,fn] of Object.entries(RENDERERS)){
+    try{ await fn(); }catch(e){ showErr(e.message); document.getElementById("p-"+k).innerHTML=`<div class="card muted">Lỗi: ${e.message}</div>`; }
+  }
+  document.getElementById("updated").textContent="Cập nhật: "+new Date().toLocaleTimeString();
+}
+document.getElementById("days").addEventListener("change",loadAll);
+document.getElementById("bot").addEventListener("keydown",e=>{if(e.key==="Enter")loadAll();});
+loadAll();
+</script>
+</body>
+</html>

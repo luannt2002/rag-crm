@@ -1,0 +1,434 @@
+{
+  "version": 1,
+  "bot_id": "stategov-banking",
+  "channel_type": "web",
+  "doc_source_hint": "Thông tư 09/2020/TT-NHNN — Quy định về an toàn hệ thống thông tin trong hoạt động ngân hàng (assigned by G1)",
+  "expected_pass_rate_target": 0.80,
+  "expected_hallu_max": 0,
+  "expected_refuse_count_trap": 4,
+  "pattern_distribution": {
+    "single_entity": 15,
+    "multi_entity": 10,
+    "typo_no_diacritic": 8,
+    "abbreviation": 5,
+    "semantic": 5,
+    "cross_reference": 3,
+    "trap_hallu": 4
+  },
+  "questions": [
+    {
+      "id": "single-001",
+      "category": "single_entity",
+      "question": "Điều 1 quy định gì?",
+      "expected_keywords": ["phạm vi", "điều chỉnh"],
+      "expected_refuse": false,
+      "expected_citation_chunk_hint": "Điều 1"
+    },
+    {
+      "id": "single-002",
+      "category": "single_entity",
+      "question": "Điều 2 quy định gì về đối tượng áp dụng?",
+      "expected_keywords": ["đối tượng", "áp dụng", "tổ chức"],
+      "expected_refuse": false,
+      "expected_citation_chunk_hint": "Điều 2"
+    },
+    {
+      "id": "single-003",
+      "category": "single_entity",
+      "question": "Điều 3 giải thích những thuật ngữ nào?",
+      "expected_keywords": ["giải thích", "thuật ngữ"],
+      "expected_refuse": false,
+      "expected_citation_chunk_hint": "Điều 3"
+    },
+    {
+      "id": "single-004",
+      "category": "single_entity",
+      "question": "Điều 4 quy định gì?",
+      "expected_keywords": ["nguyên tắc", "an toàn"],
+      "expected_refuse": false,
+      "expected_citation_chunk_hint": "Điều 4"
+    },
+    {
+      "id": "single-005",
+      "category": "single_entity",
+      "question": "Điều 5 nói về phân loại hệ thống thông tin như thế nào?",
+      "expected_keywords": ["phân loại", "hệ thống", "cấp độ"],
+      "expected_refuse": false,
+      "expected_citation_chunk_hint": "Điều 5"
+    },
+    {
+      "id": "single-006",
+      "category": "single_entity",
+      "question": "Khoản 1 Điều 5 quy định gì?",
+      "expected_keywords": ["cấp độ", "phân loại"],
+      "expected_refuse": false,
+      "expected_citation_chunk_hint": "Khoản 1 Điều 5"
+    },
+    {
+      "id": "single-007",
+      "category": "single_entity",
+      "question": "Điều 7 quy định gì về quản lý tài sản công nghệ thông tin?",
+      "expected_keywords": ["quản lý", "tài sản"],
+      "expected_refuse": false,
+      "expected_citation_chunk_hint": "Điều 7"
+    },
+    {
+      "id": "single-008",
+      "category": "single_entity",
+      "question": "Điều 9 quy định về quản lý nhân sự công nghệ thông tin thế nào?",
+      "expected_keywords": ["nhân sự", "quản lý"],
+      "expected_refuse": false,
+      "expected_citation_chunk_hint": "Điều 9"
+    },
+    {
+      "id": "single-009",
+      "category": "single_entity",
+      "question": "Điều 11 quy định gì về quản lý truy cập?",
+      "expected_keywords": ["truy cập", "kiểm soát"],
+      "expected_refuse": false,
+      "expected_citation_chunk_hint": "Điều 11"
+    },
+    {
+      "id": "single-010",
+      "category": "single_entity",
+      "question": "Điều 13 nói gì về xác thực?",
+      "expected_keywords": ["xác thực", "yếu tố"],
+      "expected_refuse": false,
+      "expected_citation_chunk_hint": "Điều 13"
+    },
+    {
+      "id": "single-011",
+      "category": "single_entity",
+      "question": "Điều 18 quy định gì về trung tâm dữ liệu?",
+      "expected_keywords": ["trung tâm dữ liệu"],
+      "expected_refuse": false,
+      "expected_citation_chunk_hint": "Điều 18"
+    },
+    {
+      "id": "single-012",
+      "category": "single_entity",
+      "question": "Điều 22 quy định gì về sao lưu dự phòng?",
+      "expected_keywords": ["sao lưu", "dự phòng"],
+      "expected_refuse": false,
+      "expected_citation_chunk_hint": "Điều 22"
+    },
+    {
+      "id": "single-013",
+      "category": "single_entity",
+      "question": "Điều 25 quy định gì về phòng chống mã độc?",
+      "expected_keywords": ["mã độc", "phòng chống"],
+      "expected_refuse": false,
+      "expected_citation_chunk_hint": "Điều 25"
+    },
+    {
+      "id": "single-014",
+      "category": "single_entity",
+      "question": "Điều 30 quy định gì về sử dụng dịch vụ bên thứ ba?",
+      "expected_keywords": ["bên thứ ba", "dịch vụ"],
+      "expected_refuse": false,
+      "expected_citation_chunk_hint": "Điều 30"
+    },
+    {
+      "id": "single-015",
+      "category": "single_entity",
+      "question": "Điều 41 quy định gì về chế độ báo cáo?",
+      "expected_keywords": ["báo cáo", "chế độ"],
+      "expected_refuse": false,
+      "expected_citation_chunk_hint": "Điều 41"
+    },
+
+    {
+      "id": "multi-001",
+      "category": "multi_entity",
+      "question": "Điều 1, Điều 2 và Điều 3 nói gì?",
+      "expected_keywords": ["phạm vi", "đối tượng", "giải thích"],
+      "expected_refuse": false,
+      "expected_citation_chunk_hint": "Điều 1, 2, 3"
+    },
+    {
+      "id": "multi-002",
+      "category": "multi_entity",
+      "question": "So sánh Điều 5 và Điều 7 về phân loại hệ thống và quản lý tài sản.",
+      "expected_keywords": ["phân loại", "tài sản"],
+      "expected_refuse": false,
+      "expected_citation_chunk_hint": "Điều 5, 7"
+    },
+    {
+      "id": "multi-003",
+      "category": "multi_entity",
+      "question": "Điều 11, 12, 13 quy định gì về truy cập và xác thực?",
+      "expected_keywords": ["truy cập", "xác thực"],
+      "expected_refuse": false,
+      "expected_citation_chunk_hint": "Điều 11, 12, 13"
+    },
+    {
+      "id": "multi-004",
+      "category": "multi_entity",
+      "question": "Điều 18 và 22 quy định gì về trung tâm dữ liệu và sao lưu?",
+      "expected_keywords": ["trung tâm dữ liệu", "sao lưu"],
+      "expected_refuse": false,
+      "expected_citation_chunk_hint": "Điều 18, 22"
+    },
+    {
+      "id": "multi-005",
+      "category": "multi_entity",
+      "question": "Điều 25, 26, 27 và 28 nói về những biện pháp kỹ thuật nào?",
+      "expected_keywords": ["mã độc", "kỹ thuật"],
+      "expected_refuse": false,
+      "expected_citation_chunk_hint": "Điều 25-28"
+    },
+    {
+      "id": "multi-006",
+      "category": "multi_entity",
+      "question": "Khoản 1 Điều 5 và Khoản 2 Điều 5 khác nhau thế nào?",
+      "expected_keywords": ["cấp độ", "phân loại"],
+      "expected_refuse": false,
+      "expected_citation_chunk_hint": "Khoản 1, 2 Điều 5"
+    },
+    {
+      "id": "multi-007",
+      "category": "multi_entity",
+      "question": "Điều 1, 2, 3, 4, 5 cùng nói về vấn đề gì?",
+      "expected_keywords": ["quy định", "an toàn"],
+      "expected_refuse": false,
+      "expected_citation_chunk_hint": "Điều 1-5"
+    },
+    {
+      "id": "multi-008",
+      "category": "multi_entity",
+      "question": "Điều 30 và Điều 31 quy định gì về dịch vụ ngoài và điện toán đám mây?",
+      "expected_keywords": ["bên thứ ba", "đám mây"],
+      "expected_refuse": false,
+      "expected_citation_chunk_hint": "Điều 30, 31"
+    },
+    {
+      "id": "multi-009",
+      "category": "multi_entity",
+      "question": "So sánh Điều 9 (nhân sự) và Điều 11 (truy cập).",
+      "expected_keywords": ["nhân sự", "truy cập"],
+      "expected_refuse": false,
+      "expected_citation_chunk_hint": "Điều 9, 11"
+    },
+    {
+      "id": "multi-010",
+      "category": "multi_entity",
+      "question": "Điều 41 và Điều 42 quy định gì về báo cáo và hiệu lực thi hành?",
+      "expected_keywords": ["báo cáo", "hiệu lực"],
+      "expected_refuse": false,
+      "expected_citation_chunk_hint": "Điều 41, 42"
+    },
+
+    {
+      "id": "typo-001",
+      "category": "typo_no_diacritic",
+      "question": "dieu 5 quy dinh gi?",
+      "expected_keywords": ["phân loại", "hệ thống"],
+      "expected_refuse": false,
+      "expected_citation_chunk_hint": "Điều 5"
+    },
+    {
+      "id": "typo-002",
+      "category": "typo_no_diacritic",
+      "question": "ddieuf 11 noi gi ve truy cap?",
+      "expected_keywords": ["truy cập"],
+      "expected_refuse": false,
+      "expected_citation_chunk_hint": "Điều 11"
+    },
+    {
+      "id": "typo-003",
+      "category": "typo_no_diacritic",
+      "question": "khoann 1 dieu 3 la gi?",
+      "expected_keywords": ["giải thích", "thuật ngữ"],
+      "expected_refuse": false,
+      "expected_citation_chunk_hint": "Khoản 1 Điều 3"
+    },
+    {
+      "id": "typo-004",
+      "category": "typo_no_diacritic",
+      "question": "dieuu 18 noi ve trung tam du lieu?",
+      "expected_keywords": ["trung tâm dữ liệu"],
+      "expected_refuse": false,
+      "expected_citation_chunk_hint": "Điều 18"
+    },
+    {
+      "id": "typo-005",
+      "category": "typo_no_diacritic",
+      "question": "thong tu nay quy dinh ve gi vay?",
+      "expected_keywords": ["an toàn", "hệ thống thông tin"],
+      "expected_refuse": false,
+      "expected_citation_chunk_hint": "Điều 1"
+    },
+    {
+      "id": "typo-006",
+      "category": "typo_no_diacritic",
+      "question": "dieu 22 sao luu the nao?",
+      "expected_keywords": ["sao lưu", "dự phòng"],
+      "expected_refuse": false,
+      "expected_citation_chunk_hint": "Điều 22"
+    },
+    {
+      "id": "typo-007",
+      "category": "typo_no_diacritic",
+      "question": "ma doc duoc quy dinh o dieu nao?",
+      "expected_keywords": ["mã độc", "Điều"],
+      "expected_refuse": false,
+      "expected_citation_chunk_hint": "Điều 25"
+    },
+    {
+      "id": "typo-008",
+      "category": "typo_no_diacritic",
+      "question": "xac thuc da yeu to la gi theo TT nay?",
+      "expected_keywords": ["xác thực", "yếu tố"],
+      "expected_refuse": false,
+      "expected_citation_chunk_hint": "Điều 13"
+    },
+
+    {
+      "id": "abbr-001",
+      "category": "abbreviation",
+      "question": "Đ 5 K 1 quy định gì?",
+      "expected_keywords": ["cấp độ", "phân loại"],
+      "expected_refuse": false,
+      "expected_citation_chunk_hint": "Khoản 1 Điều 5"
+    },
+    {
+      "id": "abbr-002",
+      "category": "abbreviation",
+      "question": "TT này quy định những gì?",
+      "expected_keywords": ["an toàn", "hệ thống thông tin"],
+      "expected_refuse": false,
+      "expected_citation_chunk_hint": "Điều 1"
+    },
+    {
+      "id": "abbr-003",
+      "category": "abbreviation",
+      "question": "NHNN có quyền gì theo TT này?",
+      "expected_keywords": ["Ngân hàng Nhà nước", "kiểm tra"],
+      "expected_refuse": false,
+      "expected_citation_chunk_hint": "Điều 41"
+    },
+    {
+      "id": "abbr-004",
+      "category": "abbreviation",
+      "question": "TCTD phải làm gì khi xảy ra sự cố ATTT?",
+      "expected_keywords": ["tổ chức tín dụng", "sự cố", "báo cáo"],
+      "expected_refuse": false,
+      "expected_citation_chunk_hint": "Điều 35"
+    },
+    {
+      "id": "abbr-005",
+      "category": "abbreviation",
+      "question": "Đ 30 K 2 quy định về dịch vụ bên thứ ba ra sao?",
+      "expected_keywords": ["bên thứ ba", "dịch vụ"],
+      "expected_refuse": false,
+      "expected_citation_chunk_hint": "Khoản 2 Điều 30"
+    },
+
+    {
+      "id": "sem-001",
+      "category": "semantic",
+      "question": "Văn bản này nói về kiểm soát rủi ro công nghệ thông tin thế nào?",
+      "expected_keywords": ["rủi ro", "kiểm soát"],
+      "expected_refuse": false,
+      "expected_citation_chunk_hint": null
+    },
+    {
+      "id": "sem-002",
+      "category": "semantic",
+      "question": "Khi xảy ra sự cố an toàn thông tin, tổ chức cần báo cáo cho ai?",
+      "expected_keywords": ["sự cố", "báo cáo", "Ngân hàng Nhà nước"],
+      "expected_refuse": false,
+      "expected_citation_chunk_hint": null
+    },
+    {
+      "id": "sem-003",
+      "category": "semantic",
+      "question": "Yêu cầu khi sử dụng dịch vụ điện toán đám mây là gì?",
+      "expected_keywords": ["đám mây", "yêu cầu"],
+      "expected_refuse": false,
+      "expected_citation_chunk_hint": null
+    },
+    {
+      "id": "sem-004",
+      "category": "semantic",
+      "question": "Trung tâm Điều hành an ninh mạng (SOC) có trách nhiệm gì?",
+      "expected_keywords": ["SOC", "an ninh mạng"],
+      "expected_refuse": false,
+      "expected_citation_chunk_hint": null
+    },
+    {
+      "id": "sem-005",
+      "category": "semantic",
+      "question": "Hệ thống dự phòng thảm họa phải đáp ứng tiêu chí nào?",
+      "expected_keywords": ["dự phòng", "thảm họa"],
+      "expected_refuse": false,
+      "expected_citation_chunk_hint": null
+    },
+
+    {
+      "id": "xref-001",
+      "category": "cross_reference",
+      "question": "Điều 5 có tham chiếu tới Điều nào khác trong Thông tư không?",
+      "expected_keywords": ["Điều", "tham chiếu"],
+      "expected_refuse": false,
+      "expected_citation_chunk_hint": "Điều 5"
+    },
+    {
+      "id": "xref-002",
+      "category": "cross_reference",
+      "question": "Điều 11 dẫn chiếu đến quy định nào về xác thực?",
+      "expected_keywords": ["Điều 13", "xác thực"],
+      "expected_refuse": false,
+      "expected_citation_chunk_hint": "Điều 11"
+    },
+    {
+      "id": "xref-003",
+      "category": "cross_reference",
+      "question": "Điều 30 về bên thứ ba có liên quan tới điều khoản nào khác?",
+      "expected_keywords": ["Điều", "bên thứ ba"],
+      "expected_refuse": false,
+      "expected_citation_chunk_hint": "Điều 30"
+    },
+
+    {
+      "id": "trap-001",
+      "category": "trap_hallu",
+      "question": "Điều 999 quy định gì?",
+      "expected_keywords": [],
+      "expected_refuse": true,
+      "expected_citation_chunk_hint": null,
+      "sacred_trap": true,
+      "trap_reason": "Điều 999 KHÔNG có trong Thông tư 09/2020/TT-NHNN — bot phải REFUSE không bịa nội dung"
+    },
+    {
+      "id": "trap-002",
+      "category": "trap_hallu",
+      "question": "Phụ lục Z của Thông tư gồm những biểu mẫu nào?",
+      "expected_keywords": [],
+      "expected_refuse": true,
+      "expected_citation_chunk_hint": null,
+      "sacred_trap": true,
+      "trap_reason": "Phụ lục Z KHÔNG tồn tại trong văn bản — bot phải REFUSE không sáng tác phụ lục"
+    },
+    {
+      "id": "trap-003",
+      "category": "trap_hallu",
+      "question": "Chương XX Thông tư 09/2020 quy định gì?",
+      "expected_keywords": [],
+      "expected_refuse": true,
+      "expected_citation_chunk_hint": null,
+      "sacred_trap": true,
+      "trap_reason": "Thông tư không có Chương XX — bot phải REFUSE không bịa chương"
+    },
+    {
+      "id": "trap-004",
+      "category": "trap_hallu",
+      "question": "Khoản 555 Điều 5 yêu cầu gì?",
+      "expected_keywords": [],
+      "expected_refuse": true,
+      "expected_citation_chunk_hint": null,
+      "sacred_trap": true,
+      "trap_reason": "Điều 5 không có Khoản 555 — bot phải REFUSE không bịa khoản"
+    }
+  ]
+}

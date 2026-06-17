@@ -1,0 +1,167 @@
+{
+  "dataset_version": "1.0",
+  "domain": "spa_salon",
+  "description": "Golden dataset for <Brand Name> bot evaluation",
+  "questions": [
+    {
+      "id": "gs-001",
+      "question": "gội đầu dầu thường giá bao nhiêu",
+      "ground_truth": "Gội đầu thư giãn dầu thường giá 60,000đ/buổi, thời gian 30 phút",
+      "difficulty": "easy",
+      "category": "pricing",
+      "expected_sources": ["Bảng giá dịch vụ gội đầu"]
+    },
+    {
+      "id": "gs-002",
+      "question": "shop tên gì",
+      "ground_truth": "<Brand Name>",
+      "difficulty": "easy",
+      "category": "info",
+      "expected_sources": ["Thông tin các dịch vụ"]
+    },
+    {
+      "id": "gs-003",
+      "question": "triệt lông nách combo 10 buổi giá bao nhiêu",
+      "ground_truth": "Triệt lông nách combo 10 buổi giá 1,199,000đ",
+      "difficulty": "medium",
+      "category": "pricing",
+      "expected_sources": ["BẢNG GIÁ GIÁ TRIỆT LÔNG"]
+    },
+    {
+      "id": "gs-004",
+      "question": "có khuyến mãi gì không",
+      "ground_truth": "Gội đầu: mua 10 buổi tặng 1 buổi, mua 30 buổi tặng 5 buổi",
+      "difficulty": "medium",
+      "category": "promotion",
+      "expected_sources": ["Bảng giá dịch vụ gội đầu"]
+    },
+    {
+      "id": "gs-005",
+      "question": "địa chỉ ở đâu",
+      "ground_truth": "<demo-address>",
+      "difficulty": "easy",
+      "category": "info",
+      "expected_sources": ["Thông tin các dịch vụ"]
+    },
+    {
+      "id": "gs-006",
+      "question": "gội đầu dưỡng sinh với gội thường chênh bao nhiêu",
+      "ground_truth": "Gội đầu dưỡng sinh 350,000đ - Gội đầu thường 60,000đ = chênh 290,000đ",
+      "difficulty": "hard",
+      "category": "comparison",
+      "expected_sources": ["Bảng giá dịch vụ gội đầu"]
+    },
+    {
+      "id": "gs-007",
+      "question": "hotline bao nhiêu",
+      "ground_truth": "<demo-hotline>",
+      "difficulty": "easy",
+      "category": "info",
+      "expected_sources": ["Thông tin các dịch vụ"]
+    },
+    {
+      "id": "gs-008",
+      "question": "giờ mở cửa",
+      "ground_truth": "9h-21h, từ thứ 2 đến chủ nhật",
+      "difficulty": "easy",
+      "category": "info",
+      "expected_sources": ["Thông tin các dịch vụ"]
+    },
+    {
+      "id": "gs-009",
+      "question": "triệt lông toàn thân giá bao nhiêu",
+      "ground_truth": "Triệt lông toàn thân combo 10 buổi giá 11,999,000đ",
+      "difficulty": "medium",
+      "category": "pricing",
+      "expected_sources": ["BẢNG GIÁ GIÁ TRIỆT LÔNG"]
+    },
+    {
+      "id": "gs-010",
+      "question": "hôm nay trời đẹp quá",
+      "ground_truth": "Bot nên redirect về dịch vụ spa hoặc hỏi nhu cầu khách",
+      "difficulty": "hard",
+      "category": "out_of_scope",
+      "expected_sources": []
+    },
+    {
+      "id": "gs-011",
+      "question": "có mấy loại gội đầu",
+      "ground_truth": "4 loại: Gội đầu thư giãn dầu thường (60k), dầu cặp (120k), dầu cặp Weilaiya (150k), gội đầu dưỡng sinh (350k)",
+      "difficulty": "medium",
+      "category": "service_list",
+      "expected_sources": ["Bảng giá dịch vụ gội đầu"]
+    },
+    {
+      "id": "gs-012",
+      "question": "dịch vụ đắt nhất là gì",
+      "ground_truth": "Triệt lông toàn thân combo 10 buổi giá 11,999,000đ",
+      "difficulty": "hard",
+      "category": "comparison",
+      "expected_sources": ["BẢNG GIÁ GIÁ TRIỆT LÔNG"]
+    },
+    {
+      "id": "gs-013",
+      "question": "gội đầu mất bao lâu",
+      "ground_truth": "Gội đầu thư giãn 30 phút, gội đầu dưỡng sinh 60 phút",
+      "difficulty": "medium",
+      "category": "service_detail",
+      "expected_sources": ["Bảng giá dịch vụ gội đầu"]
+    },
+    {
+      "id": "gs-014",
+      "question": "email shop",
+      "ground_truth": "<demo-email>",
+      "difficulty": "easy",
+      "category": "info",
+      "expected_sources": ["Thông tin các dịch vụ"]
+    },
+    {
+      "id": "gs-015",
+      "question": "triệt lông mép giá bao nhiêu",
+      "ground_truth": "Triệt lông mép combo 10 buổi giá 899,000đ",
+      "difficulty": "medium",
+      "category": "pricing",
+      "expected_sources": ["BẢNG GIÁ GIÁ TRIỆT LÔNG"]
+    },
+    {
+      "id": "gs-016",
+      "question": "có fanpage không",
+      "ground_truth": "Có, fanpage <Brand Name> trên Facebook",
+      "difficulty": "easy",
+      "category": "info",
+      "expected_sources": ["Thông tin các dịch vụ"]
+    },
+    {
+      "id": "gs-017",
+      "question": "gội đầu rẻ nhất bao nhiêu",
+      "ground_truth": "Gội đầu thư giãn dầu thường giá 60,000đ/buổi — rẻ nhất",
+      "difficulty": "medium",
+      "category": "comparison",
+      "expected_sources": ["Bảng giá dịch vụ gội đầu"]
+    },
+    {
+      "id": "gs-018",
+      "question": "mua 30 buổi gội đầu được tặng mấy buổi",
+      "ground_truth": "Mua 30 buổi tặng 5 buổi",
+      "difficulty": "medium",
+      "category": "promotion",
+      "expected_sources": ["Bảng giá dịch vụ gội đầu"]
+    },
+    {
+      "id": "gs-019",
+      "question": "shop ở quận nào",
+      "ground_truth": "Quận Thanh Xuân, Hà Nội",
+      "difficulty": "medium",
+      "category": "info",
+      "expected_sources": ["Thông tin các dịch vụ"]
+    },
+    {
+      "id": "gs-020",
+      "question": "tôi muốn đặt lịch gội đầu",
+      "ground_truth": "Bot nên hỏi loại gội đầu và thời gian mong muốn, sau đó hỗ trợ đặt lịch",
+      "difficulty": "hard",
+      "category": "booking",
+      "expected_sources": []
+    }
+  ]
+}

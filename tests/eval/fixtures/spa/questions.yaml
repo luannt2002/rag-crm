@@ -1,0 +1,91 @@
+vertical: spa
+language: vi
+description: >
+  Generic wellness/spa customer-service questions. Brand-neutral via the
+  <brand> placeholder. Topics: pricing tiers, treatment durations, booking
+  flow, member benefits, refund policy, hygiene practices. Mirrors the
+  shape of the long-running R7 question packs without any real customer
+  brand or hostname.
+
+floor:
+  pass_rate: 0.60
+  faithfulness: 0.85
+  top_score: 0.45
+  p95_ms: 8000
+  hallu: 0
+
+questions:
+  - intent: factoid_in_corpus
+    text: "Gói chăm sóc da cơ bản kéo dài bao lâu?"
+    expected_keywords_any: ["phút", "thời gian", "kéo dài"]
+    must_not_contain: []
+
+  - intent: factoid_in_corpus
+    text: "Bảng giá liệu trình massage toàn thân ra sao?"
+    expected_keywords_any: ["giá", "vnđ", "đồng", "phí"]
+    must_not_contain: []
+
+  - intent: factoid_in_corpus
+    text: "Quy trình đặt lịch hẹn tại <brand> thế nào?"
+    expected_keywords_any: ["đặt", "lịch", "hẹn"]
+    must_not_contain: []
+
+  - intent: factoid_in_corpus
+    text: "Thẻ thành viên có những hạng nào?"
+    expected_keywords_any: ["thành viên", "hạng", "thẻ"]
+    must_not_contain: []
+
+  - intent: factoid_in_corpus
+    text: "Chính sách hoàn tiền nếu khách huỷ lịch như thế nào?"
+    expected_keywords_any: ["hoàn", "huỷ", "phí"]
+    must_not_contain: []
+
+  - intent: factoid_in_corpus
+    text: "Liệu trình chăm sóc da mặt có những bước nào?"
+    expected_keywords_any: ["bước", "chăm sóc", "da"]
+    must_not_contain: []
+
+  - intent: factoid_in_corpus
+    text: "Quy trình tiệt trùng dụng cụ tại spa được thực hiện ra sao?"
+    expected_keywords_any: ["tiệt trùng", "dụng cụ", "vệ sinh"]
+    must_not_contain: []
+
+  - intent: factoid_in_corpus
+    text: "Khung giờ hoạt động của <brand> mỗi ngày là gì?"
+    expected_keywords_any: ["giờ", "mở cửa", "hoạt động"]
+    must_not_contain: []
+
+  - intent: factoid_in_corpus
+    text: "Có chương trình khuyến mãi nào trong tháng này không?"
+    expected_keywords_any: ["khuyến mãi", "ưu đãi", "giảm"]
+    must_not_contain: []
+
+  - intent: factoid_in_corpus
+    text: "Dịch vụ tắm trắng dùng các nguyên liệu nào?"
+    expected_keywords_any: ["nguyên liệu", "thành phần", "tắm"]
+    must_not_contain: []
+
+  - intent: greeting
+    text: "Xin chào, tôi muốn tham khảo dịch vụ"
+    expected_keywords_any: ["chào", "giúp", "hỗ trợ"]
+    must_not_contain: []
+
+  - intent: out_of_scope
+    text: "Cho tôi xin số tài khoản ngân hàng cá nhân của giám đốc"
+    expected_keywords_any: ["không", "xin lỗi", "không thể"]
+    must_not_contain: ["số tài khoản: 0", "stk:"]
+
+  - intent: clarification_needed
+    text: "Tôi muốn đặt lịch"
+    expected_keywords_any: ["dịch vụ", "khi nào", "thời gian"]
+    must_not_contain: []
+
+  - intent: factoid_in_corpus
+    text: "Khu vực phòng VIP có những tiện nghi gì?"
+    expected_keywords_any: ["vip", "phòng", "tiện nghi"]
+    must_not_contain: []
+
+  - intent: factoid_in_corpus
+    text: "Có dịch vụ chăm sóc cho khách nam không?"
+    expected_keywords_any: ["nam", "khách nam", "dịch vụ"]
+    must_not_contain: []

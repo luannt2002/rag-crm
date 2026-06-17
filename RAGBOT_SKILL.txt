@@ -1,0 +1,140 @@
+RAGBOT — Tóm tắt kỹ năng & công nghệ
+========================================
+
+1. RAGBOT LÀ GÌ?
+-----------------
+Ragbot là hệ thống chatbot thông minh, trả lời câu hỏi dựa trên tài liệu
+của khách hàng. Khách upload tài liệu (bảng giá, quy trình, thông tin dịch vụ),
+bot đọc hiểu rồi trả lời khách hàng cuối chính xác theo nội dung tài liệu đó.
+
+Không bịa — mọi câu trả lời đều có nguồn từ tài liệu gốc.
+Đa ngành — spa, giáo dục, tài chính, môi trường, bất kỳ chủ đề nào.
+Tự động adapt — khi khách đổi tài liệu, bot tự thay đổi cách xử lý.
+
+
+2. NGÔN NGỮ & RUNTIME
+----------------------
+- Python 3.12+
+- Async everywhere (asyncio, asyncpg, aioredis)
+- Không dùng đồng bộ (sync) ở bất kỳ đâu trong request path
+
+
+3. FRAMEWORK & THƯ VIỆN CHÍNH
+------------------------------
+- FastAPI — HTTP server, REST API
+- LangGraph — orchestrate pipeline RAG (14 nodes, state machine)
+- LiteLLM — unified API gọi OpenAI, Cohere, Anthropic, Jina, bất kỳ LLM nào
+- SQLAlchemy 2.0 (async) — ORM, raw SQL
+- Pydantic v2 — validation, settings
+- structlog — structured logging JSON
+- PostgreSQL 16 + pgvector — DB + vector search
+- Redis — cache, rate limit, semantic cache
+- Alembic — database migrations
+
+
+4. AI & NLP
+-----------
+- OpenAI gpt-4.1-mini — LLM chính (generation, routing, grading, reflection)
+- OpenAI text-embedding-3-small — tạo vector embedding cho tài liệu + câu hỏi
+- Cohere rerank-v3.5 — cross-encoder reranker (xếp hạng lại kết quả tìm kiếm)
+- pgvector — vector similarity search (cosine distance)
+- Hybrid search — kết hợp dense (vector) + sparse (BM25 keyword) qua RRF fusion
+- underthesea — tokenization tiếng Việt cho BM25
+
+
+5. PIPELINE RAG (14 BƯỚC)
+--------------------------
+Mỗi câu hỏi đi qua 14 bước:
+
+  guard_input → check_cache → condense_question → router
+  → rewrite (HyDE) → retrieve (hybrid search, top-20)
+  → rerank (cross-encoder, cắt xuống top-5) → mmr_dedup
+  → grade (CRAG) → [retry nếu kém] → generate (XML sandbox)
+  → guard_output → reflect (Self-RAG) → persist
+
+Mỗi bước đọc config từ database (system_config), không hardcode gì trong code.
+Factoid đơn giản thì skip rewrite + reflect (tiết kiệm 2 LLM calls).
+
+
+6. ĐẶC ĐIỂM NỔI BẬT
+---------------------
+a) Zero hardcode:
+   Không có bất kỳ giá trị nào trong code. 49 config keys lưu trong database,
+   cache Redis 5 phút. Thay đổi config khi app đang chạy mà không cần restart.
+
+b) Dynamic chunking:
+   Tài liệu upload lên, hệ thống tự phân tích cấu trúc (heading, bảng, văn xuôi)
+   rồi chọn chiến lược cắt chunk phù hợp (HDT, semantic, recursive, hybrid).
+   Bảng giá không bao giờ bị cắt đôi.
+
+c) Contextual enrichment:
+   Trước khi embed, mỗi chunk được thêm 1-2 câu mô tả vị trí trong tài liệu.
+   Giảm 67% lỗi tìm kiếm (theo nghiên cứu Anthropic 2024).
+
+d) Follow-up understanding:
+   Khách nói "gội đầu" rồi hỏi "gói thường giá sao" — bot hiểu "gói thường"
+   là "gội đầu dầu thường" nhờ condense question gom ngữ cảnh hội thoại.
+
+e) Source tracking:
+   Mỗi câu trả lời kèm nguồn: tên file, đoạn nào, score bao nhiêu.
+   Khách và admin có thể verify bot nói đúng hay bịa.
+
+f) Self-correction:
+   CRAG: nếu tài liệu tìm được không liên quan → tự viết lại câu hỏi, tìm lại.
+   Self-RAG: sau khi trả lời → tự đánh giá, nếu kém → trả lời lại.
+
+g) Không cần GPU:
+   Toàn bộ AI chạy trên cloud API (OpenAI, Cohere). Server chỉ cần CPU + RAM.
+
+
+7. BẢO MẬT & AUTH
+------------------
+- JWT HS256 per service token (version + regenerate chống lộ)
+- Role-based: owner (admin) vs service (external)
+- Rate limit per token (Redis sliding window)
+- Context sandboxing XML (chống prompt injection từ tài liệu)
+- Input/output guardrails (PII, SQL injection, moderation)
+
+
+8. CACHING (TIẾT KIỆM CHI PHÍ)
+--------------------------------
+- OpenAI prompt cache: tự động 50% discount (system prompt dài được cache)
+- Semantic cache: câu hỏi tương tự → trả luôn, không gọi LLM (68.8% savings)
+- Embedding cache: text đã embed → lấy từ Redis, không gọi API (30 ngày TTL)
+- Smart node skip: câu hỏi đơn giản bỏ qua 2-3 bước (tiết kiệm 30% LLM calls)
+
+
+9. ĐÁNH GIÁ CHẤT LƯỢNG
+------------------------
+- Golden dataset: 20 câu hỏi mẫu (dễ/trung bình/khó) với đáp án chuẩn
+- RAGAS eval script: chạy tự động, đo keyword overlap + source hit rate
+- Request logs: mỗi request lưu đầy đủ (tokens, cost, duration, chunks, citations)
+- Step tracking: mỗi node trong pipeline ghi log riêng (model, tokens, status)
+
+
+10. TÀI LIỆU THAM KHẢO
+------------------------
+- RAGBOT_MASTER.md — kiến trúc 7 tầng + 3 trục ngang (validated 9.8/10)
+- AdapChunk spec — chunking adaptive 7 tầng xử lý (validated 9.6/10)
+- docs/ROADMAP_MASTER.md — roadmap chi tiết 3 phases
+- docs/ANALYSIS_RAGBOT_VS_WORLD_V2.md — so sánh với 60+ nguồn thế giới
+- docs/API_REFERENCE.md — 30+ endpoints documentation
+
+Nguồn nghiên cứu:
+- Anthropic Contextual Retrieval (2024) — giảm 67% retrieval failure
+- Cohere Reranking benchmark — +48% retrieval quality
+- Mayo Clinic adaptive chunking study (PMC12649634) — 87% vs 13% accuracy
+- Perplexity AI architecture (Vespa.ai) — multi-phase ranking
+- RAG-Fusion industry deployment (arxiv 2603.02153) — proven ineffective
+- Google NotebookLM — source grounding architecture
+- Redis RAG at Scale (2026) — semantic cache 68.8% savings
+- RAGAS framework — evaluation metrics chuẩn
+
+
+11. ĐIỂM HIỆN TẠI
+------------------
+Score: 8.5/10
+
+Đã làm: Phase 1 (Intelligence) + Phase 2 (Cost) gần xong
+Còn lại: Phase 3 (Excellence) — dashboard, GraphRAG, CI gating
+Target: 9.5+/10

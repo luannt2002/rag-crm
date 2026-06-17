@@ -1,0 +1,11 @@
+[Unit]
+Description=RAGbot Redis<->DB token usage reconcile (every 5 min)
+After=network.target postgresql.service redis.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/var/www/html/ragbot
+EnvironmentFile=/var/www/html/ragbot/.env
+ExecStart=/var/www/html/ragbot/.venv/bin/python /var/www/html/ragbot/scripts/reconcile_token_usage_redis_vs_db.py
+StandardOutput=journal
+StandardError=journal

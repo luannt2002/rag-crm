@@ -1,0 +1,127 @@
+{
+  "version": 1,
+  "domain_neutral": true,
+  "description": "Smartness-floor golden set. Domain-neutral, tenant-agnostic. Each item declares the expected RAG behavior (PASS / REFUSE / GREET) so a future regression that breaks intent classification or grounding fails CI deterministically. Faithfulness floor is enforced at the aggregate level, not per-item, to tolerate one judge LLM flap without false-positive failure.",
+  "items": [
+    {
+      "id": "g01",
+      "category": "greeting",
+      "question": "xin chào",
+      "expected_chunk_keywords": [],
+      "expected_classification": "GREET",
+      "min_faithfulness": 0.0
+    },
+    {
+      "id": "g02",
+      "category": "greeting",
+      "question": "hello",
+      "expected_chunk_keywords": [],
+      "expected_classification": "GREET",
+      "min_faithfulness": 0.0
+    },
+    {
+      "id": "g03",
+      "category": "factoid_in_corpus",
+      "question": "Cho mình hỏi thông tin về dịch vụ",
+      "expected_chunk_keywords": ["dịch vụ"],
+      "expected_classification": "PASS",
+      "min_faithfulness": 0.7
+    },
+    {
+      "id": "g04",
+      "category": "factoid_in_corpus",
+      "question": "Bảng giá thế nào",
+      "expected_chunk_keywords": ["giá"],
+      "expected_classification": "PASS",
+      "min_faithfulness": 0.7
+    },
+    {
+      "id": "g05",
+      "category": "factoid_in_corpus",
+      "question": "Địa chỉ ở đâu",
+      "expected_chunk_keywords": ["địa chỉ"],
+      "expected_classification": "PASS",
+      "min_faithfulness": 0.7
+    },
+    {
+      "id": "g06",
+      "category": "factoid_in_corpus",
+      "question": "Giờ làm việc",
+      "expected_chunk_keywords": ["giờ"],
+      "expected_classification": "PASS",
+      "min_faithfulness": 0.7
+    },
+    {
+      "id": "g07",
+      "category": "factoid_in_corpus",
+      "question": "Liên hệ bằng cách nào",
+      "expected_chunk_keywords": ["liên hệ"],
+      "expected_classification": "PASS",
+      "min_faithfulness": 0.7
+    },
+    {
+      "id": "g08",
+      "category": "factoid_no_corpus",
+      "question": "Trời hôm nay mưa to thế nào",
+      "expected_chunk_keywords": [],
+      "expected_classification": "REFUSE",
+      "min_faithfulness": 0.0
+    },
+    {
+      "id": "g09",
+      "category": "factoid_no_corpus",
+      "question": "Tỉ số trận bóng đá hôm qua",
+      "expected_chunk_keywords": [],
+      "expected_classification": "REFUSE",
+      "min_faithfulness": 0.0
+    },
+    {
+      "id": "g10",
+      "category": "factoid_no_corpus",
+      "question": "Tổng thống Mỹ hiện tại là ai",
+      "expected_chunk_keywords": [],
+      "expected_classification": "REFUSE",
+      "min_faithfulness": 0.0
+    },
+    {
+      "id": "g11",
+      "category": "hallucination_trap",
+      "question": "Mã giảm giá nội bộ XYZ123 còn dùng được không",
+      "expected_chunk_keywords": [],
+      "expected_classification": "REFUSE",
+      "min_faithfulness": 0.0
+    },
+    {
+      "id": "g12",
+      "category": "hallucination_trap",
+      "question": "Khuyến mãi chỉ dành riêng cho mã ABC789 thế nào",
+      "expected_chunk_keywords": [],
+      "expected_classification": "REFUSE",
+      "min_faithfulness": 0.0
+    },
+    {
+      "id": "g13",
+      "category": "booking",
+      "question": "Mình muốn đặt lịch hẹn",
+      "expected_chunk_keywords": [],
+      "expected_classification": "PASS",
+      "min_faithfulness": 0.0
+    },
+    {
+      "id": "g14",
+      "category": "chitchat",
+      "question": "Bot tên gì vậy",
+      "expected_chunk_keywords": [],
+      "expected_classification": "GREET",
+      "min_faithfulness": 0.0
+    },
+    {
+      "id": "g15",
+      "category": "chitchat",
+      "question": "Cảm ơn nhé",
+      "expected_chunk_keywords": [],
+      "expected_classification": "GREET",
+      "min_faithfulness": 0.0
+    }
+  ]
+}

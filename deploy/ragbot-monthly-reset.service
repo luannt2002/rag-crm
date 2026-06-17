@@ -1,0 +1,11 @@
+[Unit]
+Description=RAGbot monthly token quota reset (cron 00:01 day-1)
+After=network.target postgresql.service redis.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/var/www/html/ragbot
+EnvironmentFile=/var/www/html/ragbot/.env
+ExecStart=/var/www/html/ragbot/.venv/bin/python /var/www/html/ragbot/scripts/reset_bot_token_quota_monthly.py
+StandardOutput=journal
+StandardError=journal

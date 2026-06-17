@@ -1,0 +1,120 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+*.egg-info/
+build/
+dist/
+*.whl
+
+# Env (secrets)
+.env
+.env.*
+!.env.example
+!.env.uat.example
+!docker/coder/.env.coder.example
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Docker
+docker-compose.override.yml
+
+# Local / temp
+local/
+tmp/
+*.log
+*.pid
+
+# Personal scratch — NOT tracked
+# Use scratch/ for ragbot-related notes that ARE committed.
+# Use scratch/private/ for personal off-project work (e.g. Hermes setup,
+# external tooling guides, credentials draft) — NEVER committed.
+scratch/private/
+
+# Secrets
+secrets/
+*.pem
+*.key
+*.p12
+
+# uv
+uv.lock
+
+# OS
+Thumbs.db
+Desktop.ini
+
+# Claude Code memory (personal)
+.claude/
+
+# Internal design docs / AI agent prompts (not for repo)
+doc.txt
+prompt.txt
+BOOTSTRAP_PROMPT.md
+NEXT_PLAN.md
+RAGBOT_REVIEW.md
+RAGBOT_FLOW.md
+HANDOFF.md
+VERSION_LOG.md
+MIGRATION_PLAN.md
+postman_collection.json
+_archived/
+
+# User personal prompts/notes — NOT tracked (incl. z- prefixed n8n prompt dumps
+# that carry customer PII: phone numbers, bank accounts, brand names)
+luannt-*
+luannt_*
+z-luannt-*
+z-luannt-*.txt*
+
+# Load test artifacts — large HTML/CSV from locust, do NOT track (skew Languages stat)
+reports/load_test/*.html
+reports/load_test/*.csv
+
+training_corpus/
+
+# claude-ops runtime scratch (session dumps, local state)
+claude-ops/_runtime/*
+!claude-ops/_runtime/.gitkeep
+
+# aidlc runtime state (commit workspace.yaml + skills, NOT runs)
+.aidlc/runs/
+
+# V14 session noise — load test outputs + async pollution audit logs
+reports/_async/
+reports/agent_d_raw_responses.jsonl
+reports/agent_d_per_stage_metrics.csv
+reports/V14b_raw_jsonl_backup.jsonl
+
+# Local pull of external reference repos (NOT installed, read-only)
+_external_refs/
+
+# Runtime parsed-Markdown dump (operator debug aid)
+var/parsed_md/
+var/
+
+# Asset images outside docs/
+/rag1111.jpg
+
+# Per-project local scratch
+*.local.md
+coverage.json
+
+# Personal design docs (HTML masterplans) — not code
+z-luannt/

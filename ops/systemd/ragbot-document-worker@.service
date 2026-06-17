@@ -1,0 +1,20 @@
+[Unit]
+Description=RAGbot Document Worker instance %i (consume document.uploaded.v1 -> chunk + embed)
+After=network.target redis.service postgresql.service ragbot-api.service
+Wants=redis.service
+Requires=postgresql.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/var/www/html/ragbot
+Environment=RAGBOT_WORKER_INSTANCE=%i
+ExecStart=/bin/bash -c 'set -a && source /var/www/html/ragbot/.env && set +a && exec /var/www/html/ragbot/.venv/bin/python -m ragbot.interfaces.workers.document_worker'
+Restart=always
+RestartSec=3
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=ragbot-document-worker-%i
+
+[Install]
+WantedBy=multi-user.target
