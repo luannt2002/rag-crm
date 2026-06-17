@@ -371,6 +371,7 @@ from ragbot.shared.constants import (
     DEFAULT_STATS_INDEX_RACE_ENABLED,
     DEFAULT_STATS_SUPERLATIVE_LIMIT,
     DEFAULT_STATS_ATTR_MAX_CHARS,
+    DEFAULT_STATS_ATTR_MAX_WORDS,
     RANGE_QUERY_MIN_CONFIDENCE,
     DEFAULT_STRUCTURAL_REF_FALLBACK_PATTERN,
     INTENT_AGGREGATION,
@@ -2849,18 +2850,27 @@ def build_graph(
                 # column names come from the corpus header — domain-neutral, no
                 # hard-coded field list. Skip internal keys + mega-cells (the
                 # huge synonym/variant column that would dilute the chunk).
-                _cat = _e.get("entity_category")
-                if _cat:
+                # A structured FIELD value is short + atomic (price, date,
+                # code, "30 phút"). Free-text extraction noise (a booking
+                # sentence mis-captured as a column) is many words — surfacing
+                # it pollutes the chunk and trips the grounding check on a
+                # correct answer. Keep only field-like values: domain-neutral
+                # word-count + char cap, skip generic placeholder columns.
+                def _is_field_like(v: str) -> bool:
+                    return bool(v) and len(v) <= DEFAULT_STATS_ATTR_MAX_CHARS \
+                        and len(v.split()) <= DEFAULT_STATS_ATTR_MAX_WORDS
+                _cat = str(_e.get("entity_category") or "").strip()
+                if _is_field_like(_cat):
                     _parts.append(f"category: {_cat}")
                 _attrs = _e.get("attributes_json")
                 if isinstance(_attrs, dict):
                     for _k, _v in _attrs.items():
-                        if _k in ("chunk_index", "question", "variants"):
+                        if _k in ("chunk_index", "question", "variants") \
+                                or re.fullmatch(r"col_\d+", str(_k)):
                             continue
                         _vs = str(_v).strip()
-                        if not _vs or len(_vs) > DEFAULT_STATS_ATTR_MAX_CHARS:
-                            continue
-                        _parts.append(f"{_k}: {_vs}")
+                        if _is_field_like(_vs):
+                            _parts.append(f"{_k}: {_vs}")
                 _rows.append(" | ".join(_parts))
                 if len(_rows) >= DEFAULT_STATS_INDEX_LIMIT:
                     break

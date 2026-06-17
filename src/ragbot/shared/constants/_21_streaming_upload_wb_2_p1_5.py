@@ -69,6 +69,9 @@ DEFAULT_STATS_SUPERLATIVE_LIMIT: Final[int] = 5
 # synthetic chunk. Skips mega-cells (e.g. a 64-synonym variant column) that
 # would dilute the chunk while keeping normal fields (answer/quantity/date).
 DEFAULT_STATS_ATTR_MAX_CHARS: Final[int] = 120
+# Max WORDS of a surfaced attribute value — a real field (price/date/"30 phút")
+# is few words; a mis-captured sentence is many. Skips free-text noise.
+DEFAULT_STATS_ATTR_MAX_WORDS: Final[int] = 4
 # Fallback structural-reference detector for the stats_index guard. The guard
 # normally relies on the injected metadata_filter_strategy to detect an
 # article/clause anchor and skip stats routing — but that strategy is None on
