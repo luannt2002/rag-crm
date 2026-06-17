@@ -35,6 +35,7 @@ from ragbot.shared.constants import (
     DEFAULT_GROUNDING_CHECK_THRESHOLD,
     DEFAULT_GROUNDING_INTENTS,
     DEFAULT_GUARDRAIL_LEAK_SHINGLE_SIZE,
+    DEFAULT_SYSPROMPT_LEAK_SKIP_INTENTS,
     DEFAULT_GUARDRAIL_OOS_SIMILARITY_THRESHOLD,
     DEFAULT_PIPELINE_PARALLEL_OUTPUT_GUARDS_ENABLED,
 )
@@ -202,8 +203,18 @@ async def guard_output(
 
         _leak_shingle_size = int(_pcfg(state, "guardrail_leak_shingle_size", DEFAULT_GUARDRAIL_LEAK_SHINGLE_SIZE))
         _sys_prompt = state.get("system_prompt", "")
+        # Persona intents (greeting/identity) may legitimately echo the
+        # sysprompt persona — skip the leak shingle so the intro the owner
+        # asked for is not false-blocked as a system_prompt leak.
+        _leak_skip_intents = _pcfg(
+            state, "sysprompt_leak_skip_intents", DEFAULT_SYSPROMPT_LEAK_SKIP_INTENTS,
+        )
+        _leak_skip = (
+            isinstance(_leak_skip_intents, (list, tuple))
+            and str(state.get("intent") or "") in _leak_skip_intents
+        )
         _sys_prompt_hash: list[str] | None = None
-        if _sys_prompt:
+        if _sys_prompt and not _leak_skip:
             _words = _sys_prompt.split()
             if len(_words) >= _leak_shingle_size:
                 _sys_prompt_hash = [

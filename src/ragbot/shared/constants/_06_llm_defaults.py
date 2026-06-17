@@ -99,6 +99,16 @@ DEFAULT_GUARDRAIL_MAX_INPUT_LENGTH: Final[int] = 8000
 DEFAULT_GUARDRAIL_MIN_ALPHA_CHARS: Final[int] = 2
 DEFAULT_GUARDRAIL_TIMEOUT_S: Final[int] = 30
 DEFAULT_GUARDRAIL_LEAK_SHINGLE_SIZE: Final[int] = 24
+# Intents whose answer may echo the system_prompt persona without tripping the
+# system_prompt_leak shingle guard. A greeting/identity reply ("Em là trợ lý
+# tư vấn của <brand>, chuyên về ...") legitimately derives from the bot persona
+# in the sysprompt — NOT a leak of instructions. The leak guard otherwise
+# blocks the intro the owner explicitly asked for. Per-bot override:
+# pipeline_config 'sysprompt_leak_skip_intents'.
+DEFAULT_SYSPROMPT_LEAK_SKIP_INTENTS: Final[tuple[str, ...]] = (
+    "greeting",
+    "chitchat",
+)
 # Bot's OOS refusal text shares vocabulary with system_prompt (per-bot owner phrases),
 # producing shingle collisions that mislabel legitimate refusals as prompt-leak.
 # Skip leak detection when answer ≈ oos_answer_template (Jaccard on word sets).
