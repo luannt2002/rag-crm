@@ -1,451 +1,97 @@
-Tại sao 4 phút — gốc rễ KHÔNG phải TPM, mà là token nổ bậc 2
-llm_chunk_context_provider.py:100-102: CR enrichment nhúng FULL doc vào prompt của TỪNG chunk (doc=doc_full_text). Đây là pattern Anthropic Contextual Retrieval.
+1. Câu lệnh (Prompt) dành cho Claude Code
 
-→ Token tiêu thụ = O(số_chunk × kích_thước_doc) = bậc 2 theo độ lớn doc:
+Bạn hãy copy chính xác đoạn sau đưa cho Claude Code thực thi:
 
-Doc	chunks	Input token (ước tính ~4 char/tok)	Pace @180k/phút
-27k char	~48	~48 × 7k = 336k	~2 phút (+ narrate + embed → 4 phút)
-50k char	~90	~90 × 13k = 1.2M	~7 phút
-100k char	~180	~180 × 25k = 4.5M	~25 phút
-TPM 180k chỉ là cái van; bệnh thật là lượng token gửi đi tăng bình phương. Nâng TPM lên cũng chỉ dời cliff, không chữa gốc. (Số 336k/4M là ước tính từ char-count; bản chất O(n²) là fact trong code line 101.)
+    "Hãy giúp tôi gom (squash) toàn bộ các file migration trong thư mục /var/www/html/ragbot/alembic/versions/ lại thành một file migration duy nhất chuẩn bị cho release version. Hãy thực hiện tuần tự các bước sau:
 
-Trả lời câu token-bucket của anh
-"180k limit, đang dùng 100k, doc cần 120k — phải đợi dư 120k mới vào?"
+    Bước 1 - Phân tích & Viết Note: Đọc toàn bộ các sub-file trong thư mục trên. Xác định thứ tự thực thi của chúng dựa vào revision và down_revision. Sau đó, tạo ra một file migration_flow_notes.md ghi chú lại toàn bộ luồng thay đổi của database schema một cách chi tiết nhất (bảng nào được tạo, cột nào được thêm/sửa/xóa qua từng file).
 
-Không. Mỗi call enrich chỉ ~7-25k token (1 chunk + context), KHÔNG phải 120k. Limiter (tpm_rate_limiter.py:69) nhỏ giọt từng call: budget cũ aging-out liên tục trong cửa sổ 60s → call mới chen vào ngay khi đủ ~10-25k trống. Doc cần 120k tổng chỉ là "chảy" qua ~40s budget, không phải đợi 1 khối 120k. (Chỉ khi MỘT call > budget còn lại mới đợi window trống — mà 1 call enrich không bao giờ to vậy.)
+    Bước 2 - Tạo file tổng hợp: Tạo ra một file migration Alembic mới (ví dụ: [revision_id]_initial_release.py). Trong file này, hãy gộp tất cả các lệnh trong hàm upgrade() và downgrade() từ các file cũ thành một khối thống nhất. Đặt down_revision = None cho file này vì nó sẽ đóng vai trò là điểm bắt đầu (base).
 
-Code đã có 1 tối ưu: warm-then-fan-out (chunk[0] chạy trước để warm prompt-cache, phần còn lại reuse cached doc-prefix). Nhưng nó giảm COST, không giảm TPM throughput — OpenAI vẫn đếm cached token vào TPM, và limiter của ta pace theo gross estimate → vẫn chậm.
+    Bước 3 - Dọn dẹp: Sau khi tôi kiểm tra và xác nhận file tổng hợp mới đã đầy đủ data, hãy thực hiện lệnh xóa toàn bộ các file migration cũ đi, chỉ giữ lại file mới vừa tạo và file notes."
 
-Expert solution — luồng upload đúng chuẩn (ưu tiên giảm token, không phải "đợi")
-① Cắt token tại gốc — summary-based CR (thắng lớn nhất). Thay vì full-doc per chunk, gửi 1 doc-summary 300-500 token (tạo 1 lần) làm context cho mọi chunk. Ablation của chính Anthropic: summary-CR ≈ full-doc recall (chênh 1-2%). → O(n×doc) thành O(n×500): doc 100k từ 4.5M → ~110k token = dưới 1 phút. Config-driven: doc nhỏ dùng full-doc (chất lượng tối đa), doc > ngưỡng tự chuyển summary.
+2. Cảnh báo quan trọng về mặt hệ thống (Database)
 
-② Tách ingest khỏi lane query — OpenAI Batch API. Ingest không cần real-time. Đẩy enrichment qua Batch: rẻ 50%, quota RIÊNG (không đụng 200k TPM live), async. Query không bao giờ tranh token với upload. Đây là cách prod-grade cho corpus lớn.
+Claude Code có thể giúp bạn gom file code python rất tốt, nhưng nó không thể tự động sửa trạng thái database của bạn. Khi bạn thay đổi file trong thư mục alembic/versions, bạn phải đồng bộ lại database.
 
-③ Doc dùng được NGAY khi embed xong, CR backfill async (UX thắng). Chunk + embedding xong là doc đã trả lời được — CR chỉ là booster recall, không bắt buộc. Mark doc "ready" sau embed (vài giây), enrichment chạy nền. → anh thấy doc sẵn sàng tức thì thay vì đợi 4 phút.
+Sau khi Claude Code chạy xong và bạn chỉ còn lại 1 file duy nhất, bạn bắt buộc phải làm thêm bước này ở dưới database (PostgreSQL/MySQL/SQLite...) của bạn:
 
-④ Key pool nhân throughput. Project đã có DBBackedApiKeyPoolFactory. N key → N×200k TPM, round-robin cho enrichment. (+ xin OpenAI nâng tier TPM.)
-
-⑤ Tier theo size. cr_full_doc_max_chars knob: nhỏ → full CR; lớn → summary CR hoặc skip.
+    Nếu đây là môi trường Dev/Local (Có thể xóa Data):
 
-Combo em đề xuất (evolve, không rewrite): ① summary-CR theo size-tier + ③ doc-ready-on-embed (CR async) — giải đúng cả tốc độ lẫn UX, giữ nguyên kiến trúc. ② Batch API để dành cho bulk-load corpus lớn.
-
-Anh muốn em ship cái nào? Em recommend bắt đầu ③ (doc ready ngay, CR chạy nền) vì nó xóa cảm giác "đợi 4 phút" tức thì mà không đổi chất lượng, rồi ① summary-CR cho file nặng. Em viết plan + implement luôn nếu anh duyệt.
+        Xóa hoặc Drop toàn bộ database hiện tại.
 
-
-"""LLM-backed implementation of ChunkContextProviderPort.
-
-Wraps an injected ``LLMPort`` to generate per-chunk context labels for
-Contextual Retrieval (Anthropic pattern).  The ``LLMSpec`` is resolved via
-``ModelResolverService`` with ``intent="contextualization"`` at construction
-time — callers need no knowledge of which model is active.
-
-Output flows ONLY to the ``document_chunks.chunk_context`` DB column, never
-into any LLM answer prompt (Quality Gate #10 / HALLU=0 sacred).
-"""
-
-from __future__ import annotations
-
-import asyncio
-import time
-from collections.abc import Sequence
-from uuid import UUID
-
-import httpx
-import structlog
-
-from ragbot.application.ports.llm_port import LLMMessage, LLMPort
-from ragbot.application.services.chunk_context_enricher import (
-    CHUNK_CONTEXT_PROMPT_TEMPLATE,
-)
-from ragbot.application.services.model_resolver import ModelResolverService
-from ragbot.shared.constants import DEFAULT_CHUNK_CONTEXT_ENRICHMENT_CONCURRENCY
-from ragbot.shared.types import BotId, TenantId
-
-logger = structlog.get_logger(__name__)
-
-
-class LLMChunkContextProvider:
-    """Generate per-chunk context strings using a resolved LLM binding.
-
-    Constructor params
-    ------------------
-    llm:
-        Injected ``LLMPort`` implementation (DynamicLiteLLMRouter in production).
-    model_resolver:
-        ``ModelResolverService`` used to look up the LLMSpec for
-        intent="contextualization" at call time.
-    record_tenant_id:
-        Internal UUID for the owning tenant (multi-tenancy scope).
-    record_bot_id:
-        Internal UUID for the owning bot (used by resolver for per-bot binding).
-    """
-
-    def __init__(
-        self,
-        llm: LLMPort,
-        model_resolver: ModelResolverService,
-        record_tenant_id: UUID,
-        record_bot_id: UUID,
-    ) -> None:
-        self._llm = llm
-        self._model_resolver = model_resolver
-        self._record_tenant_id: TenantId = record_tenant_id  # type: ignore[assignment]
-        self._record_bot_id: BotId = record_bot_id  # type: ignore[assignment]
-
-    # ------------------------------------------------------------------
-    # Port contract
-    # ------------------------------------------------------------------
-
-    @staticmethod
-    def get_provider_name() -> str:
-        return "llm_enrichment"
-
-    async def generate(
-        self,
-        *,
-        doc_full_text: str,
-        chunks: Sequence[str],
-        max_context_tokens: int,
-    ) -> list[str]:
-        """Generate context labels for each chunk.
-
-        Runs chunks with bounded concurrency (semaphore =
-        ``DEFAULT_CHUNK_CONTEXT_ENRICHMENT_CONCURRENCY``).  Per-chunk failures
-        return an empty string so the caller stores NULL in the optional
-        column instead of failing the whole ingest batch.
-
-        The generated strings are stored in ``document_chunks.chunk_context``
-        ONLY — never injected into any answer LLM prompt.
-        """
-        if not chunks:
-            return []
-
-        spec = await self._model_resolver.resolve_llm(
-            self._record_bot_id,
-            record_tenant_id=self._record_tenant_id,
-            intent="contextualization",
-        )
-
-        sem = asyncio.Semaphore(DEFAULT_CHUNK_CONTEXT_ENRICHMENT_CONCURRENCY)
-        t_start = time.monotonic()
-
-        async def _one(chunk: str) -> str:
-            async with sem:
-                prompt = CHUNK_CONTEXT_PROMPT_TEMPLATE.format(
-                    doc=doc_full_text,
-                    chunk=chunk,
-                    max_tokens=max_context_tokens,
-                )
-                try:
-                    resp = await self._llm.complete(
-                        [LLMMessage(role="user", content=prompt)],
-                        spec=spec,
-                        record_tenant_id=self._record_tenant_id,
-                        trace_id=None,  # type: ignore[arg-type] — enrichment is offline
-                    )
-                    return resp.content
-                except (httpx.HTTPError, OSError, ValueError, TypeError) as exc:
-                    logger.warning(
-                        "chunk_context_provider_chunk_failed",
-                        error_type=type(exc).__name__,
-                        error=str(exc),
-                    )
-                    return ""
-                except Exception as exc:  # noqa: BLE001 — per-chunk failure must not block ingest
-                    logger.warning(
-                        "chunk_context_provider_chunk_failed",
-                        error_type=type(exc).__name__,
-                        error=str(exc),
-                    )
-                    return ""
-
-        # Warm-then-fan-out: run the FIRST chunk alone so the shared
-        # "Document: {doc}" prompt prefix lands in the provider's prompt
-        # cache, THEN fan out the remaining chunks — each reuses the cached
-        # document prefix (cache-read ≈ 10% tokens) instead of re-sending the
-        # full doc cold. Converts the per-batch cost from N×doc_size into
-        # 1×doc_size + N×chunk_size — the canonical Anthropic Contextual-
-        # Retrieval prompt-cache pattern. A cold concurrent gather sends N
-        # full-doc copies simultaneously; on a large doc that alone trips the
-        # org TPM cap (RateLimitError) and fails ingest. The warm call cannot
-        # raise (``_one`` degrades to "" on any error), so a cache-miss simply
-        # falls back to the prior cold behaviour for the remainder.
-        if len(chunks) > 1:
-            warmed = await _one(chunks[0])
-            rest = await asyncio.gather(*[_one(c) for c in chunks[1:]])
-            output: list[str] = [warmed, *rest]
-        else:
-            output = list(await asyncio.gather(*[_one(c) for c in chunks]))
-
-        latency_ms = int((time.monotonic() - t_start) * 1000)
-        n_non_empty = sum(1 for r in output if r)
-        logger.info(
-            "chunk_context_provider_complete",
-            n_chunks=len(output),
-            n_non_empty=n_non_empty,
-            latency_ms=latency_ms,
-        )
-        return output
-
-
-
-
-
-
-
-"""Per-model token-per-minute (TPM) rate limiter — pace, don't storm.
-
-Why: provider rate limits are per-model TPM (e.g. OpenAI 200k TPM). A cold
-fan-out of ingest enrichment fires many large calls at once → 429 →
-retry-with-backoff → thundering herd that wastes tokens and stalls ingest.
-
-This limiter makes callers QUEUE instead of fire-and-429: before each LLM
-call, ``acquire(model, est_tokens)`` awaits until the trailing-60s token sum
-for that model would stay under the configured limit, then records the spend.
-No spam, no wasted retries, no burnt tokens — requests simply pace to the cap.
-
-Keyed by model so a cheap ingest model (nano) paces on its OWN bucket and never
-throttles the live answer model (mini) — the two never contend.
-
-Disabled (``limit_per_min <= 0``) → ``acquire`` is a no-op (zero overhead),
-preserving the prior behaviour for anyone who opts out.
-"""
-
-from __future__ import annotations
-
-import asyncio
-import time
-from collections import defaultdict, deque
-
-import structlog
-
-logger = structlog.get_logger(__name__)
-
-# Smallest slice we sleep while waiting for the window to free — bounds the
-# busy-wait granularity without over-sleeping past the moment budget frees.
-_WAIT_SLICE_S: float = 0.25
-_WINDOW_S: float = 60.0
-
-
-class TpmRateLimiter:
-    """Async sliding-1-minute-window token limiter, one window per model key."""
-
-    def __init__(self, limit_per_min: int) -> None:
-        self._limit = int(limit_per_min)
-        # model_key → deque[(monotonic_ts, tokens)]
-        self._windows: dict[str, deque[tuple[float, int]]] = defaultdict(deque)
-        self._locks: dict[str, asyncio.Lock] = defaultdict(asyncio.Lock)
-
-    @property
-    def limit_per_min(self) -> int:
-        return self._limit
-
-    def _prune(self, key: str, now: float) -> int:
-        win = self._windows[key]
-        while win and (now - win[0][0]) > _WINDOW_S:
-            win.popleft()
-        return sum(tok for _, tok in win)
-
-    async def acquire(self, model_key: str, est_tokens: int) -> None:
-        """Block until ``est_tokens`` fits the trailing-60s budget, then record it.
-
-        A single call larger than the whole limit is admitted once the window
-        is otherwise empty (we never deadlock on an oversized request).
-        """
-        if self._limit <= 0:
-            return
-        key = model_key or "unknown"
-        est = max(0, int(est_tokens))
-        waited_ms = 0.0
-        async with self._locks[key]:
-            while True:
-                now = time.monotonic()
-                used = self._prune(key, now)
-                if used + est <= self._limit or not self._windows[key]:
-                    self._windows[key].append((now, est))
-                    if waited_ms > 0:
-                        logger.info(
-                            "tpm_limiter_paced",
-                            model=key,
-                            waited_ms=round(waited_ms),
-                            est_tokens=est,
-                            window_used=used,
-                            limit=self._limit,
-                        )
-                    return
-                # Wait for the oldest entry to age out of the window.
-                oldest_ts = self._windows[key][0][0]
-                sleep_s = min(max(_WINDOW_S - (now - oldest_ts), _WAIT_SLICE_S), _WAIT_SLICE_S * 8)
-                waited_ms += sleep_s * 1000
-                await asyncio.sleep(sleep_s)
-
-
-def estimate_request_tokens(messages: list[dict], max_output_tokens: int) -> int:
-    """Cheap pre-call token estimate: ~4 chars/token for input + output cap.
-
-    Deliberately rough — pacing only needs an order-of-magnitude figure, and
-    over-estimating is the safe direction (paces slightly more conservatively).
-    """
-    chars = sum(len(str(m.get("content", ""))) for m in messages)
-    return chars // 4 + max(0, int(max_output_tokens or 0))
-
-
-
-
-
-"""LLM-backed implementation of ChunkContextProviderPort.
-
-Wraps an injected ``LLMPort`` to generate per-chunk context labels for
-Contextual Retrieval (Anthropic pattern).  The ``LLMSpec`` is resolved via
-``ModelResolverService`` with ``intent="contextualization"`` at construction
-time — callers need no knowledge of which model is active.
-
-Output flows ONLY to the ``document_chunks.chunk_context`` DB column, never
-into any LLM answer prompt (Quality Gate #10 / HALLU=0 sacred).
-"""
-
-from __future__ import annotations
-
-import asyncio
-import time
-from collections.abc import Sequence
-from uuid import UUID
-
-import httpx
-import structlog
-
-from ragbot.application.ports.llm_port import LLMMessage, LLMPort
-from ragbot.application.services.chunk_context_enricher import (
-    CHUNK_CONTEXT_PROMPT_TEMPLATE,
-)
-from ragbot.application.services.model_resolver import ModelResolverService
-from ragbot.shared.constants import DEFAULT_CHUNK_CONTEXT_ENRICHMENT_CONCURRENCY
-from ragbot.shared.types import BotId, TenantId
-
-logger = structlog.get_logger(__name__)
-
-
-class LLMChunkContextProvider:
-    """Generate per-chunk context strings using a resolved LLM binding.
-
-    Constructor params
-    ------------------
-    llm:
-        Injected ``LLMPort`` implementation (DynamicLiteLLMRouter in production).
-    model_resolver:
-        ``ModelResolverService`` used to look up the LLMSpec for
-        intent="contextualization" at call time.
-    record_tenant_id:
-        Internal UUID for the owning tenant (multi-tenancy scope).
-    record_bot_id:
-        Internal UUID for the owning bot (used by resolver for per-bot binding).
-    """
-
-    def __init__(
-        self,
-        llm: LLMPort,
-        model_resolver: ModelResolverService,
-        record_tenant_id: UUID,
-        record_bot_id: UUID,
-    ) -> None:
-        self._llm = llm
-        self._model_resolver = model_resolver
-        self._record_tenant_id: TenantId = record_tenant_id  # type: ignore[assignment]
-        self._record_bot_id: BotId = record_bot_id  # type: ignore[assignment]
-
-    # ------------------------------------------------------------------
-    # Port contract
-    # ------------------------------------------------------------------
-
-    @staticmethod
-    def get_provider_name() -> str:
-        return "llm_enrichment"
-
-    async def generate(
-        self,
-        *,
-        doc_full_text: str,
-        chunks: Sequence[str],
-        max_context_tokens: int,
-    ) -> list[str]:
-        """Generate context labels for each chunk.
-
-        Runs chunks with bounded concurrency (semaphore =
-        ``DEFAULT_CHUNK_CONTEXT_ENRICHMENT_CONCURRENCY``).  Per-chunk failures
-        return an empty string so the caller stores NULL in the optional
-        column instead of failing the whole ingest batch.
-
-        The generated strings are stored in ``document_chunks.chunk_context``
-        ONLY — never injected into any answer LLM prompt.
-        """
-        if not chunks:
-            return []
-
-        spec = await self._model_resolver.resolve_llm(
-            self._record_bot_id,
-            record_tenant_id=self._record_tenant_id,
-            intent="contextualization",
-        )
-
-        sem = asyncio.Semaphore(DEFAULT_CHUNK_CONTEXT_ENRICHMENT_CONCURRENCY)
-        t_start = time.monotonic()
-
-        async def _one(chunk: str) -> str:
-            async with sem:
-                prompt = CHUNK_CONTEXT_PROMPT_TEMPLATE.format(
-                    doc=doc_full_text,
-                    chunk=chunk,
-                    max_tokens=max_context_tokens,
-                )
-                try:
-                    resp = await self._llm.complete(
-                        [LLMMessage(role="user", content=prompt)],
-                        spec=spec,
-                        record_tenant_id=self._record_tenant_id,
-                        trace_id=None,  # type: ignore[arg-type] — enrichment is offline
-                    )
-                    return resp.content
-                except (httpx.HTTPError, OSError, ValueError, TypeError) as exc:
-                    logger.warning(
-                        "chunk_context_provider_chunk_failed",
-                        error_type=type(exc).__name__,
-                        error=str(exc),
-                    )
-                    return ""
-                except Exception as exc:  # noqa: BLE001 — per-chunk failure must not block ingest
-                    logger.warning(
-                        "chunk_context_provider_chunk_failed",
-                        error_type=type(exc).__name__,
-                        error=str(exc),
-                    )
-                    return ""
-
-        # Warm-then-fan-out: run the FIRST chunk alone so the shared
-        # "Document: {doc}" prompt prefix lands in the provider's prompt
-        # cache, THEN fan out the remaining chunks — each reuses the cached
-        # document prefix (cache-read ≈ 10% tokens) instead of re-sending the
-        # full doc cold. Converts the per-batch cost from N×doc_size into
-        # 1×doc_size + N×chunk_size — the canonical Anthropic Contextual-
-        # Retrieval prompt-cache pattern. A cold concurrent gather sends N
-        # full-doc copies simultaneously; on a large doc that alone trips the
-        # org TPM cap (RateLimitError) and fails ingest. The warm call cannot
-        # raise (``_one`` degrades to "" on any error), so a cache-miss simply
-        # falls back to the prior cold behaviour for the remainder.
-        if len(chunks) > 1:
-            warmed = await _one(chunks[0])
-            rest = await asyncio.gather(*[_one(c) for c in chunks[1:]])
-            output: list[str] = [warmed, *rest]
-        else:
-            output = list(await asyncio.gather(*[_one(c) for c in chunks]))
-
-        latency_ms = int((time.monotonic() - t_start) * 1000)
-        n_non_empty = sum(1 for r in output if r)
-        logger.info(
-            "chunk_context_provider_complete",
-            n_chunks=len(output),
-            n_non_empty=n_non_empty,
-            latency_ms=latency_ms,
-        )
-        return output
+        Tạo lại database trắng.
 
+        Chạy lệnh: alembic upgrade head (Nó sẽ chạy file duy nhất mà Claude vừa tạo).
 
+    Nếu đây là môi trường đã có Data (Không thể Drop DB):
+
+        Truy cập vào Database của bạn bằng DataGrip, DBeaver hoặc CLI.
+
+        Tìm bảng có tên là alembic_version.
+
+        Update giá trị version_num trong bảng đó thành cái ID (revision) của file mới mà Claude vừa tạo. Điều này giúp Alembic hiểu là database hiện tại đã "khớp" với file gộp mới này.
+
+Cách "chuẩn" và an toàn nhất của Alembic (Không cần dùng AI gộp code)
+
+Thực tế, để tạo một file release sạch trong Alembic, các kỹ sư thường dùng tính năng autogenerate thay vì ngồi gộp code thủ công. Nếu cách dùng Claude phía trên bị lỗi cú pháp, bạn có thể áp dụng luồng chuẩn này:
+
+    Đảm bảo database hiện tại đã được update mới nhất: alembic upgrade head
+
+    Xóa toàn bộ file trong /var/www/html/ragbot/alembic/versions/
+
+    Xóa data trong bảng alembic_version ở database: TRUNCATE TABLE alembic_version; (hoặc DELETE FROM alembic_version;)
+
+    Chạy lại lệnh tạo file mới từ đầu dựa trên Models hiện tại: alembic revision --autogenerate -m "Initial release version"
+
+Cách này đảm bảo 100% file tạo ra sẽ khớp hoàn toàn với các Models SQLAlchemy hiện tại của bạn mà không sợ sai sót do AI gộp nhầm dòng code.
+
+đang ở database dev khoogn ợ, cứ merge lại luồng à seed lại databse như reset để tets lại thôi, cho prompt đi
+
+Quá tuyệt vời! Nếu đang ở môi trường Dev và có thể thoải mái reset, drop bảng rồi chạy seed lại thì mọi thứ đơn giản và triệt để hơn rất nhiều.
+
+Dưới đây là prompt "một chạm" (all-in-one) cực kỳ chi tiết bằng tiếng Anh (để Claude Code hiểu logic code tốt nhất) mà bạn chỉ cần copy và paste thẳng vào terminal cho nó tự xử lý.
+Copy đoạn Prompt này dán vào Claude Code:
+
+    I am working on a Python RAG project in a dev environment. I need to squash all existing Alembic migration files in /var/www/html/ragbot/alembic/versions/ into a single base migration file for a release version. Since it's a dev DB, I will reset and re-seed it afterward.
+
+    Please execute the following steps exactly in order:
+
+    Step 1: Analyze and Document the Flow
+    Read all python files in /var/www/html/ragbot/alembic/versions/. Determine the correct execution order by tracing the revision and down_revision variables. Once traced, create a markdown file named alembic_migration_notes.md in the alembic/ folder. This file must contain a highly detailed, chronological note of every schema change (which tables were created, which columns were added/modified/dropped, etc.).
+
+    Step 2: Create the Squashed Migration File
+    Create a brand new Alembic migration file in the versions folder (e.g., <new_revision_id>_initial_release.py).
+
+        Consolidate all the upgrade() logic from the old files into this new file's upgrade() function, ensuring the chronological order is strictly maintained.
+
+        Consolidate all the downgrade() logic into the new file's downgrade() function, maintaining the correct reverse-chronological order.
+
+        Set down_revision = None in this new file.
+
+    Step 3: Delete Old Files
+    Once the new consolidated file and the notes markdown file are successfully created, completely delete all the old .py migration files in the versions folder. Only the newly created single migration file should remain.
+
+    Step 4: Output the Reset Commands
+    Finally, output the exact terminal commands I need to run to:
+
+        Drop all tables in my database (or reset it).
+
+        Run alembic upgrade head to apply this new squashed file.
+
+        Run my database seed script.
+
+Sau khi Claude Code chạy xong, bạn chỉ việc:
+
+    Đọc qua file alembic_migration_notes.md xem có thiếu sót bảng nào không.
+
+    Xóa sạch DB cũ (hoặc drop schema/tables).
+
+    Chạy alembic upgrade head.
+
+    Chạy script seed data của bạn.
+
+Database sẽ sạch bong như mới với một file migration duy nhất chuẩn bị cho release!
+
+
+Gemini là AI và có thể mắc sai sót.
