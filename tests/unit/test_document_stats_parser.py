@@ -131,6 +131,37 @@ def test_parse_table_chunks_basic_csv() -> None:
     assert by_name["Service B"].price_primary == 1_499_000
 
 
+def test_parse_table_chunks_quoted_field_with_commas() -> None:
+    """A quoted CSV cell containing commas stays ONE column (RFC-4180).
+
+    Regression: a naive line.split(",") shattered a quoted synonym-list cell
+    into N phantom columns, shifting every real column right so the header
+    labels no longer aligned (quantity/price held code-variant garbage, the
+    real numbers landed in col_N). csv.reader keeps the quoted cell intact so
+    code / quantity / price / date land under their correct header keys.
+    """
+    content = (
+        "question,code,productname,answer,quantity,price,date1,date2,image\n"
+        '"195/65R15, 195 65 15, 195/65/15, 195-65-15",'
+        "2-R15 195/65 LPD,"
+        "Lop LANDSPIDER 195/65R15,"
+        "LANDSPIDER 195/65R15 G/P,"
+        "338,972000,26,,http://example/img\n"
+    )
+    entities = parse_table_chunks([_make_chunk(content)])
+    assert len(entities) == 1
+    e = entities[0]
+    # Real price lands in price_primary (was 1959... garbage before the fix).
+    assert e.price_primary == 972_000
+    # The labeled columns align with their header keys.
+    assert e.attributes.get("code") == "2-R15 195/65 LPD"
+    assert e.attributes.get("quantity") == "338"
+    assert e.attributes.get("date1") == "26"
+    assert e.attributes.get("answer") == "LANDSPIDER 195/65R15 G/P"
+    # No phantom col_N keys from a shattered quoted cell.
+    assert not any(k.startswith("col_") for k in e.attributes)
+
+
 def test_parse_table_chunks_skip_non_data() -> None:
     """Prose/intro chunks without delimiters are skipped entirely."""
     prose = _make_chunk(

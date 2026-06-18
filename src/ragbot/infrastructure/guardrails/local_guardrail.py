@@ -45,6 +45,7 @@ from ragbot.shared.constants import (
     DEFAULT_GROUNDING_NUMERIC_OVERLAP_ENABLED,
     DEFAULT_GROUNDING_SUBSTRING_MIN,
     DEFAULT_GROUNDING_USE_STRUCTURED,
+    DEFAULT_GUARDRAIL_LEAK_MIN_MATCH_COUNT,
     DEFAULT_GUARDRAIL_LEAK_SHINGLE_SIZE,
     DEFAULT_GUARDRAIL_MAX_INPUT_LENGTH,
     DEFAULT_GUARDRAIL_MIN_ALPHA_CHARS,
@@ -301,6 +302,7 @@ class OutputGuardrail:
         *,
         oos_template: str | None = None,
         oos_similarity_threshold: float = DEFAULT_GUARDRAIL_OOS_SIMILARITY_THRESHOLD,
+        min_match_count: int = DEFAULT_GUARDRAIL_LEAK_MIN_MATCH_COUNT,
     ) -> GuardrailHit | None:
         """Check if `answer` leaks any known hashed n-gram of system prompt.
 
@@ -311,6 +313,12 @@ class OutputGuardrail:
         ``oos_answer_template`` — the refusal text shares vocabulary with
         ``system_prompt`` (per-bot phrasing) and would otherwise produce
         shingle-collision false positives.
+
+        Block only when at least ``min_match_count`` shingles match. The guard
+        targets prompt EXTRACTION (a sysprompt dump reproduces dozens of
+        contiguous shingles); a single customer-facing refusal/persona sentence
+        the owner wrote in the sysprompt yields only a few and is NOT a leak —
+        blocking it would replace a graceful refusal with a generic template.
         """
         if not system_prompt_hash or not answer:
             return None
@@ -332,7 +340,7 @@ class OutputGuardrail:
             h = hashlib.sha256(shingle.encode("utf-8")).hexdigest()
             if h in known:
                 found.append(h)
-        if found:
+        if len(found) >= max(1, min_match_count):
             return GuardrailHit(
                 rule_id="system_leak",
                 severity="block",
@@ -858,6 +866,7 @@ class LocalGuardrail(GuardrailPort):
         grounding_use_structured: bool = DEFAULT_GROUNDING_USE_STRUCTURED,
         oos_template: str | None = None,
         oos_similarity_threshold: float = DEFAULT_GUARDRAIL_OOS_SIMILARITY_THRESHOLD,
+        leak_min_match_count: int = DEFAULT_GUARDRAIL_LEAK_MIN_MATCH_COUNT,
     ) -> list[GuardrailHit]:
         # The regex-based grounding_check enforces `[chunk_id]` markers
         # in the answer. Flow/template bots (spa consultation, sales,
@@ -874,6 +883,7 @@ class LocalGuardrail(GuardrailPort):
             shingle_size=shingle_size,
             oos_template=oos_template,
             oos_similarity_threshold=oos_similarity_threshold,
+            min_match_count=leak_min_match_count,
         )
         # When the loader is wired, secret_leak (and any future tenant
         # output regex rules) come from DB. Otherwise fall back.

@@ -420,6 +420,7 @@ class StatsIndexRepository:
         *,
         record_bot_id: uuid.UUID,
         keyword: str,
+        synonyms: list[str] | None = None,
         limit: int = DEFAULT_STATS_INDEX_QUERY_LIMIT,
     ) -> list[dict]:
         """SELECT every entity whose name OR category contains *keyword*.
@@ -428,32 +429,54 @@ class StatsIndexRepository:
         "tư vấn về da", "có bao nhiêu dịch vụ X"): vector/BM25 retrieve only
         surfaces top-k chunks so the LLM can never list/count ALL matching
         services. This returns EVERY matching record from the clean structured
-        index, deterministic + complete. Case/accent-insensitive via ILIKE on
-        the raw substring. Domain-neutral — keys on the corpus name/category,
-        no hard-coded service list. Scoped by record_bot_id (RLS + explicit).
+        index, deterministic + complete. Truly accent-insensitive via
+        ``unaccent()`` (folds đ→d, ế→e, …) so a corpus diacritic/typo variant
+        ("Tẩy đa chết body" vs the query "tẩy da chết") still matches — plain
+        ILIKE folds CASE only, not ACCENTS, and silently dropped such a service
+        from a list/count answer.
+
+        ``synonyms`` (per-bot ``custom_vocabulary["synonyms"]``) widen the match
+        set: a generic keyword ("da") OR-expands to the owner-taught variants
+        ("da chết", "chăm sóc da") so a "về da" list returns ALL skin services
+        rather than only exact-substring hits. Empty/None → raw keyword only
+        (behaviour unchanged). Domain-neutral — the owner supplies the synonym
+        map; no hard-coded service list here. Each variant is a BOUND param
+        (``:kw{i}``); only the controlled index is interpolated, never values.
+
+        Scoped by record_bot_id (RLS + explicit). ``unaccent`` by alembic 0240.
         """
         kw = (keyword or "").strip()
         if not kw:
             return []
+        # Build the de-duplicated match set: raw keyword + per-bot synonyms.
+        _seen: set[str] = set()
+        variants: list[str] = []
+        for term in [kw, *(synonyms or [])]:
+            t = (term or "").strip()
+            if t and t.lower() not in _seen:
+                _seen.add(t.lower())
+                variants.append(t)
         effective_limit = min(limit, DEFAULT_STATS_INDEX_QUERY_LIMIT)
+        params: dict = {"bot_id": record_bot_id, "limit": effective_limit}
+        or_clauses: list[str] = []
+        for i, v in enumerate(variants):
+            or_clauses.append(
+                f"unaccent(entity_name) ILIKE unaccent(:kw{i}) "
+                f"OR unaccent(entity_category) ILIKE unaccent(:kw{i})"
+            )
+            params[f"kw{i}"] = f"%{v}%"
+        where_match = " OR ".join(f"({c})" for c in or_clauses)
         sql = (
             "SELECT id, record_document_id, record_chunk_id, entity_name, "
             "entity_category, price_primary, price_secondary, attributes_json "
             "FROM document_service_index "
             "WHERE record_bot_id = :bot_id "
-            "AND (entity_name ILIKE :kw OR entity_category ILIKE :kw) "
+            f"AND ({where_match}) "
             "ORDER BY entity_name ASC "
             "LIMIT :limit"
         )
         async with self._sf() as session:
-            result = await session.execute(
-                text(sql),
-                {
-                    "bot_id": record_bot_id,
-                    "kw": f"%{kw}%",
-                    "limit": effective_limit,
-                },
-            )
+            result = await session.execute(text(sql), params)
             rows = result.fetchall()
 
         return [

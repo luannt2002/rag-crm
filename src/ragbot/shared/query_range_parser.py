@@ -19,6 +19,8 @@ from dataclasses import dataclass
 from typing import Final
 
 from ragbot.shared.constants import (
+    CODE_QUERY_CONFIDENCE,
+    DEFAULT_CODE_QUERY_PATTERN,
     RANGE_QUERY_MIN_CONFIDENCE,
     SUPERLATIVE_QUERY_CONFIDENCE,
     SUMMARY_QUERY_PATTERNS_VI,
@@ -344,6 +346,12 @@ _LIST_STRIP_PHRASES: Final[tuple[str, ...]] = (
     "dịch vụ", "dich vu", "bên em", "ben em", "cho mình", "cho minh",
     "cho tôi", "cho toi", "giúp em", "giup em", "tất cả", "tat ca",
     "loại", "loai", "hết", "với", "voi", "các", "của", "nào", "nao",
+    # Connective fillers that sit between "dịch vụ" and the real keyword
+    # ("có dịch vụ VÀO VỀ da chết", "dịch vụ VỀ da") — left in, they pollute
+    # the ILIKE keyword so it matches nothing → the list route silently falls
+    # back to vector (top-1 chunk) and only ONE service surfaces. Generic VN
+    # function words, domain-neutral.
+    "về", "ve", "vào", "vao",
     "không", "khong", "có", "co", "ạ", "à", "ra", "mình", "minh",
 )
 
@@ -389,6 +397,51 @@ def parse_list_query(query: str) -> RangeFilter | None:
     return RangeFilter(
         price_min=None, price_max=None, price_column="any",
         operation="keyword", confidence=0.8, keyword=kw,
+    )
+
+
+# Spec/product-code detector. A code is an alphanumeric run joined by / . - —
+# a shape no natural-language word takes (195/65R15, 2-R17, A1.B2, a SKU). The
+# pattern is operator-overridable via system_config 'code_query_pattern'; the
+# compiled default lives here so the hot path does not recompile per call.
+_CODE_QUERY_RE: Final[re.Pattern[str]] = re.compile(DEFAULT_CODE_QUERY_PATTERN)
+
+
+def parse_code_query(query: str) -> RangeFilter | None:
+    """Detect a product/spec CODE in *query* and route it to the name lookup.
+
+    "lốp 195/65R15 còn hàng không?" / "giá 195/65R15" / "khi nào về 2-R17" all
+    carry an exact code. The user wants the ONE record for that code (stock /
+    restock-date / price), not a fuzzy vector neighbour that returns a
+    near-duplicate code's row (wrong tire). Returns a
+    ``RangeFilter(operation="keyword", keyword=<code>)`` so the caller reuses
+    the existing structured name/category ILIKE lookup
+    (``query_by_name_keyword``), which surfaces the FULL labeled record
+    (code + quantity + date + price) deterministically.
+
+    Domain-neutral: keyed on the universal code-token SHAPE, never on a
+    bot/brand/corpus literal. Returns None when no code token is present
+    (caller falls back to range/list/vector retrieve).
+    """
+    if not query or not query.strip():
+        return None
+    m = _CODE_QUERY_RE.search(query)
+    if not m:
+        return None
+    code = m.group(0).strip()
+    if len(code) < 2:
+        return None
+    # A code must carry at least one LETTER. A digits-only token joined by
+    # / . - is a date / document-number / phone ("09/2020", "16/2017",
+    # "090-123-4567"), not a product/spec code — routing those to the name
+    # lookup would hijack a legal "Thông tư 09/2020" or doc-id query away from
+    # the article-aware path. Domain-neutral: a structural property of the
+    # token, not a corpus literal.
+    if not re.search(r"[A-Za-z]", code):
+        return None
+    return RangeFilter(
+        price_min=None, price_max=None, price_column="any",
+        operation="keyword", confidence=CODE_QUERY_CONFIDENCE, keyword=code,
     )
 
 
@@ -455,5 +508,7 @@ __all__ = [
     "parse_money_vn",
     "parse_range_query",
     "parse_list_query",
+    "parse_code_query",
+    "parse_code_query",
     "matches_summary_pattern",
 ]

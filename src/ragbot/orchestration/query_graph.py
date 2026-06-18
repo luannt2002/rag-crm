@@ -220,6 +220,7 @@ from ragbot.shared.constants import (
     DEFAULT_METADATA_AWARE_RETRIEVAL_ENABLED,
     DEFAULT_METADATA_LAYER3_LLM_ENABLED,
     DEFAULT_METADATA_FALLBACK_RELAX_ENABLED,
+    DEFAULT_MULTI_QUERY_COMPLEXITY_MIN,
     DEFAULT_MULTI_QUERY_ENABLED,
     DEFAULT_MULTI_QUERY_MAX_VARIANTS,
     DEFAULT_MULTI_QUERY_MODEL,
@@ -372,6 +373,7 @@ from ragbot.shared.constants import (
     DEFAULT_STATS_SUPERLATIVE_LIMIT,
     DEFAULT_STATS_ATTR_MAX_CHARS,
     DEFAULT_STATS_ATTR_MAX_WORDS,
+    DEFAULT_STATS_SYNTHETIC_CHUNK_ID,
     RANGE_QUERY_MIN_CONFIDENCE,
     DEFAULT_STRUCTURAL_REF_FALLBACK_PATTERN,
     INTENT_AGGREGATION,
@@ -835,6 +837,34 @@ def _render_captured_slots(action_state: dict, action_cfg: dict) -> str:
     filled_str = ", ".join(pairs) if pairs else "none"
     missing_str = ", ".join(missing) if missing else "none"
     return f"{filled_str}; missing: {missing_str}"
+
+
+def _resolve_stats_keyword_synonyms(state: Any, keyword: str) -> list[str]:  # noqa: ANN401
+    """Per-bot synonym variants for a stats-route keyword (domain-neutral).
+
+    Reads ``bot_custom_vocabulary["synonyms"]`` — an owner-taught map like
+    ``{"da": ["da chết", "chăm sóc da", "trẻ hóa da"]}`` — and returns the
+    expansions for ``keyword`` (case-insensitive key match) so the structured
+    LIST route OR-matches the full family rather than only exact substrings.
+    Empty/missing map → ``[]`` (raw keyword only, behaviour unchanged). No
+    hard-coded vocabulary here; the bot owner supplies the map via DB.
+    """
+    kw = (keyword or "").strip().lower()
+    if not kw:
+        return []
+    custom_vocab = _pcfg(state, "bot_custom_vocabulary", {})
+    syn_map = custom_vocab.get("synonyms") if isinstance(custom_vocab, dict) else None
+    if not isinstance(syn_map, dict):
+        return []
+    out: list[str] = []
+    for key, vals in syn_map.items():
+        if not isinstance(key, str) or key.strip().lower() != kw:
+            continue
+        if isinstance(vals, str):
+            vals = [vals]
+        if isinstance(vals, (list, tuple)):
+            out.extend(str(v) for v in vals if isinstance(v, (str,)) and v.strip())
+    return out
 
 
 def _compute_bot_cache_version(system_prompt: str | None, oos_answer_template: str | None) -> str:
@@ -2404,6 +2434,23 @@ def build_graph(
         if not _intent_mq_enabled:
             return []
 
+        # Adaptive-RAG auto-mode gate (complexity routing). The query_complexity
+        # node runs AFTER this on the graph, so ``state["complexity_score"]`` is
+        # not populated yet — classify inline (the classifier is a sub-ms pure
+        # function, no side effects). When the floor is 0.0 (default) the gate
+        # is inert; a calibrated >0 floor lets simple single-fact queries skip
+        # the paraphrase fanout (faster + cheaper) while complex queries expand.
+        _mq_cx_min = float(_pcfg(state, "multi_query_complexity_min", DEFAULT_MULTI_QUERY_COMPLEXITY_MIN))
+        if _mq_cx_min > 0.0:
+            _mq_q = state.get("query") or ""
+            try:
+                _, _mq_cx_score = _classify_query_complexity(_mq_q)
+            except (ValueError, TypeError):
+                _mq_cx_score = _mq_cx_min  # classify failure → do not suppress
+            if float(_mq_cx_score) < _mq_cx_min:
+                state["multi_query_skipped_simple"] = True
+                return []
+
         mq_enabled = bool(_pcfg(state, "multi_query_enabled", DEFAULT_MULTI_QUERY_ENABLED))
         mq_n_variants = int(_pcfg(state, "multi_query_n_variants", DEFAULT_MULTI_QUERY_N_VARIANTS))
         mq_max_variants = int(_pcfg(state, "multi_query_max_variants", DEFAULT_MULTI_QUERY_MAX_VARIANTS))
@@ -2759,9 +2806,11 @@ def build_graph(
                 # List/category ("liệt kê dịch vụ X" / "tư vấn về X"): return
                 # EVERY record whose name/category matches the keyword, so the
                 # LLM can list/count them ALL (vector/BM25 only surface top-k).
+                _stats_kw = getattr(range_filter, "keyword", "") or ""
                 entities = await stats_index_repo.query_by_name_keyword(
                     record_bot_id=state["record_bot_id"],
-                    keyword=getattr(range_filter, "keyword", "") or "",
+                    keyword=_stats_kw,
+                    synonyms=_resolve_stats_keyword_synonyms(state, _stats_kw),
                     limit=stats_limit,
                 )
             elif _operation in ("max", "min"):
@@ -2815,28 +2864,27 @@ def build_graph(
                         "stats_index_chunk_fetch_failed",
                         exc_info=True,
                     )
-            # Doc-level fallback when no chunk_id linkage exists yet.
-            if not linked_chunks and doc_ids and doc_repo is not None and hasattr(
-                doc_repo, "find_chunks_by_document_ids"
-            ):
-                try:
-                    linked_chunks = await doc_repo.find_chunks_by_document_ids(
-                        list(set(doc_ids)),
-                        record_bot_id=state["record_bot_id"],
-                    )
-                except (OSError, RuntimeError, ValueError, KeyError,
-                        AttributeError):
-                    logger.warning(
-                        "stats_index_doc_chunk_fetch_failed",
-                        exc_info=True,
-                    )
             # Surface the filtered/ranked rows as a synthetic context chunk.
-            # The stats rows carry no chunk FK, so linked_chunks are doc-level
-            # (the whole price table) — the LLM then has to re-filter "< 500k"
-            # itself and often misses the matching rows. Handing it the already
-            # filtered/ranked name+price list makes the aggregation result
-            # explicit. Grounded data only (values extracted from the corpus),
-            # no instruction text → not an app-inject (QG #10). Deduped + capped.
+            # The stats rows carry no chunk FK, so the only alternative is the
+            # doc-level dump of the WHOLE table — the LLM then has to re-filter
+            # "< 500k" itself and often misses the matching rows, or (worse, on a
+            # code lookup) reads the raw variant-blob rows and FABRICATES a
+            # price/stock for a near-duplicate code. Handing it the already
+            # filtered/ranked name+price+field list makes the result explicit
+            # and is the clean source of truth. Grounded data only (values
+            # extracted from the corpus), no instruction text → not an
+            # app-inject (QG #10). Deduped + capped. Built BEFORE the doc-level
+            # fallback so the fallback can be suppressed when this succeeds.
+            # A structured FIELD value is short + atomic (price, date, code,
+            # "30 phút"). Free-text extraction noise (a booking sentence
+            # mis-captured as a column) is many words — surfacing it pollutes
+            # the chunk and trips the grounding check on a correct answer. Keep
+            # only field-like values: domain-neutral word-count + char cap,
+            # skip generic placeholder columns.
+            def _is_field_like(v: str) -> bool:
+                return bool(v) and len(v) <= DEFAULT_STATS_ATTR_MAX_CHARS \
+                    and len(v.split()) <= DEFAULT_STATS_ATTR_MAX_WORDS
+
             _seen: set[tuple[str, int]] = set()
             _rows: list[str] = []
             for _e in entities:
@@ -2850,24 +2898,38 @@ def build_graph(
                 if _key in _seen:
                     continue
                 _seen.add(_key)
+                # A name column that is actually a synonym/variant mega-cell
+                # (a quoted "code, code, …" list parsed as col 0) is not a
+                # usable display label — surfacing it dilutes the chunk and can
+                # trip the grounding check. When the name is not field-like,
+                # drop it from the line lead and let the labeled attributes
+                # (productname / code / quantity / price / date …) carry the
+                # record. Domain-neutral: keyed on value shape, not corpus.
+                _name_field_like = _is_field_like(_name)
                 # Currency-neutral: emit the raw number only (the corpus may be
                 # in any currency — appending "VND" would break a USD/EUR bot).
-                _parts = [f"{_name}: {int(_price)}"] if _price is not None else [_name]
+                # When the name is field-like it labels the price (e.g.
+                # "Triệt lông nách: 500000"). When it is NOT (a variant mega-cell
+                # dropped from the lead), the bare number is ambiguous — the LLM
+                # cannot tell 972000 is a price vs a quantity/id — so label it
+                # generically "price:" (price_primary IS the schema's price
+                # column, a structure concept, not a corpus/brand literal).
+                if _name_field_like:
+                    _parts = (
+                        [f"{_name}: {int(_price)}"]
+                        if _price is not None
+                        else [_name]
+                    )
+                else:
+                    _parts = (
+                        [f"price: {int(_price)}"] if _price is not None else []
+                    )
                 # Surface the remaining structured columns (answer/quantity/date/
                 # image/...) generically so a record-shaped bot (e.g. an n8n
                 # results[] consumer) gets every field, not just the price. The
                 # column names come from the corpus header — domain-neutral, no
                 # hard-coded field list. Skip internal keys + mega-cells (the
                 # huge synonym/variant column that would dilute the chunk).
-                # A structured FIELD value is short + atomic (price, date,
-                # code, "30 phút"). Free-text extraction noise (a booking
-                # sentence mis-captured as a column) is many words — surfacing
-                # it pollutes the chunk and trips the grounding check on a
-                # correct answer. Keep only field-like values: domain-neutral
-                # word-count + char cap, skip generic placeholder columns.
-                def _is_field_like(v: str) -> bool:
-                    return bool(v) and len(v) <= DEFAULT_STATS_ATTR_MAX_CHARS \
-                        and len(v.split()) <= DEFAULT_STATS_ATTR_MAX_WORDS
                 _cat = str(_e.get("entity_category") or "").strip()
                 if _is_field_like(_cat):
                     _parts.append(f"category: {_cat}")
@@ -2880,6 +2942,10 @@ def build_graph(
                         _vs = str(_v).strip()
                         if _is_field_like(_vs):
                             _parts.append(f"{_k}: {_vs}")
+                if not _parts:
+                    # No field-like name, price, nor attribute → nothing
+                    # groundable to surface; skip rather than emit a blank line.
+                    continue
                 _rows.append(" | ".join(_parts))
                 if len(_rows) >= DEFAULT_STATS_INDEX_LIMIT:
                     break
@@ -2889,11 +2955,40 @@ def build_graph(
                 synthetic_chunks.append({
                     "content": _body,
                     "text": _body,
-                    "chunk_id": "",
+                    # Non-empty sentinel: the generate node drops chunks with a
+                    # falsy id from the <documents> block, which would make this
+                    # authoritative stats answer invisible to the LLM.
+                    "chunk_id": DEFAULT_STATS_SYNTHETIC_CHUNK_ID,
                     "document_name": "",
                     "score": 1.0,
                     "source": "stats_index",
                 })
+            # Doc-level fallback — ONLY when neither precise chunk-id linkage nor
+            # a synthetic chunk is available. The whole-document dump exists to
+            # avoid a no_chunks_short_circuit → OOS refuse when stats rows have
+            # no chunk FK (pre-backfill corpora). But when a synthetic chunk was
+            # built, that clean record IS the grounded context — adding the raw
+            # whole-table dump on top reintroduces the variant-blob noise the
+            # structured route exists to avoid, and on a code lookup the LLM then
+            # fabricates a price/stock from a near-duplicate row. Suppress it.
+            if (
+                not linked_chunks
+                and not synthetic_chunks
+                and doc_ids
+                and doc_repo is not None
+                and hasattr(doc_repo, "find_chunks_by_document_ids")
+            ):
+                try:
+                    linked_chunks = await doc_repo.find_chunks_by_document_ids(
+                        list(set(doc_ids)),
+                        record_bot_id=state["record_bot_id"],
+                    )
+                except (OSError, RuntimeError, ValueError, KeyError,
+                        AttributeError):
+                    logger.warning(
+                        "stats_index_doc_chunk_fetch_failed",
+                        exc_info=True,
+                    )
             return {
                 "entities": entities,
                 "linked_chunks": synthetic_chunks + linked_chunks,

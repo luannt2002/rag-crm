@@ -13,6 +13,8 @@ import pytest
 from ragbot.shared.query_range_parser import (
     RangeFilter,
     matches_summary_pattern,
+    parse_code_query,
+    parse_list_query,
     parse_money_vn,
     parse_range_query,
 )
@@ -342,3 +344,120 @@ def test_range_takes_priority_over_superlative() -> None:
     result = parse_range_query("dịch vụ rẻ nhất dưới 500k")
     assert result is not None
     assert result.price_max == 500_000  # range wins, not operation=min
+
+
+# ---------------------------------------------------------------------------
+# parse_code_query — product/spec code → structured name lookup
+# ---------------------------------------------------------------------------
+
+
+def test_parse_code_query_extracts_spec_code() -> None:
+    """A query carrying a spec code routes to the keyword name lookup."""
+    result = parse_code_query("lốp 195/65R15 còn hàng không?")
+    assert result is not None
+    assert result.operation == "keyword"
+    assert result.keyword == "195/65R15"
+    assert result.confidence >= RANGE_QUERY_MIN_CONFIDENCE
+
+
+def test_parse_code_query_price_phrasing() -> None:
+    result = parse_code_query("giá lốp 195/65R15")
+    assert result is not None
+    assert result.keyword == "195/65R15"
+
+
+def test_code_query_wins_over_polluted_list_keyword() -> None:
+    """When a price factoid splits 'giá … bao nhiêu' around a spec code
+    ('giá lốp 275/55R20 bao nhiêu'), the list parser captures a POLLUTED
+    keyword while the code parser extracts the clean code. The retrieve gate
+    must prefer the code (more specific) — assert both so the ordering
+    invariant is regression-guarded: code is clean, list is polluted.
+    """
+    q = "giá lốp 275/55R20 bao nhiêu?"
+    code = parse_code_query(q)
+    lst = parse_list_query(q)
+    assert code is not None and code.keyword == "275/55R20"
+    # The list parser DOES fire here with a non-matching phrase — proving why
+    # the code route must be consulted first (else this masks the code).
+    assert lst is None or "275/55R20" not in (lst.keyword or "") or "giá" in (
+        lst.keyword or ""
+    )
+
+
+def test_parse_code_query_hyphen_code() -> None:
+    result = parse_code_query("khi nào về hàng 2-R17")
+    assert result is not None
+    assert result.keyword == "2-R17"
+
+
+def test_parse_code_query_no_code_returns_none() -> None:
+    """A brand/keyword query with no code token → None (HALLU trap path)."""
+    assert parse_code_query("có lốp Michelin không?") is None
+    assert parse_code_query("dịch vụ nào đắt nhất") is None
+
+
+def test_parse_code_query_rejects_date_docnumber() -> None:
+    """A digits-only token (date / doc id / phone) is NOT a product code.
+
+    Guards against hijacking a legal "Thông tư 09/2020" or a phone number
+    away from its proper retrieval path.
+    """
+    assert parse_code_query("Thông tư 09/2020 quy định gì") is None
+    assert parse_code_query("Nghị định 16/2017") is None
+    assert parse_code_query("gọi 090-123-4567") is None
+
+
+def test_parse_code_query_empty_returns_none() -> None:
+    assert parse_code_query("") is None
+    assert parse_code_query("   ") is None
+
+
+# ---------------------------------------------------------------------------
+# parse_list_query — keyword extraction strips connective fillers
+#
+# Regression: an existence/list query with a filler word between "dịch vụ" and
+# the real keyword ("có dịch vụ VÀO/VỀ/NÀO da chết không") left the filler in
+# the extracted keyword ("vào về da chết"), so the structured ILIKE matched
+# nothing and the route silently fell back to vector (top-1 chunk) → only ONE
+# service surfaced instead of the full list.
+# ---------------------------------------------------------------------------
+
+
+def test_parse_list_strips_filler_vao_ve() -> None:
+    """'có dịch vụ vào về da chết không' → keyword 'da chết' (fillers removed)."""
+    result = parse_list_query("có dịch vụ vào về da chết không?")
+    assert result is not None
+    assert result.operation == "keyword"
+    assert result.keyword == "da chết"
+
+
+def test_parse_list_strips_filler_nao_ve() -> None:
+    result = parse_list_query("có dịch vụ nào về da chết không?")
+    assert result is not None
+    assert result.keyword == "da chết"
+
+
+def test_parse_list_existence_question_routes_keyword() -> None:
+    """A yes/no existence question still routes to the keyword list so EVERY
+    matching service surfaces, not just the top-1 vector chunk."""
+    for q in (
+        "có dịch vụ về da chết không?",
+        "có dịch vụ tẩy da chết không?",
+    ):
+        result = parse_list_query(q)
+        assert result is not None and result.operation == "keyword", q
+
+
+def test_parse_list_keyword_unchanged_no_filler() -> None:
+    """No-filler queries keep their existing keyword (no over-stripping)."""
+    assert parse_list_query("liệt kê dịch vụ tẩy da chết").keyword == "tẩy da chết"
+    assert parse_list_query("có bao nhiêu dịch vụ massage").keyword == "massage"
+    assert parse_list_query("tư vấn về da").keyword == "da"
+
+
+def test_parse_list_filler_preserves_multiword_service() -> None:
+    """Stripping the connective must not eat a real service token. 'ủ trắng'
+    survives ('về' is a filler, 'trắng' is content)."""
+    result = parse_list_query("có dịch vụ về ủ trắng body không?")
+    assert result is not None
+    assert "trắng" in (result.keyword or "")

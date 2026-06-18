@@ -17,6 +17,8 @@ Usage (ingest pipeline — Agent B2 wires this):
 """
 from __future__ import annotations
 
+import csv
+import io
 import re
 import unicodedata
 from dataclasses import dataclass, field
@@ -176,8 +178,20 @@ def _split_cols(line: str) -> list[str]:
     # Tab separator
     if "\t" in line:
         return [c.strip() for c in line.split("\t")]
-    # Comma separator (common for CSV chunks)
-    return [c.strip() for c in line.split(",")]
+    # Comma separator (common for CSV chunks). Parse with the csv module so a
+    # quoted field that itself contains commas stays ONE column. A naive
+    # line.split(",") shatters a quoted cell (e.g. a "code-variant, variant, …"
+    # synonym list) into N phantom columns, shifting every real column right so
+    # the header labels no longer align with their values (quantity/price/date
+    # end up holding garbage, the real numbers land in col_N). RFC-4180 quoting
+    # is domain-neutral — no corpus/bot assumption.
+    try:
+        row = next(csv.reader(io.StringIO(line)))
+    except (csv.Error, StopIteration):
+        # Malformed quoting → fall back to the naive split so a single bad
+        # line cannot abort extraction for the whole document.
+        return [c.strip() for c in line.split(",")]
+    return [c.strip() for c in row]
 
 
 def _extract_entity_from_row(

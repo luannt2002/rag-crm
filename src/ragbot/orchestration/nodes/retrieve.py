@@ -71,6 +71,8 @@ from ragbot.shared.embedding_cache import set_cached_embedding
 from ragbot.shared.errors import InvariantViolation
 from ragbot.shared.query_range_parser import (
     matches_summary_pattern as _matches_summary_pattern,
+    parse_code_query as _parse_code_query,
+    parse_code_query as _parse_code_query,
     parse_list_query as _parse_list_query,
     parse_range_query as _parse_range_query,
 )
@@ -112,6 +114,7 @@ from ragbot.shared.constants import (
     DEFAULT_RETRIEVE_TOP_K_BY_INTENT,
     DEFAULT_RRF_K,
     DEFAULT_SPECULATIVE_SIMILARITY_THRESHOLD,
+    DEFAULT_STATS_CODE_LOOKUP_ENABLED,
     DEFAULT_STATS_INDEX_LIMIT,
     DEFAULT_STATS_INDEX_RACE_ENABLED,
     DEFAULT_STATS_SUPERLATIVE_ENABLED,
@@ -200,10 +203,26 @@ async def retrieve(
             # the raw text; fall back to query when condense did not run.
             _raw_query = state.get("original_query") or state.get("query") or ""
             _range_filter = _parse_range_query(_raw_query)
+            # Code/spec lookup — tried BEFORE the fuzzy keyword list. A query
+            # carrying a product/spec CODE ("lốp 195/65R15 còn hàng?",
+            # "giá lốp 275/55R20 bao nhiêu") is a single exact-record lookup. The
+            # keyword-list parser would otherwise capture a POLLUTED phrase
+            # ("giá lốp 275/55R20") when the price-factoid words ("giá … bao
+            # nhiêu") are split by the code — that phrase ILIKE-matches no row →
+            # 0 stats → wrong vector fallback ("chưa tìm thấy") even though the
+            # code exists. A code token is the most specific signal, so it wins
+            # over the keyword list. Per-bot opt-out. Keyed on the code-token
+            # SHAPE — domain-neutral, no bot/brand literal.
+            if _range_filter is None and bool(_pcfg(
+                state, "stats_code_lookup_enabled",
+                DEFAULT_STATS_CODE_LOOKUP_ENABLED,
+            )):
+                _range_filter = _parse_code_query(_raw_query)
             # Keyword/category list route: "liệt kê dịch vụ X" / "tư vấn về X" /
             # "có bao nhiêu X" need EVERY matching record (vector/BM25 only
-            # surface top-k → incomplete list/count). When no price filter
-            # applies, fall back to a name/category keyword lookup.
+            # surface top-k → incomplete list/count). Only when no price filter
+            # AND no spec code applies, fall back to a name/category keyword
+            # lookup.
             if _range_filter is None:
                 _range_filter = _parse_list_query(_raw_query)
             # Superlative kill-switch: a "max"/"min" filter carries no numeric

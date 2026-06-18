@@ -284,11 +284,25 @@ async def chat_stream(req: ChatRequest, request: Request) -> StreamingResponse:
     # (LLM stream) blocks on full queue instead of buffering tokens
     # unbounded, preventing OOM on stuck/disconnected clients.
     sink: asyncio.Queue = asyncio.Queue(maxsize=DEFAULT_SSE_SINK_MAXSIZE)
+    # Resolve a persistent conversation_id so action bots keep multi-turn slot
+    # state across SSE turns. The inline graph here never went through the
+    # use-case get-or-create (unlike the queued /chat path), so this was the
+    # SSE booking-slot loss. Factoid bots resolve to None (no row churn).
+    from ragbot.interfaces.http.routes._action_conversation import (  # noqa: PLC0415
+        resolve_action_conversation_id,
+    )
+    _conversation_id = await resolve_action_conversation_id(
+        container.conv_repo(),
+        bot_cfg,
+        connect_id=connect_id,
+        tenant_id=tenant_uuid,
+        workspace_slug=workspace_id,
+    )
     initial_state: GraphState = build_chat_initial_state(
         record_tenant_id=tenant_uuid,
         request_id=request_id,
         message_id=message_id,
-        conversation_id=None,
+        conversation_id=_conversation_id,
         record_bot_id=bot_cfg.id,
         bot_cfg=bot_cfg,
         channel_type=req.channel_type,

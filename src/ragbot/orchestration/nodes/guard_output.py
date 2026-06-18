@@ -34,8 +34,10 @@ from ragbot.shared.constants import (
     DEFAULT_GROUNDING_CHECK_ENABLED,
     DEFAULT_GROUNDING_CHECK_THRESHOLD,
     DEFAULT_GROUNDING_INTENTS,
+    DEFAULT_GUARDRAIL_LEAK_MIN_MATCH_COUNT,
     DEFAULT_GUARDRAIL_LEAK_SHINGLE_SIZE,
     DEFAULT_SYSPROMPT_LEAK_SKIP_INTENTS,
+    DEFAULT_SYSPROMPT_LEAK_SKIP_STATS_ROUTE,
     DEFAULT_GUARDRAIL_OOS_SIMILARITY_THRESHOLD,
     DEFAULT_PIPELINE_PARALLEL_OUTPUT_GUARDS_ENABLED,
 )
@@ -91,6 +93,15 @@ async def guard_output(
             _grounding_intents = DEFAULT_GROUNDING_INTENTS
         _current_intent = state.get("intent") or ""
         _grounding_eligible = _current_intent in _grounding_intents
+        # Stats/aggregation route answers come from the authoritative structured
+        # index (exact price/quantity/date SQL), not fuzzy retrieval — the LLM
+        # relays those rows and the answer often REFORMATS them ("còn 338 cái"
+        # vs chunk "quantity: 338"), which the fuzzy grounding judge mislabels
+        # unsupported and FALSE-BLOCKS a correct answer. Skip grounding when the
+        # route is a stats lookup (HALLU traps never reach it — they return 0
+        # rows → vector path → grounding still applies). Per-bot overridable.
+        if str(state.get("retrieve_mode") or "").startswith("stats"):
+            _grounding_eligible = False
         _grounding_check_skipped = bool(
             _grounding_enabled and not _grounding_eligible
         )
@@ -202,6 +213,7 @@ async def guard_output(
             llm_fn = _grounding_llm
 
         _leak_shingle_size = int(_pcfg(state, "guardrail_leak_shingle_size", DEFAULT_GUARDRAIL_LEAK_SHINGLE_SIZE))
+        _leak_min_match = int(_pcfg(state, "guardrail_leak_min_match_count", DEFAULT_GUARDRAIL_LEAK_MIN_MATCH_COUNT))
         _sys_prompt = state.get("system_prompt", "")
         # Persona intents (greeting/identity) may legitimately echo the
         # sysprompt persona — skip the leak shingle so the intro the owner
@@ -213,6 +225,20 @@ async def guard_output(
             isinstance(_leak_skip_intents, (list, tuple))
             and str(state.get("intent") or "") in _leak_skip_intents
         )
+        # Stats/structured route: the synthetic chunk is pipe-delimited, so the
+        # doc-shingle subtraction below cannot cover the LLM's reworded prose
+        # relay — any 24-word overlap with the owner's answer-template sentences
+        # in the system_prompt then false-blocks a correct factoid. Skip the leak
+        # shingle on this authoritative route (mirrors the grounding skip above;
+        # the route never serves a prompt-extraction attack). Per-bot overridable.
+        if str(state.get("retrieve_mode") or "").startswith("stats") and bool(
+            _pcfg(
+                state,
+                "sysprompt_leak_skip_stats_route",
+                DEFAULT_SYSPROMPT_LEAK_SKIP_STATS_ROUTE,
+            )
+        ):
+            _leak_skip = True
         _sys_prompt_hash: list[str] | None = None
         if _sys_prompt and not _leak_skip:
             _words = _sys_prompt.split()
@@ -312,6 +338,7 @@ async def guard_output(
                     llm_complete_fn=None,
                     oos_template=_oos_template,
                     oos_similarity_threshold=_oos_threshold,
+                    leak_min_match_count=_leak_min_match,
                 )
             )
             # Task B: standalone LLM grounding judge. Bypasses
@@ -442,6 +469,7 @@ async def guard_output(
                 llm_complete_fn=llm_fn,
                 oos_template=_oos_template,
                 oos_similarity_threshold=_oos_threshold,
+                leak_min_match_count=_leak_min_match,
             )
             for h in hits:
                 flags.append(

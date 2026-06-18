@@ -21,6 +21,7 @@ from ragbot.shared.constants import (
     DEFAULT_GENERATION_TEMPERATURE,
     DEFAULT_GROUNDING_CHECK_ENABLED,
     DEFAULT_MULTI_QUERY_ENABLED,
+    DEFAULT_MULTI_QUERY_COMPLEXITY_MIN,
     DEFAULT_MULTI_QUERY_MAX_VARIANTS,
     DEFAULT_MULTI_QUERY_MODEL,
     DEFAULT_MULTI_QUERY_N_VARIANTS,
@@ -402,6 +403,10 @@ def _build_pipeline_config(_cfg: dict[str, Any], bot_cfg: Any) -> dict[str, Any]
         # cannot fall back to a silent default-True path.
         "multi_query_enabled": _cfg_bool(
             _cfg, "multi_query_enabled", DEFAULT_MULTI_QUERY_ENABLED,
+        ),
+        # Adaptive-RAG auto-mode floor (0.0 = inert); per-bot/system tunable.
+        "multi_query_complexity_min": _cfg_float(
+            _cfg, "multi_query_complexity_min", DEFAULT_MULTI_QUERY_COMPLEXITY_MIN,
         ),
         "multi_query_n_variants": _cfg_int(
             _cfg, "multi_query_n_variants", DEFAULT_MULTI_QUERY_N_VARIANTS,

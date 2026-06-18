@@ -18,7 +18,10 @@ from ragbot.infrastructure.guardrails.local_guardrail import (
     LocalGuardrail,
     OutputGuardrail,
 )
-from ragbot.shared.constants import DEFAULT_GUARDRAIL_LEAK_SHINGLE_SIZE
+from ragbot.shared.constants import (
+    DEFAULT_GUARDRAIL_LEAK_MIN_MATCH_COUNT,
+    DEFAULT_GUARDRAIL_LEAK_SHINGLE_SIZE,
+)
 
 
 def _hash_shingles(text: str, size: int = DEFAULT_GUARDRAIL_LEAK_SHINGLE_SIZE) -> list[str]:
@@ -52,15 +55,21 @@ _SYS_PROMPT = (
 def test_exact_oos_template_skips_leak_detection() -> None:
     """Bot answer = exact OOS template → no system_leak hit."""
     sys_hash = _hash_shingles(_SYS_PROMPT)
-    # Without OOS skip the assert would trip — verify the collision is real.
-    collide = OutputGuardrail.system_prompt_leak(_OOS_TEMPLATE, sys_hash)
+    # Verify the collision is real at the raw shingle level. ``min_match_count=1``
+    # disables the bulk-extraction floor (default 10) so even the single colliding
+    # shingle this short refusal produces surfaces — isolating the OOS-skip path
+    # from the new match-count threshold (a 1-shingle echo is no longer a leak by
+    # default, which is the desired behaviour for short refusals).
+    collide = OutputGuardrail.system_prompt_leak(
+        _OOS_TEMPLATE, sys_hash, min_match_count=1
+    )
     assert collide is not None and collide.rule_id == "system_leak", (
         "test fixture must produce a real shingle collision; if not the "
         "OOS-skip path is being tested against a no-op input"
     )
 
     hit = OutputGuardrail.system_prompt_leak(
-        _OOS_TEMPLATE, sys_hash, oos_template=_OOS_TEMPLATE
+        _OOS_TEMPLATE, sys_hash, oos_template=_OOS_TEMPLATE, min_match_count=1
     )
     assert hit is None
 
@@ -120,6 +129,32 @@ def test_empty_oos_template_falls_back_to_normal_check() -> None:
     )
     assert hit is not None
     assert hit.rule_id == "system_leak"
+
+
+def test_short_refusal_below_threshold_not_blocked() -> None:
+    """A short off-topic refusal echoes ONE customer-facing sysprompt sentence
+    (a few shingles) — below the bulk-extraction floor, so NOT a leak by default.
+    Regression for the spa/xe off-topic false-block (graceful refusal replaced by
+    a generic template). The OOS-skip is NOT used here — only the match threshold.
+    """
+    sys_hash = _hash_shingles(_SYS_PROMPT)
+    # 41-word OOS-style refusal that overlaps the sysprompt by a single shingle.
+    hit = OutputGuardrail.system_prompt_leak(_OOS_TEMPLATE, sys_hash)
+    assert hit is None, "single-shingle refusal echo must not block by default"
+
+
+def test_bulk_extraction_above_threshold_still_blocked() -> None:
+    """A verbatim multi-sentence sysprompt dump (≫ threshold shingles) is a real
+    extraction and MUST still block, even with no oos_template set."""
+    sys_hash = _hash_shingles(_SYS_PROMPT)
+    leaked_answer = (
+        "Bạn là chuyên gia tư vấn. Khi không thể giúp, hãy lịch sự xin lỗi và "
+        "đề nghị khách vui lòng liên hệ hotline để được hỗ trợ thêm thông tin "
+        "chính xác và đầy đủ bởi nhân viên tư vấn của chúng tôi."
+    )
+    hit = OutputGuardrail.system_prompt_leak(leaked_answer, sys_hash)
+    assert hit is not None and hit.rule_id == "system_leak"
+    assert hit.details["match_count"] >= DEFAULT_GUARDRAIL_LEAK_MIN_MATCH_COUNT
 
 
 @pytest.mark.asyncio

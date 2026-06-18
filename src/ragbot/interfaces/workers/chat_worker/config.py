@@ -163,6 +163,7 @@ _CHAT_CONFIG_KEYS: tuple[str, ...] = (
     "crag_min_fallback_score",
     "crag_skip_retry_above_score",
     "multi_query_enabled",
+    "multi_query_complexity_min",
     "multi_query_n_variants",
     "multi_query_max_variants",
     "multi_query_timeout_s",

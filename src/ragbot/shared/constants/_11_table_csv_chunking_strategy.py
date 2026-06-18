@@ -244,6 +244,16 @@ DEFAULT_MULTI_QUERY_INCLUDE_ORIGINAL: Final[bool] = True
 # greeting wastes an LLM call and adds latency without recall benefit.
 DEFAULT_MULTI_QUERY_MIN_TOKENS: Final[int] = 5
 DEFAULT_MULTI_QUERY_SKIP_CHITCHAT_INTENT: Final[bool] = True
+# Adaptive-RAG auto-mode gate (Jeong et al. 2024 — route by query complexity):
+# multi-query paraphrase fanout fires ONLY when the complexity classifier
+# scores the query >= this floor. Trivial single-fact queries (score 0) skip
+# the LLM fanout → faster + cheaper; anything carrying a complexity signal
+# (commas, conjunctions, multi-numeral, list/aggregation cues) still expands.
+# 0.0 = gate DISABLED (current behaviour, zero regression) — flip to a
+# calibrated value (load-test first; the "complex" label boundary is
+# DEFAULT_QUERY_COMPLEXITY_THRESHOLD=1.2) per-bot via
+# pipeline_config.multi_query_complexity_min. Honest default: OFF until measured.
+DEFAULT_MULTI_QUERY_COMPLEXITY_MIN: Final[float] = 0.0
 # dedup: cosine-similarity threshold above which two MQ variants
 # are treated as redundant (one is dropped). 0.95 keeps near-duplicate
 # rewrites from doubling fan-out cost without recall benefit.

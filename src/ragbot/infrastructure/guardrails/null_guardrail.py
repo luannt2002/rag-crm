@@ -28,6 +28,8 @@ from __future__ import annotations
 from typing import Any, Callable, Coroutine
 from uuid import UUID
 
+from ragbot.shared.constants import DEFAULT_GUARDRAIL_LEAK_MIN_MATCH_COUNT
+
 from ragbot.application.ports.guardrail_port import (
     GuardrailHit,
     GuardrailPort,
@@ -91,6 +93,7 @@ class NullGuardrail(GuardrailPort):
         grounding_use_structured: bool = False,  # noqa: ARG002
         oos_template: str | None = None,  # noqa: ARG002
         oos_similarity_threshold: float = 0.85,  # noqa: ARG002
+        leak_min_match_count: int = DEFAULT_GUARDRAIL_LEAK_MIN_MATCH_COUNT,  # noqa: ARG002
     ) -> list[GuardrailHit]:
         return []
 

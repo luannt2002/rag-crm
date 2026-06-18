@@ -99,6 +99,18 @@ DEFAULT_GUARDRAIL_MAX_INPUT_LENGTH: Final[int] = 8000
 DEFAULT_GUARDRAIL_MIN_ALPHA_CHARS: Final[int] = 2
 DEFAULT_GUARDRAIL_TIMEOUT_S: Final[int] = 30
 DEFAULT_GUARDRAIL_LEAK_SHINGLE_SIZE: Final[int] = 24
+# Minimum number of matching 24-word shingles before the system_prompt_leak guard
+# BLOCKS. The guard exists to stop prompt EXTRACTION (an attacker making the bot
+# dump its instructions) — that reproduces dozens of contiguous shingles. But a
+# legitimate off-topic REFUSAL or persona line legitimately echoes ONE short
+# customer-facing sentence the owner wrote in the sysprompt, yielding only a few
+# shingles — blocking it replaced a graceful "em chỉ tư vấn dịch vụ X" refusal
+# with a generic OOS template (worse UX). Measured: a refusal sentence ≈ 5 matches,
+# an internal-instruction block ≈ 13-89, a 300-word verbatim dump ≈ 277. A floor of
+# 10 clears single-sentence refusals while still catching bulk extraction. Per-bot
+# override: pipeline_config 'guardrail_leak_min_match_count'. Set to 1 to restore
+# the strict "block on any match" behaviour.
+DEFAULT_GUARDRAIL_LEAK_MIN_MATCH_COUNT: Final[int] = 10
 # Intents whose answer may echo the system_prompt persona without tripping the
 # system_prompt_leak shingle guard. A greeting/identity reply ("Em là trợ lý
 # tư vấn của <brand>, chuyên về ...") legitimately derives from the bot persona
@@ -109,6 +121,17 @@ DEFAULT_SYSPROMPT_LEAK_SKIP_INTENTS: Final[tuple[str, ...]] = (
     "greeting",
     "chitchat",
 )
+# Stats/structured route: the answer relays an authoritative SQL row whose
+# synthetic chunk is pipe-delimited (e.g. "972000 | code: ... | quantity: 338"),
+# so the LLM REWORDS it into prose ("…giá 972.000đ, hiện còn 338 lốp"). That
+# prose is absent from the doc-shingle set (which only covers the literal
+# pipe-blob), so any 24-word overlap with the owner's answer-template sentences
+# in the system_prompt false-fires the leak guard and BLOCKS a correct factoid.
+# The stats route never serves a prompt-extraction attack — it fires only on
+# price/list/code/aggregation factoids (0 rows otherwise → vector path), so the
+# leak shingle is skipped here, mirroring the grounding skip on the same route.
+# Per-bot override: pipeline_config 'sysprompt_leak_skip_stats_route'.
+DEFAULT_SYSPROMPT_LEAK_SKIP_STATS_ROUTE: Final[bool] = True
 # Bot's OOS refusal text shares vocabulary with system_prompt (per-bot owner phrases),
 # producing shingle collisions that mislabel legitimate refusals as prompt-leak.
 # Skip leak detection when answer ≈ oos_answer_template (Jaccard on word sets).

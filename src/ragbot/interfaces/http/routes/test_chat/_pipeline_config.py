@@ -23,6 +23,7 @@ from ragbot.shared.constants import (
     DEFAULT_GENERATION_TEMPERATURE,
     DEFAULT_GROUNDING_CHECK_ENABLED,
     DEFAULT_MAX_HISTORY,
+    DEFAULT_MULTI_QUERY_COMPLEXITY_MIN,
     DEFAULT_MULTI_QUERY_ENABLED,
     DEFAULT_PIPELINE_PRE_RETRIEVAL_PARALLEL_ENABLED,
     DEFAULT_MULTI_QUERY_MAX_VARIANTS,
@@ -128,6 +129,7 @@ _PIPELINE_CFG_KEYS: tuple[str, ...] = (
     "semantic_cache_ttl_s",
     "crag_skip_retry_above_score",
     "multi_query_enabled",
+    "multi_query_complexity_min",
     "multi_query_n_variants",
     "multi_query_max_variants",
     "multi_query_timeout_s",
@@ -762,6 +764,11 @@ async def _build_pipeline_config(cfg_svc: SystemConfigService, bot_cfg: Any) -> 
         # falls back to default-True on test endpoint.
         "multi_query_enabled": _coerce_bool(
             raw.get("multi_query_enabled"), DEFAULT_MULTI_QUERY_ENABLED,
+        ),
+        # Adaptive-RAG auto-mode floor (0.0 = gate inert). Per-bot/system
+        # override flows here so the complexity gate is tunable without code.
+        "multi_query_complexity_min": _coerce_float(
+            raw.get("multi_query_complexity_min"), DEFAULT_MULTI_QUERY_COMPLEXITY_MIN,
         ),
         "multi_query_n_variants": _coerce_int(
             raw.get("multi_query_n_variants"), DEFAULT_MULTI_QUERY_N_VARIANTS,

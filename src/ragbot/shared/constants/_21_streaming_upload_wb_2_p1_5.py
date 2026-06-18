@@ -58,6 +58,36 @@ RANGE_QUERY_MIN_CONFIDENCE: Final[float] = 0.7
 # document_service_index (not a re-parse of raw retrieved chunks, which fails
 # on CSV price formats like "Laser Carbon,1200000"). Domain-neutral.
 SUPERLATIVE_QUERY_CONFIDENCE: Final[float] = 0.8
+# --- Code/spec lookup ("lốp 195/65R15 còn hàng?" → name/category ILIKE) -------
+# A query carrying a product/spec CODE (e.g. "195/65R15", "2-R17", a SKU /
+# part number) is a single-record lookup: the user wants the row for that
+# exact code (stock / restock-date / price), not a fuzzy vector neighbour
+# (which returns a near-duplicate code's row → wrong tire). When such a code
+# is present and no price/list/superlative signal applies, route to the
+# clean structured index via query_by_name_keyword(code). Domain-neutral:
+# keyed on "a code token is present", never on a bot/brand/corpus literal.
+CODE_QUERY_CONFIDENCE: Final[float] = 0.8
+# Master switch (per-bot override: pipeline_config 'stats_code_lookup_enabled').
+# Fail-soft: a bot whose stats index has no row matching the code gets zero
+# entities → the route returns nothing → falls back to vector retrieve.
+DEFAULT_STATS_CODE_LOOKUP_ENABLED: Final[bool] = True
+# Sentinel chunk_id for the stats-route synthetic context chunk. The stats rows
+# carry no DB chunk FK, so the synthetic chunk would otherwise have an EMPTY
+# chunk_id — and the generate node DROPS any chunk whose id is falsy from the
+# <documents> block (guards against malformed rows). An empty id therefore made
+# the authoritative stats answer invisible to the LLM → false "không tìm thấy"
+# refuse on an in-stock product. A non-empty sentinel keeps the synthetic chunk
+# in context. Not a real DB id (no FK), just a stable structural marker.
+DEFAULT_STATS_SYNTHETIC_CHUNK_ID: Final[str] = "stats_index_synthetic"
+# Spec/product-code token detector for the code-lookup route. A code is an
+# alphanumeric run joined by one of / . - (e.g. 195/65R15, 2-R17, A1.B2) — a
+# format no natural-language word takes. Universal token shape, not corpus
+# data, so it stays domain-neutral. Mirrors the BM25 symbol-phrase token in
+# pgvector_store so the same codes that need exact BM25 matching also route to
+# the structured index. Operators override via system_config 'code_query_pattern'.
+DEFAULT_CODE_QUERY_PATTERN: Final[str] = (
+    r"[A-Za-z0-9]+(?:[/.\-][A-Za-z0-9]+)+"
+)
 # Master switch (per-bot override: pipeline_config 'stats_superlative_enabled').
 # Fail-soft: a bot whose stats index has no priced rows (e.g. a legal corpus)
 # gets zero entities → the route returns nothing → falls back to vector.
@@ -69,9 +99,14 @@ DEFAULT_STATS_SUPERLATIVE_LIMIT: Final[int] = 5
 # synthetic chunk. Skips mega-cells (e.g. a 64-synonym variant column) that
 # would dilute the chunk while keeping normal fields (answer/quantity/date).
 DEFAULT_STATS_ATTR_MAX_CHARS: Final[int] = 120
-# Max WORDS of a surfaced attribute value — a real field (price/date/"30 phút")
-# is few words; a mis-captured sentence is many. Skips free-text noise.
-DEFAULT_STATS_ATTR_MAX_WORDS: Final[int] = 4
+# Max WORDS of a surfaced attribute value — a real field (price/date/"30 phút",
+# or a full product name like "Lốp xe LANDSPIDER 195/65R15 91H CITYTRAXX G/P")
+# is a short phrase; a mis-captured paragraph is many words. The char cap above
+# (120) is the primary bound; this word cap only skips short-but-wordy free-text
+# noise. Kept generous enough that a real product name / title (≈6-10 words) is
+# surfaced — dropping it strips the one human-readable label the LLM needs to
+# map the row to the owner's answer schema. Override via system_config.
+DEFAULT_STATS_ATTR_MAX_WORDS: Final[int] = 12
 # Fallback structural-reference detector for the stats_index guard. The guard
 # normally relies on the injected metadata_filter_strategy to detect an
 # article/clause anchor and skip stats routing — but that strategy is None on

@@ -279,41 +279,13 @@ def _apply_rolling_summary(
     return [{"role": "system", "content": summary_text}, *tail]
 
 
-async def _resolve_action_conversation_id(
-    conv_repo: Any,
-    bot_cfg: Any,
-    *,
-    connect_id: str,
-    tenant_id: Any,
-    workspace_slug: str,
-) -> Any:
-    """Resolve a persistent conversation_id for conversational-action bots.
-
-    Returns the existing/new ``conversations.id`` (get-or-create keyed by
-    ``connect_id``) when the bot opted into ``action_config.enabled`` and a
-    repository is wired; otherwise ``None``. Multi-turn slot/lead-capture
-    state is keyed by this id, and the JSONB backend no-ops on ``None`` — so
-    factoid-only bots intentionally return ``None`` (no conversation-row churn
-    on single-turn load tests). Mirrors production, which gets the id from the
-    upstream chat payload. Graceful-degrades to ``None`` on repo error.
-    """
-    action_on = bool((getattr(bot_cfg, "action_config", {}) or {}).get("enabled"))
-    if not action_on or conv_repo is None:
-        return None
-    try:
-        from ragbot.shared.types import BotId, TenantId, UserId, WorkspaceId
-        conv = await conv_repo.get_or_create(
-            BotId(bot_cfg.id), UserId(connect_id),
-            record_tenant_id=TenantId(tenant_id),
-            workspace_id=WorkspaceId(workspace_slug),
-        )
-        return conv.id
-    except (SQLAlchemyError, ValueError, TypeError, AttributeError) as exc:
-        logger.warning(
-            "test_chat_conversation_resolve_failed",
-            error=str(exc), error_type=type(exc).__name__,
-        )
-        return None
+# Promoted to a neutral shared module so the production SSE/sync routes reuse
+# the exact same get-or-create logic (was previously test-only, which left
+# ``chat_stream.py`` hardcoding ``conversation_id=None`` → SSE booking-slot
+# loss). Re-exported here under the original name for import/pin parity.
+from ragbot.interfaces.http.routes._action_conversation import (  # noqa: E402
+    resolve_action_conversation_id as _resolve_action_conversation_id,
+)
 
 
 def _doc_service(request: Request):
