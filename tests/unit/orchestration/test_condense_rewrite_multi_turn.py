@@ -24,7 +24,12 @@ def test_condense_threshold_is_less_than_two_not_less_equal_two() -> None:
 
     Source-level pin so a future refactor cannot silently revert.
     """
-    src = inspect.getsource(qg.build_graph)
+    # condense_question's body now lives in its own node module (build_graph
+    # binds it via functools.partial). Pin the threshold at the source of truth.
+    from ragbot.orchestration.nodes.condense_question import (
+        condense_question as _condense_question_node,
+    )
+    src = inspect.getsource(_condense_question_node)
     # Find the condense_question definition body
     assert "async def condense_question" in src
     # 2026-06-13 zero-hardcode: the literal ``2`` was lifted into
