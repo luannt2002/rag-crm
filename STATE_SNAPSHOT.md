@@ -21,14 +21,17 @@ Live DB stamped `squash_base_20260618` nhưng DDL áp **một phần**. Em confi
 | S1+T1 | schema re-sync 6 bảng/2 trigger/access_groups/index | (DB DDL) | psql + load-test no-regress |
 | I1 | chunks_processed import (ingest_phases:297 `shared.tenant_context`→`infrastructure.db.engine`, ModuleNotFound thật) | `2ae0500` | import OK + signature match |
 | L1 | channel_type 4th ledger key (ContextVar+bind+thread 2 emit+aux) | `2ae0500` | runtime: row `channel_type=web` (was 0/261) |
-| R1 | parent-embedding backfill (legal 87 parent, app Jina params) | `3d86267` | **HONEST: KHÔNG fix Điều 56** (top=0.168, structural-query cần exact-path match, KHÔNG phải embedding) — no regression |
+| R1-backfill | parent-embedding backfill (legal 87 parent) | `3d86267` | **HONEST: KHÔNG fix Điều 56** (red-herring) — no regression |
+| **R1-structural** 🎯 | **EXPERT FIX**: structural-filter pattern/schema drift — chunker viết `[Chương>Điều 56. title]` nhưng filter assume `[Điều 56]` → match 0 chunk → degrade unfiltered → mất article. Sửa pattern khớp breadcrumb + boundary-safe + 2 pin test | `5bbc6db` | **Điều 56 trả lời ĐÚNG** runtime ("hiệu lực 01/01/2021..."), 5916 pass, no regression, HALLU traps refuse |
+| **W1** | recovery anti-dup **time-bound cooldown** (1h) → hết permanent-stuck DRAFT + pin test; xe-3 (bad doc text/html) soft-deleted → 0 stuck | `5a8283b` | recovery test 10/10, 0 stuck DRAFT |
 
-### ⏳ CÒN LẠI (honest — cần careful/governed, KHÔNG rush)
-- **R1-structural** (Điều 56): root thật = retrieval cho query số-điều cần **structural-anchor exact match** (retrieve.py `detect_vn_structural_anchor`/`structural_filter_patterns` + verify adapter support). Deeper fix. HALLU-safe (refuse, không bịa).
-- **W1** (recovery xe-3 stuck DRAFT): recovery worker KHÔNG insert jobs row + anti-dup khoá vĩnh viễn sau replay-fail. LOW-impact (1 doc Google-Sheets test fail mime text/html; 3 bot OK). Rush = rủi ro replay-storm.
-- **H1 — REFRAME (KHÔNG phải bug)**: agent gọi "HALLU breach" vì grounding-check `severity=warn` không block. NHƯNG đây là **sacred design CỐ Ý** (rule #2: app KHÔNG override answer LLM). Block deterministic = **vi phạm sacred**. HALLU=0 enforce bằng sysprompt GATE + CRAG (empirical 5/5 refuse trap khi em test). Cải thiện = sysprompt mạnh hơn / async-grounding HITL alert, KHÔNG phải block.
-- **RLS1** (governed): baseline CÓ RLS DDL (em skip khi apply). Bật cần đổi runtime DSN sang `ragbot_app` (non-superuser; hiện cả 2 DSN = superuser → RLS bypass). App-level scoping ĐÃ chắc (defence-in-depth). Ops task theo `docs/dev/RLS_ACTIVATION_RUNBOOK.md`.
-- **C1** (semantic_cache no-GC, 48/85 expired): thêm purge cron (`scripts/purge_stale_data.py` chưa wire).
+### 🎓 "Đâu là EXPERT solution" — R1 minh hoạ: band-aid (backfill embedding, KHÔNG fix) vs **expert** (đào tới immutable root = pattern/schema drift → sửa đúng tầng + boundary-safe + regression pin → verify số thật). Đúng CLAUDE.md 5-step.
+
+### ⏳ CÒN LẠI (design/governed — KHÔNG blind-fix vì sẽ vi phạm sacred / phá app)
+- **H1 — KHÔNG PHẢI BUG (reframe)**: grounding `severity=warn` không-block là **sacred design CỐ Ý** (rule #2: app KHÔNG override answer). Block deterministic = **vi phạm sacred**. HALLU=0 = sysprompt GATE + CRAG (empirical: em test 5/5 trap "tắm trắng pha lê" đều refuse). Expert path KHÔNG vi phạm = async-grounding → **HITL flag** (review) / sysprompt-hardening, KHÔNG auto-override.
+- **RLS1** (governed, KHÔNG blind-activate): baseline có RLS DDL; bật enforcement cần đổi DSN sang `ragbot_app` non-superuser (hiện superuser → bypass). Blind-enable + DSN-switch sai GUC = **vỡ mọi query**. App-scoping đã chắc (defence-in-depth). Theo `docs/dev/RLS_ACTIVATION_RUNBOOK.md`, controlled window.
+- **W1-followup**: recovery insert jobs-row (observability) + replay-outcome tracking — đã hết permanent-stuck (đủ); phần này là nice-to-have.
+- **C1** (cache no-GC, expired bị filter đúng nên chỉ bloat): wire `scripts/purge_stale_data.py` vào embedded-worker cron. LOW.
 
 ---
 
