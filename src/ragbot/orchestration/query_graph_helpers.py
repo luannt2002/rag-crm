@@ -133,6 +133,23 @@ def _compute_bot_cache_version(system_prompt: str | None, oos_answer_template: s
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:DEFAULT_BOT_CACHE_VERSION_HASH_LEN]
 
 
+def _pcfg(state: Any, key: str, default: Any = None) -> Any:
+    """Read pipeline config value from GraphState with fallback default.
+
+    260525 Bug #12 — also treat ``None`` as "missing". The Bug #7c bulk
+    closure populates 78 keys with ``raw.get(key, None)`` so the key is
+    PRESENT in the dict but the value is ``None`` (no operator override
+    in ``system_config``). Pre-fix this short-circuited the caller-side
+    ``DEFAULT_*`` fallback and propagated ``None`` straight through to
+    code like ``float(_pcfg(...))`` which then crashed.
+
+    Semantically ``None`` means "no operator override → use caller
+    default", which is what callers already pass as ``default``.
+    """
+    raw = (state.get("pipeline_config") or {}).get(key, default)
+    return default if raw is None else raw
+
+
 def _is_null_lexical(adapter: Any) -> bool:
     """Return True when ``adapter`` is the Null Object for lexical retrieval.
 

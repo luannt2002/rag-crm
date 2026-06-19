@@ -93,6 +93,7 @@ from ragbot.orchestration.query_graph_helpers import (
     _compute_bot_cache_version,
     _is_null_lexical,
     _parse_doc_type_vocabulary,
+    _pcfg,
     _render_captured_slots,
     _uuid_or_none,
     expand_parent_chunks,
@@ -489,23 +490,6 @@ def _lang(state: Any) -> LanguagePack:  # noqa: ANN401
     if rows:
         return language_pack_from_dict(language, rows)
     return get_pack(language)
-
-def _pcfg(state: Any, key: str, default: Any = None) -> Any:  # noqa: ANN401
-    """Read pipeline config value from GraphState with fallback default.
-
-    260525 Bug #12 — also treat ``None`` as "missing". The Bug #7c bulk
-    closure populates 78 keys with ``raw.get(key, None)`` so the key is
-    PRESENT in the dict but the value is ``None`` (no operator override
-    in ``system_config``). Pre-fix this short-circuited the caller-side
-    ``DEFAULT_*`` fallback and propagated ``None`` straight through to
-    code like ``float(_pcfg(...))`` which then crashed.
-
-    Semantically ``None`` means "no operator override → use caller
-    default", which is what callers already pass as ``default``.
-    """
-    raw = (state.get("pipeline_config") or {}).get(key, default)
-    return default if raw is None else raw
-
 
 def _resolve_xml_wrap_enabled(state: Any) -> bool:  # noqa: ANN401
     """Return the effective ``xml_wrap_enabled`` decision for this request.
