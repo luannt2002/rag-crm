@@ -14,8 +14,16 @@
 ### ✅ Phase 4 A/B — mechanism + Test 1 MEASURED (commit `e3fa461`)
 - **Cơ chế psql-free**: thêm `pipeline_config_overrides` (test-mode only) vào `TestChatRequest` → merge lên pipeline_config trong `chat_routes` → load-test flip cờ bất kỳ per-request, KHÔNG đụng DB (tránh cấm psql). 232 test_chat pass.
 - **Test 1 `cascade_routing_enabled`** (`scripts/ab_cascade_20260619.py`, A=off vs B=on, bypass_cache, n=6×2): **cost −12.3%** ($0.005298→$0.004646); factoid cắt mạnh nhất (báo cáo sự cố −35%, bảo hành lốp −21%); superlative (complex) GIỮ full model đúng (cost ngang); **answer byte-similar = quality giữ nguyên**. Key ChatGPT verified còn quota (HTTP 200).
-- **Còn**: bật cascade persistent phải qua alembic/admin (không psql) — quyết định riêng. Test 2-5 (adaptive_context, speculative_retrieve, reflect_skip, neighbor_expand) chưa chạy — matrix sẵn trong subagent report.
-- ⚠️ n=1/case = directional signal, chưa multi-iter rigor. Nhưng pattern factoid→nano rõ.
+- **Test 2-5 ĐÃ CHẠY** (`scripts/ab_flags_20260619.py`, n=6, baseline chung + 4 treatment, **verified answer-diff từng cái**):
+  | cờ | cost | latency | quality | verdict |
+  |---|---|---|---|---|
+  | **mq_speculative** | −21.1% | −779ms | neutral (verified) | ✅ safe win (tốt nhất) |
+  | **adaptive_context** | −18.3% | −619ms | neutral (verified) | ✅ safe win |
+  | speculative_retrieve | −19.3% | +738ms | grounded coverage-gain | ⚠️ cost win nhưng +latency |
+  | neighbor_expand | +4.0% | −71ms | context giàu hơn | quality trade |
+  - **RIGOR (rule #0)**: 3/6 answer "changed" → em đọc diff TỪNG cái. adaptive/mq = chỉ khác "ạ"/"bên em→Dr.Medispa" = quality y nguyên. speculative đổi Điều 56 từ refuse→claim "Chương 3 hiệu lực thi hành" → **NGHI HALLU → verify corpus**: corpus CÓ chunk `[Chương 3 > Điều 56. Hiệu lực thi hành] ... hiệu lực 01/01/2021` → **GROUNDED, KHÔNG hallu**, là coverage-gain (baseline miss).
+  - **🔴 FINDING coverage miss**: baseline REFUSE SAI "Điều 56 không có nội dung" trong khi corpus CÓ (Điều 56 = hiệu lực thi hành, 01/01/2021). Retrieval miss — issue riêng đáng đào (faithfulness OK nhưng coverage <100% câu này).
+- **Còn**: bật mq_speculative + adaptive_context persistent (qua alembic/admin, KHÔNG psql) để áp dụng cost −18..21% thật; Test 4 reflect_skip cần prereq reflection_enabled (chưa chạy). n=1/case = directional, chưa multi-iter rigor.
 
 ### 🟡 Phase 6-E — VẪN DEFER (đánh giá lại, không grind T3 rủi ro)
 - Composite `cache_check_and_understand_parallel` (190 dòng, orchestrate 4 callable + task-cancel logic) + ~6 source-inspection test phải retarget + KHÔNG tới <1200 (cần services-refactor). Để phiên riêng có load-test gác. query_graph.py giữ **2828** (A-D done, verified).
