@@ -40,6 +40,7 @@ from ragbot.orchestration.nodes.critique_parser import (
     critique_parse as _critique_parse_node,
 )
 from ragbot.orchestration.nodes.rewrite_retry import rewrite_retry as _rewrite_retry_node
+from ragbot.orchestration.nodes.router import router as _router_node
 from ragbot.orchestration.nodes.generate import generate as _generate_node
 from ragbot.orchestration.nodes.grade import grade as _grade_node
 from ragbot.orchestration.nodes.guard_output import (
@@ -2164,28 +2165,13 @@ def build_graph(
                 )
         return merged
 
-    async def router(state: GraphState) -> dict:
-        async with state["step_tracker"].step("router"):
-            if model_resolver is None or llm is None:
-                raise InvariantViolation("LLM runtime not configured for node=routing")
-            messages = [
-                {"role": "system", "content": _lang(state).prompt_understand},
-                {"role": "user", "content": f"<question>{state['query']}</question>"},
-            ]
-            payload, _ctx = await _invoke_llm_node(
-                state,
-                purpose="routing",
-                messages=messages,
-                user_prompt=state["query"],
-            )
-            raw = (payload["text"] or "").strip().lower()
-            intent = DEFAULT_INTENT_FALLBACK
-            for cand in _VALID_INTENTS:
-                if cand in raw:
-                    intent = cand
-                    break
-            update: dict = {"intent": intent}
-            return update
+    router = functools.partial(
+        _router_node,
+        model_resolver=model_resolver,
+        llm=llm,
+        _lang=_lang,
+        _invoke_llm_node=_invoke_llm_node,
+    )
 
     async def rewrite(state: GraphState) -> dict:
         # Wave M3.7-G1 — name step ctx so the rewrite LLM cost is
