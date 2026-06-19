@@ -57,7 +57,10 @@ def test_rewrite_node_passes_history_into_user_content() -> None:
     After fix: when history exists, user content is
         ``"Conversation context (last turns):\\n...\\nCurrent query: ..."``
     """
-    src = inspect.getsource(qg.build_graph)
+    # rewrite's body now lives in its own node module (build_graph binds it
+    # via functools.partial). Pin the history-threading logic at its source.
+    from ragbot.orchestration.nodes.rewrite import rewrite as _rewrite_node
+    src = inspect.getsource(_rewrite_node)
     # Locate rewrite() node code
     assert "async def rewrite" in src
     # Hallmark of the new threading logic

@@ -219,10 +219,15 @@ def test_check_cache_closure_still_defined_in_build_graph() -> None:
 
 
 def test_rewrite_closure_still_defined_in_build_graph() -> None:
-    """The ``rewrite`` closure is invoked by ``rewrite_and_mq_parallel``
-    when its flag is OFF. The function definition MUST stay."""
+    """The ``rewrite`` callable is invoked by ``rewrite_and_mq_parallel``
+    when its flag is OFF. The binding MUST stay so the fallback
+    ``rewrite(state)`` call resolves.
+
+    rewrite's body now lives in nodes/rewrite.py; build_graph binds it via
+    functools.partial — still callable as ``rewrite(state)``.
+    """
     src = inspect.getsource(qg.build_graph)
-    assert "async def rewrite(state: GraphState)" in src, (
+    assert "rewrite = functools.partial(" in src, (
         "Closure ``rewrite`` removed but the parallel wrapper still "
         "calls it for the byte-identical fallback path."
     )
