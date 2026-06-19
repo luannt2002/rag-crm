@@ -16,7 +16,58 @@ import json as _json_mod
 from typing import Any
 from uuid import UUID
 
-from ragbot.shared.constants import DEFAULT_BOT_CACHE_VERSION_HASH_LEN
+from ragbot.shared.constants import (
+    DEFAULT_BOT_CACHE_VERSION_HASH_LEN,
+    DEFAULT_PARSE_DECOMPOSED_MAX_SUB,
+)
+
+
+def parse_decomposed_sub_queries(
+    raw_llm_text: str, *, max_sub: int = DEFAULT_PARSE_DECOMPOSED_MAX_SUB,
+) -> list[str]:
+    """Parse LLM JSON-array output. raw text → list[str] (max `max_sub`)."""
+    if not raw_llm_text:
+        return []
+    text = raw_llm_text.strip()
+    if not text.startswith("["):
+        return []
+    try:
+        parsed = _json_mod.loads(text)
+    except (ValueError, TypeError):
+        # Malformed JSON / non-string input — defensive parse failure.
+        return []
+    # A "decomposition" is structurally ≥2 sub-queries; fewer means the LLM
+    # decided the query was atomic — not a magic threshold but a definition.
+    if not isinstance(parsed, list) or len(parsed) < 2:  # noqa: PLR2004
+        return []
+    return [str(q).strip() for q in parsed[:max_sub] if str(q).strip()]
+
+
+def expand_parent_chunks(
+    chunks: list[dict],
+    parent_map: dict[str, dict],
+) -> list[dict]:
+    """Swap child chunks for their parent content (small-to-big retrieval); dedup by parent id."""
+    seen_parents: set[str] = set()
+    expanded: list[dict] = []
+    for chunk in chunks:
+        pcid = chunk.get("parent_chunk_id")
+        if pcid and str(pcid) in parent_map:
+            pcid_str = str(pcid)
+            if pcid_str in seen_parents:
+                continue  # dedup
+            seen_parents.add(pcid_str)
+            parent = parent_map[pcid_str]
+            expanded.append({
+                **chunk,
+                "content": parent["content"],
+                "text": parent.get("text", parent["content"]),
+                "chunk_id": pcid_str,
+                "is_parent_expanded": True,
+            })
+        else:
+            expanded.append(chunk)
+    return expanded
 
 
 def _uuid_or_none(value: Any) -> Any:

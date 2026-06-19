@@ -95,6 +95,8 @@ from ragbot.orchestration.query_graph_helpers import (
     _parse_doc_type_vocabulary,
     _render_captured_slots,
     _uuid_or_none,
+    expand_parent_chunks,
+    parse_decomposed_sub_queries,
 )
 
 logger = structlog.get_logger(__name__)
@@ -193,7 +195,6 @@ from ragbot.shared.constants import (
     DEFAULT_DECOMPOSE_CONFIDENCE_GATE,
     DEFAULT_DECOMPOSE_MIN_TOKENS,
     DEFAULT_DECOMPOSE_TOP_K_PER_SUBQUERY,
-    DEFAULT_PARSE_DECOMPOSED_MAX_SUB,
     DEFAULT_DECOMPOSE_USE_STRUCTURED_OUTPUT,
     DEFAULT_INTENT_CONFIDENCE_FALLBACK,
     DEFAULT_GENERATE_CONTEXT_TRUST_HINT_ENABLED,
@@ -416,25 +417,6 @@ from ragbot.orchestration.retrieval_filter import (  # noqa: E402
 _CITATION_RE = re.compile(r"\[chunk:([0-9a-f\-]+)\]", re.IGNORECASE)
 
 
-def parse_decomposed_sub_queries(
-    raw_llm_text: str, *, max_sub: int = DEFAULT_PARSE_DECOMPOSED_MAX_SUB,
-) -> list[str]:
-    """Parse LLM JSON-array output. raw text → list[str] (max `max_sub`)."""
-    if not raw_llm_text:
-        return []
-    text = raw_llm_text.strip()
-    if not text.startswith("["):
-        return []
-    try:
-        parsed = _json_mod.loads(text)
-    except (ValueError, TypeError):
-        # Malformed JSON / non-string input — defensive parse failure.
-        return []
-    if not isinstance(parsed, list) or len(parsed) < 2:
-        return []
-    return [str(q).strip() for q in parsed[:max_sub] if str(q).strip()]
-
-
 async def retry_hybrid_with_original(
     vector_store: Any,
     original_query: str,
@@ -486,33 +468,6 @@ async def retry_hybrid_with_original(
             exc_info=True,
         )
         return []
-
-
-def expand_parent_chunks(
-    chunks: list[dict],
-    parent_map: dict[str, dict],
-) -> list[dict]:
-    """Swap child chunks for their parent content (small-to-big retrieval); dedup by parent id."""
-    seen_parents: set[str] = set()
-    expanded: list[dict] = []
-    for chunk in chunks:
-        pcid = chunk.get("parent_chunk_id")
-        if pcid and str(pcid) in parent_map:
-            pcid_str = str(pcid)
-            if pcid_str in seen_parents:
-                continue  # dedup
-            seen_parents.add(pcid_str)
-            parent = parent_map[pcid_str]
-            expanded.append({
-                **chunk,
-                "content": parent["content"],
-                "text": parent.get("text", parent["content"]),
-                "chunk_id": pcid_str,
-                "is_parent_expanded": True,
-            })
-        else:
-            expanded.append(chunk)
-    return expanded
 
 
 _VALID_INTENTS: list[str] = list(get_args(UnderstandOutput.model_fields["intent"].annotation))
