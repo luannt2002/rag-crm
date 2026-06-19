@@ -232,6 +232,16 @@ DEFAULT_RECOVERY_STUCK_THRESHOLD_S: Final[int] = 900
 # cannot self-DoS the worker pool. 100 docs/5min = 20 docs/min replay,
 # well below DEFAULT_RL_UPLOAD_PER_MIN=30 ingest tier cap.
 DEFAULT_RECOVERY_BATCH_SIZE: Final[int] = 100
+# Replay-suppression cooldown. The anti-dup join hides a doc that already has a
+# recent replay outbox row so a sweep does not re-emit while the worker is still
+# processing. WITHOUT a time bound this becomes PERMANENT: once a replay is
+# marked 'processed' (on publish-to-stream) the doc is hidden forever — so a
+# replay whose downstream ingest then FAILED leaves the doc stuck in DRAFT with
+# no further sweep (observed: xe-3). Bounding the suppression to this cooldown
+# turns permanent-stuck into retry-with-backoff: after the window a still-stuck
+# doc is swept again. 1 h >> a full ingest (parse+chunk+embed), so a healthy
+# in-flight ingest is never double-replayed.
+DEFAULT_RECOVERY_REPLAY_COOLDOWN_S: Final[int] = 3600
 
 # ── Cascade Routing thresholds (T1-Smartness + T2-CostPerf) ─────────────
 # Adaptive Router downstream of the query_complexity classifier. When a

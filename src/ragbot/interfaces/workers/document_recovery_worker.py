@@ -83,6 +83,7 @@ from ragbot.infrastructure.repositories.audit_chain_writer import (
 from ragbot.shared.constants import (
     DEFAULT_RECOVERY_BATCH_SIZE,
     DEFAULT_RECOVERY_INTERVAL_S,
+    DEFAULT_RECOVERY_REPLAY_COOLDOWN_S,
     DEFAULT_RECOVERY_STUCK_THRESHOLD_S,
     SUBJECT_DOCUMENT_UPLOADED,
     WORKSPACE_SYSTEM_SLUG,
@@ -129,6 +130,7 @@ async def _scan_stuck_documents(
     session: Any,
     stuck_threshold_s: int,
     batch_size: int,
+    replay_cooldown_s: int,
 ) -> list[Any]:
     """Return up to ``batch_size`` rows stuck in DRAFT or active-0-chunk.
 
@@ -137,6 +139,13 @@ async def _scan_stuck_documents(
     flight (publisher hasn't drained yet or worker is retrying) — skip
     it. The ``LEFT JOIN ... WHERE o.id IS NULL`` pattern is the
     canonical "not exists" SQL.
+
+    The anti-dup is TIME-BOUNDED by ``replay_cooldown_s``: only a recent
+    replay suppresses the sweep. A replay row is marked ``processed`` on
+    publish-to-stream, so without the bound a replay whose downstream
+    ingest then FAILED would hide the doc forever (permanent DRAFT). The
+    cooldown turns that into retry-with-backoff — after the window the
+    still-stuck doc is swept again.
     """
     # ``outbox.payload`` is ``bytea`` (binary-safe JSON storage), so we
     # decode via ``convert_from(..., 'UTF8')`` before casting to jsonb.
@@ -171,6 +180,7 @@ async def _scan_stuck_documents(
             AND o.subject = :subject
             AND o.status IN ('pending', 'processed')
             AND o.created_at > GREATEST(d.created_at, d.updated_at)
+            AND o.created_at > now() - make_interval(secs => :replay_cooldown_s)
         WHERE d.deleted_at IS NULL
           AND o.id IS NULL
           AND (
@@ -191,6 +201,7 @@ async def _scan_stuck_documents(
             "subject": SUBJECT_DOCUMENT_UPLOADED,
             "stuck_threshold_s": stuck_threshold_s,
             "batch_size": batch_size,
+            "replay_cooldown_s": replay_cooldown_s,
         },
     )
     return list(result.fetchall())
@@ -295,6 +306,7 @@ async def _run_one_sweep(
     session_factory: Any,
     stuck_threshold_s: int,
     batch_size: int,
+    replay_cooldown_s: int = DEFAULT_RECOVERY_REPLAY_COOLDOWN_S,
 ) -> int:
     """Scan + replay one batch. Returns count of successful replays.
 
@@ -309,6 +321,7 @@ async def _run_one_sweep(
             session=session,
             stuck_threshold_s=stuck_threshold_s,
             batch_size=batch_size,
+            replay_cooldown_s=replay_cooldown_s,
         )
     finally:
         await session.close()

@@ -229,9 +229,14 @@ async def test_sweep_inserts_outbox_for_each_stuck_row(
     # Anti-dup join must compare against the LAST write, not first insert,
     # so re-ingested (updated_at-bumped) docs are not excluded forever.
     assert "GREATEST(d.created_at, d.updated_at)" in sql_text
+    # The suppression MUST be time-bounded by the replay cooldown — otherwise a
+    # replay marked 'processed' on publish whose downstream ingest then failed
+    # would hide the doc permanently (the xe-3 permanent-DRAFT stuck case).
+    assert "make_interval(secs => :replay_cooldown_s)" in sql_text
     assert "deleted_at IS NULL" in sql_text
     assert scan_session.executes[0][1]["stuck_threshold_s"] == 900
     assert scan_session.executes[0][1]["batch_size"] == 100
+    assert scan_session.executes[0][1]["replay_cooldown_s"] == 3600
 
 
 @pytest.mark.asyncio
