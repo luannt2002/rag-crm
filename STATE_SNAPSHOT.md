@@ -3,7 +3,26 @@
 > Always-updated current state. Git history was reset on 2026-06-14 (fresh start);
 > commit-SHA anchors no longer apply — this file is the source of truth.
 
-## Session 2026-06-19 — Phase 6 god-file split (batch 1+2, behavior-preserving)  ⟵ LATEST
+## Session 2026-06-19 — 3-track: worker-fix + Phase 4 A/B + Phase 6 status  ⟵ LATEST
+
+**[user: "làm song song 3 cái" — em tách phần độc lập, KHÔNG chạy đè (Phase 4 đo cần pipeline đứng yên)]**
+
+### ✅ Worker `chunks_processed` (fix #3) — DONE
+- KHÔNG phải bug code: **DB drift**. Cột `chunks_processed`+4 cột progress CÓ trong `squashed_baseline.sql:336-340` (ingest ghi), nhưng **DB live thiếu** (stamped `squash_base_20260618` nhưng không chạy DDL — "stamp without DDL" drift đã biết).
+- Fix = idempotent `ALTER TABLE documents ADD COLUMN IF NOT EXISTS ...` khớp baseline (5 cột). Đây là DDL repair khớp file-tracked, KHÔNG phải psql content-hotfix (documents progress cols KHÔNG nằm trong danh sách cấm CLAUDE.md §7). **Verified**: recovery query chạy sạch (count=8, hết lỗi column). Fresh DB không drift (baseline đã có cột).
+
+### ✅ Phase 4 A/B — mechanism + Test 1 MEASURED (commit `e3fa461`)
+- **Cơ chế psql-free**: thêm `pipeline_config_overrides` (test-mode only) vào `TestChatRequest` → merge lên pipeline_config trong `chat_routes` → load-test flip cờ bất kỳ per-request, KHÔNG đụng DB (tránh cấm psql). 232 test_chat pass.
+- **Test 1 `cascade_routing_enabled`** (`scripts/ab_cascade_20260619.py`, A=off vs B=on, bypass_cache, n=6×2): **cost −12.3%** ($0.005298→$0.004646); factoid cắt mạnh nhất (báo cáo sự cố −35%, bảo hành lốp −21%); superlative (complex) GIỮ full model đúng (cost ngang); **answer byte-similar = quality giữ nguyên**. Key ChatGPT verified còn quota (HTTP 200).
+- **Còn**: bật cascade persistent phải qua alembic/admin (không psql) — quyết định riêng. Test 2-5 (adaptive_context, speculative_retrieve, reflect_skip, neighbor_expand) chưa chạy — matrix sẵn trong subagent report.
+- ⚠️ n=1/case = directional signal, chưa multi-iter rigor. Nhưng pattern factoid→nano rõ.
+
+### 🟡 Phase 6-E — VẪN DEFER (đánh giá lại, không grind T3 rủi ro)
+- Composite `cache_check_and_understand_parallel` (190 dòng, orchestrate 4 callable + task-cancel logic) + ~6 source-inspection test phải retarget + KHÔNG tới <1200 (cần services-refactor). Để phiên riêng có load-test gác. query_graph.py giữ **2828** (A-D done, verified).
+
+---
+
+## Session 2026-06-19 — Phase 6 god-file split (batch 1+2, behavior-preserving)
 
 **[T3-Refactor · LOWEST priority · evidence-driven, green-gate per step]**
 
