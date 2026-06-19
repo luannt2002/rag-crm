@@ -198,14 +198,23 @@ def test_no_orphan_rewrite_to_retrieve_edge() -> None:
 
 
 def test_check_cache_closure_still_defined_in_build_graph() -> None:
-    """The ``check_cache`` closure is invoked by
+    """The ``check_cache`` callable is invoked by
     ``cache_check_and_understand_parallel`` when its flag is OFF. The
-    function definition MUST stay; only its node registration is
-    removed."""
+    binding MUST stay in build_graph so the fallback ``check_cache(state)``
+    call resolves; only its node registration is removed.
+
+    check_cache's body now lives in nodes/check_cache.py and build_graph
+    binds it via functools.partial — still callable as ``check_cache(state)``
+    (the partial supplies the di_kwargs), so the byte-identical fallback
+    path is preserved.
+    """
     src = inspect.getsource(qg.build_graph)
-    assert "async def check_cache(state: GraphState)" in src, (
-        "Closure ``check_cache`` removed but the parallel wrapper still "
+    assert "check_cache = functools.partial(" in src, (
+        "Binding ``check_cache`` removed but the parallel wrapper still "
         "calls it for the byte-identical fallback path."
+    )
+    assert "check_cache(state)" in src, (
+        "The parallel wrapper's fallback call to check_cache(state) is gone."
     )
 
 
