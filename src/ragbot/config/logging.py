@@ -37,6 +37,10 @@ bot_id_ctx: ContextVar[str] = ContextVar("bot_id", default="")
 # The token ledger's primary report key. Kept separate so we never parse a slug
 # as a UUID (CLAUDE.md naming rule: bot_id = slug, record_bot_id = UUID PK).
 record_bot_id_ctx: ContextVar[str] = ContextVar("record_bot_id", default="")
+# Channel the request arrived on (web/zalo/...) — the 4th key of bot identity.
+# Set by the chat route/worker entrypoint so token_ledger rows can attribute
+# cost per channel (otherwise the ledger 4-key collapses to 3-key).
+channel_type_ctx: ContextVar[str] = ContextVar("channel_type", default="")
 # Token-ledger flow classifier — 'ingest' (document worker) | 'query' (chat).
 # Set by the worker/route entrypoint so the LLM router tags each token-spending
 # call WITHOUT guessing flow from the model name.

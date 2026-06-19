@@ -57,6 +57,7 @@ from ._shared import (
 from ragbot.shared.workspace_id_validator import resolve_workspace_id
 from ragbot.config.logging import (
     bot_id_ctx,
+    channel_type_ctx,
     mode_ctx,
     record_bot_id_ctx,
     workspace_id_ctx,
@@ -117,6 +118,7 @@ async def test_chat(req: TestChatRequest, request: Request) -> dict:
     record_bot_id_ctx.set(str(bot_cfg.id))                       # internal UUID (report key)
     bot_id_ctx.set(str(getattr(bot_cfg, "bot_id", "") or req.bot_id or ""))  # external slug
     workspace_id_ctx.set(str(workspace_slug or ""))
+    channel_type_ctx.set(str(req.channel_type or ""))           # 4th identity key for ledger
     mode_ctx.set("query")
 
     # ── Step B: Parallel gather — all 6 calls independent after bot_cfg ──

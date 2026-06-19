@@ -15,6 +15,7 @@ from uuid import UUID
 from ragbot.application.ports.token_ledger_port import TokenLedgerEntry, TokenLedgerPort
 from ragbot.config.logging import (
     bot_id_ctx,
+    channel_type_ctx,
     mode_ctx,
     record_bot_id_ctx,
     tenant_id_ctx,
@@ -64,6 +65,7 @@ def emit_aux_usage(
                 record_bot_id=_safe_uuid(record_bot_id_ctx.get()),
                 bot_id=(bot_id_ctx.get() or None),
                 workspace_id=(workspace_id_ctx.get() or None),
+                channel_type=(channel_type_ctx.get() or None),
                 trace_id=(trace_id_ctx.get() or None),
                 input_tokens=input_tokens,
                 total_tokens=total_tokens or input_tokens,

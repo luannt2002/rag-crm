@@ -294,7 +294,7 @@ async def _update_doc_progress(
     policies stay enforced.
     """
     try:
-        from ragbot.shared.tenant_context import session_with_tenant  # noqa: PLC0415
+        from ragbot.infrastructure.db.engine import session_with_tenant  # noqa: PLC0415
         async with session_with_tenant(
             session_factory, record_tenant_id=record_tenant_id,
         ) as session:

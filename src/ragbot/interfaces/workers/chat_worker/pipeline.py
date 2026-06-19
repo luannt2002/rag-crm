@@ -22,6 +22,7 @@ from ragbot.application.dto.chat_payload import ChatReceivedPayload
 from ragbot.bootstrap import Container
 from ragbot.config.logging import (
     bind_request_context,
+    channel_type_ctx,
     clear_request_context,
     mode_ctx,
     record_bot_id_ctx,
@@ -229,6 +230,7 @@ async def _handle_chat_received_body(
     # Token-ledger attribution (production query path): record_bot_id (report
     # key) + mode='query' so every LLM call this turn makes is attributed.
     record_bot_id_ctx.set(str(bot_cfg.id))
+    channel_type_ctx.set(str(channel_type_str or ""))  # 4th identity key for ledger
     mode_ctx.set("query")
     if not valid.conversation_id:
         logger.error("chat_worker_missing_conversation_id", job_id=str(job_id))

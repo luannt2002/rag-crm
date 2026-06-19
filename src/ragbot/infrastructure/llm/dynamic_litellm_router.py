@@ -38,6 +38,7 @@ from ragbot.application.ports.token_ledger_port import (
 from ragbot.application.services.tenant_token_meter import TenantTokenMeter
 from ragbot.config.logging import (
     bot_id_ctx,
+    channel_type_ctx,
     mode_ctx,
     record_bot_id_ctx,
     tenant_id_ctx,
@@ -761,6 +762,7 @@ class DynamicLiteLLMRouter(LLMPort):
                 record_bot_id=_safe_uuid(record_bot_id_ctx.get()),
                 bot_id=(bot_id_ctx.get() or None),
                 workspace_id=(workspace_id_ctx.get() or None),
+                channel_type=(channel_type_ctx.get() or None),
                 trace_id=(trace_id_ctx.get() or None),
                 input_tokens=prompt_tokens,
                 output_tokens=completion_tokens,
@@ -1105,6 +1107,7 @@ class DynamicLiteLLMRouter(LLMPort):
                 record_bot_id=_safe_uuid(record_bot_id_ctx.get()),
                 bot_id=(bot_id_ctx.get() or None),
                 workspace_id=(workspace_id_ctx.get() or None),
+                channel_type=(channel_type_ctx.get() or None),
                 trace_id=(trace_id_ctx.get() or None),
                 input_tokens=tokens_in,
                 output_tokens=tokens_out,
