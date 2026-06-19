@@ -1,5 +1,12 @@
 # [T3-Refactor] Phase 6 — build_graph god-file split
 
+> **STATUS 2026-06-19**: Phase A–D DONE. query_graph.py 3945→2828 (−1117, ~28%),
+> 20 green commits (5912/0 each). Runtime LOAD-TEST PASS: HALLU=0 (3/3 traps
+> refused) + coverage intact across 3 bots. **Phase E + services-refactor
+> DEFERRED** (user decision): composites high-coupling + infra-closures (~700
+> lines) need a services-object refactor, not the partial pattern — <1200
+> unreachable without it. See STATE_SNAPSHOT.md "build_graph surgery" section.
+
 > Goal: shrink `src/ragbot/orchestration/query_graph.py` (3820 lines) toward the
 > <1200 target by extracting `build_graph`'s inline node-closures into
 > `nodes/*.py`, **completing the established `functools.partial(_node, di=…)`

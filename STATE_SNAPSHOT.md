@@ -15,7 +15,15 @@
 - **Verify mỗi bước**: full unit suite **5912 pass / 0 fail** (Y HỆT baseline `0a73211` — 39 skip/34 xfail/34 xpass) ×3 lần (baseline + sau batch1 + sau batch2). Behavior preserved exact (trong phạm vi unit coverage).
 - **query_graph.py**: 3945 → **3820 dòng** (-125). Pre-existing ruff debt 254→249 (KHÔNG thêm lỗi mới — file god này chưa từng ruff-clean).
 
-### ✅ build_graph surgery ĐANG CHẠY (user chốt "Phẫu thuật build_graph closures", green-gate mỗi bước)
+### ✅ build_graph surgery — Phase A–D DONE + LOAD-TEST VERIFIED (user chốt dừng 2828, verify runtime)
+
+**🎯 RUNTIME GATE PASS (2026-06-19, restart API code mới + loadtest 13-case 3 bot):**
+- **HALLU=0 VERIFIED**: 3/3 trap refuse (spa phun-xăm "chưa thấy danh mục" · xe Michelin "chưa có hãng" · legal mức-phạt "không quy định") — KHÔNG bịa.
+- **Coverage giữ nguyên**: superlative (đắt/rẻ nhất → stats SQL đúng), range (dưới 500k/700k → list có nhãn giá đúng), factoid (trị mụn 700k, bảo hành lốp 1.6mm/70%, báo cáo sự cố 24h/05 ngày) — đúng hết.
+- → **Closure surgery behavior-preserving bằng CẢ HAI**: unit gate 5912/0 ×20 bước + load-test runtime HALLU=0. API restart build_graph (toàn bộ partial binding) compile + serve OK trên port 3004. Raw: `reports/validate_20260617/fixverify_raw.jsonl`.
+- ⚠️ Pre-existing (KHÔNG do refactor): `document_recovery_worker` query `d.chunks_processed` column-not-exist (background worker, không chặn API/query-path).
+
+**Strangler-fig** (green-gate mỗi bước), hoàn thiện pattern `functools.partial(_node, di=…)`:
 Strangler-fig: hoàn thiện pattern `functools.partial(_node, di=…)` đã có sẵn (retrieve/rerank/grade/generate đã tách trước). MỖI bước verify full suite **5912 pass / 0 fail** = behavior-preserving.
 
 | Phase | Nội dung | Commit | Kết quả |
@@ -30,12 +38,13 @@ Strangler-fig: hoàn thiện pattern `functools.partial(_node, di=…)` đã có
 | D.4 | condense_question → nodes/condense_question.py (bind _lang/_invoke_llm_node) | `0b1f003` | 5912 ✓ + fix 1 threshold pin |
 | D.5 | rewrite → nodes/rewrite.py (bind model_resolver/llm/_lang/_invoke_llm_node) | `aa40021` | 5912 ✓ + fix 2 source pins |
 | D.6 | decompose → nodes/decompose.py (bind _lang/_invoke_llm_node/_invoke_structured/_so_usage) | `094f7e8` | 5912 ✓ + fix 1 window-boundary |
+| D.7 | query_complexity_node + adaptive_decompose → nodes/* (Phase D DONE) | `17eaac6` | 5912 ✓ |
 
-- **query_graph.py: 3945 → 2990 dòng** (-955, ~24%). Mỗi node-body chuyển sang `nodes/<name>.py`, build_graph chỉ giữ `functools.partial` binding (~5 dòng/node). Mọi import cũ + di_kwargs threading GIỮ NGUYÊN qua re-export/partial.
+- **query_graph.py: 3945 → 2828 dòng** (-1117, ~28%). Mỗi node-body chuyển sang `nodes/<name>.py`, build_graph chỉ giữ `functools.partial` binding (~5 dòng/node). Mọi import cũ + di_kwargs threading GIỮ NGUYÊN qua re-export/partial.
 - **2 brittle test fix** (HONEST, không che regression): cả 2 là `inspect.getsource(build_graph)` grep text đã di chuyển — behavior verified intact (consume-set + mmr_filter strip_embedding), assertion retarget tới đúng construct/module.
 - **CÒN LẠI**:
-  - **Phase D còn lại** — query_complexity_node, adaptive_decompose. (router/guard_input/check_cache/condense/rewrite/decompose ĐÃ xong D.1–D.6.)
   - **6 brittle source-inspection test** đã fix HONEST (behavior verified intact, retarget getsource tới đúng module/construct): mmr, mq-multihop, check_cache dead-node, condense threshold, rewrite history×2, dead-ctx-record window.
+  - **Phase E + services-refactor = DEFERRED** (user chốt dừng 2828 sau khi thấy structural floor). Lý do: (a) composite song song coupling cao (`cache_check_and_understand_parallel` 208 dòng gọi 4 node-callable + task-cancel logic; `rewrite_and_mq_parallel`) + 2 sub-helper to nhất (`_do_stats_lookup` 326, `_run_multi_query_expansion` 268); (b) **infra-closures ~700 dòng** (`_invoke_llm_node` 240, `_invoke_structured_llm_node` 145, `_embed_query` 160, `_audit`, `_resolve_corpus_version`, `_so_usage`, `_prewarm_embedding_cache`, `_llm_complete_fn`) là shared LLM/embed service capture di_kwargs by-ref → cần **services-object refactor** (build 1 lần, inject) chứ KHÔNG phải partial pattern. → Kể cả Phase E xong, file ~1700, <1200 cần thêm services-refactor. Để phiên riêng có load-test gác.
   - **Phase E** — composite/parallel: cache_check_and_understand_parallel, rewrite_and_mq_parallel + _run_* sub-helpers.
   - **Infra-closures GIỮ trong build_graph** (capture di_kwargs, shared by-ref): _audit, _resolve_corpus_version, _invoke_llm_node, _invoke_structured_llm_node, _so_usage, _prewarm_embedding_cache, _embed_query, _llm_complete_fn.
   - **Load-test milestone** (stack up) sau khi Phase D/E xong — verify HALLU=0 + bot answer đúng runtime (unit mock chưa đủ cho sacred pipeline).
