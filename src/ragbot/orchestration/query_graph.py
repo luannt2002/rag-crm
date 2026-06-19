@@ -6,7 +6,6 @@ import asyncio
 import contextlib
 import functools
 import inspect
-import json as _json_mod
 import os
 import re
 import time
@@ -46,6 +45,7 @@ from ragbot.orchestration.nodes.condense_question import (
     condense_question as _condense_question_node,
 )
 from ragbot.orchestration.nodes.rewrite import rewrite as _rewrite_node
+from ragbot.orchestration.nodes.decompose import decompose as _decompose_node
 from ragbot.orchestration.nodes.generate import generate as _generate_node
 from ragbot.orchestration.nodes.grade import grade as _grade_node
 from ragbot.orchestration.nodes.guard_output import (
@@ -215,7 +215,6 @@ from ragbot.shared.constants import (
     DEFAULT_CRAG_MIN_RELEVANT_FRACTION,
     DEFAULT_CR_ENHANCED_ENABLED,
     DEFAULT_DECOMPOSE_TOP_K_PER_SUBQUERY,
-    DEFAULT_DECOMPOSE_USE_STRUCTURED_OUTPUT,
     DEFAULT_GENERATE_CONTEXT_TRUST_HINT_ENABLED,
     DEFAULT_GENERATE_HISTORY_MAX_MSGS,
     DEFAULT_DETERMINISTIC_LLM_PURPOSES,
@@ -281,11 +280,9 @@ from ragbot.shared.constants import (
     DEFAULT_RRF_K,
     DEFAULT_SSE_PRODUCER_TIMEOUT_S,
     DEFAULT_OUTPUT_TOKENS_PER_RESPONSE,
-    DEFAULT_STRUCTURED_OUTPUT_ENABLED,
     _REFUSE_ANSWER_TYPES,
 )
 from ragbot.application.dto.llm_schemas import (
-    DecomposeOutput,
     GenerateFlatOutput,
     GenerateOutput,
     GradeBatchOutput,
@@ -2218,66 +2215,13 @@ def build_graph(
             logger.warning("mq_in_parallel_failed", exc_info=mq_out)
         return merged
 
-    async def decompose(state: GraphState) -> dict:
-        """LLM-decompose multi-hop query into 2-4 sub-questions."""
-        async with state["step_tracker"].step("decompose"):
-            query = state.get("rewritten_query") or state["query"]
-            messages = [
-                {"role": "system", "content": _lang(state).prompt_decompose},
-                {"role": "user", "content": query},
-            ]
-            so_master = _pcfg(state, "structured_output_enabled", DEFAULT_STRUCTURED_OUTPUT_ENABLED)
-            so_node = _pcfg(state, "decompose_use_structured_output", DEFAULT_DECOMPOSE_USE_STRUCTURED_OUTPUT)
-            use_structured = bool(so_master) and bool(so_node)
-            try:
-                if use_structured:
-                    parsed, ctx = await _invoke_structured_llm_node(
-                        state,
-                        purpose="decompose",
-                        messages=messages,
-                        user_prompt=query,
-                        schema=DecomposeOutput,
-                    )
-                    if parsed is not None:
-                        if ctx is not None:
-                            _u = _so_usage(ctx)
-                            ctx.record(
-                                response=_json_mod.dumps(parsed.model_dump()),
-                                prompt_tokens=_u["prompt_tokens"],
-                                completion_tokens=_u["completion_tokens"],
-                                cost_usd=_u["cost_usd"],
-                                finish_reason=_u["finish_reason"],
-                            )
-                        sub_queries = [s.strip() for s in (parsed.sub_queries or []) if s and s.strip()]
-                        if len(sub_queries) >= 2:
-                            logger.info(
-                                "query_decomposed",
-                                original=query[:80],
-                                sub_count=len(sub_queries),
-                                source="structured_output",
-                            )
-                            return {"sub_queries": sub_queries, "original_query": query}
-                        return {}
-                payload, ctx = await _invoke_llm_node(
-                    state, purpose="decompose", messages=messages, user_prompt=query,
-                )
-                ctx.record(
-                    response=payload["text"],
-                    prompt_tokens=payload["prompt_tokens"],
-                    completion_tokens=payload["completion_tokens"],
-                    cost_usd=payload["cost_usd"],
-                    finish_reason=payload["finish_reason"],
-                )
-                sub_queries = parse_decomposed_sub_queries(payload["text"] or "")
-                if sub_queries:
-                    logger.info("query_decomposed", original=query[:80], sub_count=len(sub_queries))
-                    return {"sub_queries": sub_queries, "original_query": query}
-            except (InvariantViolation, asyncio.TimeoutError, OSError,
-                    RuntimeError, ValueError, KeyError):
-                # Decompose is opportunistic; failure leaves the original
-                # query as a single-pass retrieve.
-                logger.debug("decompose_skipped", query=query[:80])
-            return {}
+    decompose = functools.partial(
+        _decompose_node,
+        _lang=_lang,
+        _invoke_llm_node=_invoke_llm_node,
+        _invoke_structured_llm_node=_invoke_structured_llm_node,
+        _so_usage=_so_usage,
+    )
 
     async def _do_stats_lookup(
         state: GraphState,

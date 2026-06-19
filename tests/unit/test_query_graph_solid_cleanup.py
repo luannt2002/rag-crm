@@ -104,9 +104,13 @@ def test_no_dead_ctx_record_echoes_after_invoke_llm_node(
         # never bleed into a sibling node's body — bleeding caused false
         # positives when the next node legitimately calls ctx.record() on
         # its own (e.g. router has multi-fan-out branches that record).
-        next_def = query_graph_source.find("\n    async def ", idx + len(marker))
-        if next_def == -1:
-            next_def = idx + 4000  # fallback ceiling
+        # Bound the window at the NEXT ``async def`` at ANY indent. Nodes were
+        # carved out of build_graph into module-level functions in
+        # ``nodes/*.py`` (0-indent), so the old 4-space-only boundary would
+        # over-run past the function into a sibling module's body (false
+        # positive on that sibling's legitimate ctx.record()).
+        _next_m = re.search(r"\n\s*async def ", query_graph_source[idx + len(marker):])
+        next_def = idx + len(marker) + _next_m.start() if _next_m else idx + 4000
         window = query_graph_source[idx:next_def]
         if "_invoke_llm_node(" not in window:
             # decompose-style: node may use _invoke_structured_llm_node
