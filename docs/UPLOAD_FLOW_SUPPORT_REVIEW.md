@@ -1,147 +1,55 @@
-# Luồng UPLOAD tài liệu — tóm tắt cho Technical Support review
+# Luồng Upload tài liệu — Đầu vào / Đầu ra từng bước
 
-> Mục đích: mô tả **hệ thống HIỆN TẠI đang làm gì** từ lúc nhận file/link đến lúc tài liệu `active` (xài được cho chat). Mọi bước đều kèm `file:line` để review code.
-> Cập nhật 2026-06-19. Stack: FastAPI + LangGraph + PostgreSQL/pgvector + Redis Streams + Jina embed.
+> Cho Technical Support. Mô tả **phương pháp** (không code): input 1 tài liệu → mỗi bước biến đổi thành gì. Cập nhật 2026-06-19.
 
----
-
-## 0. Ý tưởng cốt lõi: **2-action async** (không xử lý đồng bộ quá 30s)
-
-Upload KHÔNG xử lý xong trong 1 request. Chia 2 pha:
+## Tóm tắt
+Upload = **nhận nhanh rồi xử lý ngầm**. Người dùng gửi link/file → hệ thống nhận, trả `202` ngay (không bắt chờ) → worker chạy ngầm **8 bước** biến tài liệu thành các "mẩu" (chunk) có vector để bot tìm kiếm.
 
 ```
-NGƯỜI DÙNG/BE gửi file/link
-        │
-   ┌────▼─────────────────────────────────────────────┐
-   │ ACTION 1 (đồng bộ, < 1s) — chỉ NHẬN + LƯU thô     │
-   │  validate link → fetch content → INSERT DRAFT     │
-   │  + ghi outbox event → trả HTTP 202 "đã nhận"      │
-   └────┬─────────────────────────────────────────────┘
-        │  (event document.uploaded.v1)
-   ┌────▼─────────────────────────────────────────────┐
-   │ OUTBOX PUBLISHER → Redis Stream (exactly-once)    │
-   └────┬─────────────────────────────────────────────┘
-        │
-   ┌────▼─────────────────────────────────────────────┐
-   │ ACTION 2 (ngầm, worker) — XỬ LÝ NẶNG              │
-   │  U1 validate → U2 parse → U3 clean → U4 chunk     │
-   │  → U5 enrich → U6 vn_segment → U7 embed+store     │
-   │  → finalize: state DRAFT → active (hoặc failed)   │
-   └──────────────────────────────────────────────────┘
+Gửi link/file ─► [B0 Nhận + 202] ─► (event) ─► worker: B1→B7 xử lý ─► state = active (xài được)
 ```
 
-Lý do tách: parse + chunk + **embed** (gọi API Jina cho hàng trăm–hàng nghìn đoạn) tốn nhiều giây→phút, không thể bắt client chờ. Trả `202` ngay, UI poll trạng thái tới khi `active`.
+## Từng bước: vào gì → làm gì → ra gì
 
----
+| Bước | Đầu vào | Phương pháp (làm gì) | Đầu ra |
+|---|---|---|---|
+| **B0. Nhận** (đồng bộ, trả 202) | link Google Doc/Sheet hoặc text | validate link → **tải text thô về ngay** → lưu DB `state=DRAFT` (kèm text thô) → bắn 1 event | 1 dòng `documents` (DRAFT, chưa có chunk) + trả **HTTP 202 "đã nhận"** |
+| **B1. VALIDATE** | text thô | chặn nếu **quá lớn** (mặc định ~500k ký tự) hoặc **trùng** (so `content_hash`) | text hợp lệ (hoặc trả 400/413) |
+| **B2. PARSE** | text/file thô | đọc cấu trúc: Kreuzberg (OCR/PDF), openpyxl (Excel), Google Sheets, Markdown. **Đọc lại text từ DB, không tải link lần 2** | text **có cấu trúc** (bảng, tiêu đề, đoạn) |
+| **B3. CLEAN** | text có cấu trúc | chuẩn hoá unicode (NFC) + bỏ ký tự rác/nối từ + **chặn câu lệnh chèn độc (prompt-injection)** | text **sạch** |
+| **B4. CHUNK** ⭐ | text sạch | **AdapChunk**: đo cấu trúc tài liệu → chọn cách cắt phù hợp (Bảng → **mỗi dòng 1 mẩu** + tiêu đề cột; Văn bản → cắt theo ý/tiêu đề; Văn bản luật → **mỗi Điều/Khoản 1 mẩu**). Cắt **2 tầng**: mẩu lớn (parent) + mẩu nhỏ (child) | **danh sách chunk** (mẩu nhỏ) |
+| **B5. ENRICH** | mỗi chunk | AI (`gpt-4.1-mini`) thêm **1 câu mô tả ngữ cảnh** vào đầu mỗi mẩu (để search trúng hơn) | chunk = **[câu context] + [text gốc]** |
+| **B6. TÁCH TỪ (VN)** | chunk tiếng Việt | tách từ ghép (underthesea) phục vụ tìm theo từ khoá | text đã tách từ |
+| **B7. EMBED + LƯU** | các child chunk | gọi **Jina** đổi mỗi mẩu thành **vector 1024 số** → lưu bảng `document_chunks` (vector + text). *Parent KHÔNG embed — chỉ dùng để mở rộng lúc trả lời* | chunk **có vector → tìm kiếm được** |
+| **B8. CHỐT** | toàn bộ chunk | mọi child đã có vector? | **`active`** ✅ (bot xài được) / **`failed`** ❌ |
 
-## 1. ACTION 1 — Nhận file/link (đồng bộ, trả 202 ngay)
+## Ví dụ thật (file Thông tư 09/2020 vừa upload)
 
-**Endpoint** (BE-to-BE canonical): `POST /api/ragbot/documents/create` — [`routes/documents.py:91`](../src/ragbot/interfaces/http/routes/documents.py#L91)
-**Endpoint test (script `init_bots_from_urls.py` dùng)**: `POST .../bots/{bot_id}/{channel_type}/documents` — [`routes/test_chat/document_routes.py:171`](../src/ragbot/interfaces/http/routes/test_chat/document_routes.py#L171) → hàm `add_document()`
+**Đầu vào:** 1 link Google Doc văn bản luật.
+**Đầu ra:** `state=active`, **576 chunk** (489 child có vector + 87 parent không vector).
 
-Các bước trong Action 1 (đều trong handler trên):
-1. **Validate link** — `google_link_service.validate_link()` → nhận diện Google Docs/Sheets/HTML; sai → `400`.
-2. **Fetch content** — `google_link_service.fetch_content()` lấy text thô NGAY tại đây. Fetch fail / rỗng → `400` (fail-loud, không nhận rác).
-3. **Dedup** — `content_hash = sha256(content)`; nếu đã có doc cùng `content_hash` + `active` → bỏ qua (idempotent).
-4. **Lưu 1 transaction**: `INSERT documents(state='DRAFT', raw_content=<text thô>)` **+** `INSERT outbox(subject='document.uploaded.v1')` → commit.
-   - **Quan trọng**: lưu `raw_content` ngay → worker KHÔNG fetch lại link (Google `/edit?gid=` trả trang login nếu fetch lần 2).
-5. Trả **HTTP 202** `{document_id, state:"DRAFT"}`.
-
-> Sau bước này doc đã nằm trong DB ở trạng thái `DRAFT`, chưa có chunk/embedding.
-
----
-
-## 2. Event bus — outbox → Redis Stream (exactly-once)
-
-- **Outbox publisher** (worker nền): đọc bảng `outbox` bằng `FOR UPDATE SKIP LOCKED` (1 event chỉ 1 worker lấy) → `XADD` lên Redis Stream `ragbot:documents:ingest` → đánh dấu published. — [`workers/outbox_publisher.py`](../src/ragbot/interfaces/workers/outbox_publisher.py)
-- Đảm bảo **không mất event, không xử lý trùng** (transactional outbox + inbox dedup).
-
----
-
-## 3. ACTION 2 — Worker xử lý ngầm (pipeline ingest U1→U7)
-
-**Consumer**: `handle_document_uploaded(payload)` — [`workers/document_worker.py:83`](../src/ragbot/interfaces/workers/document_worker.py#L83)
-1. `bind_request_context(record_tenant_id, workspace_id)` — gắn tenant cho RLS + log (line 94).
-2. `job_repo.update_status(running)` (line 145).
-3. Gọi `doc_service.ingest(...)` (line 457).
-4. Xong: `state → active`; lỗi: `state → failed` + ghi outbox event lỗi; cập nhật job (line 496/526).
-
-**Pipeline `ingest()`** — [`document_service/ingest_core.py:177`](../src/ragbot/application/services/document_service/ingest_core.py#L177). Gọi tuần tự 7 stage:
-
-| Stage | Làm gì | Code |
-|---|---|---|
-| **U1 VALIDATE** | guard kích thước `MAX_DOCUMENT_CONTENT_CHARS=500_000` + dedup `content_hash`/`source_url` | đầu hàm `ingest()` |
-| **U2 PARSE** | text thô → cấu trúc: Kreuzberg OCR / openpyxl (xlsx) / google-sheets / markdown. **Đọc `raw_content` từ DB, không fetch lại link** | `infrastructure/parser/registry.py` |
-| **U3 CLEAN** | chuẩn hoá NFC + bỏ nối từ + **strip prompt-injection** | `_stage_u3_clean` ([:565](../src/ragbot/application/services/document_service/ingest_core.py#L565)) |
-| **U4 CHUNK** | **AdapChunk**: phân tích cấu trúc doc (heading/bảng/đoạn) → chọn chiến lược cắt; **small-to-big**: tạo `parent` (đoạn lớn) + `child` (đoạn nhỏ) | `_stage_u4_chunk` ([:566](../src/ragbot/application/services/document_service/ingest_core.py#L566)), `shared/chunking/` |
-| **U5 ENRICH** | thêm câu context vào mỗi chunk (Anthropic Contextual Retrieval) bằng `gpt-4.1-mini` | `_stage_u5_enrich` ([:567](../src/ragbot/application/services/document_service/ingest_core.py#L567)) |
-| **U6 VN_SEGMENT** | tách từ ghép tiếng Việt (underthesea) cho BM25 | `_stage_u6_vn_segment` ([:568](../src/ragbot/application/services/document_service/ingest_core.py#L568)) |
-| **U7 EMBED + STORE** | gọi **Jina `jina-embeddings-v3` (1024-dim)** embed các **child** (parent KHÔNG embed, chỉ để mở rộng lúc trả lời) → lưu `document_chunks` (vector HNSW + tsvector BM25). Embed theo **batch** + circuit-breaker | `_stage_u7_embed_store` ([:701](../src/ragbot/application/services/document_service/ingest_core.py#L701)) |
-| **finalize** | nếu còn chunk chưa embed → `failed`; ngược lại `active` | `_stage_finalize` ([:702](../src/ragbot/application/services/document_service/ingest_core.py#L702)) |
-
----
-
-## 4. State machine + cách kiểm tra "done"
-
+**1 chunk thật trông như này** (thấy rõ B5 thêm câu context ở đầu):
 ```
-DRAFT ──(worker bắt đầu)──► (enriching → embedding) ──► active   ✅ xài được
-   └────────────────────────────────────────────────► failed   ❌ lỗi
+[câu context AI thêm]  Đoạn đầu của tài liệu, giới thiệu về Thông tư số 09/2020/TT-NHNN
+                        ban hành ngày 21/10/2020 về an toàn hệ thống thông tin trong ngân hàng.
+[text gốc]             NGÂN HÀNG NHÀ NƯỚC VIỆT NAM ... Căn cứ Luật Các tổ chức tín dụng ...
 ```
-- UI/BE **poll** `GET .../bots/{bot_id}/{channel_type}/documents` ([`document_routes.py:30`](../src/ragbot/interfaces/http/routes/test_chat/document_routes.py#L30)) tới khi `state=active`. Chat bị chặn cho tới khi doc `active`.
-- **Verify bằng SQL** (support hay dùng):
-```sql
-SELECT b.bot_id, d.document_name, d.state,
-       count(dc.id)                                    AS chunks,
-       count(dc.id) FILTER (WHERE dc.embedding IS NOT NULL) AS embedded
-FROM documents d JOIN bots b ON b.id=d.record_bot_id
-LEFT JOIN document_chunks dc ON dc.record_document_id=d.id
-WHERE d.deleted_at IS NULL GROUP BY 1,2,3 ORDER BY 1;
-```
-"Done" = `state=active` + `chunks>0` + `embedded>0`. *(Lưu ý: `embedded < chunks` là BÌNH THƯỜNG — phần chênh là `parent` cố ý không embed.)*
+→ mỗi mẩu ~300–400 ký tự, gọn đúng 1 ý.
 
----
+## Cách CHECK chunk có "cùi bắp" không (anh Luân hỏi)
 
-## 5. Tham số hiện tại (mặc định)
+1. **Xem chunk thật** (psql):
+   ```sql
+   SELECT chunk_type, left(content,150) FROM document_chunks dc
+   JOIN documents d ON d.id=dc.record_document_id JOIN bots b ON b.id=d.record_bot_id
+   WHERE b.bot_id='<bot>' ORDER BY chunk_index LIMIT 20;
+   ```
+2. **Số chunk/tài liệu có hợp lý không?** Vài chục–vài trăm = ổn. Nếu **1 tài liệu ra hàng NGHÌN chunk** = tài liệu quá to hoặc parse lỗi (ví dụ phiên này: file `xe-3` 1 sheet → **2643 chunk** = bất thường, cần tách nhỏ).
+3. **Cờ cảnh báo trong log** lúc ingest:
+   - `ingestion_validation_issues` — báo chunk **quá ngắn** (1–2 ký tự) hoặc **trùng nhau** (near-duplicate).
+   - `chunk_quality_below_threshold` — mẩu có điểm liên quan thấp lúc tìm kiếm.
 
-| Knob | Giá trị | Ghi chú |
-|---|---|---|
-| Embedding model | `jina-embeddings-v3` (1024-dim) | per-bot binding; lưu cột `document_chunks.embedding` |
-| Chunk size (parent / child / overlap) | `1024 / 256 / 128` | small-to-big |
-| Giới hạn kích thước doc | `500_000` ký tự | guard U1 |
-| Parse | Kreuzberg / openpyxl / google-sheets / markdown | self-hosted |
-| Recovery | worker quét doc kẹt `DRAFT` → re-emit (cooldown 3600s) | `document_recovery_worker.py` |
+## ⚠️ Vấn đề đã biết
+Tài liệu **quá lớn** (1 Sheet khổng lồ) → B4 nổ ra **hàng nghìn chunk** → B7 gọi Jina embed quá nhiều → **đụng trần token/phút (Jina ~100k tok/phút)** → ingest rất chậm, có thể **kẹt ở DRAFT** (không xong). Hướng xử lý: tách nhỏ tài liệu trước khi upload / nâng gói Jina / tách riêng việc embed nền khỏi luồng chat.
 
----
-
-## 6. ⚠️ Vấn đề ĐÃ BIẾT (cần support lưu ý khi review)
-
-**Doc quá lớn (1 sheet to) → nghẽn embedding → kẹt `DRAFT` âm thầm.**
-
-- Ca thật (2026-06-19): file `xe-3` = Google Sheet **224KB → parse ra 1 bảng khổng lồ → 2643 child chunk** (27 batch embed).
-- U7 gọi Jina embed 2643 chunk → **đụng trần Jina TPM** (free tier ~**100.000 token/phút**): log `HTTP 429: Token rate limit exceeded 100,038/100,000 tokens per minute`.
-- Hậu quả: ingest **rất chậm** (mỗi batch chờ ~29s), có thể **OOM** server nếu chạy lúc tải cao, và để doc ở `DRAFT` **không báo lỗi rõ** (event vẫn "processed"). Recovery re-ingest lại → tiếp tục ngốn TPM → **bỏ đói luôn query-embed của chat** (chat trả rỗng).
-- **Phân biệt 2 giới hạn**: số request song song (concurrency, ví dụ 2 key × 2 = 4 lane) ≠ **token/phút (TPM)**. Thêm lane KHÔNG cứu khi trần là tổng token/phút.
-
-**Hướng fix đề xuất (cho team review):**
-1. **Cap kích thước/đoạn** mỗi doc; sheet lớn → tách nhỏ trước khi ingest.
-2. **Tách lane ingest khỏi lane query** (query ưu tiên; ingest throttle/off-peak) để doc lớn không bỏ đói chat.
-3. **Nâng Jina tier** (TPM cao hơn) hoặc embedder dự phòng.
-4. **Surface-loud**: ingest fail/timeout phải set `failed` + log lỗi rõ, KHÔNG để `DRAFT` âm thầm; chặn recovery re-ingest vô hạn doc luôn-fail.
-
----
-
-## 7. Code map nhanh (để review)
-
-| Bước | File |
-|---|---|
-| Action 1 (nhận, 202) | `interfaces/http/routes/documents.py` · `routes/test_chat/document_routes.py:171` |
-| Validate/fetch link | `application/services/google_link_service.py` |
-| Outbox publish | `interfaces/workers/outbox_publisher.py` |
-| Consumer (Action 2) | `interfaces/workers/document_worker.py:83` |
-| Pipeline U1–U7 | `application/services/document_service/ingest_core.py:177` + `ingest_stages*.py` |
-| Chunk (AdapChunk) | `shared/chunking/` |
-| Enrich | `application/services/contextual_chunk_enrichment.py` |
-| Embed + store | `infrastructure/embedding/jina_embedder.py` · `infrastructure/vector/pgvector_store.py` |
-| Recovery doc kẹt | `interfaces/workers/document_recovery_worker.py` |
-
-> Tài liệu sâu hơn: [`docs/FLOW_INGEST_DETAIL.md`](FLOW_INGEST_DETAIL.md) · [`README.md`](../README.md) §7. Nếu fact ở đây lệch code → **code đúng**.
+> Cần code chi tiết bước nào, báo em trích đúng đoạn. File này chỉ mô tả phương pháp.
