@@ -3,7 +3,27 @@
 > Always-updated current state. Git history was reset on 2026-06-14 (fresh start);
 > commit-SHA anchors no longer apply — this file is the source of truth.
 
-## Session 2026-06-18→19 — Phase 0 EXECUTED: bots WORKING + squash 240→1 + tests GREEN  ⟵ LATEST
+## Session 2026-06-19 — Phase 6 god-file split (batch 1+2, behavior-preserving)  ⟵ LATEST
+
+**[T3-Refactor · LOWEST priority · evidence-driven, green-gate per step]**
+
+### ✅ ĐÃ LÀM + VERIFIED
+- **Tạo module mới** `src/ragbot/orchestration/query_graph_helpers.py` (156 dòng, **0 ruff error**) — gom các helper THUẦN (stateless, không close over `build_graph` di_kwargs).
+- **Batch 1** (commit `5a515c5`): tách 5 helper — `_uuid_or_none`, `_parse_doc_type_vocabulary`, `_render_captured_slots`, `_compute_bot_cache_version`, `_is_null_lexical`. Gỡ import thừa (`hashlib`, `DEFAULT_BOT_CACHE_VERSION_HASH_LEN`).
+- **Batch 2** (commit `8e73b57`): tách 2 parser leaf-pure — `parse_decomposed_sub_queries`, `expand_parent_chunks`. Gỡ `DEFAULT_PARSE_DECOMPOSED_MAX_SUB` thừa.
+- **Re-export pattern**: `query_graph` import-lại mọi tên → MỌI đường import cũ (`from ragbot.orchestration.query_graph import X` trong tests + threading di_kwargs vào node funcs) GIỮ NGUYÊN, 0 call-site phải sửa.
+- **Verify mỗi bước**: full unit suite **5912 pass / 0 fail** (Y HỆT baseline `0a73211` — 39 skip/34 xfail/34 xpass) ×3 lần (baseline + sau batch1 + sau batch2). Behavior preserved exact (trong phạm vi unit coverage).
+- **query_graph.py**: 3945 → **3820 dòng** (-125). Pre-existing ruff debt 254→249 (KHÔNG thêm lỗi mới — file god này chưa từng ruff-clean).
+
+### ⚠️ DECISION POINT — build_graph monolith (chưa làm)
+- `query_graph.py` còn **3820 dòng**; `build_graph` chiếm ~2800 dòng = **~23 node-closure capture `di_kwargs`** (guard_input/check_cache/router/rewrite/decompose/mmr_dedup/... + 8 routing-edge fn + graph wiring). Node logic NẶNG đã ở `nodes/*.py` rồi.
+- Để xuống <1200 BẮT BUỘC phá build_graph closures = chuyển từng captured-var thành explicit param (giống pattern node đã tách). **RỦI RO CAO trên sacred HALLU=0 pipeline** — unit test dùng mock nên có thể KHÔNG bắt được sai lệch closure→param. Cần integration/load-test gác, không nên grind tự động.
+- `retrieve.py` (1888 dòng) = 1 `async def retrieve` full-closure-state → cùng rủi ro.
+- **Khuyến nghị**: tách helper an-toàn DỪNG ở đây (đã 2 batch verified). build_graph/retrieve surgery = phiên riêng có load-test gác + user chốt, vì T3-refactor là tầng THẤP NHẤT và rủi ro > lợi-ích thẩm-mỹ.
+
+---
+
+## Session 2026-06-18→19 — Phase 0 EXECUTED: bots WORKING + squash 240→1 + tests GREEN
 
 **[T1+T2 · đã sửa `src/`, schema, tests — verified runtime]**
 
