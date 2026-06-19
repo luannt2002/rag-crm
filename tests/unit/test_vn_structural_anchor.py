@@ -46,13 +46,47 @@ def test_detect_returns_none_for_multi_anchor() -> None:
 def test_build_like_clauses_covers_corpus_formats() -> None:
     patterns = build_vn_structural_like_clauses(("Chương", "3"))
     assert len(patterns) == 4
-    # Cover the 4 dominant formats observed in TT 09/2020 chunks
-    assert "%[Chương 3%" in patterns
+    # Boundary-safe patterns matching the chunker breadcrumb (number + non-digit
+    # delimiter), covering leaf-with-title, leaf-no-title, comma path, inner path.
+    assert "%Chương 3.%" in patterns
+    assert "%Chương 3]%" in patterns
     assert "%Chương 3,%" in patterns
     assert "%Chương 3 >%" in patterns
-    assert "%Chương 3]%" in patterns
 
 
 def test_build_like_clauses_for_dieu() -> None:
     patterns = build_vn_structural_like_clauses(("Điều", "55"))
     assert all("Điều 55" in p for p in patterns)
+
+
+def _like_match(pattern: str, text: str) -> bool:
+    """Emulate Postgres LIKE for a ``%literal%`` pattern (only wildcards used)."""
+    return pattern.strip("%") in text
+
+
+def test_build_like_clauses_match_real_chunker_breadcrumb_header() -> None:
+    """At least one pattern MUST match the chunker's real breadcrumb header.
+
+    Regression pin (Điều 56 coverage miss): the chunker writes
+    ``[Chương N > Điều M. <title>]`` (article followed by ``. <title>`` then
+    ``]``). The pattern set previously assumed ``[Điều M]`` / ``Điều M]`` (no
+    title), so it matched ZERO real chunks and the structural pre-filter
+    silently degraded to unfiltered — losing the target article among 57
+    structurally-similar điều.
+    """
+    header = "[Chương 3 > Điều 56. Hiệu lực thi hành]"
+    patterns = build_vn_structural_like_clauses(("Điều", "56"))
+    assert any(_like_match(p, header) for p in patterns), (
+        f"structural patterns {patterns} match NONE of the real chunker header "
+        f"{header!r} — the filter narrows to zero chunks and the article is lost"
+    )
+
+
+def test_build_like_clauses_boundary_safe_no_overmatch() -> None:
+    """``Điều 56`` must NOT match ``Điều 561`` (a different, longer article)."""
+    header_561 = "[Chương 3 > Điều 561. Khác]"
+    patterns = build_vn_structural_like_clauses(("Điều", "56"))
+    assert not any(_like_match(p, header_561) for p in patterns), (
+        f"structural patterns {patterns} over-match 'Điều 561' when querying "
+        f"'Điều 56' — would pull a wrong article into the filtered set"
+    )

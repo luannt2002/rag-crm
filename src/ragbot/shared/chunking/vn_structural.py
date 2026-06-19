@@ -239,17 +239,28 @@ def detect_vn_structural_anchor(query: str) -> tuple[str, str] | None:
 
 
 def build_vn_structural_like_clauses(anchor: tuple[str, str]) -> list[str]:
-    """Return list of LIKE patterns that match chunks under the anchor.
+    """Return LIKE patterns that match chunks whose breadcrumb path hits the anchor.
 
-    Chunks store path like '[Chương 3 > Điều 55]' or 'Chương 3, Mục 1, Điều 55'.
-    The 4 patterns cover the dominant formats observed in the corpus.
+    The chunker writes a breadcrumb header ``[Chương N > Mục M > Điều K. <title>]``
+    (see ``promote_vn_hierarchical_headings`` + the chunk-context builder): the
+    leaf section number is followed by ``. <title>`` then ``]``, and an inner
+    section is followed by `` >``. Every pattern below therefore anchors the
+    number against a NON-DIGIT delimiter (``.`` ``]`` ``,`` `` >``) so it matches
+    the real path AND stays boundary-safe — ``Điều 56`` never matches ``Điều 561``.
+
+    Regression pin: ``tests/unit/test_vn_structural_anchor.py`` —
+    ``test_build_like_clauses_match_real_chunker_breadcrumb_header`` /
+    ``..._boundary_safe_no_overmatch``. (Pre-fix the patterns assumed a
+    title-less ``[Điều N]`` form and matched ZERO real chunks, so the structural
+    pre-filter silently degraded to unfiltered and lost the target article among
+    its structurally-similar siblings — the "Điều 56" coverage miss.)
     """
     prefix, num = anchor
     return [
-        f"%[{prefix} {num}%",      # bracketed path: [Chương 3 > ...]
-        f"%{prefix} {num},%",       # comma-separated: Chương 3, Mục 1, Điều 55
-        f"%{prefix} {num} >%",      # arrow path inline: Chương 3 > Điều 55
-        f"%{prefix} {num}]%",       # closing bracket: [Chương 3] heading-only
+        f"%{prefix} {num}.%",       # leaf w/ title:  ... > Điều 56. Hiệu lực ...]
+        f"%{prefix} {num}]%",       # leaf, no title: ... > Điều 56]
+        f"%{prefix} {num},%",       # comma path:     Chương 3, Mục 1, Điều 56
+        f"%{prefix} {num} >%",      # inner section:  [Chương 3 > Điều 56 > ...]
     ]
 
 
