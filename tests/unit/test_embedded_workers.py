@@ -119,16 +119,18 @@ async def test_start_embedded_workers_returns_four_named_tasks(monkeypatch: pyte
     monkeypatch.setattr(ew_mod, "run_embedded_outbox_publisher", _stub)
     monkeypatch.setattr(ew_mod, "run_embedded_recovery_worker", _stub)
     monkeypatch.setattr(ew_mod, "run_embedded_cost_cap_alerter", _stub)
+    monkeypatch.setattr(ew_mod, "run_embedded_cache_purge", _stub)
 
     tasks = start_embedded_workers(MagicMock())
     try:
-        assert len(tasks) == 4
+        assert len(tasks) == 5
         names = {t.get_name() for t in tasks}
         assert names == {
             "embedded_document_consumer",
             "embedded_outbox_publisher",
             "embedded_recovery_worker",
             "embedded_cost_cap_alerter",
+            "embedded_cache_purge",
         }
     finally:
         await stop_embedded_workers(tasks)

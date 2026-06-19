@@ -213,6 +213,14 @@ DEFAULT_COST_CAP_EXCEED_RATIO: Final[float] = 1.0
 # Hourly is fine: token caps move slowly and the warn ratio gives headroom.
 DEFAULT_COST_CAP_ALERT_INTERVAL_S: Final[int] = 3600
 
+# Embedded semantic-cache GC. Expired rows are already IGNORED at read time
+# (``expires_at > now()`` filter), so this is pure housekeeping to stop the
+# pgvector HNSW index bloating with dead rows. Hourly DELETE of rows expired
+# beyond the grace window. (Closes the C1 audit gap — purge_stale_data.py
+# existed as a cron but was never wired into the single-process deployment.)
+DEFAULT_CACHE_PURGE_INTERVAL_S: Final[int] = 3600
+DEFAULT_CACHE_PURGE_GRACE_HOURS: Final[int] = 24
+
 
 # === Wave J consolidated constants restore — post-K1 + cleanup-wave drift ===
 # Comprehensive restore of constants imported by src/ragbot/ modules but

@@ -44,6 +44,8 @@ from ragbot.interfaces.workers.document_recovery_worker import run_recovery_loop
 from ragbot.interfaces.workers.document_worker import handle_document_uploaded
 from ragbot.interfaces.workers.outbox_publisher import run_outbox_loop
 from ragbot.shared.constants import (
+    DEFAULT_CACHE_PURGE_GRACE_HOURS,
+    DEFAULT_CACHE_PURGE_INTERVAL_S,
     DEFAULT_COST_CAP_ALERT_INTERVAL_S,
     SUBJECT_DOCUMENT_UPLOADED,
 )
@@ -164,6 +166,41 @@ async def run_embedded_cost_cap_alerter(container: "Container") -> None:
         await asyncio.sleep(DEFAULT_COST_CAP_ALERT_INTERVAL_S)
 
 
+async def run_embedded_cache_purge(container: "Container") -> None:
+    """Periodically DELETE expired ``semantic_cache`` rows (C1 GC).
+
+    Expired rows are already ignored at read time (``expires_at > now()``), so
+    this is pure housekeeping to keep the pgvector HNSW index from bloating with
+    dead rows. Runs every ``DEFAULT_CACHE_PURGE_INTERVAL_S``, deleting rows whose
+    ``expires_at`` is older than ``DEFAULT_CACHE_PURGE_GRACE_HOURS``. Best-effort
+    + read-mostly: a sweep error is logged and the loop continues. (Closes the
+    audit gap: ``scripts/purge_stale_data.py`` existed as a cron but was never
+    wired into the single-process deployment.)
+    """
+    from sqlalchemy import text as _sa_text  # noqa: PLC0415
+
+    logger.info("embedded_cache_purge_started")
+    factory = container.session_factory()
+    while True:
+        try:
+            async with factory() as session:
+                result = await session.execute(
+                    _sa_text(
+                        "DELETE FROM semantic_cache WHERE expires_at IS NOT NULL "
+                        "AND expires_at < now() - (:grace || ' hours')::interval",
+                    ),
+                    {"grace": DEFAULT_CACHE_PURGE_GRACE_HOURS},
+                )
+                await session.commit()
+            logger.info("cache_purge_done", deleted=result.rowcount)
+        except asyncio.CancelledError:
+            logger.info("embedded_cache_purge_stopping")
+            raise
+        except (OSError, RuntimeError, RedisError, asyncio.TimeoutError) as exc:
+            logger.warning("cache_purge_failed", error_type=type(exc).__name__)
+        await asyncio.sleep(DEFAULT_CACHE_PURGE_INTERVAL_S)
+
+
 async def _supervise(name: str, coro_factory: Any, container: "Container") -> None:
     """Run a single embedded worker with crash isolation.
 
@@ -223,7 +260,11 @@ def start_embedded_workers(container: "Container") -> list[asyncio.Task[None]]:
         _supervise("cost_cap_alerter", run_embedded_cost_cap_alerter, container),
         name="embedded_cost_cap_alerter",
     )
-    return [consumer_task, outbox_task, recovery_task, cost_cap_task]
+    cache_purge_task = asyncio.create_task(
+        _supervise("cache_purge", run_embedded_cache_purge, container),
+        name="embedded_cache_purge",
+    )
+    return [consumer_task, outbox_task, recovery_task, cost_cap_task, cache_purge_task]
 
 
 async def stop_embedded_workers(tasks: list[asyncio.Task[None]]) -> None:
