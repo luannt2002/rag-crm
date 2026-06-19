@@ -24,11 +24,13 @@ Strangler-fig: hoàn thiện pattern `functools.partial(_node, di=…)` đã có
 | B | 9 routing deciders → `nodes/routing.py` (pure state→str, 0 di_kwargs) | `8435c17` | 5912 ✓ + fix 1 brittle source-test |
 | C.1 | mmr_dedup, neighbor_expand, graph_retrieve → nodes/* (bind _pcfg/_audit) | `a6cd479` | 5912 ✓ + fix 1 brittle source-test |
 | C.2 | critique_parse, rewrite_retry → nodes/* (bind _oos_text / rewrite) | `b58bb9d` | 5912 ✓ |
+| D.1 | router (intent classifier) → nodes/router.py (bind model_resolver/llm/_lang/_invoke_llm_node) | `69fbf62` | 5912 ✓ |
+| D.2 | guard_input → nodes/guard_input.py (bind guardrail/language_pack_service/_resolved_oos_template) | `5eb9de4` | 5912 ✓ |
 
-- **query_graph.py: 3945 → 3407 dòng** (-538). Mỗi node-body chuyển sang `nodes/<name>.py`, build_graph chỉ giữ `functools.partial` binding (~3 dòng/node). Mọi import cũ + di_kwargs threading GIỮ NGUYÊN qua re-export/partial.
+- **query_graph.py: 3945 → 3340 dòng** (-605). Mỗi node-body chuyển sang `nodes/<name>.py`, build_graph chỉ giữ `functools.partial` binding (~3 dòng/node). Mọi import cũ + di_kwargs threading GIỮ NGUYÊN qua re-export/partial.
 - **2 brittle test fix** (HONEST, không che regression): cả 2 là `inspect.getsource(build_graph)` grep text đã di chuyển — behavior verified intact (consume-set + mmr_filter strip_embedding), assertion retarget tới đúng construct/module.
 - **CÒN LẠI**:
-  - **Phase D** — node capture nhiều di_kwargs: guard_input, check_cache, condense_question, router, rewrite, decompose, query_complexity_node, adaptive_decompose (+ sub-helpers). Lớn hơn, cùng pattern.
+  - **Phase D còn lại** — check_cache, condense_question, rewrite, decompose, query_complexity_node, adaptive_decompose (+ sub-helpers). Lớn hơn, cùng pattern. (router + guard_input ĐÃ xong D.1/D.2.)
   - **Phase E** — composite/parallel: cache_check_and_understand_parallel, rewrite_and_mq_parallel + _run_* sub-helpers.
   - **Infra-closures GIỮ trong build_graph** (capture di_kwargs, shared by-ref): _audit, _resolve_corpus_version, _invoke_llm_node, _invoke_structured_llm_node, _so_usage, _prewarm_embedding_cache, _embed_query, _llm_complete_fn.
   - **Load-test milestone** (stack up) sau khi Phase D/E xong — verify HALLU=0 + bot answer đúng runtime (unit mock chưa đủ cho sacred pipeline).
