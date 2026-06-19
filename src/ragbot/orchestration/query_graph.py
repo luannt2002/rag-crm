@@ -26,7 +26,6 @@ from ragbot.application.services.model_resolver import (
 from ragbot.application.ports.audit_logger_port import AuditLoggerPort
 from ragbot.application.ports.cache_port import CachedResponse
 from ragbot.application.ports.guardrail_port import (
-    GuardrailBlocked,
     GuardrailHit,
     GuardrailPort,
 )
@@ -41,6 +40,7 @@ from ragbot.orchestration.nodes.critique_parser import (
 )
 from ragbot.orchestration.nodes.rewrite_retry import rewrite_retry as _rewrite_retry_node
 from ragbot.orchestration.nodes.router import router as _router_node
+from ragbot.orchestration.nodes.guard_input import guard_input as _guard_input_node
 from ragbot.orchestration.nodes.generate import generate as _generate_node
 from ragbot.orchestration.nodes.grade import grade as _grade_node
 from ragbot.orchestration.nodes.guard_output import (
@@ -1558,65 +1558,12 @@ def build_graph(
             )
         return []
 
-    async def guard_input(state: GraphState) -> dict:
-        async with state["step_tracker"].step("guard_input"):
-            # Pre-load DB-driven language pack rows so downstream nodes read from the same source.
-            lpack_rows: dict[str, str] | None = None
-            if language_pack_service is not None:
-                try:
-                    lpack_rows = await language_pack_service.get_pack(
-                        state.get("language", DEFAULT_LANGUAGE),
-                    )
-                except (OSError, RuntimeError, AttributeError,
-                        KeyError, ValueError):
-                    # Defensive: language-pack lookup failure must never
-                    # block the input guard pipeline.
-                    lpack_rows = None
-            flags = list(state.get("guardrail_flags", []))
-            try:
-                hits = await guardrail.check_input(
-                    state["query"],
-                    tenant_id=state.get("record_tenant_id"),
-                    message_id=state["message_id"],
-                    request_id=state.get("request_id"),
-                )
-                for h in hits:
-                    flags.append(
-                        {
-                            "stage": "input",
-                            "rule_id": h.rule_id,
-                            "severity": h.severity,
-                            "action": h.action,
-                        }
-                    )
-                out: dict[str, Any] = {"guardrail_flags": flags}
-                if lpack_rows is not None:
-                    out["_language_pack_rows"] = lpack_rows
-                return out
-            except GuardrailBlocked as exc:
-                # Per-rule response_message overrides bot-level oos_answer_template.
-                blocked_answer = _resolved_oos_template(state)
-                for h in exc.hits:
-                    flags.append(
-                        {
-                            "stage": "input",
-                            "rule_id": h.rule_id,
-                            "severity": h.severity,
-                            "action": h.action,
-                            "blocked": True,
-                        }
-                    )
-                    if h.severity == "block" and h.details.get("response_message"):
-                        blocked_answer = h.details["response_message"]
-                out_blocked: dict[str, Any] = {
-                    "guardrail_flags": flags,
-                    "answer": blocked_answer,
-                    "answer_type": "blocked",
-                    "answer_reason": "Input guardrail blocked",
-                }
-                if lpack_rows is not None:
-                    out_blocked["_language_pack_rows"] = lpack_rows
-                return out_blocked
+    guard_input = functools.partial(
+        _guard_input_node,
+        guardrail=guardrail,
+        language_pack_service=language_pack_service,
+        _resolved_oos_template=_resolved_oos_template,
+    )
 
     async def check_cache(state: GraphState) -> dict:
         """Lookup semantic cache; short-circuit on hit."""
