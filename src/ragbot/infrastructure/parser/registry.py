@@ -23,6 +23,9 @@ from typing import TYPE_CHECKING
 import structlog
 
 from ragbot.infrastructure.parser.docx_parser import DocxParser
+from ragbot.infrastructure.parser.kreuzberg_markdown_parser import (
+    KreuzbergMarkdownParser,
+)
 from ragbot.infrastructure.parser.excel_openpyxl_parser import ExcelOpenpyxlParser
 from ragbot.infrastructure.parser.google_sheets_parser import GoogleSheetsParser
 from ragbot.infrastructure.parser.markdown_parser import MarkdownParser
@@ -37,6 +40,10 @@ logger = structlog.get_logger(__name__)
 
 _REGISTRY: dict[str, type] = {
     "null": NullParser,
+    # Structured-markdown (pdf/pptx/html) via Kreuzberg + OutputFormat.MARKDOWN —
+    # precedence over legacy ``pdf``. Fail-soft: if kreuzberg absent, build_parser
+    # → NullParser and detect_parser drops through to ``pdf`` (pypdfium2).
+    "kreuzberg_markdown": KreuzbergMarkdownParser,
     "excel_openpyxl": ExcelOpenpyxlParser,
     "google_sheets": GoogleSheetsParser,
     "pdf": PdfParser,
