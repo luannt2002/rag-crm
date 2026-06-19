@@ -201,7 +201,7 @@ Industry pattern (OpenAI/Anthropic Files, AWS Textract): 100% async, no sync ing
 
 **Action 2** — worker (async): outbox publisher → Redis Stream `ragbot:documents:ingest` → consumer (`run_embedded_document_consumer`, binds tenant ctx from payload) → read `raw_content` **from DB** (never refetch source_url — Google Sheets `/edit?gid=` returns an HTML login page) → `ingest()` U1–U7 → progress updates → atomic flip: `chunks_null>0 → failed`, else `active`.
 
-State machine: `DRAFT → enriching → embedding → active` (or `failed`). UI polls `GET …/documents`; chat is guarded until docs are `active`. Stuck DRAFTs are swept by the recovery worker. Detail: [`docs/dev/INGEST_FLOW_DEEP_DIVE.md`](docs/dev/INGEST_FLOW_DEEP_DIVE.md).
+State machine: `DRAFT → enriching → embedding → active` (or `failed`). UI polls `GET …/documents`; chat is guarded until docs are `active`. Stuck DRAFTs are swept by the recovery worker. Detail: [`docs/FLOW_INGEST_DETAIL.md`](docs/FLOW_INGEST_DETAIL.md) · [`docs/UPLOAD_FLOW_SUPPORT_REVIEW.md`](docs/UPLOAD_FLOW_SUPPORT_REVIEW.md).
 
 ---
 
