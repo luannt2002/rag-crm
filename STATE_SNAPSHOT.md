@@ -3,7 +3,20 @@
 > Always-updated current state. Git history was reset on 2026-06-14 (fresh start);
 > commit-SHA anchors no longer apply — this file is the source of truth.
 
-## Session 2026-06-19 — 10-agent flow audit (2 waves) + fix 5 vấn đề  ⟵ LATEST
+## Session 2026-06-19 — handle all 4 (push + C1 + Phase4-apply + RLS1)  ⟵ LATEST
+
+**[user chốt cả 4 sau audit. Mỗi cái fix + verify + commit.]**
+
+- **✅ PUSH**: 9 commit phiên audit/fix → `origin/expert-rag-...20260619` (đã secure remote).
+- **✅ C1 cache-GC** (`168d00a`): wire `run_embedded_cache_purge` (hourly DELETE expired semantic_cache > 24h grace) vào `start_embedded_workers` (4→5 task). Expired rows trước nay chỉ bloat (read filter `expires_at>now()` đã đúng). Test 8/8, purge SQL verified.
+- **✅ Phase4 APPLY** (`a782097`): alembic `phase4_costwin_20260619` bật `pipeline_multi_query_speculative_enabled` + `adaptive_context_enabled` = true (system_config, idempotent ON CONFLICT, per-bot opt-out giữ). Đo A/B: **−21% & −18% cost**. **Verified sau upgrade+restart: load-test 3 bot — coverage đúng, Điều 56 vẫn fix, mọi HALLU trap refuse, 0 regression.** Caveat: A/B n=1/case (directional) — monitor ledger + traps.
+- **🟡 RLS1 — phần SAFE done, enforcement PENDING (governed)**:
+  - Applied RLS DDL từ baseline (drift repair): **20 bảng ENABLE+FORCE RLS + 21 policy `tenant_isolation`** (`current_setting('app.tenant_id')`). Khớp baseline. **INERT dưới superuser runtime** (ragbot rolbypassrls=t bypass cả FORCE) → app healthy, chat 700.000đ OK.
+  - **⛔ KHÔNG switch DSN** (đúng): `ragbot_app` chưa provision — `rolcanlogin=f` + 0 table grant → switch giờ = **vỡ app** (không login + permission denied). Enforcement = governed runbook: provision ragbot_app (LOGIN+password+GRANT SELECT/INSERT/UPDATE/DELETE + USAGE sequences) → đổi `DATABASE_URL_APP` → verify MỌI query path set `app.tenant_id` GUC (recovery forensic scan + platform query là rủi ro) → load-test gate. App-level scoping ĐÃ chắc (defence-in-depth) nên chưa enforce DB-RLS KHÔNG phải lỗ hổng cấp bách.
+
+---
+
+## Session 2026-06-19 — 10-agent flow audit (2 waves) + fix 5 vấn đề
 
 **[user: "debug chuyên sâu tất cả luồng / check ra tất cả vấn đề / handle tất cả". 10 Explore-agent (Sonnet, Fable down) × 2 wave + em Opus adjudicate từng finding HIGH bằng psql/curl.]**
 
