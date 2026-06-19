@@ -367,6 +367,13 @@ async def test_chat(req: TestChatRequest, request: Request) -> dict:
     # Load ALL pipeline tunable params from system_config (Redis-cached DB)
     pipeline_config = await _build_pipeline_config(cfg_svc, bot_cfg)
 
+    # Test-mode A/B: merge per-request overrides on top of the resolved config
+    # so a load-test can flip cost/intelligence flags without mutating
+    # system_config / plan_limits (CLAUDE.md forbids psql hot-fixes there).
+    # Ephemeral — scoped to this single request only.
+    if req.pipeline_config_overrides:
+        pipeline_config.update(req.pipeline_config_overrides)
+
     # Walk the canonical 7-tier OOS template chain ONCE per request and
     # stash the result for orchestration nodes to read sync. See
     # ``OosTemplateResolver`` module docstring for the full ladder.

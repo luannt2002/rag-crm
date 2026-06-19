@@ -172,6 +172,19 @@ class TestChatRequest(BaseModel):
             "Production /chat endpoint does NOT expose this flag."
         ),
     )
+    # Test-mode only: per-request pipeline_config overrides for A/B flag
+    # tuning. Merged ON TOP of the resolved pipeline_config so a load-test can
+    # flip any intelligence/cost flag (e.g. cascade_routing_enabled) WITHOUT
+    # touching system_config / plan_limits in the DB (CLAUDE.md forbids psql
+    # hot-fixes to those). Reproducible + ephemeral (one request). Production
+    # /chat endpoint does NOT expose this field.
+    pipeline_config_overrides: dict[str, Any] | None = Field(
+        default=None,
+        description=(
+            "Test-mode only: per-request pipeline_config overrides for A/B "
+            "measurement. Merged over the resolved config; no DB mutation."
+        ),
+    )
 
 
 class TestChatClearRequest(BaseModel):
