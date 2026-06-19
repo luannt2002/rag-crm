@@ -1,6 +1,6 @@
 # `1111111_TT09.pdf` → Markdown
 
-> Output markdown convert từ file PDF. Nguồn convert: kreuzberg.extract_file (cands=['ExtractedImage', 'ExtractedTable', 'ExtractionCancelledError', 'ExtractionConfig', 'ExtractionResult', 'ExtractionTimeoutError', 'FileExtractionConfig', 'ImageExtractionConfig', 'StructuredExtractionConfig', '_discover_extraction_config_impl', '_load_extraction_config_from_file_impl', 'batch_extract_bytes', 'batch_extract_bytes_impl', 'batch_extract_bytes_sync', 'batch_extract_bytes_sync_impl', 'batch_extract_files', 'batch_extract_files_impl', 'batch_extract_files_sync', 'batch_extract_files_sync_impl', 'clear_document_extractors', 'discover_extraction_config', 'extract_bytes', 'extract_bytes_impl', 'extract_bytes_sync', 'extract_bytes_sync_impl', 'extract_file', 'extract_file_impl', 'extract_file_sync', 'extract_file_sync_impl', 'list_document_extractors', 'load_extraction_config_from_file', 'unregister_document_extractor']). 79,776 ký tự.
+> Output markdown convert từ file PDF. Nguồn convert: kreuzberg.extract_file. 79,776 ký tự.
 
 ---
 
