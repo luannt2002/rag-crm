@@ -3,7 +3,44 @@
 > Always-updated current state. Git history was reset on 2026-06-14 (fresh start);
 > commit-SHA anchors no longer apply — this file is the source of truth.
 
-## Session 2026-06-19 — handle all 4 (push + C1 + Phase4-apply + RLS1)  ⟵ LATEST
+## Session 2026-06-19 — RLS role-split (Phase 1+2) + clean rebuild & 5-criteria load-test  ⟵ LATEST
+
+**[user: "tiếp tục tích + fix RLS" → "tự động làm hết: xóa DB+cache → init 3 bot+sysprompt → upload 9 file → load-test tất cả luồng → Expert RAG 5 tiêu chí".]**
+
+### ✅ RLS enforcement — request/system role split (Phase 1+2 committed `edc2d6d`, pushed)
+- **Gốc rễ (evidence)**: app connect superuser `ragbot` (rolbypassrls=t) → 20 bảng FORCE-RLS + 21 policy INERT. `ragbot_app` NOLOGIN + 0 grant. Squash baseline `20260618` đánh rơi TOÀN BỘ DDL provision role → clone mới không enforce được.
+- **Phase 1** (2 migration tracked, no-secret): `ragbot_app` (NOBYPASSRLS) + `ragbot_system` (BYPASSRLS) — applied. **Probe PROVEN (rule #0)**: app+tenantA→9 docs, tenant khác→0, no-ctx→0 (fail-closed); system(bypass)→9.
+- **Phase 2** (code, inert no-op hôm nay): `create_engine_system` + `system_session_factory` (no RLS hook) + reroute 4 worker cross-tenant (outbox/recovery-scan/cache-purge/cost-cap) → system factory; consumer giữ app factory (đã bind ctx). **5926 unit pass/0 fail**, 10 pin mới. 4 luồng background sẽ fail-closed 0-row nếu flip naive → lý do KHÔNG flip 1 dòng được.
+- **Phase 3 GATED**: set DATABASE_URL_APP/_SYSTEM → role thật + NULLIF('') policy hardening + load-test gate. Plan `plans/260619-rls-enforcement/`.
+
+### 🔄 Clean rebuild + load-test (A→B→C→D, backup `/tmp/ragbot_backups/...144837.dump`)
+- **A** ✅ DROP SCHEMA → `alembic upgrade head` (4 migration, re-provision roles) → `seed_dev.py` (3 bot + sysprompt: spa 7154 / xe 7907 / legal 4594 chars) → FLUSHDB → restart. Clean.
+- **B** ⚠️ upload 9 file (Google→Jina): **8/9 active**. **xe-3 = oversized sheet** (224KB → 1 table → 2643 child chunk / 27 embed batch) → ingest CHẬM, server crash giữa chừng (batch 26/27) → DRAFT. KHÔNG hard-fail, là slow + cần load-isolation. Còn lại 222/549/576 chunk, children embed 100%, parents (221) expand-only đúng design.
+- **C/D** — **BOT KHỎE, nhưng full auto-score BỊ CHẶN bởi rate-limit infra (KHÔNG phải bot)**:
+  - **Bằng chứng bot đúng (clean serial calls qua được)**: spa "giá triệt lông"→bảng giá đúng corpus; thong-tu "hiệu lực"→**01/01/2021** đúng; xe "hãng lốp"→Landspider/Rovelo đúng; size 185/55R16 + 225/45ZR18 PASS; spa HALLU trap "cấy chỉ collagen 24k"→**refuse đúng (HALLU=0)**.
+  - **Chặn đo**: cumulative load → **OpenAI gpt-4.1-mini TPM rate-limit** (`litellm.RateLimitError ... tokens per min`) → answer rỗng/500/6ms = ARTIFACT. `eval_gate` lỗi tooling: concurrent → burst 60/window → 429 giả "WRONG"; substring KHÔNG chuẩn số VN ("700000" vs "700.000"). `graded` OOM-crash server.
+  - **Quyết định honest**: DỪNG load-test (thêm = saturate TPM + tốn tiền + đo rác). Bot verified khỏe qua serial clean calls.
+
+### 📊 5 tiêu chí Expert-RAG (honest, VERIFIED vs BLOCKED)
+| Tiêu chí | Kết quả | Nhãn |
+|---|---|---|
+| **Đúng/Faithful=100%** | HALLU=0 trên trap đã test (refuse đúng); coverage đúng trên factoid/list/structural đã test | ✅ partial-VERIFIED (full% BLOCKED by TPM) |
+| **Nhanh/Latency** | real RAG turn p50 ~5-7s, p95 ~9-11s (cold, no cache) | ⚠️ MODERATE |
+| **UX** | refusal graceful ("chưa thấy trong danh mục...hotline"); citations present | ✅ |
+| **Performance** | retrieve+rerank(jina) OK; **server OOM dưới concurrent-load + big-embed** | ⚠️ gap |
+| **Cost thấp** | per-turn cost chưa đo sạch (TPM-limited); Phase4 −18/−21% vẫn active | ⚠️ BLOCKED |
+
+### 🔧 Gap thật (cho vòng sau)
+1. **xe-3 oversized-doc** — 2643 chunk/27 batch → slow + crash; cần embed batch-timeout + load-isolation + surface-loud (đừng silent DRAFT); W1 cooldown 3600s chặn auto-retry.
+2. **guardrail_rules = 0** — squash/seed KHÔNG seed 12 platform rule (migration 010f) → luồng guardrail (F13) trống. **CRITICAL seed gap.**
+3. **OpenAI TPM** — org rate-limit chặn load-test nặng; cần tier cao hơn / throttle / fallback LLM.
+4. **eval tooling** — eval_gate concurrent-burst + number-format; graded OOM. Cần serial + bypass + number-norm (`/tmp/serial_eval.py`).
+5. **server OOM** — concurrent chat + big-embed giết process; cần memory guard / embed off-peak.
+6. **system_config stale** — embedding_dimension=1536/model=openai vs bot binding jina-1024 (benign — binding override) — nên dọn.
+
+---
+
+## Session 2026-06-19 — handle all 4 (push + C1 + Phase4-apply + RLS1)
 
 **[user chốt cả 4 sau audit. Mỗi cái fix + verify + commit.]**
 
