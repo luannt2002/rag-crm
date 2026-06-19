@@ -336,7 +336,7 @@ def test_alembic_0118_revision_chain() -> None:
     import pathlib
 
     path = pathlib.Path(
-        "alembic/versions/20260526_0118_stats_index_schema.py"
+        "alembic/_archive_pre_squash_20260618/20260526_0118_stats_index_schema.py"
     )
     spec = importlib.util.spec_from_file_location("migration_0118", path)
     assert spec is not None
@@ -354,7 +354,7 @@ def test_alembic_0118_upgrade_sql_contains_create_table() -> None:
     import pathlib
 
     src = pathlib.Path(
-        "alembic/versions/20260526_0118_stats_index_schema.py"
+        "alembic/_archive_pre_squash_20260618/20260526_0118_stats_index_schema.py"
     ).read_text()
 
     assert "document_service_index" in src
@@ -366,7 +366,7 @@ def test_alembic_0118_rls_policy_enabled() -> None:
     import pathlib
 
     src = pathlib.Path(
-        "alembic/versions/20260526_0118_stats_index_schema.py"
+        "alembic/_archive_pre_squash_20260618/20260526_0118_stats_index_schema.py"
     ).read_text()
 
     assert "ENABLE ROW LEVEL SECURITY" in src
@@ -379,7 +379,7 @@ def test_alembic_0118_summary_json_column() -> None:
     import pathlib
 
     src = pathlib.Path(
-        "alembic/versions/20260526_0118_stats_index_schema.py"
+        "alembic/_archive_pre_squash_20260618/20260526_0118_stats_index_schema.py"
     ).read_text()
 
     assert "summary_json" in src
@@ -391,7 +391,7 @@ def test_alembic_0118_downgrade_drops_table() -> None:
     import pathlib
 
     src = pathlib.Path(
-        "alembic/versions/20260526_0118_stats_index_schema.py"
+        "alembic/_archive_pre_squash_20260618/20260526_0118_stats_index_schema.py"
     ).read_text()
 
     assert "DROP TABLE IF EXISTS document_service_index" in src

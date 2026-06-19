@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, Request
@@ -106,6 +106,45 @@ async def metrics_active_models(request: Request) -> dict[str, object]:
     return {
         "ok": True,
         "data": {"total_active": len(models), "by_kind": by_kind},
+    }
+
+
+@router.get("/metrics/usage/timeseries")
+async def metrics_usage_timeseries(
+    request: Request,
+    date_from: datetime | None = Query(default=None),
+    date_to: datetime | None = Query(default=None),
+    group_by: str = Query(default="day"),       # hour | day | month
+    breakdown: str = Query(default="none"),     # none | model | action | provider
+    record_bot_id: UUID | None = Query(default=None),
+    workspace_id: str | None = Query(default=None),
+    scope: str = Query(default="tenant"),        # tenant | all
+) -> dict[str, object]:
+    """Log-center dashboard: token + cost over time from ``token_ledger``.
+
+    Covers every external paid call (llm / rerank / embedding). ``scope=tenant``
+    (RBAC >= admin) bounds to the caller's tenant; ``scope=all`` is the
+    platform-wide view (RBAC level 100). Optional ``record_bot_id`` /
+    ``workspace_id`` narrow to a single bot / workspace.
+    """
+    all_tenants = scope == "all"
+    require_min_level(request, 100 if all_tenants else DEFAULT_ADMIN_LEVEL)
+    now = datetime.now(UTC)
+    repo = request.app.state.container.token_ledger_analytics_repo()
+    rows = await repo.usage_timeseries(
+        record_tenant_id=request.state.record_tenant_id,
+        date_from=date_from or (now - timedelta(days=30)),
+        date_to=date_to or now,
+        group_by=group_by,
+        breakdown=breakdown,
+        record_bot_id=record_bot_id,
+        workspace_id=workspace_id,
+        all_tenants=all_tenants,
+    )
+    return {
+        "ok": True,
+        "data": rows,
+        "meta": {"group_by": group_by, "breakdown": breakdown, "scope": scope},
     }
 
 

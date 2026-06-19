@@ -72,8 +72,8 @@ from ragbot.shared.errors import InvariantViolation
 from ragbot.shared.query_range_parser import (
     matches_summary_pattern as _matches_summary_pattern,
     parse_code_query as _parse_code_query,
-    parse_code_query as _parse_code_query,
     parse_list_query as _parse_list_query,
+    parse_price_of_entity_query as _parse_price_of_entity_query,
     parse_range_query as _parse_range_query,
 )
 from ragbot.shared.vi_tokenizer import expand_abbreviations, restore_diacritics
@@ -116,6 +116,7 @@ from ragbot.shared.constants import (
     DEFAULT_SPECULATIVE_SIMILARITY_THRESHOLD,
     DEFAULT_STATS_CODE_LOOKUP_ENABLED,
     DEFAULT_STATS_INDEX_LIMIT,
+    DEFAULT_STATS_PRICE_OF_ENTITY_ENABLED,
     DEFAULT_STATS_INDEX_RACE_ENABLED,
     DEFAULT_STATS_SUPERLATIVE_ENABLED,
     DEFAULT_STATS_RACE_TIMEOUT_S,
@@ -218,6 +219,17 @@ async def retrieve(
                 DEFAULT_STATS_CODE_LOOKUP_ENABLED,
             )):
                 _range_filter = _parse_code_query(_raw_query)
+            # BUG-1 CONFLATE fix: a "<entity> giá bao nhiêu" price-of-entity
+            # factoid must route to the structured name lookup (1 entity = 1
+            # labelled price) so the LLM cannot attribute a co-occurring
+            # entity's price from a multi-entity vector chunk. Sits BEFORE the
+            # list route so "X giá bao nhiêu" is not treated as "list all X".
+            # Keyed on the price-ask SHAPE — domain-neutral.
+            if _range_filter is None and bool(_pcfg(
+                state, "stats_price_of_entity_enabled",
+                DEFAULT_STATS_PRICE_OF_ENTITY_ENABLED,
+            )):
+                _range_filter = _parse_price_of_entity_query(_raw_query)
             # Keyword/category list route: "liệt kê dịch vụ X" / "tư vấn về X" /
             # "có bao nhiêu X" need EVERY matching record (vector/BM25 only
             # surface top-k → incomplete list/count). Only when no price filter

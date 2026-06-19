@@ -91,7 +91,7 @@ def test_both_dicts_cover_same_intent_set() -> None:
 _MIGRATION_PATH = (
     Path(__file__).resolve().parents[2]
     / "alembic"
-    / "versions"
+    / "_archive_pre_squash_20260618"
     / "20260526_0117_per_intent_skip_flags.py"
 )
 

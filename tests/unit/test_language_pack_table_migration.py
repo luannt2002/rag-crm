@@ -19,7 +19,7 @@ from pathlib import Path
 
 from ragbot.shared.constants import LANGUAGE_PACK_PROMPT_KEYS
 
-_MIGRATIONS = Path(__file__).resolve().parents[2] / "alembic" / "versions"
+_MIGRATIONS = Path(__file__).resolve().parents[2] / "alembic" / "_archive_pre_squash_20260618"
 
 # Additive seed migrations that contribute rows to ``language_packs``.
 # Order matters: later entries override earlier ones for the same key.

@@ -226,7 +226,9 @@ def test_write_path_fail_loud_without_kek(monkeypatch: pytest.MonkeyPatch) -> No
 
 def _load_migration_module():
     repo_root = Path(__file__).resolve().parents[2]
-    matches = sorted(repo_root.glob("alembic/versions/*encrypt_api_keys_backfill.py"))
+    matches = sorted(
+        repo_root.glob("alembic/_archive_pre_squash_20260618/*encrypt_api_keys_backfill.py")
+    )
     assert matches, "Migration A (encrypt_api_keys_backfill) not found"
     spec = importlib.util.spec_from_file_location("encrypt_api_keys_backfill", matches[0])
     module = importlib.util.module_from_spec(spec)

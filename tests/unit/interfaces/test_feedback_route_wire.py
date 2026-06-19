@@ -31,11 +31,9 @@ def test_thumbs_path_registered() -> None:
     """Composite router must expose POST /api/ragbot/feedback/thumbs."""
     from ragbot.interfaces.http.router import router
 
-    paths = {
-        (tuple(sorted(r.methods)), r.path)
-        for r in router.routes
-        if hasattr(r, "methods") and hasattr(r, "path")
-    }
+    from tests.unit._helpers_routes import leaf_method_paths
+
+    paths = leaf_method_paths(router.routes)
     assert (("POST",), "/api/ragbot/feedback/thumbs") in paths, (
         f"POST /api/ragbot/feedback/thumbs not registered. "
         f"Registered paths sample: {sorted(paths)[:8]}"
@@ -48,11 +46,9 @@ def test_baseline_feedback_path_still_registered() -> None:
     endpoint."""
     from ragbot.interfaces.http.router import router
 
-    paths = {
-        (tuple(sorted(r.methods)), r.path)
-        for r in router.routes
-        if hasattr(r, "methods") and hasattr(r, "path")
-    }
+    from tests.unit._helpers_routes import leaf_method_paths
+
+    paths = leaf_method_paths(router.routes)
     assert (("POST",), "/api/ragbot/feedback") in paths, (
         "POST /api/ragbot/feedback removed — Wire Option A requires both "
         "endpoints to coexist (legacy rating + new thumbs analytics)"

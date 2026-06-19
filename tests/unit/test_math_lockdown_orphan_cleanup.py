@@ -36,7 +36,7 @@ def test_init_seed_does_not_reintroduce_math_lockdown() -> None:
 
 def test_migration_0200_deletes_and_is_reversible() -> None:
     src = (
-        _ROOT / "alembic" / "versions"
+        _ROOT / "alembic" / "_archive_pre_squash_20260618"
         / "20260610_0200_delete_math_lockdown_orphan_config.py"
     ).read_text(encoding="utf-8")
     assert 'down_revision: str | None = "0199"' in src

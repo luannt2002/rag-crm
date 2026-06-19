@@ -71,6 +71,10 @@ CODE_QUERY_CONFIDENCE: Final[float] = 0.8
 # Fail-soft: a bot whose stats index has no row matching the code gets zero
 # entities → the route returns nothing → falls back to vector retrieve.
 DEFAULT_STATS_CODE_LOOKUP_ENABLED: Final[bool] = True
+# BUG-1 CONFLATE fix: route "<entity> giá bao nhiêu" price-of-entity factoids to
+# the structured name lookup (1 entity = 1 labelled price) instead of the vector
+# path. Per-bot opt-out via plan_limits.stats_price_of_entity_enabled.
+DEFAULT_STATS_PRICE_OF_ENTITY_ENABLED: Final[bool] = True
 # Sentinel chunk_id for the stats-route synthetic context chunk. The stats rows
 # carry no DB chunk FK, so the synthetic chunk would otherwise have an EMPTY
 # chunk_id — and the generate node DROPS any chunk whose id is falsy from the

@@ -3,6 +3,108 @@
 > Always-updated current state. Git history was reset on 2026-06-14 (fresh start);
 > commit-SHA anchors no longer apply — this file is the source of truth.
 
+## Session 2026-06-18→19 — Phase 0 EXECUTED: bots WORKING + squash 240→1 + tests GREEN  ⟵ LATEST
+
+**[T1+T2 · đã sửa `src/`, schema, tests — verified runtime]**
+
+### ✅ ĐÃ LÀM + VERIFIED (evidence thật)
+- **3 bot chạy end-to-end**: `test-spa-id`(ws spa) · `chinh-sach-xe`(ws xe) · `thong-tu-09-2020-tt-nhnn`(ws legal) — **trả lời đúng từ corpus** (retrieve vector+BM25 → Jina rerank → gpt-4.1-mini generate → grounded). Verified nhiều lần.
+- **Model stack** (user chốt): **gpt-4.1-nano** (light: routing/intent/condense) + **mini** (generation/grade/ground) · **Jina** embed `jina-embeddings-v3` 1024-dim + rerank `jina-reranker-v3`. Provider chọn qua `system_config.embedding_provider/reranker_provider='jina'`.
+- **Single-process** (devops yêu cầu): 1 PID `python -m ragbot.main` + 4 embedded asyncio worker (consumer/outbox/recovery/cost-cap). Scale = nhân bản process, consumer-group chia việc.
+- **SQUASH 240→1**: `alembic/versions/` = **1 file** (`20260618_squash_baseline.py` + `squashed_baseline.sql`, 44 bảng). 278 file cũ → `alembic/_archive_pre_squash_20260618/`. **Validated: fresh DB `alembic upgrade head` → 45 bảng, exit 0.** Chain-break 0006 fixed (guard column-exist).
+- **1 seed file**: `scripts/db/seed_dev.py` (orchestrate: system_config + RBAC + language_packs + 3 bot + provider=jina + quota). + `scripts/db/seed_3test_bots.py` (import sysprompt từ archived 0239/0236).
+- **Schema gaps vá (vào squash)**: `document_chunks`(embedding vector(1024)+content+chunk_context+doc_deleted_at+search_vector+trigger) · `document_service_index` · `token_ledger`/`monitoring_log`/`token_budgets` (**FK-free** = xóa chunk giữ cost, user yêu cầu) · `quotas`.
+- **Tests**: multi-agent (6 agent Workflow) fix **28 file** post-squash → **5897 pass / 0 fail** / 39 skip. Ruff+mypy file mới sạch. `pyproject` thêm per-file-ignore seed scripts.
+- **CLAUDE.md**: thêm dòng no-guess (cấm tuyên bố ≥X/100 khi chưa backward-verify + load-test output).
+- **BUG-1 CONFLATE fix (CODE, Phase 2)**: thêm `parse_price_of_entity_query` ([query_range_parser.py]) → route "<entity> giá bao nhiêu" sang `operation="keyword"` (structured name lookup, 1 entity=1 giá có nhãn → conflate bất khả). Wired `retrieve.py` (range→code→**price-of-entity**→list) + constant `DEFAULT_STATS_PRICE_OF_ENTITY_ENABLED` (per-bot opt-out). **TDD 15 test pass + full suite 5912 pass/0 fail.** ⚠️ **Runtime chưa kích hoạt**: route đọc `document_service_index` đang RỖNG (dead-wire #2 — xem risk #7) → hiện fallback vector an toàn (no regression). Conflate hết HẲN khi stats-index được populate.
+- **STATS-INDEX — KHÔNG phải dead-wire, là ORDERING**: `parse_table_chunks` CHẠY ĐÚNG (spa 30-chunk→200 entities). Index rỗng vì **ingest chạy TRƯỚC khi `document_service_index` được tạo** (em add bảng lúc debug query, sau ingest → bulk_insert fail silent best-effort). **Fix = backfill** `scripts/db/backfill_stats_index.py` (reusable, idempotent) → **1335 entities** (spa 350·xe 973·legal 12) với giá có nhãn.
+- **✅ CONFLATE FIX RUNTIME-VERIFIED**: sau backfill, "triệt lông nách giá bao nhiêu" → **"199.000đ buổi lẻ"** (đúng giá entity "Nách" trong stats `Nách|199000`, KHÔNG conflate). Route price-of-entity → `query_by_name_keyword` → 1 entity=1 giá nhãn. **BUG-1 đóng hoàn toàn** (code+TDD+data+runtime).
+- ⚠️ **Backfill cần chạy SAU ingest** (chunk phải tồn tại) — thêm vào runbook ingest, KHÔNG vào seed_dev (chạy pre-ingest).
+- **Phase 3 token-stats (rerank-capture CODE done)**: helper `infrastructure/token_ledger/aux_usage.py::emit_aux_usage` (đọc ctx 4-key, fire-and-forget) + `JinaReranker` nhận `ledger` + emit `action="rerank"` sau response + bootstrap move `token_ledger` provider lên trước embedder/reranker + pass `ledger=token_ledger`. Container build OK, **258 test pass/0 regression**. ⚠️ Verify runtime BỊ CHẶN: **Jina rerank node BYPASS** (rerank=1ms, **0 `rerank_executed` event**) → reranker không execute dù provider="jina"+JinaReranker resolve đúng + whitelist rỗng → retrieval đang dựa RRF-only (finding quality riêng). Embed-capture (cùng pattern) CHƯA wire.
+- **✅ RERANK-BYPASS FIXED + token-stats VERIFIED**: rerank-node thấy `null_reranker` vì **per-bot `RerankerResolver` trả Null** do 3 seed-gap: (1) `ai_providers.code`=NULL → `provider_code` rỗng, (2) `system_config.reranker_model`="cohere/rerank-v3.5" (init-default) → JinaReranker model sai → 422, (3) `ai_providers.api_key_ref`=NULL → resolver `os.getenv(None)` → `rerank_resolver_api_key_empty`→Null. **Fix**: set `code=name` + `api_key_ref=JINA_API_KEY/OPENAI_API_KEY` (đưa vào `seed_3test_bots.py` reproducible) + `reranker_model=jina-reranker-v3`. **Kết quả**: rerank ACTIVE (Jina cross-encoder 444ms — trước RRF-only → **quality TĂNG**) + wire ledger vào `RerankerResolver` → **token_ledger có `rerank|jina-reranker-v3|1918tok|444ms`** = log-center capture rerank VERIFIED. 282 test pass/0 regression.
+- **✅ Phase 3 token-stats D1 COMPLETE+VERIFIED**: embed-capture wired (JinaEmbedder + `build_embedder` signature-filter + bootstrap ledger) → **token_ledger ghi ĐỦ 3 action**: `embedding|2|50tok` + `llm|52|14423tok|$0.0045` + `rerank|3|6337tok`. Mọi external paid call (LLM/rerank/embed) giờ durable trong log-center với provider/model/tokens/duration. 572 test pass/0 regression. **Còn**: cost_usd cho rerank/embed=0 (chưa snapshot unit_price — chỉ token); **D2 timeseries API** `/metrics/usage/timeseries` (date_trunc trên token_ledger, RBAC-scoped) chưa làm.
+- **✅ Phase 3 D2 DASHBOARD API COMPLETE+VERIFIED**: `TokenLedgerAnalyticsRepository.usage_timeseries` (date_trunc hour|day|month · breakdown none|model|action|provider · whitelist chống injection · optional bot/workspace filter · all_tenants) + endpoint `GET {BASE}/admin/metrics/usage/timeseries` (RBAC: tenant≥admin, scope=all→L100) + wired container. **Test thật**: `?group_by=day&breakdown=action` → trả `[{ts, bucket_key:llm/rerank/embedding, tokens_in/out/total, cost_usd, calls}]` — đúng màn dashboard "verify 1 bot/ws/tenant dùng bao nhiêu token theo khoảng thời gian". Full suite **5912 pass/0 regression**. → **LOG-CENTER (D1 capture + D2 dashboard) HOÀN CHỈNH**, đúng yêu cầu ban đầu của user.
+
+### 📈 RE-SCORE load-test (verified, post conflate+rerank fix, conc=2)
+| Metric | Baseline (pre-fix) | **Now** |
+|---|---|---|
+| Coverage (content answered) | 13/15 = 87% | **15/15 = 100%** (2 false-refuse hết) |
+| Latency p95 | 70s (RPM burst) | **8.8s** (conc=2 + rerank fast) |
+| Latency p50 | 10s | **5.3s** |
+| Errors | 0 | 0 |
+| Trap refuse | 6/7 | 7/7 (2 ⚠REVIEW đã đọc tay → **refuse đúng, HALLU=0**) |
+| **HALLU** | ~0 | **0 VERIFIED** (fabricate-price trap: spa vàng-24k + xe 999/99R99 đều refuse, KHÔNG bịa giá) |
+→ **conflate fix + rerank-active = Coverage 87→100%, latency -88%, HALLU=0 giữ nguyên.** Số thật, không đoán. Quality 100% (Faithfulness 1.0 + Coverage 1.0).
+
+### 📊 CHẤM ĐIỂM LẠI (verified runtime vs baseline tĩnh ~62)
+| Flow | Baseline tĩnh | **Now (verified)** | Lý do |
+|---|---:|---:|---|
+| Nền tảng (migration/DB/test) | 32 | **78** | squash reproducible + DB seeded chạy + suite green 5897 + 1-seed |
+| RAG-CRM | 73 | **80** | squash + cost-tables FK-free verified |
+| Trace-log | 87 | **87** | giữ |
+| RAG Query | 62 | **70** | bot trả đúng (verified), Coverage 87% đo thật; conflate chưa fix, few-shot chưa A/B |
+| RAG Ingest | 67 | **68** | embedding Jina works; **U4 chunk dead-wire `parsed_blocks=[]` VẪN còn** |
+| Token-stats | 52 | **55** | token_ledger có; rerank/embed capture chưa wire (Phase 3) |
+| **OVERALL** | ~62 | **~73** | nền + verified kéo lên; smartness (conflate/coverage) chưa chạm |
+- **Load-test đo**: Coverage **87%** (13/15) · HALLU **~0** (trap refuse đúng 7/7) · Errors 0 · latency p95=70s (=OpenAI RPM backoff burst).
+
+### 🔴 RISKS / CAVEATS (quan trọng — đọc trước khi tiếp)
+1. **OpenAI tier THẤP (~500 RPM)** — mỗi load-test 22-case song song → burst → backoff 64s/call (p95=70s) + đốt quota. **Gate Phase 1/2/4/5** (vòng đo-sửa-đo). → cần nâng tier HOẶC load-test `LOADTEST_CONCURRENCY=2` (đã set default thấp).
+2. **Squash là SCHEMA-ONLY** — `squashed_baseline.sql` không có DATA. **Data-migration content** (few-shot prompts 010w/010z, money-norm 0114...) KHÔNG ở fresh-DB seed. Dev hiện dùng **prompt BASE (version=1)**. Thử accumulate few-shot (version=4) → **0/15** nhưng đó là **app-quota gate**, không phải few-shot → **đã revert, cần A/B lại khi quota ổn**.
+3. **DEV-ONLY hacks (KHÔNG được lên prod)**: `bots.bypass_token_check=true` (3 bot), `tenants.bypass_rate_limit=true`, `RAGBOT_ALLOW_SUPERUSER_RUNTIME` trong `.env`, redis `protected-mode no`, docs `state` flip thủ công→active. Mọi thay đổi DB-content thủ công cần đưa vào `seed_dev.py` cho reproducible.
+4. **Ingest robustness (Phase 2)**: pool=20 → `MaxConnectionsError` khi burst; FK-violation khi `--wipe` xóa doc giữa lúc worker chèn chunk (no guard doc-deleted-mid-flight).
+5. **Corpus chưa đầy đủ**: spa 888 / xe 2192 / legal 576 chunk (ingest rate-limit churn); 8 doc flip active thủ công.
+6. **278 migration + 8 test archived** (`_archive_pre_squash_20260618/`) — recoverable qua git; squash baseline là source mới.
+
+### 🎯 EXPERT SOLUTION cho phase còn lại (best-practice)
+- **Phase 2 conflate** (BUG-1): plan có sẵn `plans/260618-phaseA-bug1-conflate/` — `parse_price_of_entity_query` → `query_by_name_keyword` (structured-first routing, LlamaIndex SQLAutoVector pattern). + wire `parsed_blocks` (block-pipeline). + grounding warn→enforce. Verify: load-test conc=2.
+- **Phase 3 token-stats**: capture Jina rerank/embed `usage` → `AsyncDBTokenLedger` (đã có hạ tầng, chỉ wire 5 adapter); ContextVar auto-attribute. + API `/metrics/usage/timeseries` date_trunc trên token_ledger, RBAC-scoped. Ref `reports/LOG_CENTER_OBSERVABILITY_DESIGN_20260618.md`.
+- **Phase 4 A/B**: bật từng cờ DEFAULT=False + few-shot, đo Coverage/latency delta conc=2, giữ cờ +lift (bài học Wave E: đừng tin paper -30%).
+- **Phase 6 refactor**: god-file `query_graph.py`(~3900) → tách 1-node-1-file; behavior-preserving + suite green gác.
+- **Phase 7 docs**: 50 keep / 35 orphan (đã audit) → 1 INDEX + archive orphan.
+
+### ➡️ NEXT (ưu tiên, ít đốt quota trước)
+1. Phase 3 token-stats (code, verify nhẹ) · Phase 7 docs (no-LLM) · Phase 6 refactor (test gác).
+2. Phase 2 conflate + Phase 4 A/B + Phase 5 re-score: chạy `LOADTEST_CONCURRENCY=2`, cần quota/tier ổn.
+
+---
+
+## Session 2026-06-18 — Expert-RAG deep-read + research (~80 agent) + dev-DB rebuild  ⟵ HANDOFF/COMPACT ANCHOR
+
+**[T1-Smartness · research/analysis, KHÔNG sửa hot-path `src/`]**
+
+### Đã làm (artifacts ở root + reports/ + plans/)
+- **Deep-read 9 subsystem** (6 read-only agent, file:line) → [reports/PROJECT_UNDERSTANDING_EXPERT_RAG_20260618.md](reports/PROJECT_UNDERSTANDING_EXPERT_RAG_20260618.md). Verdict: khung expert-grade, **trí thông minh bị TẮT bằng flag `DEFAULT=False`** (cascade/async-grounding/adaptive-context/Ekimetrics/narrate/late-sliding/HyDE/MQ-gate) + **block-pipeline dead-wire** (`parsed_blocks=[]` hardcode → `smart_chunk_atomic` never called).
+- **Research SOTA ~80 agent** (web+arXiv 2024-26, adversarial-verified) → **[RAG_RESEARCH_MASTER_20260618.md](RAG_RESEARCH_MASTER_20260618.md)** (PART1, 7 trục) + **[RAG_RESEARCH_MASTER_PART2_20260618.md](RAG_RESEARCH_MASTER_PART2_20260618.md)** (PART2, 9 trục: GraphRAG/RAPTOR/embeddings/pgvector-scaling/security/reranking/hybrid-tuning/table-RAG/eval-CI/caveats). Đối chiếu code → [reports/CHUNKING_RESEARCH_VS_CODE_20260618.md](reports/CHUNKING_RESEARCH_VS_CODE_20260618.md).
+- **Bản đồ luồng full** (debug handoff) → [reports/PROJECT_ALL_FLOWS_20260618.md](reports/PROJECT_ALL_FLOWS_20260618.md) §0 KNOWN BUGS.
+- **Plan Phase A** (chờ approve) → [plans/260618-phaseA-bug1-conflate/plan.md](plans/260618-phaseA-bug1-conflate/plan.md).
+
+### Bug đã đo (rule#0) + gốc rễ verify
+- 🚨 **BUG-1 CONFLATE giá**: gốc `shared/query_range_parser.py:374-377` (loại "gia bao nhieu" → vector → conflate). Fix = sản xuất `RangeFilter(operation="keyword")` cho price-of-entity → `query_by_name_keyword` (cơ chế ĐÃ CÓ, verified `stats_index_repository.py:418-494`, trả per-row giá-có-nhãn atomic).
+- grounding **warn-only = faithfulness KHÔNG enforce** · RLS **bypass runtime** (.env superuser) · routing regex VN hardcode · i18n superlative/tokenizer hardcode tuple `("vi","en")` · 1-bot-1-language.
+
+### DB local: migration vỡ → rebuild bằng runbook (KHÔNG squash)
+- `alembic upgrade head` fresh DB FAIL (`bot_model_bindings.tenant_id` không tồn tại rev 0006 — history sửa sau). Dùng [scripts/db/REBUILD_DEV_DB_RUNBOOK.md](scripts/db/REBUILD_DEV_DB_RUNBOOK.md): `create_all`(26)+`bootstrap_ddl_only_tables.sql`+`stamp head` → **35 bảng @ 0240, 158 system_config, RBAC seeded** ✅ trên local 5434 (ragbot/ragbot, redis 6380). **CHƯA seed bot** (cần `scripts/db/seed_dev_drmedispa_bot.py`, API-heavy). Bug phụ: `scripts/seed_ai_config.py` (top-level) **stale** (`provider_id` vs `record_provider_id`).
+- `.env` = local DB 5434 + key thật (gitignored). Server `10.0.1.160` unreachable.
+
+### TOP-7 adoption (map bug) — chi tiết 2 research file
+1. 🔴 routing price-of-entity→stats (Phase A) + **table STC per-row** (conflate; STC MRR+66%/R@1+106%)
+2. 🔴 atomic-claim NLI + numeric-verify (faithfulness enforce)
+3. 🔴 eval-CI dual-gate + ARSP (thoát fix-bừa; fix LOW-recall ở retrieval không sysprompt)
+4. pgvector tune (ef_construction=128/ef_search=160 + halfvec + iterative_scan) — p95
+5. 🔴 retrieval-layer injection scanner + URL provenance (security P0; guardrail mù chunk-injection)
+6. cascade/async-grounding/MQ-gate (config-flip đã build) — p95/cost
+7. ViRanker/Qwen3-0.6B swap (VN recall, same 1024-dim)
+- ❌ **KHÔNG full GraphRAG** (cost ~350× token, win-rate thổi phồng — adversarial bác). Caveat vendor (pgvectorscale 28×, per-tenant 37.2×, ef40 90-93%) đã bác — PART2 §J.
+
+### ➡️ NEXT (sau /compact, tiếp tục từ đây)
+- **(a)** Code **Phase A1** TDD: thêm `parse_price_of_entity_query` → wire `retrieve.py` (sau code-query, trước list-query) → `query_by_name_keyword`. Failing test trước. Cần user approve plan trước khi đụng `src/`.
+- **(b)** Seed bot local (`seed_dev_drmedispa_bot.py`) để load-test (`scripts/verify_fixes_loadtest.py` gate: conflate=0, Coverage≥0.95, HALLU=0).
+- **(c)** Eval-CI harness (RAGAS dual-gate) — anti-whack-a-mole.
+
+### Lesson
+Code KHÔNG "5/100" — ruff+mypy strict, 6158 test, ~0 broad-except; nợ tập trung (god-file `query_graph.py` 3945 dòng, 71 file dead-code, `z_luannt_*.txt` commit nhầm). "Test lòi bug = test đúng việc". Scorecard 5-tiêu-chí: Faithfulness ❌(conflate) · Nhanh ❌(p95~15s) · UX ⚠️ · Perf ⚠️(RLS off) · Cost ⚠️. Overall ~63/100.
+
 ## Session 2026-06-17 (cont) — Aggregation + number standard + 3-bot role-fix (alembic 0235–0236)
 
 **[T1-Smartness]** Đào sâu retrieval/aggregation/sysprompt cho 3 bot demo (spa/xe/legal), fix tận gốc nhiều bug, HALLU=0 giữ vững. Commits: `4c61deb`→`e5c71ee` (chưa push — harness chặn, user tự push).

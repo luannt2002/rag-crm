@@ -26,6 +26,7 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+from datetime import UTC, datetime
 from typing import Any
 
 import httpx
@@ -33,6 +34,7 @@ import structlog
 
 from ragbot.application.dto.ai_specs import EmbeddingSpec
 from ragbot.application.ports.embedding_port import EmbeddingPort
+from ragbot.application.ports.token_ledger_port import TokenLedgerPort
 from ragbot.application.services.retry_policy import (
     CircuitBreaker,
     CircuitBreakerPolicy,
@@ -40,6 +42,7 @@ from ragbot.application.services.retry_policy import (
     retry_with_backoff,
 )
 from ragbot.infrastructure.llm.tpm_rate_limiter import TpmRateLimiter
+from ragbot.infrastructure.token_ledger.aux_usage import emit_aux_usage
 from ragbot.shared.api_key_pool import ApiKeyEntry, ApiKeyPool, ApiKeyPoolFactory
 from ragbot.shared.constants import (
     DEFAULT_API_KEY_MAX_CONCURRENT,
@@ -122,11 +125,13 @@ class JinaEmbedder(EmbeddingPort):
         dimensions: int = DEFAULT_JINA_EMBEDDING_DIM,
         late_chunking: bool = DEFAULT_JINA_EMBEDDING_LATE_CHUNKING,
         window_tokens: int = DEFAULT_JINA_LATE_CHUNK_WINDOW_TOKENS,
+        ledger: TokenLedgerPort | None = None,
     ) -> None:
         self._model = model
         self._api_url = api_url
         self._timeout_s = timeout_s
         self._dimensions = dimensions
+        self._ledger = ledger
         self._late_chunking = late_chunking
         self._window_chars = max(1, int(window_tokens) * _CHARS_PER_TOKEN)
         self._pool: ApiKeyPool | None = (
@@ -221,7 +226,7 @@ class JinaEmbedder(EmbeddingPort):
             except (ValueError, KeyError, TypeError):
                 return False
             return True
-        except (httpx.HTTPError, asyncio.TimeoutError, OSError):
+        except (TimeoutError, httpx.HTTPError, OSError):
             logger.warning("embedder_health_check_failed", model=self._model, exc_info=True)
             return False
 
@@ -272,6 +277,7 @@ class JinaEmbedder(EmbeddingPort):
             }
             if late:
                 body["late_chunking"] = True
+            _emb_t0 = datetime.now(UTC)
             async with asyncio.timeout(self._timeout_s):
                 resp = await client.post(
                     self._api_url, json=body,
@@ -288,6 +294,18 @@ class JinaEmbedder(EmbeddingPort):
                     )
                 data: dict[str, Any] = resp.json()
                 rows = data.get("data") or []
+                # Log-center: snapshot Jina embedding token usage (action="embedding").
+                _u = data.get("usage") or {}
+                emit_aux_usage(
+                    self._ledger,
+                    action="embedding",
+                    provider=self._PROVIDER_CODE,
+                    model=self._model,
+                    input_tokens=int(_u.get("prompt_tokens", 0) or 0),
+                    total_tokens=int(_u.get("total_tokens", 0) or 0),
+                    started_at=_emb_t0,
+                    finished_at=datetime.now(UTC),
+                )
                 # Jina returns rows with an ``index`` field; sort to guarantee
                 # alignment with the input order before stripping to vectors.
                 rows = sorted(rows, key=lambda r: r.get("index", 0))
@@ -313,7 +331,7 @@ class JinaEmbedder(EmbeddingPort):
             raise ExternalServiceError(f"embedding CB open: {exc}") from exc
         except ExternalServiceError:
             raise
-        except (httpx.HTTPError, OSError, TimeoutError) as exc:  # noqa: BLE001 — surface hard errors as external service failure
+        except (httpx.HTTPError, OSError, TimeoutError) as exc:
             raise ExternalServiceError(
                 f"Jina embedding API failed after retries: {exc}",
             ) from exc

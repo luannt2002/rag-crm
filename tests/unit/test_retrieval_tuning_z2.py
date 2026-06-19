@@ -118,7 +118,7 @@ def _z2_migration_body() -> str:
     path = (
         Path(__file__).resolve().parents[2]
         / "alembic"
-        / "versions"
+        / "_archive_pre_squash_20260618"
         / "20260501_0057_z2_retrieval_tuning.py"
     )
     return path.read_text(encoding="utf-8")

@@ -400,6 +400,69 @@ def parse_list_query(query: str) -> RangeFilter | None:
     )
 
 
+# Price-ask signals (folded). A "<entity> giá bao nhiêu" question asks ONE
+# labelled price, so it must route to the name/category structured lookup
+# (1 entity = 1 labelled price → cross-entity conflation is impossible), NOT
+# the vector path where a multi-entity chunk lets the LLM attribute the wrong
+# price. Domain-neutral — keyed on the price-ask SHAPE, not any brand/service.
+_PRICE_ASK_SIGNALS: Final[tuple[str, ...]] = (
+    "gia bao nhieu", "bao nhieu tien", "bao nhieu mot", "bao nhieu 1",
+    "gia the nao", "gia la bao nhieu", "bao tien", "het bao nhieu",
+    "tinh tien", "how much", "price of", "what is the price",
+)
+# Structural anchors that mark a LEGAL/clause reference, not a catalog price.
+_PRICE_STRUCTURAL_ANCHORS: Final[tuple[str, ...]] = (
+    "dieu ", "khoan ", "chuong ", "diem ", "muc ", "thong tu", "nghi dinh",
+)
+# Phrases stripped to isolate the entity keyword (price-ask + list stopwords).
+_PRICE_STRIP_PHRASES: Final[tuple[str, ...]] = _LIST_STRIP_PHRASES + (
+    "giá bao nhiêu", "gia bao nhieu", "bao nhiêu tiền", "bao nhieu tien",
+    "bao nhiêu một", "bao nhieu mot", "hết bao nhiêu", "het bao nhieu",
+    "giá thế nào", "gia the nao", "giá là bao nhiêu", "gia la bao nhieu",
+    "bao nhiêu", "bao nhieu", "giá", "gia", "tiền", "tien", "một", "mot",
+    "là", "la", "thế nào", "the nao", "bao tiền", "bao tien", "của",
+)
+
+
+def parse_price_of_entity_query(query: str) -> RangeFilter | None:
+    """Detect a "<entity> giá bao nhiêu" price-of-entity factoid.
+
+    Returns ``RangeFilter(operation="keyword", keyword=<entity>)`` so the caller
+    routes to the structured name/category lookup (``query_by_name_keyword``),
+    which returns each entity's OWN labelled price — making the cross-entity
+    price conflation of the vector path impossible by construction.
+
+    Returns None when there is no price-ask signal, when a numeric range /
+    superlative is present (``parse_range_query`` owns those), when a legal
+    clause anchor is present (Điều/Khoản → not a catalog price), or when the
+    residual entity keyword is too short to be a useful lookup.
+    """
+    if not query or not query.strip():
+        return None
+    folded = _ascii_fold(query)
+    if not any(s in folded for s in _PRICE_ASK_SIGNALS):
+        return None
+    # A numeric range / superlative price question belongs to parse_range_query.
+    if parse_range_query(query) is not None:
+        return None
+    # Legal clause reference, not a catalog item.
+    if any(a in folded for a in _PRICE_STRUCTURAL_ANCHORS):
+        return None
+    kw = query
+    for ph in sorted(_PRICE_STRIP_PHRASES, key=len, reverse=True):
+        kw = re.sub(
+            r"\b" + re.escape(ph) + r"\b", " ", kw,
+            flags=re.IGNORECASE | re.UNICODE,
+        )
+    kw = re.sub(r"\s+", " ", kw).strip(" ?.,!")
+    if len(kw) < 2:
+        return None
+    return RangeFilter(
+        price_min=None, price_max=None, price_column="any",
+        operation="keyword", confidence=0.8, keyword=kw,
+    )
+
+
 # Spec/product-code detector. A code is an alphanumeric run joined by / . - —
 # a shape no natural-language word takes (195/65R15, 2-R17, A1.B2, a SKU). The
 # pattern is operator-overridable via system_config 'code_query_pattern'; the
@@ -508,7 +571,7 @@ __all__ = [
     "parse_money_vn",
     "parse_range_query",
     "parse_list_query",
-    "parse_code_query",
+    "parse_price_of_entity_query",
     "parse_code_query",
     "matches_summary_pattern",
 ]

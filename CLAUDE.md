@@ -291,6 +291,8 @@ Coverage = answer_correct_when_corpus_has_answer / total_corpus_has_answer
 
 Mỗi load test PHẢI report cả 2 metric. Coverage <0.95 = blocker để ship.
 
+**CẤM tuyên bố 1 flow/step "đạt ≥X/100" (hoặc "đã fix / work / pass") khi CHƯA có (a) debug-trace backward-verify cho step đó (chunk có ingest→retrieve→topK→prompt→answer đúng không) VÀ (b) load-test/eval output số thật.** Baseline TĨNH (chấm theo code-evidence) ≠ VERIFIED (chấm theo runtime số thật) — phải gắn nhãn rõ cái nào. Khớp rule #0 CẤM ĐOÁN.
+
 ---
 
 ## Domain-neutral rule — TUYỆT ĐỐI

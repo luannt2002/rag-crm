@@ -94,10 +94,14 @@ class RerankerResolver:
         redis_client: Any,
         ttl_s: int = DEFAULT_RERANK_CONFIG_TTL_S,
         key_pool_factory: ApiKeyPoolFactory | None = None,
+        ledger: Any = None,
     ) -> None:
         self._sf = session_factory
         self._redis = redis_client
         self._ttl = ttl_s
+        # Log-center: per-bot rerankers emit their token usage to this ledger
+        # (action="rerank"). None → adapter no-ops the emit.
+        self._ledger = ledger
         # Multi-key pool factory — passed to every per-bot reranker so the
         # provider adapter resolves an N-key round-robin pool (BPM failover)
         # instead of a single env key. Without it a 429 cannot rotate and
@@ -303,6 +307,7 @@ class RerankerResolver:
                 # round-robin across keys (BPM failover) rather than degrade
                 # to RRF. ``api_key`` stays the single-key legacy fallback.
                 key_pool_factory=self._key_pool_factory,
+                ledger=self._ledger,
             )
             logger.debug(
                 "rerank_resolver_built",
@@ -320,4 +325,4 @@ class RerankerResolver:
             return NullReranker()
 
 
-__all__ = ["RerankerResolver", "REDIS_KEY_PREFIX"]
+__all__ = ["REDIS_KEY_PREFIX", "RerankerResolver"]

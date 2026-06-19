@@ -16,6 +16,7 @@ CLAUDE.md compliance:
 
 from __future__ import annotations
 
+import inspect
 from typing import Final
 
 from ragbot.application.ports.embedding_port import EmbeddingPort
@@ -63,6 +64,7 @@ def build_embedder(
     provider: str | None = None,
     model: str | None = None,
     key_pool_factory: ApiKeyPoolFactory | None = None,
+    ledger: object | None = None,
 ) -> EmbeddingPort:
     """Construct an embedder for ``provider`` (defaults to LiteLLM).
 
@@ -88,9 +90,15 @@ def build_embedder(
     if key in {"zeroentropy", "bkai_vn"} and model and "/" in model:
         # Provider mismatch — fall back to adapter's native default model id.
         model = None
-    if model is None:
-        return cls(key_pool_factory=key_pool_factory)
-    return cls(model=model, key_pool_factory=key_pool_factory)
+    # Filter kwargs to the constructor signature — adapters vary (only the
+    # log-center-aware ones accept ``ledger``; LiteLLM/ZeroEntropy ignore it).
+    sig = set(inspect.signature(cls.__init__).parameters)
+    kwargs: dict[str, object] = {"key_pool_factory": key_pool_factory}
+    if model is not None:
+        kwargs["model"] = model
+    if ledger is not None:
+        kwargs["ledger"] = ledger
+    return cls(**{k: v for k, v in kwargs.items() if k in sig})  # type: ignore[arg-type]
 
 
 __all__ = ["DEFAULT_EMBEDDING_PROVIDER", "build_embedder"]

@@ -16,8 +16,8 @@ import time
 import httpx
 
 BASE_URL = os.getenv("RAGBOT_BASE_URL", "http://localhost:3004")
-_BYPASS_HEADER = "X-Loadtest-Bypass"
-_SEM = asyncio.Semaphore(8)
+_BYPASS_HEADER = "X-Ragbot-Loadtest-Bypass"  # must match RAGBOT_LOADTEST_BYPASS_HEADER server constant
+_SEM = asyncio.Semaphore(int(os.getenv("LOADTEST_CONCURRENCY", "2")))  # low default: avoid OpenAI RPM burst
 
 
 def _bypass() -> dict[str, str]:

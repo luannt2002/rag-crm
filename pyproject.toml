@@ -123,6 +123,12 @@ ignore = [
 "tests/**" = ["S101", "PLR2004", "ANN"]
 "alembic/**" = ["ANN", "PLR", "D"]
 "scripts/**" = ["T201", "PLC0415", "PLR0912", "ANN001"]
+# Dev seed scripts: data-heavy literal rows (long lines), intentional subprocess
+# orchestration, and glob over migration files for prompt sourcing.
+"scripts/db/seed_*.py" = ["E501", "N806", "S603", "PTH207"]
+# Analytics repo builds a date_trunc query from CLOSED whitelists (bucket +
+# breakdown col); every user value is a bound :param — not injectable.
+"src/ragbot/infrastructure/repositories/token_ledger_analytics_repository.py" = ["S608"]
 
 [tool.ruff.format]
 quote-style = "double"

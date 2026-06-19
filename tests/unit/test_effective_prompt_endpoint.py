@@ -24,7 +24,11 @@ from uuid import uuid4
 def test_route_registered_on_app_router() -> None:
     from ragbot.interfaces.http.router import router as composed_router
 
-    paths = {getattr(r, "path", None) for r in composed_router.routes}
+    from tests.unit._helpers_routes import leaf_paths
+
+    # FastAPI lazy-composes include_router(...) as _IncludedRouter wrappers;
+    # flatten to the real leaf paths the live app serves.
+    paths = leaf_paths(composed_router.routes)
     assert "/api/ragbot/admin/bots/{bot_uuid}/effective-prompt" in paths
 
 

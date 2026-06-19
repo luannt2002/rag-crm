@@ -428,7 +428,7 @@ def test_count_by_price_range_uses_bot_id_scope() -> None:
     sf.return_value.__aexit__ = AsyncMock(return_value=False)
 
     repo = StatsIndexRepository(session_factory=sf)
-    result = asyncio.get_event_loop().run_until_complete(
+    result = asyncio.run(
         repo.count_by_price_range(
             record_bot_id=bot_id,
             price_min=100_000,

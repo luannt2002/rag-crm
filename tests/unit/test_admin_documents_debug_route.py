@@ -24,6 +24,7 @@ from ragbot.shared.constants import (
     DEBUG_VIEW_FORMATS_ALLOWED,
     DEFAULT_DEBUG_VIEW_FORMAT,
 )
+from tests.unit._helpers_routes import leaf_paths
 
 
 def test_renamed_module_is_importable() -> None:
@@ -34,13 +35,15 @@ def test_renamed_module_is_importable() -> None:
 
 def test_debug_view_route_registered_on_app_router() -> None:
     """Composed app router must include the new generic path."""
-    paths = {getattr(r, "path", None) for r in composed_router.routes}
+    # FastAPI lazy-composes include_router(...) as _IncludedRouter wrappers;
+    # flatten to the real leaf paths the live app serves.
+    paths = leaf_paths(composed_router.routes)
     assert "/api/ragbot/admin/documents/{document_id}/debug-view" in paths
 
 
 def test_old_markdown_path_is_gone() -> None:
     """Removing the format suffix is mandatory — the old URL must not exist."""
-    paths = {getattr(r, "path", None) for r in composed_router.routes}
+    paths = leaf_paths(composed_router.routes)
     assert "/api/ragbot/admin/documents/{document_id}/markdown" not in paths
 
 

@@ -26,10 +26,14 @@ from ragbot.interfaces.http.routes import (
     admin_analytics,
     admin_refuse_suggestions,
 )
+from tests.unit._helpers_routes import leaf_paths
 
 
-def _paths() -> set[str | None]:
-    return {getattr(r, "path", None) for r in composed_router.routes}
+def _paths() -> set[str]:
+    # FastAPI composes include_router(...) results as lazy _IncludedRouter
+    # wrappers; the real leaf paths live one level down. Flatten the tree so
+    # the assertion checks the SAME fully-prefixed paths the live app serves.
+    return leaf_paths(composed_router.routes)
 
 
 # ---------------------------------------------------------------------------

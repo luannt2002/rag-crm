@@ -118,11 +118,14 @@ def test_app_router_mounts_sync_async_streaming_at_distinct_paths() -> None:
     from ragbot.config.settings import get_settings
     from ragbot.interfaces.http.router import router as app_router
 
+    from tests.unit._helpers_routes import iter_leaf_routes
+
     base = get_settings().app.api_base_path
-    full_paths: set[str] = set()
-    for r in app_router.routes:
-        if isinstance(r, APIRoute) and "POST" in r.methods:
-            full_paths.add(r.path)
+    # FastAPI lazy-composes include_router(...) as _IncludedRouter wrappers;
+    # flatten to the real leaf routes the live app serves.
+    full_paths: set[str] = {
+        lr.path for lr in iter_leaf_routes(app_router.routes) if "POST" in lr.methods
+    }
 
     assert f"{base}/chat" in full_paths, (
         f"Sync chat path missing; full POST paths: {sorted(full_paths)!r}"
@@ -140,11 +143,12 @@ def test_app_router_async_polling_get_is_wired_at_full_path() -> None:
     from ragbot.config.settings import get_settings
     from ragbot.interfaces.http.router import router as app_router
 
+    from tests.unit._helpers_routes import iter_leaf_routes
+
     base = get_settings().app.api_base_path
-    full_get_paths: set[str] = set()
-    for r in app_router.routes:
-        if isinstance(r, APIRoute) and "GET" in r.methods:
-            full_get_paths.add(r.path)
+    full_get_paths: set[str] = {
+        lr.path for lr in iter_leaf_routes(app_router.routes) if "GET" in lr.methods
+    }
 
     assert f"{base}/test/chat-async/{{job_id}}" in full_get_paths, (
         f"Async polling GET path missing; full GET paths: "

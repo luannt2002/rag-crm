@@ -36,6 +36,8 @@ import pytest
 
 from ragbot.interfaces.http.app import create_app
 
+from tests.unit._helpers_routes import iter_leaf_routes
+
 # Routes intentionally exempt from the workspace contract (must be justified).
 # A route is exempt ONLY when it does NOT resolve a bot from the DB by
 # (bot_id, channel_type) — i.e. nothing that could match the wrong workspace.
@@ -68,10 +70,13 @@ def _carries_workspace(endpoint) -> bool:
 def _bot_channel_routes():
     app = create_app()
     out = []
-    for route in app.routes:
-        path = getattr(route, "path", "")
+    # FastAPI lazy-composes include_router(...) as _IncludedRouter wrappers;
+    # flatten to the real leaf routes (path + resolved endpoint) the live app
+    # serves so the fitness function inspects every bot-channel handler.
+    for lr in iter_leaf_routes(app.routes):
+        path = lr.path
         if "{bot_id}" in path and "{channel_type}" in path:
-            ep = getattr(route, "endpoint", None)
+            ep = lr.endpoint
             if ep is not None:
                 out.append((ep.__name__, ep, path))
     return out

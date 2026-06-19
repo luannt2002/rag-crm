@@ -96,7 +96,7 @@ def test_classifier_output_is_always_in_allowed_set() -> None:
 _MIGRATION_PATH = (
     Path(__file__).resolve().parents[2]
     / "alembic"
-    / "versions"
+    / "_archive_pre_squash_20260618"
     / "20260518_010k_chunk_type_metadata.py"
 )
 

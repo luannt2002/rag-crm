@@ -66,9 +66,20 @@ CHANNEL_TYPE_TABLES = [
 
 def upgrade() -> None:
     for t in TENANT_NULLABLE_TABLES:
-        # Some tables may not exist on clean DB (dropped in 0010)
+        # Some tables may not exist on clean DB (dropped in 0010); some never
+        # had a literal ``tenant_id`` column (later history created them with
+        # ``record_tenant_id`` directly). Guard on column existence so a fresh
+        # ``alembic upgrade head`` replay stays reproducible.
         op.execute(
-            f"ALTER TABLE IF EXISTS {SCHEMA}.{t} ALTER COLUMN tenant_id DROP NOT NULL"
+            f"""DO $$ BEGIN
+                IF EXISTS (
+                    SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='{SCHEMA}' AND table_name='{t}'
+                      AND column_name='tenant_id'
+                ) THEN
+                    ALTER TABLE {SCHEMA}.{t} ALTER COLUMN tenant_id DROP NOT NULL;
+                END IF;
+            END $$;"""
         )
 
     for t in CHANNEL_TYPE_TABLES:

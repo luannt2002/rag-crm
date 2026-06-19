@@ -204,7 +204,12 @@ def test_constants_exposed_and_sane() -> None:
 def test_route_registered_on_composed_app() -> None:
     """Composed router must expose the streaming path."""
     from ragbot.interfaces.http.router import router as composed
-    paths = {getattr(r, "path", None) for r in composed.routes}
+
+    from tests.unit._helpers_routes import leaf_paths
+
+    # FastAPI lazy-composes include_router(...) as _IncludedRouter wrappers;
+    # flatten to the real leaf paths the live app serves.
+    paths = leaf_paths(composed.routes)
     assert "/api/ragbot/documents/upload-stream" in paths
 
 

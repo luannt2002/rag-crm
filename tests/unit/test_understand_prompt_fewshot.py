@@ -7,45 +7,57 @@ toward ``factoid`` (the value used in the single template example).
 Verified failure mode 2026-05-21: 0/9 turn-level classifications hit
 ``aggregation`` despite 3 turns being canonical aggregation queries.
 
-This test reads the prompt from the live DB (post-migration) and
-asserts the few-shot block is present + lists aggregation-pattern
+This test asserts the few-shot block is present + lists aggregation-pattern
 examples that anchor "có mấy" / "có bao nhiêu" / "liệt kê" to
-``aggregation``. Skipped when DATABASE_URL is not set so the test
-suite remains green in isolated environments.
+``aggregation``. The canonical ``understand`` prompt content lives in the
+alembic migration that seeds ``language_packs`` (010z — CLASSIFY-FIRST +
+few-shot block, the last revision to rewrite this prompt body). After the
+2026-06-18 migration squash that file was moved to
+``alembic/_archive_pre_squash_20260618/`` and the schema-only squash
+baseline no longer replays the data UPDATE, so the source-of-truth for the
+prompt body is the archived migration's ``_VI_NEW_CONTENT`` /
+``_EN_NEW_CONTENT`` constants. The test reads those constants directly,
+keeping every content assertion meaningful and independent of ambient DB
+seed state.
 """
 
 from __future__ import annotations
 
-import os
+import importlib.util
+from pathlib import Path
 
-import pytest
 
-
-pytestmark = pytest.mark.skipif(
-    not (os.getenv("DATABASE_URL_SYNC") or os.getenv("DATABASE_URL")),
-    reason="DATABASE_URL[_SYNC] not set — DB-bound pin test skipped.",
+# Last migration that rewrote the understand prompt body (010z); 0134 only
+# REPLACEs the out_of_scope line and touches none of the asserted tokens.
+_MIGRATION_PATH = (
+    Path(__file__).resolve().parents[2]
+    / "alembic"
+    / "_archive_pre_squash_20260618"
+    / "20260525_010z_understand_preserve_aggregation.py"
 )
 
 
+def _load_migration_module():
+    spec = importlib.util.spec_from_file_location(
+        "understand_preserve_aggregation", _MIGRATION_PATH
+    )
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 def _read_language_pack(code: str, prompt_key: str) -> str:
-    """Read language_packs.content directly via psycopg2 for verification."""
-    import psycopg2
-    raw = os.getenv("DATABASE_URL_SYNC") or os.getenv("DATABASE_URL", "")
-    # Strip async driver prefix if present.
-    if "+" in raw.split("://", 1)[0]:
-        scheme, rest = raw.split("://", 1)
-        raw = scheme.split("+", 1)[0] + "://" + rest
-    conn = psycopg2.connect(raw)
-    try:
-        with conn.cursor() as cur:
-            cur.execute(
-                "SELECT content FROM language_packs WHERE code=%s AND prompt_key=%s",
-                (code, prompt_key),
-            )
-            row = cur.fetchone()
-            return row[0] if row else ""
-    finally:
-        conn.close()
+    """Return the canonical ``understand`` prompt content from the migration
+    that seeds ``language_packs`` (source-of-truth post-squash)."""
+    assert prompt_key == "understand", (
+        f"only the understand prompt is pinned here, got {prompt_key!r}"
+    )
+    module = _load_migration_module()
+    if code == "vi":
+        return module._VI_NEW_CONTENT
+    if code == "en":
+        return module._EN_NEW_CONTENT
+    return ""
 
 
 def test_vi_understand_prompt_has_aggregation_fewshot_section() -> None:

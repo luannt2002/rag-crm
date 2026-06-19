@@ -12,7 +12,18 @@ from __future__ import annotations
 
 import pathlib
 
+import pytest
+
 UNIT_FILE = pathlib.Path("/etc/systemd/system/ragbot-chat-worker.service")
+
+# The systemd unit only exists on a provisioned deploy host. In dev/CI the
+# path is absent, so skip the whole module cleanly rather than fail — the
+# contract assertions below still run (and stay meaningful) wherever the
+# file is actually installed.
+pytestmark = pytest.mark.skipif(
+    not UNIT_FILE.exists(),
+    reason=f"{UNIT_FILE} absent (deploy-host-only unit file)",
+)
 
 
 def _content() -> str:

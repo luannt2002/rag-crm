@@ -32,7 +32,7 @@ def _load_seed_configs(rel_path: str, mod_name: str) -> dict[str, str]:
 
 def test_init_script_matches_alembic_0020_for_shared_keys() -> None:
     alembic_seed = _load_seed_configs(
-        "alembic/versions/20260417_0020_seed_system_config.py", "_seed_alembic_0020"
+        "alembic/_archive_pre_squash_20260618/20260417_0020_seed_system_config.py", "_seed_alembic_0020"
     )
     script_seed = _load_seed_configs(
         "scripts/init_system_config.py", "_seed_init_script"

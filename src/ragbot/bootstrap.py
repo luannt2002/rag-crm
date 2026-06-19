@@ -10,33 +10,35 @@ import os
 from dependency_injector import containers, providers
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker
 
-from ragbot.application.services.ai_config_service import AIConfigService
-from ragbot.application.services.error_notify_hook import ErrorNotifyHook
-from ragbot.application.services.notify_channel_resolver import (
-    NotifyChannelResolver,
-)
 from ragbot.application.events.chat_completed import ChatHookRegistry
-from ragbot.application.services.crag_grader.registry import build_crag_grader
-from ragbot.application.services.guardrail_rule_loader import GuardrailRuleLoader
-from ragbot.application.services.hallu_verifier import HALLUVerifier
-from ragbot.application.services.hyde_generator import HyDEGenerator
-from ragbot.application.services.system_config_service import SystemConfigService
-from ragbot.application.services.reranker_resolver import RerankerResolver
+from ragbot.application.services.ai_config_service import AIConfigService
+from ragbot.application.services.audit_verifier import AuditVerifier
 from ragbot.application.services.bot_lifecycle_service import BotLifecycleService
 from ragbot.application.services.bot_management_service import BotManagementService
 from ragbot.application.services.bot_registry_service import BotRegistryService
 from ragbot.application.services.citation_policy import CitationPolicyService
 from ragbot.application.services.corpus_version_service import CorpusVersionService
+from ragbot.application.services.crag_grader.registry import build_crag_grader
+from ragbot.application.services.error_notify_hook import ErrorNotifyHook
+from ragbot.application.services.guardrail_rule_loader import GuardrailRuleLoader
+from ragbot.application.services.hallu_verifier import HALLUVerifier
+from ragbot.application.services.hyde_generator import HyDEGenerator
 from ragbot.application.services.idempotency import IdempotencyService
-from ragbot.application.services.provider_key_resolver import ProviderKeyResolver
+from ragbot.application.services.ingest_idempotency_service import (
+    IngestIdempotencyService,
+)
+from ragbot.application.services.ingest_quota_service import IngestQuotaService
 from ragbot.application.services.language_pack_service import LanguagePackService
 from ragbot.application.services.model_resolver import ModelResolverService
+from ragbot.application.services.notify_channel_resolver import (
+    NotifyChannelResolver,
+)
 from ragbot.application.services.oos_template_resolver import OosTemplateResolver
+from ragbot.application.services.provider_key_resolver import ProviderKeyResolver
+from ragbot.application.services.reranker_resolver import RerankerResolver
 from ragbot.application.services.slot_extractor import SlotExtractor
 from ragbot.application.services.sysprompt_assembler import SysPromptAssembler
-from ragbot.infrastructure.conversation_state.registry import (
-    build_conversation_state,
-)
+from ragbot.application.services.system_config_service import SystemConfigService
 from ragbot.application.services.tenant_config_cache import TenantConfigCache
 from ragbot.application.services.tenant_guard import TenantGuardService
 from ragbot.application.services.tenant_rate_limiter import TenantRateLimiter
@@ -46,20 +48,9 @@ from ragbot.application.use_cases.answer_question import AnswerQuestionUseCase
 from ragbot.application.use_cases.delete_document import DeleteDocumentUseCase
 from ragbot.application.use_cases.get_job_status import GetJobStatusUseCase
 from ragbot.application.use_cases.give_feedback import GiveFeedbackUseCase
-from ragbot.application.services.ingest_idempotency_service import (
-    IngestIdempotencyService,
-)
-from ragbot.application.services.ingest_quota_service import IngestQuotaService
 from ragbot.application.use_cases.ingest_document import IngestDocumentUseCase
 from ragbot.application.use_cases.rechunk_document import RechunkDocumentUseCase
 from ragbot.config.settings import Settings, get_settings
-from ragbot.infrastructure.chat_hooks.quota_threshold_notify_hook import (
-    QuotaThresholdNotifyHook,
-)
-from ragbot.infrastructure.chat_hooks.token_usage_db_hook import TokenUsageDbHook
-from ragbot.infrastructure.chat_hooks.token_usage_redis_hook import (
-    TokenUsageRedisHook,
-)
 from ragbot.infrastructure.cache.embed_cache import EmbedCache
 from ragbot.infrastructure.cache.redis_cache import (
     RedisCache,
@@ -68,60 +59,45 @@ from ragbot.infrastructure.cache.redis_cache import (
 )
 from ragbot.infrastructure.cache.semantic_cache import PgSemanticCache
 from ragbot.infrastructure.cache.understand_query_cache import UnderstandQueryCache
+from ragbot.infrastructure.chat_hooks.quota_threshold_notify_hook import (
+    QuotaThresholdNotifyHook,
+)
+from ragbot.infrastructure.chat_hooks.token_usage_db_hook import TokenUsageDbHook
+from ragbot.infrastructure.chat_hooks.token_usage_redis_hook import (
+    TokenUsageRedisHook,
+)
+from ragbot.infrastructure.conversation_state.registry import (
+    build_conversation_state,
+)
 from ragbot.infrastructure.db.engine import create_engine_app, session_with_tenant
 from ragbot.infrastructure.db.session import create_rls_session_factory
 from ragbot.infrastructure.db.uow import UnitOfWorkFactory
-from ragbot.infrastructure.embedding.litellm_embedder import LiteLLMEmbedder  # noqa: F401  # kept for re-export
+from ragbot.infrastructure.embedding.litellm_embedder import (
+    LiteLLMEmbedder,  # noqa: F401  # kept for re-export
+)
 from ragbot.infrastructure.embedding.registry import build_embedder
-from ragbot.infrastructure.events.redis_streams_bus import RedisStreamsEventBus
-from ragbot.infrastructure.guardrails.local_guardrail import LocalGuardrail
-from ragbot.infrastructure.guardrails.registry import build_guardrail
-from ragbot.infrastructure.notify.webhook_notifier import WebhookNotifier
-from ragbot.infrastructure.notify.webhook_dispatcher import WebhookNotifyDispatcher
 from ragbot.infrastructure.entity_extractor.registry import build_entity_extractor
-from ragbot.infrastructure.metadata_filter.registry import build_metadata_filter
-from ragbot.infrastructure.rate_limiter.registry import build_rate_limiter
-from ragbot.infrastructure.reranker.litellm_reranker import LiteLLMReranker  # noqa: F401  # kept for backward compat re-export
-from ragbot.infrastructure.reranker.registry import build_reranker
-from ragbot.infrastructure.retrieval.lexical_registry import build_lexical_retrieval
-from ragbot.shared.bootstrap_config import get_boot_config
-from ragbot.shared.constants import (
-    DEFAULT_ARTICLE_REF_PATTERNS,
-    DEFAULT_CONVERSATION_STATE_TTL_HOURS,
-    DEFAULT_CRAG_GRADER_PROVIDER,
-    DEFAULT_MAX_ACTION_SLOTS,
-    DEFAULT_ENTITY_EXTRACTOR_PROVIDER,
-    DEFAULT_LANGUAGE,
-    DEFAULT_LEXICAL_RETRIEVAL_PROVIDER,
-    DEFAULT_METADATA_FILTER_PROVIDER,
-    DEFAULT_PII_REDACTOR_PROVIDER,
-    DEFAULT_RERANK_MODEL,
-    DEFAULT_RERANKER_PROVIDER,
-    DEFAULT_TOKEN_QUOTA_NOTIFY_THROTTLE_S,
-    DEFAULT_VECTOR_STORE_PROVIDER,
-    PROMPT_VERSION_UQ,
-)
-from ragbot.shared.api_key_pool import (
-    ApiKeyPool,
-    ApiKeyPoolFactory,
-    DBBackedApiKeyPoolFactory,
-)
+from ragbot.infrastructure.events.redis_streams_bus import RedisStreamsEventBus
+from ragbot.infrastructure.guardrails.registry import build_guardrail
 from ragbot.infrastructure.llm.dynamic_litellm_router import DynamicLiteLLMRouter
-from ragbot.infrastructure.token_ledger import build_token_ledger
+from ragbot.infrastructure.metadata_filter.registry import build_metadata_filter
+from ragbot.infrastructure.notify.webhook_dispatcher import WebhookNotifyDispatcher
+from ragbot.infrastructure.notify.webhook_notifier import WebhookNotifier
 from ragbot.infrastructure.observability.invocation_logger import InvocationLogger
-from ragbot.infrastructure.observability.prometheus_metrics_adapter import (
-    PrometheusMetricsAdapter,
-)
 from ragbot.infrastructure.observability.pipeline_audit_logger import (
     PipelineAuditLogger,
 )
-from ragbot.infrastructure.ocr.simple_text_parser import SimpleTextParser
+from ragbot.infrastructure.observability.prometheus_metrics_adapter import (
+    PrometheusMetricsAdapter,
+)
 from ragbot.infrastructure.ocr.ocr_factory import build_ocr_parser
 from ragbot.infrastructure.pii.registry import build_pii_redactor
+from ragbot.infrastructure.rate_limiter.registry import build_rate_limiter
 from ragbot.infrastructure.repositories.ai_config_repository import (
     SqlAlchemyAIConfigRepository,
 )
 from ragbot.infrastructure.repositories.audit_chain_writer import insert_audit_row
+from ragbot.infrastructure.repositories.audit_repository import AuditRepository
 from ragbot.infrastructure.repositories.bot_repository import SqlAlchemyBotRepository
 from ragbot.infrastructure.repositories.conversation_repository import (
     SqlAlchemyConversationRepository,
@@ -129,8 +105,8 @@ from ragbot.infrastructure.repositories.conversation_repository import (
 from ragbot.infrastructure.repositories.document_repository import (
     SqlAlchemyDocumentRepository,
 )
+from ragbot.infrastructure.repositories.guardrail_repository import GuardrailRepository
 from ragbot.infrastructure.repositories.job_repository import SqlAlchemyJobRepository
-from ragbot.infrastructure.repositories.workspace_repository import WorkspaceRepository
 from ragbot.infrastructure.repositories.language_pack_repository import (
     LanguagePackRepository,
 )
@@ -142,20 +118,50 @@ from ragbot.infrastructure.repositories.outbox_repository import (
     SqlAlchemyOutboxRepository,
 )
 from ragbot.infrastructure.repositories.quota_repository import SqlAlchemyQuotaRepository
-from ragbot.infrastructure.repositories.stats_index_repository import StatsIndexRepository
-from ragbot.infrastructure.repositories.tenant_repository import TenantRepository
-from ragbot.application.services.audit_verifier import AuditVerifier
-from ragbot.infrastructure.repositories.audit_repository import AuditRepository
-from ragbot.infrastructure.repositories.guardrail_repository import GuardrailRepository
 from ragbot.infrastructure.repositories.request_log_repository import RequestLogRepository
+from ragbot.infrastructure.repositories.stats_index_repository import StatsIndexRepository
 from ragbot.infrastructure.repositories.tenant_policy_repository import (
     TenantPolicyRepository,
 )
+from ragbot.infrastructure.repositories.tenant_repository import TenantRepository
+from ragbot.infrastructure.repositories.token_ledger_analytics_repository import (
+    TokenLedgerAnalyticsRepository,
+)
+from ragbot.infrastructure.repositories.workspace_repository import WorkspaceRepository
+from ragbot.infrastructure.reranker.litellm_reranker import (
+    LiteLLMReranker,  # noqa: F401  # kept for backward compat re-export
+)
+from ragbot.infrastructure.reranker.registry import build_reranker
+from ragbot.infrastructure.retrieval.lexical_registry import build_lexical_retrieval
 from ragbot.infrastructure.security.env_secrets import EnvSecretsAdapter
 from ragbot.infrastructure.security.jwt_auth import JwtVerifier
-from ragbot.infrastructure.vector.pgvector_store import PgVectorStore  # noqa: F401  # kept for backward-compat re-export
+from ragbot.infrastructure.token_ledger import build_token_ledger
+from ragbot.infrastructure.vector.pgvector_store import (
+    PgVectorStore,  # noqa: F401  # kept for backward-compat re-export
+)
 from ragbot.infrastructure.vector.registry import build_vector_store
+from ragbot.shared.api_key_pool import (
+    ApiKeyPoolFactory,
+    DBBackedApiKeyPoolFactory,
+)
+from ragbot.shared.bootstrap_config import get_boot_config
 from ragbot.shared.clock import SystemClock
+from ragbot.shared.constants import (
+    DEFAULT_ARTICLE_REF_PATTERNS,
+    DEFAULT_CONVERSATION_STATE_TTL_HOURS,
+    DEFAULT_CRAG_GRADER_PROVIDER,
+    DEFAULT_ENTITY_EXTRACTOR_PROVIDER,
+    DEFAULT_LANGUAGE,
+    DEFAULT_LEXICAL_RETRIEVAL_PROVIDER,
+    DEFAULT_MAX_ACTION_SLOTS,
+    DEFAULT_METADATA_FILTER_PROVIDER,
+    DEFAULT_PII_REDACTOR_PROVIDER,
+    DEFAULT_RERANK_MODEL,
+    DEFAULT_RERANKER_PROVIDER,
+    DEFAULT_TOKEN_QUOTA_NOTIFY_THROTTLE_S,
+    DEFAULT_VECTOR_STORE_PROVIDER,
+    PROMPT_VERSION_UQ,
+)
 
 
 class Container(containers.DeclarativeContainer):
@@ -272,6 +278,16 @@ class Container(containers.DeclarativeContainer):
     # handshake per call (Q16/Q17 verified). Adapter constructor must
     # raise on configuration error so the Singleton fails-loud at boot
     # instead of silently degrading on the first request.
+    # Token-log-center sink (per-call durable ledger, decoupled / fire-and-
+    # forget). Declared before embedder/reranker so those adapters can capture
+    # their own usage. 'db' provider uses its OWN session factory so the audit
+    # write never shares the LLM/retrieve-path session.
+    token_ledger = providers.Singleton(
+        build_token_ledger,
+        provider="db",
+        session_factory=session_factory,
+    )
+
     embedder = providers.Singleton(
         build_embedder,
         provider=providers.Callable(
@@ -280,6 +296,8 @@ class Container(containers.DeclarativeContainer):
         ),
         model=providers.Callable(lambda s: s.embedding.model_name, settings),
         key_pool_factory=api_key_pool_factory,
+        # Log-center: capture embedding token usage to the durable ledger.
+        ledger=token_ledger,
     )
     # Parser picked from system_config key `parser_engine`:
     #   'docling' → DoclingParser (layout-aware), falls back to Simple if dep missing
@@ -353,6 +371,10 @@ class Container(containers.DeclarativeContainer):
         # Concrete reranker strategies pick up their own pool via the
         # factory — no brand string lives in this DI wiring.
         key_pool_factory=api_key_pool_factory,
+        # Log-center: capture rerank token usage to the durable ledger
+        # (build_reranker filters kwargs to ctor sig, so null/other strategies
+        # that don't accept ledger ignore it).
+        ledger=token_ledger,
     )
     # Entity extractor strategy — T3 entity-grounded query expansion.
     # Default ``"null"`` (no-op) so existing tenants see no behaviour
@@ -443,6 +465,9 @@ class Container(containers.DeclarativeContainer):
     ai_config_repo = providers.Factory(
         SqlAlchemyAIConfigRepository, session_factory=session_factory,
     )
+    token_ledger_analytics_repo = providers.Factory(
+        TokenLedgerAnalyticsRepository, session_factory=session_factory,
+    )
     request_log_repo = providers.Factory(
         RequestLogRepository, session_factory=session_factory,
     )
@@ -511,14 +536,6 @@ class Container(containers.DeclarativeContainer):
         redis_client=redis_client,
     )
 
-    # Token-log-center sink (per-call durable ledger, decoupled / fire-and-
-    # forget). build_token_ledger reads the provider knob; 'db' uses its OWN
-    # session factory so the audit write never shares the LLM-path session.
-    token_ledger = providers.Singleton(
-        build_token_ledger,
-        provider="db",
-        session_factory=session_factory,
-    )
 
     llm = providers.Singleton(
         DynamicLiteLLMRouter,
@@ -665,6 +682,8 @@ class Container(containers.DeclarativeContainer):
         session_factory=session_factory,
         redis_client=redis_client,
         key_pool_factory=api_key_pool_factory,
+        # Log-center: per-bot rerankers capture token usage to the ledger.
+        ledger=token_ledger,
     )
 
     # Notify channel — DB-first resolver + webhook dispatcher + error

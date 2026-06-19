@@ -31,7 +31,7 @@ from ragbot.shared.constants import DEFAULT_RERANK_CLIFF_ABSOLUTE_FLOOR
 _S2_MIGRATION_PATH = (
     Path(__file__).resolve().parents[2]
     / "alembic"
-    / "versions"
+    / "_archive_pre_squash_20260618"
     / "20260511_0078_cliff_floor_recalibrate.py"
 )
 

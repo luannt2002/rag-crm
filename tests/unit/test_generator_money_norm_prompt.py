@@ -22,7 +22,7 @@ from pathlib import Path
 _MIGRATION_PATH = (
     Path(__file__).resolve().parents[2]
     / "alembic"
-    / "versions"
+    / "_archive_pre_squash_20260618"
     / "20260525_0114_generator_money_norm.py"
 )
 

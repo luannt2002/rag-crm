@@ -16,11 +16,13 @@ from __future__ import annotations
 
 import asyncio
 import os
-import structlog
+from datetime import UTC, datetime
 from typing import Any
 
 import httpx
+import structlog
 
+from ragbot.application.ports.token_ledger_port import TokenLedgerPort
 from ragbot.application.services.retry_policy import (
     CircuitBreaker,
     CircuitBreakerPolicy,
@@ -28,6 +30,7 @@ from ragbot.application.services.retry_policy import (
     retry_with_backoff,
 )
 from ragbot.infrastructure.observability.metrics import api_key_failover_total
+from ragbot.infrastructure.token_ledger.aux_usage import emit_aux_usage
 from ragbot.shared.api_key_pool import ApiKeyEntry, ApiKeyPool, ApiKeyPoolFactory
 from ragbot.shared.constants import (
     DEFAULT_JINA_HEALTH_CHECK_TIMEOUT_S,
@@ -73,6 +76,7 @@ class JinaReranker:
         *,
         key_pool: ApiKeyPool | None = None,
         key_pool_factory: ApiKeyPoolFactory | None = None,
+        ledger: TokenLedgerPort | None = None,
     ) -> None:
         # Pool can be passed explicitly (tests) or resolved from a factory
         # (production DI). Factory path picks the pool matching this
@@ -94,6 +98,7 @@ class JinaReranker:
         self._model = model
         self._base_url = base_url
         self._key_pool = resolved_pool
+        self._ledger = ledger
         # Headers built per call when the pool is active so a key swap takes
         # effect on the very next request without a process restart.
         self._static_headers: dict[str, str] = {
@@ -205,6 +210,7 @@ class JinaReranker:
             "return_documents": False,
         }
 
+        _ledger_t0 = datetime.now(UTC)
         client = await self._get_client()
         api_key, pool_entry = await self._resolve_key()
         headers = {**self._static_headers, "Authorization": f"Bearer {api_key}"}
@@ -269,6 +275,19 @@ class JinaReranker:
                 exc_info=True,
             )
             raise RetrievalError(f"Jina reranker HTTP error: {exc!r}") from exc
+
+        # Log-center: snapshot Jina rerank token usage to the durable ledger
+        # (action="rerank"). Fire-and-forget — helper never raises here.
+        _usage = data.get("usage") or {}
+        emit_aux_usage(
+            self._ledger,
+            action="rerank",
+            provider=self._PROVIDER_CODE,
+            model=effective_model,
+            total_tokens=int(_usage.get("total_tokens", 0) or 0),
+            started_at=_ledger_t0,
+            finished_at=datetime.now(UTC),
+        )
 
         # Map API results back to original chunks (preserving all metadata)
         output: list[dict[str, Any]] = []

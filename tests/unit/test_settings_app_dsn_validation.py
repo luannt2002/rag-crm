@@ -22,7 +22,14 @@ _APP_DSN = "postgresql+asyncpg://ragbot_app:apppw@localhost:5432/ragbot"
 
 @pytest.fixture(autouse=True)
 def _scrub_dsn_env(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Strip every env var that could change the validator outcome."""
+    """Strip every env var that could change the validator outcome.
+
+    Beyond deleting the process-env vars, neutralise the dotenv source on
+    both settings classes: pydantic-settings re-reads ``.env`` from disk at
+    instantiation (``env_file=".env"``), so without this the host ``.env``
+    (which sets ``DATABASE_URL_APP`` and the escape env) would leak straight
+    back in and mask the values each case explicitly controls.
+    """
     for var in (
         "DATABASE_URL",
         "DATABASE_URL_APP",
@@ -30,6 +37,10 @@ def _scrub_dsn_env(monkeypatch: pytest.MonkeyPatch) -> None:
         RAGBOT_ALLOW_SUPERUSER_RUNTIME_ENV,
     ):
         monkeypatch.delenv(var, raising=False)
+    # ``Settings.database`` is built via ``default_factory=DatabaseSettings``,
+    # so patching the nested class's config covers the ``Settings()`` paths too.
+    monkeypatch.setitem(DatabaseSettings.model_config, "env_file", None)
+    monkeypatch.setitem(Settings.model_config, "env_file", None)
 
 
 def test_settings_with_url_app_set_instantiates(monkeypatch: pytest.MonkeyPatch) -> None:

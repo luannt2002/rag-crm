@@ -295,7 +295,7 @@ def test_alembic_migration_adds_feature_name() -> None:
     multi-head consolidation so the chain stays linear.
     """
     mig = (Path(__file__).resolve().parents[2]
-           / "alembic/versions/20260514_0094a_add_feature_name_to_model_invocations.py")
+           / "alembic/_archive_pre_squash_20260618/20260514_0094a_add_feature_name_to_model_invocations.py")
     assert mig.exists()
     src = mig.read_text()
     assert 'revision = "0094a"' in src

@@ -12,7 +12,7 @@ from pathlib import Path
 _MIGRATION_PATH = (
     Path(__file__).resolve().parents[2]
     / "alembic"
-    / "versions"
+    / "_archive_pre_squash_20260618"
     / "20260526_0116_retrieve_top_k_by_intent.py"
 )
 

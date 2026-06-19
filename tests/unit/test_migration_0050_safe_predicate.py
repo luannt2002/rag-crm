@@ -15,7 +15,7 @@ from __future__ import annotations
 import pathlib
 
 _REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
-_MIGRATION = _REPO_ROOT / "alembic/versions/20260429_0050_vector_dim_1024_to_1536.py"
+_MIGRATION = _REPO_ROOT / "alembic/_archive_pre_squash_20260618/20260429_0050_vector_dim_1024_to_1536.py"
 
 
 def _src() -> str:
