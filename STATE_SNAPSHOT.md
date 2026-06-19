@@ -26,11 +26,16 @@ Strangler-fig: hoàn thiện pattern `functools.partial(_node, di=…)` đã có
 | C.2 | critique_parse, rewrite_retry → nodes/* (bind _oos_text / rewrite) | `b58bb9d` | 5912 ✓ |
 | D.1 | router (intent classifier) → nodes/router.py (bind model_resolver/llm/_lang/_invoke_llm_node) | `69fbf62` | 5912 ✓ |
 | D.2 | guard_input → nodes/guard_input.py (bind guardrail/language_pack_service/_resolved_oos_template) | `5eb9de4` | 5912 ✓ |
+| D.3 | check_cache → nodes/check_cache.py (bind semantic_cache/redis_client/_audit/...) | `8fdba55` | 5912 ✓ + fix 1 dead-node test |
+| D.4 | condense_question → nodes/condense_question.py (bind _lang/_invoke_llm_node) | `0b1f003` | 5912 ✓ + fix 1 threshold pin |
+| D.5 | rewrite → nodes/rewrite.py (bind model_resolver/llm/_lang/_invoke_llm_node) | `aa40021` | 5912 ✓ + fix 2 source pins |
+| D.6 | decompose → nodes/decompose.py (bind _lang/_invoke_llm_node/_invoke_structured/_so_usage) | `094f7e8` | 5912 ✓ + fix 1 window-boundary |
 
-- **query_graph.py: 3945 → 3340 dòng** (-605). Mỗi node-body chuyển sang `nodes/<name>.py`, build_graph chỉ giữ `functools.partial` binding (~3 dòng/node). Mọi import cũ + di_kwargs threading GIỮ NGUYÊN qua re-export/partial.
+- **query_graph.py: 3945 → 2990 dòng** (-955, ~24%). Mỗi node-body chuyển sang `nodes/<name>.py`, build_graph chỉ giữ `functools.partial` binding (~5 dòng/node). Mọi import cũ + di_kwargs threading GIỮ NGUYÊN qua re-export/partial.
 - **2 brittle test fix** (HONEST, không che regression): cả 2 là `inspect.getsource(build_graph)` grep text đã di chuyển — behavior verified intact (consume-set + mmr_filter strip_embedding), assertion retarget tới đúng construct/module.
 - **CÒN LẠI**:
-  - **Phase D còn lại** — check_cache, condense_question, rewrite, decompose, query_complexity_node, adaptive_decompose (+ sub-helpers). Lớn hơn, cùng pattern. (router + guard_input ĐÃ xong D.1/D.2.)
+  - **Phase D còn lại** — query_complexity_node, adaptive_decompose. (router/guard_input/check_cache/condense/rewrite/decompose ĐÃ xong D.1–D.6.)
+  - **6 brittle source-inspection test** đã fix HONEST (behavior verified intact, retarget getsource tới đúng module/construct): mmr, mq-multihop, check_cache dead-node, condense threshold, rewrite history×2, dead-ctx-record window.
   - **Phase E** — composite/parallel: cache_check_and_understand_parallel, rewrite_and_mq_parallel + _run_* sub-helpers.
   - **Infra-closures GIỮ trong build_graph** (capture di_kwargs, shared by-ref): _audit, _resolve_corpus_version, _invoke_llm_node, _invoke_structured_llm_node, _so_usage, _prewarm_embedding_cache, _embed_query, _llm_complete_fn.
   - **Load-test milestone** (stack up) sau khi Phase D/E xong — verify HALLU=0 + bot answer đúng runtime (unit mock chưa đủ cho sacred pipeline).
