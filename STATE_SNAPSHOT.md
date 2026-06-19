@@ -3,7 +3,36 @@
 > Always-updated current state. Git history was reset on 2026-06-14 (fresh start);
 > commit-SHA anchors no longer apply — this file is the source of truth.
 
-## Session 2026-06-19 — 3-track: worker-fix + Phase 4 A/B + Phase 6 status  ⟵ LATEST
+## Session 2026-06-19 — 10-agent flow audit (2 waves) + fix 5 vấn đề  ⟵ LATEST
+
+**[user: "debug chuyên sâu tất cả luồng / check ra tất cả vấn đề / handle tất cả". 10 Explore-agent (Sonnet, Fable down) × 2 wave + em Opus adjudicate từng finding HIGH bằng psql/curl.]**
+
+### 🔬 AUDIT — trả lời "hiện tại vs phiên trước đang bị gì?"
+**Code phiên refactor KHÔNG gây regression** (regression-agent 95/100 + em xác nhận): refactor behavior-preserving, conflate-fix có guard, Phase-4 override chỉ test-endpoint. **Mọi vấn đề là PRE-EXISTING.** Luồng SẠCH: generate/sysprompt 94/100 (KHÔNG app-inject, KHÔNG app-override — sacred giữ), refactor wiring 98/100, outbox exactly-once đúng.
+
+### 🔴 DOMINANT ROOT CAUSE — live DB drift (stamp-without-DDL) → ĐÃ FIX
+Live DB stamped `squash_base_20260618` nhưng DDL áp **một phần**. Em confirm bằng psql + apply lại baseline (idempotent, skip RLS):
+- **6 bảng thiếu** (ai_keys/api_keys/event_inbox/refuse_suggestions/tenant_webhook_secrets/tenant_webhooks) → **RESTORED** (event_inbox = exactly-once inbox, code 3 file dùng).
+- **cột `documents.access_groups`** → added. **2 trigger** (`trg_sync_doc_deleted_at` soft-delete-sync = chống xoá-doc-chunk-vẫn-hiện; `audit_log_immutable`) → restored. **22 index + CHECK constraints** → applied. Table 39→45 (=baseline). **App healthy + load-test HALLU=0 giữ nguyên sau khi apply.**
+
+### ✅ ĐÃ FIX + VERIFIED (committed)
+| # | Fix | Commit | Verify |
+|---|---|---|---|
+| S1+T1 | schema re-sync 6 bảng/2 trigger/access_groups/index | (DB DDL) | psql + load-test no-regress |
+| I1 | chunks_processed import (ingest_phases:297 `shared.tenant_context`→`infrastructure.db.engine`, ModuleNotFound thật) | `2ae0500` | import OK + signature match |
+| L1 | channel_type 4th ledger key (ContextVar+bind+thread 2 emit+aux) | `2ae0500` | runtime: row `channel_type=web` (was 0/261) |
+| R1 | parent-embedding backfill (legal 87 parent, app Jina params) | `3d86267` | **HONEST: KHÔNG fix Điều 56** (top=0.168, structural-query cần exact-path match, KHÔNG phải embedding) — no regression |
+
+### ⏳ CÒN LẠI (honest — cần careful/governed, KHÔNG rush)
+- **R1-structural** (Điều 56): root thật = retrieval cho query số-điều cần **structural-anchor exact match** (retrieve.py `detect_vn_structural_anchor`/`structural_filter_patterns` + verify adapter support). Deeper fix. HALLU-safe (refuse, không bịa).
+- **W1** (recovery xe-3 stuck DRAFT): recovery worker KHÔNG insert jobs row + anti-dup khoá vĩnh viễn sau replay-fail. LOW-impact (1 doc Google-Sheets test fail mime text/html; 3 bot OK). Rush = rủi ro replay-storm.
+- **H1 — REFRAME (KHÔNG phải bug)**: agent gọi "HALLU breach" vì grounding-check `severity=warn` không block. NHƯNG đây là **sacred design CỐ Ý** (rule #2: app KHÔNG override answer LLM). Block deterministic = **vi phạm sacred**. HALLU=0 enforce bằng sysprompt GATE + CRAG (empirical 5/5 refuse trap khi em test). Cải thiện = sysprompt mạnh hơn / async-grounding HITL alert, KHÔNG phải block.
+- **RLS1** (governed): baseline CÓ RLS DDL (em skip khi apply). Bật cần đổi runtime DSN sang `ragbot_app` (non-superuser; hiện cả 2 DSN = superuser → RLS bypass). App-level scoping ĐÃ chắc (defence-in-depth). Ops task theo `docs/dev/RLS_ACTIVATION_RUNBOOK.md`.
+- **C1** (semantic_cache no-GC, 48/85 expired): thêm purge cron (`scripts/purge_stale_data.py` chưa wire).
+
+---
+
+## Session 2026-06-19 — 3-track: worker-fix + Phase 4 A/B + Phase 6 status
 
 **[user: "làm song song 3 cái" — em tách phần độc lập, KHÔNG chạy đè (Phase 4 đo cần pipeline đứng yên)]**
 
