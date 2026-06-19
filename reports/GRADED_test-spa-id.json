@@ -1,0 +1,331 @@
+{
+  "bot": "test-spa-id",
+  "results": [
+    {
+      "id": "spa-L1-1",
+      "level": "L1",
+      "category": "factoid",
+      "fact_id": "spa.mcvg",
+      "fact_ref": null,
+      "question": "Massage cổ vai gáy giá ưu đãi khách hàng mới là bao nhiêu?",
+      "expect_refuse": false,
+      "gold_facts": [
+        "99.000"
+      ],
+      "expected_compute": null,
+      "db_ground_truth": true,
+      "pass_rate": "0/3",
+      "deterministic": true,
+      "passed": false,
+      "hallu": false,
+      "judge": {
+        "facts_covered": {
+          "99.000": false
+        },
+        "answer_correct": false
+      },
+      "layer": "RETRIEVAL (platform) — gold fact not in retrieved chunks",
+      "sample_answer": "Dạ, giá massage cổ vai gáy bên em có 2 loại: 60 phút giá 400.000đ và 90 phút giá 500.000đ. Hiện bên em chưa có thông tin ưu đãi riêng cho dịch vụ massage cổ vai gáy ạ."
+    },
+    {
+      "id": "spa-L1-2",
+      "level": "L1",
+      "category": "factoid",
+      "fact_id": "spa.mbody",
+      "fact_ref": null,
+      "question": "Massage body giá ưu đãi khách hàng mới bao nhiêu một buổi?",
+      "expect_refuse": false,
+      "gold_facts": [
+        "299.000"
+      ],
+      "expected_compute": null,
+      "db_ground_truth": false,
+      "pass_rate": "0/3",
+      "deterministic": true,
+      "passed": false,
+      "hallu": false,
+      "judge": {
+        "facts_covered": {
+          "299.000": false
+        },
+        "answer_correct": false
+      },
+      "layer": "CORPUS-GAP/TEST-DATA (fact not in DB: ['299.000'])",
+      "sample_answer": "Dịch vụ Massage body bên em có giá 600.000 đồng/buổi, hiện chưa có thông tin giá ưu đãi khách hàng mới cụ thể ạ."
+    },
+    {
+      "id": "spa-L1-3",
+      "level": "L1",
+      "category": "factoid",
+      "fact_id": "spa.tre_hoa_steps",
+      "fact_ref": null,
+      "question": "Dịch vụ trẻ hóa da Dr.Medi có quy trình bao nhiêu bước?",
+      "expect_refuse": false,
+      "gold_facts": [
+        "16"
+      ],
+      "expected_compute": null,
+      "db_ground_truth": true,
+      "pass_rate": "0/3",
+      "deterministic": true,
+      "passed": false,
+      "hallu": false,
+      "judge": {
+        "facts_covered": {
+          "16": false
+        },
+        "answer_correct": false
+      },
+      "layer": "RETRIEVAL (platform) — gold fact not in retrieved chunks",
+      "sample_answer": "Dạ, quy trình trẻ hóa da Ultherapy tại Dr. Medispa là liệu pháp không xâm lấn, cực an toàn và được thực hiện chuẩn y khoa ạ."
+    },
+    {
+      "id": "spa-L2-1",
+      "level": "L2",
+      "category": "factoid_filter",
+      "fact_id": "spa.mcvg_goc",
+      "fact_ref": null,
+      "question": "Riêng GIÁ GỐC (không phải giá ưu đãi) của massage cổ vai gáy là bao nhiêu?",
+      "expect_refuse": false,
+      "gold_facts": [
+        "400.000"
+      ],
+      "expected_compute": null,
+      "db_ground_truth": true,
+      "pass_rate": "1/3",
+      "deterministic": false,
+      "passed": false,
+      "hallu": false,
+      "judge": {
+        "answer_correct": false,
+        "facts_covered": {},
+        "refused": false,
+        "fabricated": false
+      },
+      "layer": "RETRIEVAL (platform) — gold fact not in retrieved chunks",
+      "sample_answer": ""
+    },
+    {
+      "id": "spa-L2-2",
+      "level": "L2",
+      "category": "factoid_filter",
+      "fact_id": "spa.cssd_steps",
+      "fact_ref": null,
+      "question": "Quy trình chăm sóc da chuyên sâu (không phải trẻ hóa) gồm bao nhiêu bước?",
+      "expect_refuse": false,
+      "gold_facts": [
+        "10"
+      ],
+      "expected_compute": null,
+      "db_ground_truth": true,
+      "pass_rate": "0/3",
+      "deterministic": true,
+      "passed": false,
+      "hallu": false,
+      "judge": {
+        "facts_covered": {
+          "10": false
+        },
+        "answer_correct": false
+      },
+      "layer": "RETRIEVAL (platform) — gold fact not in retrieved chunks",
+      "sample_answer": "Quy trình chăm sóc da chuyên sâu căng bóng tráng gương kim cương tại Dr. Medispa là quy trình độc quyền hơn 20 bước chăm sóc trong 1 buổi điều trị, giúp làn da thoáng sạch, căng bóng, tráng gương, ngậm nước và thư giãn tâm trí tuyệt đối với tinh dầu thiên nhiên ạ."
+    },
+    {
+      "id": "spa-L3-1",
+      "level": "L3",
+      "category": "aggregation",
+      "fact_id": null,
+      "fact_ref": [
+        "spa.mcvg",
+        "spa.mbody"
+      ],
+      "question": "Một khách làm cả massage cổ vai gáy và massage body (đều giá ưu đãi khách mới) thì tổng phải trả bao nhiêu?",
+      "expect_refuse": false,
+      "gold_facts": [
+        "99.000",
+        "299.000"
+      ],
+      "expected_compute": "99000+299000=398000",
+      "db_ground_truth": false,
+      "pass_rate": "0/3",
+      "deterministic": true,
+      "passed": false,
+      "hallu": false,
+      "judge": {
+        "facts_covered": {
+          "99.000": true,
+          "299.000": false,
+          "398.000": false
+        },
+        "answer_correct": false
+      },
+      "layer": "CORPUS-GAP/TEST-DATA (fact not in DB: ['299.000'])",
+      "sample_answer": "Dạ, giá ưu đãi khách mới cho mỗi buổi massage là 99.000 đồng (giá gốc 350.000 đồng). Nếu khách làm cả massage cổ vai gáy và massage body đều theo giá ưu đãi này thì tổng sẽ là 99.000 + 99.000 = 198.000 đồng ạ."
+    },
+    {
+      "id": "spa-L3-2",
+      "level": "L3",
+      "category": "comparison",
+      "fact_id": null,
+      "fact_ref": [
+        "spa.cssd_steps",
+        "spa.tre_hoa_steps"
+      ],
+      "question": "Giữa chăm sóc da chuyên sâu và trẻ hóa da Dr.Medi, dịch vụ nào nhiều bước hơn và hơn mấy bước?",
+      "expect_refuse": false,
+      "gold_facts": [
+        "10",
+        "16"
+      ],
+      "expected_compute": "16-10=6",
+      "db_ground_truth": true,
+      "pass_rate": "0/3",
+      "deterministic": true,
+      "passed": false,
+      "hallu": false,
+      "judge": {
+        "facts_covered": {
+          "10": false,
+          "16": true,
+          "6": false
+        },
+        "answer_correct": false
+      },
+      "layer": "MODEL/SCAFFOLD (compute) — facts retrieved, computation wrong/absent",
+      "sample_answer": "Dịch vụ chăm sóc da chuyên sâu có quy trình 16 bước chuẩn y khoa, còn dịch vụ trẻ hóa da không có thông tin cụ thể về số bước trong tài liệu, nên không thể so sánh chính xác số bước giữa hai dịch vụ này."
+    },
+    {
+      "id": "spa-L3-3",
+      "level": "L3",
+      "category": "comparison",
+      "fact_id": null,
+      "fact_ref": [
+        "spa.mbody",
+        "spa.mbody_goc"
+      ],
+      "question": "Massage body giá ưu đãi rẻ hơn giá gốc bao nhiêu tiền?",
+      "expect_refuse": false,
+      "gold_facts": [
+        "299.000",
+        "600.000"
+      ],
+      "expected_compute": "600000-299000=301000",
+      "db_ground_truth": false,
+      "pass_rate": "0/3",
+      "deterministic": true,
+      "passed": false,
+      "hallu": false,
+      "judge": {
+        "facts_covered": {
+          "299.000": false,
+          "600.000": true,
+          "301.000": false
+        },
+        "answer_correct": false
+      },
+      "layer": "CORPUS-GAP/TEST-DATA (fact not in DB: ['299.000'])",
+      "sample_answer": "Dạ, giá massage body 60 phút là 600.000 đồng/buổi, hiện chưa có giá ưu đãi trong tài liệu ạ."
+    },
+    {
+      "id": "spa-L4-1",
+      "level": "L4",
+      "category": "multi_hop",
+      "fact_id": null,
+      "fact_ref": [
+        "spa.mcvg",
+        "spa.mchan",
+        "spa.mbody"
+      ],
+      "question": "Khách mới làm 1 buổi massage cổ vai gáy + 1 buổi massage chân + 1 buổi massage body (giá ưu đãi). Tổng tiền và buổi nào lâu nhất về thời gian?",
+      "expect_refuse": false,
+      "gold_facts": [
+        "99.000",
+        "299.000",
+        "chân",
+        "70"
+      ],
+      "expected_compute": "99000+99000+299000=497000; massage chân 70 phút lâu nhất",
+      "db_ground_truth": false,
+      "pass_rate": "0/3",
+      "deterministic": true,
+      "passed": false,
+      "hallu": false,
+      "judge": {
+        "facts_covered": {
+          "99.000": true,
+          "299.000": false,
+          "497.000": false,
+          "chân": true,
+          "70": true
+        },
+        "answer_correct": false
+      },
+      "layer": "CORPUS-GAP/TEST-DATA (fact not in DB: ['299.000'])",
+      "sample_answer": "Dạ, giá ưu đãi cho khách mới là 99.000 đồng/buổi cho mỗi dịch vụ massage 60 phút. Anh/chị làm 3 buổi: massage cổ vai gáy (60 phút), massage chân (70 phút), massage body (60 phút). Tổng tiền ưu đãi là 99.000 x 3 = 297.000 đồng. Buổi massage chân là dài nhất với 70 phút ạ."
+    },
+    {
+      "id": "spa-L5-scenario",
+      "level": "L5",
+      "category": "multi_turn",
+      "question": "Da em bị mụn, bên mình có dịch vụ gì xử lý không? · Giá nhiêu vậy em? · Lấy combo điều trị mụn nhiều buổi có ưu đãi gì không? · Ok chị đặt lịch nha",
+      "expect_refuse": false,
+      "gold_facts": [],
+      "expected_compute": null,
+      "passed": false,
+      "deterministic": true,
+      "pass_rate": "1/4",
+      "layer": "scenario",
+      "hallu": false,
+      "judge": {},
+      "turns": [
+        {
+          "turn": 1,
+          "ok": true,
+          "ans": "Dạ bên em có dịch vụ điều trị mụn chuẩn y khoa giúp làm sạch sâu và phục hồi nhẹ nhàng cho da dầu mụn ạ. Anh/chị muốn em"
+        },
+        {
+          "turn": 2,
+          "ok": false,
+          "ans": ""
+        },
+        {
+          "turn": 3,
+          "ok": false,
+          "ans": ""
+        },
+        {
+          "turn": 4,
+          "ok": false,
+          "ans": ""
+        }
+      ],
+      "sample_answer": "T1:Dạ bên em có dịch vụ điều trị mụn chuẩn y khoa giúp làm sạch sâu và phục hồi nhẹ nhàng cho da dầu mụn ạ. Anh/chị muốn em || T2: || T3: || T4:",
+      "db_ground_truth": true
+    },
+    {
+      "id": "spa-L0-1",
+      "level": "L0",
+      "category": "refusal_trap",
+      "fact_id": "spa.oos",
+      "fact_ref": null,
+      "question": "Bên mình có bán mỹ phẩm Hàn Quốc xách tay không?",
+      "expect_refuse": true,
+      "gold_facts": [],
+      "expected_compute": null,
+      "db_ground_truth": true,
+      "pass_rate": "0/3",
+      "deterministic": true,
+      "passed": false,
+      "hallu": false,
+      "judge": {
+        "answer_correct": false,
+        "facts_covered": {},
+        "refused": false,
+        "fabricated": false
+      },
+      "layer": "OK-refused",
+      "sample_answer": ""
+    }
+  ]
+}
