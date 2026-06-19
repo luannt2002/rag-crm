@@ -37,9 +37,9 @@ from ragbot.application.ports.vector_store_port import HybridQuery
 from ragbot.infrastructure.guardrails.local_guardrail import OutputGuardrail
 from ragbot.infrastructure.observability.invocation_logger import InvocationLogger
 from ragbot.orchestration.nodes.critique_parser import (
-    parse_critique_tokens as _parse_critique_tokens,
-    should_refuse_critique as _should_refuse_critique,
+    critique_parse as _critique_parse_node,
 )
+from ragbot.orchestration.nodes.rewrite_retry import rewrite_retry as _rewrite_retry_node
 from ragbot.orchestration.nodes.generate import generate as _generate_node
 from ragbot.orchestration.nodes.grade import grade as _grade_node
 from ragbot.orchestration.nodes.guard_output import (
@@ -203,7 +203,6 @@ from ragbot.shared.constants import (
     DEFAULT_CRAG_GRADE_CONCURRENCY,
     DEFAULT_CRAG_LENIENT_GRADE_FOR_COMPOUND_INTENTS_ENABLED,
     DEFAULT_CRAG_LENIENT_GRADE_INTENTS,
-    DEFAULT_CRAG_MAX_GRADE_RETRIES,
     DEFAULT_CRAG_FALLBACK_RELATIVE_RATIO,
     DEFAULT_CRAG_MIN_FALLBACK_SCORE,
     DEFAULT_CRAG_MIN_FALLBACK_SCORE_BY_INTENT,
@@ -225,17 +224,13 @@ from ragbot.shared.constants import (
     INTENT_CHITCHAT,
     INTENT_GREETING,
     INTENT_MULTI_HOP,
-    INTENT_OUT_OF_SCOPE,
     DEFAULT_GRADE_TIMEOUT_S,
     DEFAULT_GRADE_USE_BATCH,
     DEFAULT_GRADE_USE_STRUCTURED_OUTPUT,
     DEFAULT_UNDERSTAND_CONDENSED_QUERY_AUDIT_PREVIEW_LEN,
     DEFAULT_UNDERSTAND_USE_STRUCTURED_OUTPUT,
     DEFAULT_LITM_REORDER_ENABLED,
-    DEFAULT_OOS_ANSWER_TEMPLATE,
     DEFAULT_REFUSE_SHORT_CIRCUIT_ENABLED,
-    DEFAULT_SELF_RAG_ENABLED,
-    DEFAULT_SELF_RAG_THRESHOLD,
     MAX_HISTORY_MESSAGE_CHARS,
     DEFAULT_METADATA_AWARE_RETRIEVAL_ENABLED,
     DEFAULT_METADATA_LAYER3_LLM_ENABLED,
@@ -2914,31 +2909,7 @@ def build_graph(
         _neighbor_expand_node, _pcfg=_pcfg, _audit=_audit,
     )
 
-    async def rewrite_retry(state: GraphState) -> dict:
-        """CRAG retry path: rewrite query and increment retry counter."""
-        async with state["step_tracker"].step("rewrite_retry") as rr_ctx:
-            attempt = state.get("grade_retries", 0) + 1
-            max_retries = int(
-                _pcfg(state, "max_grade_retries", DEFAULT_CRAG_MAX_GRADE_RETRIES)
-            )
-            graded_count = len(state.get("graded_chunks") or [])
-            triggered_by = (
-                "grade_low" if graded_count == 0 else "grade_ambiguous"
-            )
-            original_query = (state.get("query") or "")
-            result = await rewrite(state)
-            result["grade_retries"] = attempt
-            rewritten_query = result.get("rewritten_query") or ""
-            n_chunks_after = len(state.get("retrieved_chunks") or [])
-            rr_ctx.set_metadata(
-                attempt=attempt,
-                max_retries=max_retries,
-                triggered_by=triggered_by,
-                original_query_preview=str(original_query)[:80],
-                rewritten_query_preview=str(rewritten_query)[:80],
-                n_chunks_after=n_chunks_after,
-            )
-            return result
+    rewrite_retry = functools.partial(_rewrite_retry_node, rewrite=rewrite)
 
     generate = functools.partial(
         _generate_node,
@@ -2959,74 +2930,7 @@ def build_graph(
         _CITATION_RE=_CITATION_RE,
     )
 
-    async def critique_parse(state: GraphState) -> dict:
-        """Self-RAG critique-token post-processor — opt-in per-bot.
-
-        Reads ``plan_limits.self_rag_critique_enabled``.  When OFF returns
-        ``{}`` so LangGraph treats the step as identity (byte-identical to
-        the legacy path).  When ON parses ``[Supported]`` / ``[Unsupported]``
-        markers; markers are always stripped (cosmetic).  When the
-        unsupported ratio meets/exceeds the bot's threshold the answer is
-        replaced by ``bots.oos_answer_template`` (Quality Gate #10 — never
-        i18n fallback).  Parse failure ⇒ fail-open: log warning, return
-        the raw answer untouched (HALLU=0 sacred preserved).
-        """
-        if not bool(_pcfg(state, "self_rag_critique_enabled", DEFAULT_SELF_RAG_ENABLED)):
-            return {}
-        raw = state.get("answer") or ""
-        if not raw:
-            return {}
-        async with state["step_tracker"].step("critique_parse") as cp_ctx:
-            try:
-                parsed = _parse_critique_tokens(raw)
-            except Exception:  # noqa: BLE001 — fail-open: HALLU=0 sacred, never lose answer
-                logger.warning("critique_parse_failed", exc_info=True)
-                return {}
-
-            total_claims = int(parsed.get("total_claims", 0) or 0)
-            unsupported = int(parsed.get("unsupported_count", 0) or 0)
-            ratio = float(parsed.get("unsupported_ratio", 0.0) or 0.0)
-            threshold = float(_pcfg(
-                state,
-                "self_rag_critique_threshold",
-                DEFAULT_SELF_RAG_THRESHOLD,
-            ))
-            clean_text = parsed.get("clean_text") or raw
-
-            should_refuse = _should_refuse_critique(parsed, threshold)
-            cp_ctx.set_metadata(
-                total_claims=total_claims,
-                unsupported_count=unsupported,
-                unsupported_ratio=round(ratio, 4),
-                threshold=threshold,
-                refused=bool(should_refuse),
-            )
-
-            if should_refuse:
-                # Refusal text origin = bots.oos_answer_template (per-bot DB
-                # column).  Empty fallback when the operator has not set
-                # one — never an i18n hardcoded string.  Quality Gate #10.
-                bot_template = _oos_text(state)
-                template = bot_template or DEFAULT_OOS_ANSWER_TEMPLATE
-                logger.info(
-                    "critique_parse_refused",
-                    request_id=str(state.get("request_id") or ""),
-                    record_bot_id=str(state.get("record_bot_id") or ""),
-                    total_claims=total_claims,
-                    unsupported_count=unsupported,
-                    unsupported_ratio=round(ratio, 4),
-                    threshold=threshold,
-                )
-                return {
-                    "answer": template,
-                    "answer_type": INTENT_OUT_OF_SCOPE,
-                    "answer_reason": "self_rag_unsupported_ratio_exceeded",
-                }
-            # Strip markers from the user-visible answer; preserve every
-            # other field (LLM owns the prose).
-            if clean_text != raw:
-                return {"answer": clean_text}
-            return {}
+    critique_parse = functools.partial(_critique_parse_node, _oos_text=_oos_text)
 
     guard_output = functools.partial(
         _guard_output_node,

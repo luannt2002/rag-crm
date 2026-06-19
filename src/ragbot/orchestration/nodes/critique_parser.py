@@ -24,7 +24,20 @@ Pure functions, no side effects, no DB.
 from __future__ import annotations
 
 import re
-from typing import Final
+from typing import Any, Final
+
+import structlog
+
+from ragbot.orchestration.query_graph_helpers import _pcfg
+from ragbot.orchestration.state import GraphState
+from ragbot.shared.constants import (
+    DEFAULT_OOS_ANSWER_TEMPLATE,
+    DEFAULT_SELF_RAG_ENABLED,
+    DEFAULT_SELF_RAG_THRESHOLD,
+    INTENT_OUT_OF_SCOPE,
+)
+
+logger = structlog.get_logger(__name__)
 
 # Domain-neutral markers per the paper.  Case-sensitive because the
 # operator instructs the LLM to emit the literal English token.
@@ -128,7 +141,82 @@ def should_refuse_critique(parse_result: dict, threshold: float) -> bool:
     return ratio >= thr
 
 
+async def critique_parse(
+    state: GraphState,
+    *,
+    _oos_text: Any,
+) -> dict:
+    """Self-RAG critique-token post-processor — opt-in per-bot.
+
+    Reads ``plan_limits.self_rag_critique_enabled``.  When OFF returns
+    ``{}`` so LangGraph treats the step as identity (byte-identical to
+    the legacy path).  When ON parses ``[Supported]`` / ``[Unsupported]``
+    markers; markers are always stripped (cosmetic).  When the
+    unsupported ratio meets/exceeds the bot's threshold the answer is
+    replaced by ``bots.oos_answer_template`` (Quality Gate #10 — never
+    i18n fallback).  Parse failure ⇒ fail-open: log warning, return
+    the raw answer untouched (HALLU=0 sacred preserved).
+    """
+    if not bool(_pcfg(state, "self_rag_critique_enabled", DEFAULT_SELF_RAG_ENABLED)):
+        return {}
+    raw = state.get("answer") or ""
+    if not raw:
+        return {}
+    async with state["step_tracker"].step("critique_parse") as cp_ctx:
+        try:
+            parsed = parse_critique_tokens(raw)
+        except Exception:  # noqa: BLE001 — fail-open: HALLU=0 sacred, never lose answer
+            logger.warning("critique_parse_failed", exc_info=True)
+            return {}
+
+        total_claims = int(parsed.get("total_claims", 0) or 0)
+        unsupported = int(parsed.get("unsupported_count", 0) or 0)
+        ratio = float(parsed.get("unsupported_ratio", 0.0) or 0.0)
+        threshold = float(_pcfg(
+            state,
+            "self_rag_critique_threshold",
+            DEFAULT_SELF_RAG_THRESHOLD,
+        ))
+        clean_text = parsed.get("clean_text") or raw
+
+        should_refuse = should_refuse_critique(parsed, threshold)
+        cp_ctx.set_metadata(
+            total_claims=total_claims,
+            unsupported_count=unsupported,
+            unsupported_ratio=round(ratio, 4),
+            threshold=threshold,
+            refused=bool(should_refuse),
+        )
+
+        if should_refuse:
+            # Refusal text origin = bots.oos_answer_template (per-bot DB
+            # column).  Empty fallback when the operator has not set
+            # one — never an i18n hardcoded string.  Quality Gate #10.
+            bot_template = _oos_text(state)
+            template = bot_template or DEFAULT_OOS_ANSWER_TEMPLATE
+            logger.info(
+                "critique_parse_refused",
+                request_id=str(state.get("request_id") or ""),
+                record_bot_id=str(state.get("record_bot_id") or ""),
+                total_claims=total_claims,
+                unsupported_count=unsupported,
+                unsupported_ratio=round(ratio, 4),
+                threshold=threshold,
+            )
+            return {
+                "answer": template,
+                "answer_type": INTENT_OUT_OF_SCOPE,
+                "answer_reason": "self_rag_unsupported_ratio_exceeded",
+            }
+        # Strip markers from the user-visible answer; preserve every
+        # other field (LLM owns the prose).
+        if clean_text != raw:
+            return {"answer": clean_text}
+        return {}
+
+
 __all__ = [
+    "critique_parse",
     "parse_critique_tokens",
     "should_refuse_critique",
 ]
