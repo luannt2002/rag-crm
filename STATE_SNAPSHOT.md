@@ -15,11 +15,25 @@
 - **Verify mỗi bước**: full unit suite **5912 pass / 0 fail** (Y HỆT baseline `0a73211` — 39 skip/34 xfail/34 xpass) ×3 lần (baseline + sau batch1 + sau batch2). Behavior preserved exact (trong phạm vi unit coverage).
 - **query_graph.py**: 3945 → **3820 dòng** (-125). Pre-existing ruff debt 254→249 (KHÔNG thêm lỗi mới — file god này chưa từng ruff-clean).
 
-### ⚠️ DECISION POINT — build_graph monolith (chưa làm)
-- `query_graph.py` còn **3820 dòng**; `build_graph` chiếm ~2800 dòng = **~23 node-closure capture `di_kwargs`** (guard_input/check_cache/router/rewrite/decompose/mmr_dedup/... + 8 routing-edge fn + graph wiring). Node logic NẶNG đã ở `nodes/*.py` rồi.
-- Để xuống <1200 BẮT BUỘC phá build_graph closures = chuyển từng captured-var thành explicit param (giống pattern node đã tách). **RỦI RO CAO trên sacred HALLU=0 pipeline** — unit test dùng mock nên có thể KHÔNG bắt được sai lệch closure→param. Cần integration/load-test gác, không nên grind tự động.
-- `retrieve.py` (1888 dòng) = 1 `async def retrieve` full-closure-state → cùng rủi ro.
-- **Khuyến nghị**: tách helper an-toàn DỪNG ở đây (đã 2 batch verified). build_graph/retrieve surgery = phiên riêng có load-test gác + user chốt, vì T3-refactor là tầng THẤP NHẤT và rủi ro > lợi-ích thẩm-mỹ.
+### ✅ build_graph surgery ĐANG CHẠY (user chốt "Phẫu thuật build_graph closures", green-gate mỗi bước)
+Strangler-fig: hoàn thiện pattern `functools.partial(_node, di=…)` đã có sẵn (retrieve/rerank/grade/generate đã tách trước). MỖI bước verify full suite **5912 pass / 0 fail** = behavior-preserving.
+
+| Phase | Nội dung | Commit | Kết quả |
+|---|---|---|---|
+| A | `_pcfg` → query_graph_helpers (pure) | (Phase A) | 5912 ✓ |
+| B | 9 routing deciders → `nodes/routing.py` (pure state→str, 0 di_kwargs) | `8435c17` | 5912 ✓ + fix 1 brittle source-test |
+| C.1 | mmr_dedup, neighbor_expand, graph_retrieve → nodes/* (bind _pcfg/_audit) | `a6cd479` | 5912 ✓ + fix 1 brittle source-test |
+| C.2 | critique_parse, rewrite_retry → nodes/* (bind _oos_text / rewrite) | `b58bb9d` | 5912 ✓ |
+
+- **query_graph.py: 3945 → 3407 dòng** (-538). Mỗi node-body chuyển sang `nodes/<name>.py`, build_graph chỉ giữ `functools.partial` binding (~3 dòng/node). Mọi import cũ + di_kwargs threading GIỮ NGUYÊN qua re-export/partial.
+- **2 brittle test fix** (HONEST, không che regression): cả 2 là `inspect.getsource(build_graph)` grep text đã di chuyển — behavior verified intact (consume-set + mmr_filter strip_embedding), assertion retarget tới đúng construct/module.
+- **CÒN LẠI**:
+  - **Phase D** — node capture nhiều di_kwargs: guard_input, check_cache, condense_question, router, rewrite, decompose, query_complexity_node, adaptive_decompose (+ sub-helpers). Lớn hơn, cùng pattern.
+  - **Phase E** — composite/parallel: cache_check_and_understand_parallel, rewrite_and_mq_parallel + _run_* sub-helpers.
+  - **Infra-closures GIỮ trong build_graph** (capture di_kwargs, shared by-ref): _audit, _resolve_corpus_version, _invoke_llm_node, _invoke_structured_llm_node, _so_usage, _prewarm_embedding_cache, _embed_query, _llm_complete_fn.
+  - **Load-test milestone** (stack up) sau khi Phase D/E xong — verify HALLU=0 + bot answer đúng runtime (unit mock chưa đủ cho sacred pipeline).
+  - `retrieve.py` (1888 dòng) = god-file riêng, chưa đụng.
+- **Plan**: `plans/260619-phase6-buildgraph-split/plan.md`.
 
 ---
 
