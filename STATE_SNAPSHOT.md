@@ -63,9 +63,15 @@
 - **Phase 6 refactor**: god-file `query_graph.py`(~3900) → tách 1-node-1-file; behavior-preserving + suite green gác.
 - **Phase 7 docs**: 50 keep / 35 orphan (đã audit) → 1 INDEX + archive orphan.
 
-### ➡️ NEXT (ưu tiên, ít đốt quota trước)
-1. Phase 3 token-stats (code, verify nhẹ) · Phase 7 docs (no-LLM) · Phase 6 refactor (test gác).
-2. Phase 2 conflate + Phase 4 A/B + Phase 5 re-score: chạy `LOADTEST_CONCURRENCY=2`, cần quota/tier ổn.
+### ➡️ NEXT (post-/compact — tiếp từ đây)
+- **API KEYS verified khỏe (2026-06-19)**: 2 Jina key (...ktcljw, ...hTshEC) embed+rerank HTTP 200; OpenAI key (...CzvlIA) gpt-4.1-mini OK. (Lỗi 403/1010 lúc test = Cloudflare chặn urllib, KHÔNG phải key chết — app httpx OK, 1125 embeddings đã lưu.)
+- **Kiến trúc model XÁC NHẬN đúng** (token_ledger): `llm→openai` (gpt-4.1-mini/nano, CHỈ generation/routing) · `rerank→jina` (jina-reranker-v3) · `embedding→jina` (jina-embeddings-v3). ChatGPT KHÔNG ở rerank/embed.
+- **Phase 6 refactor — đang dở PHÂN TÍCH (chưa edit code)**: chỉ 2 god-file >1200: `query_graph.py` (3945 = ~24 helper module-level dòng 410-1036 + `build_graph` monolith 1037-3915 ~2878 dòng node-closures) · `retrieve.py` (1888 = 1 hàm `retrieve` ~1740 dòng full-closure). **Kế hoạch AN TOÀN**: tách cụm pure leaf helpers (`_uuid_or_none`/`_parse_doc_type_vocabulary`/`_render_captured_slots`/`_compute_bot_cache_version`/`_is_null_lexical`/`_resolve_*`...) → `query_graph_helpers.py`, import back, suite green gác MỖI bước. KHÔNG đụng `build_graph` node-closures (rủi ro vỡ graph). Mục tiêu <1200 cần nhiều bước → làm dần, commit nhỏ.
+- **Phase 4 A/B**: coverage đã 100% (hết headroom) → A/B giờ nhắm COST/LATENCY (cascade nano-vs-mini, adaptive-context). Cần load-test `conc=2`.
+
+### ➡️ NEXT cũ (đã xong phần lớn — giữ tham khảo)
+1. ~~Phase 3 token-stats~~ ✅ · ~~Phase 7 docs~~ ✅ · Phase 6 refactor (đang làm).
+2. ~~Phase 2 conflate~~ ✅ · Phase 4 A/B · ~~Phase 5 re-score~~ ✅ (Coverage 100%).
 
 ---
 
