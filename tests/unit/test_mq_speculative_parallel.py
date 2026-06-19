@@ -66,8 +66,10 @@ def test_speculative_mq_task_cancels_for_non_consumable_intent() -> None:
     """
     from ragbot.orchestration import query_graph as qg  # noqa: PLC0415
     src = inspect.getsource(qg.build_graph)
-    # The consume-set + the cancellation branch both present.
-    assert "multi_hop" in src
+    # The consume-set + the cancellation branch both present. The set uses the
+    # INTENT_MULTI_HOP constant (not a bare "multi_hop" literal) for the
+    # multi-hop entry, alongside the "synthesis" literal.
+    assert "INTENT_MULTI_HOP" in src
     assert "synthesis" in src
     assert "spec_mq_task.cancel()" in src
     assert "pipeline_multi_query_speculative_cancelled" in src

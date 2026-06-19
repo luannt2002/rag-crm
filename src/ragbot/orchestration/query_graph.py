@@ -99,6 +99,20 @@ from ragbot.orchestration.query_graph_helpers import (
     expand_parent_chunks,
     parse_decomposed_sub_queries,
 )
+# Conditional-edge routing deciders (pure state->str; capture no di_kwargs).
+# Registered by reference in build_graph's add_conditional_edges calls; the
+# route-function test fixture captures them by __name__ off the compiled graph.
+from ragbot.orchestration.nodes.routing import (
+    _cache_route,
+    _complexity_route,
+    _grade_route,
+    _input_blocked,
+    _output_blocked,
+    _reflect_route,
+    _retrieve_route,
+    _router_route,
+    _understand_query_route,
+)
 
 logger = structlog.get_logger(__name__)
 
@@ -172,7 +186,6 @@ except ImportError:
 
 from ragbot.shared.constants import (
     ACTION_CAPTURED_SLOTS_PLACEHOLDER,
-    DEFAULT_ADAPTIVE_ROUTER_L1_ENABLED,
     DEFAULT_ANSWER_AUTONOMY_PERCENT,
     DEFAULT_CASCADE_ROUTING_ENABLED,
     DEFAULT_HYDE_ENABLED,
@@ -186,18 +199,14 @@ from ragbot.shared.constants import (
     DEFAULT_CRAG_LENIENT_GRADE_FOR_COMPOUND_INTENTS_ENABLED,
     DEFAULT_CRAG_LENIENT_GRADE_INTENTS,
     DEFAULT_CRAG_MAX_GRADE_RETRIES,
-    DEFAULT_CRAG_SKIP_RETRY_ABOVE_SCORE,
     DEFAULT_CRAG_FALLBACK_RELATIVE_RATIO,
     DEFAULT_CRAG_MIN_FALLBACK_SCORE,
     DEFAULT_CRAG_MIN_FALLBACK_SCORE_BY_INTENT,
     DEFAULT_CRAG_MIN_RELEVANT_COUNT,
     DEFAULT_CRAG_MIN_RELEVANT_FRACTION,
     DEFAULT_CR_ENHANCED_ENABLED,
-    DEFAULT_DECOMPOSE_CONFIDENCE_GATE,
-    DEFAULT_DECOMPOSE_MIN_TOKENS,
     DEFAULT_DECOMPOSE_TOP_K_PER_SUBQUERY,
     DEFAULT_DECOMPOSE_USE_STRUCTURED_OUTPUT,
-    DEFAULT_INTENT_CONFIDENCE_FALLBACK,
     DEFAULT_GENERATE_CONTEXT_TRUST_HINT_ENABLED,
     DEFAULT_GENERATE_HISTORY_MAX_MSGS,
     DEFAULT_DETERMINISTIC_LLM_PURPOSES,
@@ -208,21 +217,16 @@ from ragbot.shared.constants import (
     DEFAULT_GENERATE_USE_STRUCTURED_OUTPUT,
     DEFAULT_GENERATION_TEMPERATURE,
     DEFAULT_INTENT_FALLBACK,
-    DEFAULT_REFLECTION_ENABLED,
-    DEFAULT_SKIP_REFLECT_INTENTS,
-    DEFAULT_SKIP_REWRITE_INTENTS,
     INTENT_CHITCHAT,
     INTENT_GREETING,
     INTENT_MULTI_HOP,
     INTENT_OUT_OF_SCOPE,
-    INTENT_SYNTHESIS,
     DEFAULT_GRADE_TIMEOUT_S,
     DEFAULT_GRADE_USE_BATCH,
     DEFAULT_GRADE_USE_STRUCTURED_OUTPUT,
     DEFAULT_UNDERSTAND_CONDENSED_QUERY_AUDIT_PREVIEW_LEN,
     DEFAULT_UNDERSTAND_USE_STRUCTURED_OUTPUT,
     DEFAULT_LITM_REORDER_ENABLED,
-    DEFAULT_MAX_TOTAL_GRAPH_ITERATIONS,
     DEFAULT_OOS_ANSWER_TEMPLATE,
     DEFAULT_REFUSE_SHORT_CIRCUIT_ENABLED,
     DEFAULT_SELF_RAG_ENABLED,
@@ -3159,162 +3163,6 @@ def build_graph(
         _resolved_oos_template=_resolved_oos_template,
     )
 
-    def _input_blocked(state: GraphState) -> str:
-        for f in state.get("guardrail_flags", []):
-            if f.get("stage") == "input" and f.get("blocked"):
-                return "persist"
-        return "check_cache"
-
-    def _cache_route(state: GraphState) -> str:
-        """If cache hit produced an answer, skip to persist."""
-        if state.get("cache_status") == "hit" and state.get("answer"):
-            return "persist"
-        if _pcfg(state, "merge_condense_router", True):
-            return "understand_query"
-        return "condense_question"
-
-    def _understand_query_route(state: GraphState) -> str:
-        """Route after understand_query (merged condense+router).
-
-        Adaptive Router L1: when ``adaptive_router_l1_enabled`` is True
-        and the LLM-emitted intent is NOT already ``multi_hop`` (which
-        already triggers the legacy decompose path with its own
-        confidence gate), divert into the domain-neutral regex/heuristic
-        classifier. The classifier is microseconds; on "complex" it
-        seeds ``sub_queries`` via ``adaptive_decompose`` so the existing
-        retrieve / fanout (S2 bypass) consumes them. On "simple" it
-        falls back to the legacy router so the byte-identical path is
-        preserved for all non-multi-entity questions.
-        """
-        if _pcfg(
-            state, "adaptive_router_l1_enabled", DEFAULT_ADAPTIVE_ROUTER_L1_ENABLED,
-        ):
-            existing_subs = [
-                s for s in (state.get("sub_queries") or [])
-                if isinstance(s, str) and s.strip()
-            ]
-            if (
-                state.get("intent") != INTENT_MULTI_HOP
-                and len(existing_subs) < 2
-            ):
-                return "query_complexity"
-        return _router_route(state)
-
-    def _complexity_route(state: GraphState) -> str:
-        """Route after Layer 1 classifier: complex → L3 decomposer, else legacy router."""
-        if state.get("complexity_label") == "complex":
-            return "adaptive_decompose"
-        return _router_route(state)
-
-    def _router_route(state: GraphState) -> str:
-        """Adaptive query routing: skip nodes based on intent. All intents flow through retrieve → generate."""
-        intent = state.get("intent", DEFAULT_INTENT_FALLBACK)
-        if intent == INTENT_MULTI_HOP and _pcfg(state, "decompose_enabled", True):
-            _query_text = (state.get("query") or "").strip()
-            _decompose_min = int(_pcfg(
-                state, "decompose_min_tokens", DEFAULT_DECOMPOSE_MIN_TOKENS,
-            ))
-            if len(_query_text.split()) >= _decompose_min:
-                # Confidence gate. Skip decompose (5 sub-query fan-out is
-                # wasteful) when the classifier reports low confidence. Bot
-                # owner can override via per-bot
-                # ``decompose_confidence_gate`` pipeline_config slot.
-                _conf_gate = float(_pcfg(
-                    state,
-                    "decompose_confidence_gate",
-                    DEFAULT_DECOMPOSE_CONFIDENCE_GATE,
-                ))
-                _conf = float(state.get(
-                    "intent_confidence",
-                    DEFAULT_INTENT_CONFIDENCE_FALLBACK,
-                ))
-                if _conf < _conf_gate:
-                    if decompose_skipped_low_confidence_total is not None:
-                        try:
-                            decompose_skipped_low_confidence_total.labels(
-                                intent=str(intent),
-                            ).inc()
-                        except (ValueError, KeyError, AttributeError):
-                            pass
-                    logger.info(
-                        "decompose_skipped_low_confidence",
-                        intent=intent,
-                        confidence=_conf,
-                        gate=_conf_gate,
-                    )
-                else:
-                    return "decompose"
-        skip_rewrite = _pcfg(state, "skip_rewrite_intents", DEFAULT_SKIP_REWRITE_INTENTS)
-        if intent in skip_rewrite:
-            return "retrieve"
-        return "rewrite"
-
-    def _grade_route(state: GraphState) -> str:
-        """Route after grade: rewrite_retry while retries left, else generate.
-
-        Smart-skip (S1 Pipeline-Opt, T1-Smartness): the grade node itself
-        short-circuits when ``crag_skip_retry_above_score`` is exceeded by
-        pass-1 top score (see early-exit block in ``grade``). That path
-        sets ``crag_skip_retry=True`` and ``retrieval_adequate=True`` so
-        this router falls through to ``generate`` without an LLM call.
-
-        Legacy belt-and-suspenders gate retained: if pass-1 grading marked
-        the result inadequate but the rerank score still clears the floor,
-        bypass rewrite_retry. The grounding_check guardrail downstream
-        enforces HALLU=0 regardless of which path was taken.
-        """
-        # Fast path: skip flag was set in the grade node's early-exit.
-        if state.get("crag_skip_retry"):
-            return "generate"
-        if not state.get("retrieval_adequate", True):
-            retries = state.get("grade_retries", 0)
-            if retries < _pcfg(state, "max_grade_retries", DEFAULT_CRAG_MAX_GRADE_RETRIES):
-                skip_floor = float(_pcfg(
-                    state,
-                    "crag_skip_retry_above_score",
-                    DEFAULT_CRAG_SKIP_RETRY_ABOVE_SCORE,
-                ))
-                if skip_floor > 0 and retries == 0:
-                    # Inspect pass-1 reranked chunks (graded_chunks may already
-                    # be filtered to relevant+ambiguous, so prefer the upstream
-                    # pool which carries the rerank score distribution).
-                    pool = state.get("reranked_chunks") or state.get("graded_chunks") or []
-                    top_score = 0.0
-                    for c in pool:
-                        s = float(c.get("score", 0) or 0)
-                        if s > top_score:
-                            top_score = s
-                    if top_score >= skip_floor:
-                        logger.info(
-                            "crag_retry_smart_skip",
-                            top_score=round(top_score, 4),
-                            skip_floor=skip_floor,
-                        )
-                        return "generate"
-                return "rewrite_retry"
-        return "generate"
-
-    def _output_blocked(state: GraphState) -> str:
-        """Route after guard_output: persist when blocked, when bot did not
-        opt into reflect, or when intent is in skip_reflect; else reflect.
-
-        Reflect-gate (added 2026-05-18): bot owners opt in via
-        ``plan_limits.reflection_enabled``. The default is False — matching
-        ``shared/bot_limits.PLAN_LIMIT_SCHEMA``. Production audit
-        (req 9cf611b5) found reflect firing 2× per turn (3.57s wasted) on
-        bots that never enabled it. Gating here saves the round-trip
-        without touching the reflect node implementation.
-        """
-        for f in state.get("guardrail_flags", []):
-            if f.get("stage") == "output" and f.get("blocked"):
-                return "persist"
-        if not _pcfg(state, "reflection_enabled", DEFAULT_REFLECTION_ENABLED):
-            return "persist"
-        skip_reflect = _pcfg(state, "skip_reflect_intents", DEFAULT_SKIP_REFLECT_INTENTS)
-        if state.get("intent") in skip_reflect:
-            return "persist"
-        return "reflect"
-
     async def graph_retrieve_node(state: GraphState) -> dict:
         """Retrieve additional context via knowledge graph (GraphRAG); empty on any failure."""
         _kg = state.get("kg_service")
@@ -3328,30 +3176,6 @@ def build_graph(
                 kg_service=_kg,
                 session_factory=_sf,
             )
-
-    def _retrieve_route(state: GraphState) -> str:
-        """Route after retrieve: skip pipeline when 0 chunks, else check GraphRAG."""
-        # Stream D (RAGO Pareto): early exit when retrieval returned 0 chunks.
-        # Skipping rerank→mmr→grade→rewrite_retry saves 3-4 API calls per turn.
-        chunks = state.get("retrieved_chunks") or []
-        if not chunks:
-            return "generate"
-        # Stats/aggregation route: chunks are authoritative SQL results
-        # (price-range / superlative) and graded_chunks is already seeded.
-        # Skip rerank→mmr→grade — the fuzzy reranker/grader otherwise rescore
-        # the synthetic price list low and drop it, making the bot refuse a
-        # numeric question the SQL already answered. grounding_check at
-        # guard_output still enforces HALLU=0.
-        if str(state.get("retrieve_mode") or "").startswith("stats"):
-            return "generate"
-        graph_mode = _pcfg(state, "graph_rag_mode", "disabled")
-        if graph_mode == "disabled":
-            return "rerank"
-        if graph_mode == "adaptive":
-            intent = state.get("intent", DEFAULT_INTENT_FALLBACK)
-            if intent not in INTENT_SYNTHESIS:
-                return "rerank"
-        return "graph_retrieve"
 
     async def _run_query_complexity(state: GraphState) -> dict:
         """Branch A of pre_retrieval_parallel: domain-neutral heuristic classifier.
@@ -3741,16 +3565,6 @@ def build_graph(
         _output_blocked,
         {"persist": "persist", "reflect": "reflect"},
     )
-    def _reflect_route(state: GraphState) -> str:
-        total_iters = state.get("_total_graph_iterations", 0)
-        max_iters = int(_pcfg(state, "max_total_graph_iterations", DEFAULT_MAX_TOTAL_GRAPH_ITERATIONS))
-        if total_iters >= max_iters:
-            logger.warning("graph_iteration_cap_reached", iterations=total_iters)
-            return "persist"
-        if not state.get("answer"):
-            return "generate"
-        return "persist"
-
     graph.add_conditional_edges(
         "reflect",
         _reflect_route,
