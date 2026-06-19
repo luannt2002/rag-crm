@@ -149,7 +149,9 @@ async def run_embedded_cost_cap_alerter(container: "Container") -> None:
     sweep retries) — a transient DB blip must not kill the API process.
     """
     logger.info("embedded_cost_cap_alerter_started")
-    factory = container.session_factory()
+    # Cross-tenant aggregate over request_logs (RLS-forced) → BYPASSRLS system
+    # factory so the sweep is not fail-closed under the request role.
+    factory = container.system_session_factory()
     while True:
         try:
             async with factory() as session:
@@ -180,7 +182,9 @@ async def run_embedded_cache_purge(container: "Container") -> None:
     from sqlalchemy import text as _sa_text  # noqa: PLC0415
 
     logger.info("embedded_cache_purge_started")
-    factory = container.session_factory()
+    # Cross-tenant DELETE over semantic_cache (RLS-forced) → BYPASSRLS system
+    # factory so GC actually deletes (not fail-closed to zero under the request role).
+    factory = container.system_session_factory()
     while True:
         try:
             async with factory() as session:

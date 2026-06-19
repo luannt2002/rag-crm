@@ -370,7 +370,9 @@ async def run_recovery_loop(
 ) -> None:
     """Main loop — sweep stuck documents on cadence.
 
-    @param container: DI container providing ``session_factory()``.
+    @param container: DI container providing ``system_session_factory()``
+        (the BYPASSRLS engine — the cross-tenant stuck-doc scan must not be
+        RLS-filtered, or it would see zero rows under the request role).
     @param stop_event: optional external stop signal; when set the loop
         exits before the next sleep.
     @param interval_s: seconds between sweeps.
@@ -378,7 +380,11 @@ async def run_recovery_loop(
         qualify for replay.
     @param batch_size: max rows per sweep.
     """
-    session_factory = container.session_factory()
+    # Cross-tenant forensic scan over documents/outbox (RLS-forced) → BYPASSRLS
+    # system factory so the scan sees stuck docs across every tenant. The
+    # per-doc replay below uses session_with_tenant (SET LOCAL is harmless on
+    # the BYPASSRLS role) so writes stay tenant-attributed.
+    session_factory = container.system_session_factory()
     stop_event = stop_event or asyncio.Event()
 
     logger.info(

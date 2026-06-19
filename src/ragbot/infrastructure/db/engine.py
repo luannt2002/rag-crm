@@ -92,6 +92,37 @@ def create_engine_app(settings: Settings) -> AsyncEngine:
     )
 
 
+def create_engine_system(settings: Settings) -> AsyncEngine:
+    """Build the engine for trusted cross-tenant background workers.
+
+    The four system jobs that legitimately read across every tenant —
+    outbox publisher, document recovery scan, semantic-cache GC, cost-cap
+    aggregate — have no single tenant context to bind, so under the
+    NOBYPASSRLS request role they would fail-closed (zero rows). They run on
+    THIS engine: the ``ragbot_system`` BYPASSRLS role (DATABASE_URL_SYSTEM).
+    Its session factory gets NO RLS ``after_begin`` hook.
+
+    Falls back to the admin DSN when DATABASE_URL_SYSTEM is unset — the admin
+    role is a superuser that also bypasses RLS, so worker behaviour is
+    byte-for-byte unchanged until ops provisions the dedicated role. The
+    fallback is logged so the bypass is observable.
+    """
+    dsn = settings.database.url_system
+    if dsn is None:
+        _log.info("engine.system_dsn_fallback_admin")
+        dsn = settings.database.url
+    return create_async_engine(
+        str(dsn),
+        pool_size=settings.database.pool_size,
+        max_overflow=settings.database.max_overflow,
+        pool_recycle=settings.database.pool_recycle,
+        pool_timeout=settings.database.pool_timeout,
+        pool_pre_ping=settings.database.pool_pre_ping,
+        echo=settings.database.echo,
+        future=True,
+    )
+
+
 def create_session_factory(engine: AsyncEngine) -> async_sessionmaker[AsyncSession]:
     return async_sessionmaker(engine, expire_on_commit=False, autoflush=False)
 
@@ -181,6 +212,7 @@ __all__ = [
     "attach_engine_hooks",
     "create_engine",
     "create_engine_app",
+    "create_engine_system",
     "create_session_factory",
     "dispose_engine",
     "session_with_tenant",

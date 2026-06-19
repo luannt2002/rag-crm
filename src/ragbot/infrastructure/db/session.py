@@ -68,6 +68,14 @@ _log = structlog.get_logger(__name__)
 # DATABASE_URL_APP DSN; this name only documents the contract.
 RUNTIME_DB_ROLE: Final[str] = "ragbot_app"
 
+# The role the trusted cross-tenant background workers connect as. NOSUPERUSER
+# but BYPASSRLS — outbox publisher / recovery scan / cache GC / cost-cap
+# aggregate legitimately read across every tenant and have no single tenant
+# context, so they must NOT be fail-closed by RLS. Login/credential handled by
+# ops via the DATABASE_URL_SYSTEM DSN; provisioned by the
+# ``rls_system_role_grants`` migration (whose role literal is pinned to this).
+SYSTEM_DB_ROLE: Final[str] = "ragbot_system"
+
 # Canonical GUC the RLS policies compare against. MUST match the policy
 # definitions in alembic 0069 / 0141 / 0187 — diverging here would make the
 # SET LOCAL bind a setting no policy reads, leaving RLS dead.
@@ -229,6 +237,7 @@ def create_rls_session_factory(*, engine: Any) -> Any:
 
 __all__ = [
     "RUNTIME_DB_ROLE",
+    "SYSTEM_DB_ROLE",
     "TENANT_SETTING_KEY",
     "WORKSPACE_SETTING_KEY",
     "attach_rls_session_hook",

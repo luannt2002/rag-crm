@@ -192,12 +192,19 @@ class DatabaseSettings(BaseSettings):
     scripts. ``url_app`` (DATABASE_URL_APP) is the runtime DSN bound to a
     non-superuser role so row-level-security policies actually filter —
     a superuser connection silently bypasses every RLS policy.
+    ``url_system`` (DATABASE_URL_SYSTEM) is the DSN for the trusted
+    cross-tenant background workers (outbox publisher, document recovery
+    scan, semantic-cache GC, cost-cap aggregate) — a BYPASSRLS role that
+    legitimately reads every tenant. Optional: falls back to the admin DSN
+    (also RLS-bypassing) when unset, so the split is inert until ops
+    provisions the dedicated role.
     """
 
     url: PostgresDsn = Field(
         default=PostgresDsn("postgresql+asyncpg://ragbot:ragbot@localhost:5432/ragbot"),
     )
     url_app: PostgresDsn | None = Field(default=None)
+    url_system: PostgresDsn | None = Field(default=None)
     pool_size: int = DEFAULT_DB_POOL_SIZE
     max_overflow: int = DEFAULT_DB_MAX_OVERFLOW
     pool_recycle: int = DEFAULT_DB_POOL_RECYCLE_S

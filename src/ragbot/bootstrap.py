@@ -69,7 +69,12 @@ from ragbot.infrastructure.chat_hooks.token_usage_redis_hook import (
 from ragbot.infrastructure.conversation_state.registry import (
     build_conversation_state,
 )
-from ragbot.infrastructure.db.engine import create_engine_app, session_with_tenant
+from ragbot.infrastructure.db.engine import (
+    create_engine_app,
+    create_engine_system,
+    create_session_factory,
+    session_with_tenant,
+)
 from ragbot.infrastructure.db.session import create_rls_session_factory
 from ragbot.infrastructure.db.uow import UnitOfWorkFactory
 from ragbot.infrastructure.embedding.litellm_embedder import (
@@ -179,6 +184,18 @@ class Container(containers.DeclarativeContainer):
     # the moment DATABASE_URL_APP points at the NOBYPASSRLS role.
     session_factory: providers.Provider[async_sessionmaker[object]] = providers.Singleton(
         create_rls_session_factory, engine=db_engine,
+    )
+    # System engine + factory for the trusted cross-tenant background workers
+    # (outbox publisher, recovery scan, semantic-cache GC, cost-cap aggregate).
+    # Bound to the BYPASSRLS ``ragbot_system`` role (DATABASE_URL_SYSTEM) so the
+    # cross-tenant scans are NOT fail-closed to zero rows; NO RLS hook attached
+    # (plain create_session_factory). Falls back to the admin DSN until ops
+    # provisions the role, so this is inert today (both DSNs → superuser).
+    db_engine_system: providers.Provider[AsyncEngine] = providers.Singleton(
+        create_engine_system, settings=settings,
+    )
+    system_session_factory: providers.Provider[async_sessionmaker[object]] = providers.Singleton(
+        create_session_factory, engine=db_engine_system,
     )
     uow_factory = providers.Singleton(UnitOfWorkFactory, session_factory=session_factory)
 
@@ -461,7 +478,12 @@ class Container(containers.DeclarativeContainer):
     stats_index_repo = providers.Singleton(
         StatsIndexRepository, session_factory=session_factory,
     )
-    outbox_repo = providers.Factory(SqlAlchemyOutboxRepository, session_factory=session_factory)
+    # Publisher-only repo — drains the outbox cross-tenant (FOR UPDATE SKIP
+    # LOCKED over every tenant's rows), so it MUST use the BYPASSRLS system
+    # factory or it would be fail-closed to zero rows under the request role.
+    outbox_repo = providers.Factory(
+        SqlAlchemyOutboxRepository, session_factory=system_session_factory,
+    )
     ai_config_repo = providers.Factory(
         SqlAlchemyAIConfigRepository, session_factory=session_factory,
     )
