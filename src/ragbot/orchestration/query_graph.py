@@ -46,6 +46,12 @@ from ragbot.orchestration.nodes.condense_question import (
 )
 from ragbot.orchestration.nodes.rewrite import rewrite as _rewrite_node
 from ragbot.orchestration.nodes.decompose import decompose as _decompose_node
+from ragbot.orchestration.nodes.adaptive_decompose import (
+    adaptive_decompose as _adaptive_decompose_node,
+)
+from ragbot.orchestration.nodes.query_complexity_node import (
+    query_complexity_node as _query_complexity_node,
+)
 from ragbot.orchestration.nodes.generate import generate as _generate_node
 from ragbot.orchestration.nodes.grade import grade as _grade_node
 from ragbot.orchestration.nodes.guard_output import (
@@ -71,9 +77,6 @@ from ragbot.orchestration.nodes.speculative_retrieve import (
 from ragbot.orchestration.state import GraphState
 from ragbot.orchestration.nodes.query_complexity import (
     classify_query_complexity as _classify_query_complexity,
-)
-from ragbot.orchestration.nodes.query_decomposer import (
-    decompose_query as _decompose_query,
 )
 from ragbot.orchestration.nodes.cascade_router_helper import apply_cascade_routing
 from ragbot.shared.errors import (
@@ -252,7 +255,6 @@ from ragbot.shared.constants import (
     DEFAULT_PIPELINE_PARALLEL_CACHE_UNDERSTAND_ENABLED,
     DEFAULT_PIPELINE_PARALLEL_OUTPUT_GUARDS_ENABLED,
     DEFAULT_PIPELINE_PARALLEL_REWRITE_MQ_ENABLED,
-    DEFAULT_PIPELINE_PRE_RETRIEVAL_PARALLEL_ENABLED,
     DEFAULT_MULTI_QUERY_ENABLED_BY_INTENT,
     DEFAULT_SKIP_UNDERSTAND_FOR_GREETING,
     DEFAULT_UNDERSTAND_SKIP_BELOW_TOKENS,
@@ -2641,182 +2643,18 @@ def build_graph(
                 )
         return {}
 
-    async def query_complexity_node(state: GraphState) -> dict:
-        """Adaptive Router L1 — parallel wrapper for 3 pre-retrieval steps.
+    query_complexity_node = functools.partial(
+        _query_complexity_node,
+        _run_query_complexity=_run_query_complexity,
+        _run_router_select_model=_run_router_select_model,
+        _run_semantic_cache_preflight=_run_semantic_cache_preflight,
+    )
 
-        Runs ``query_complexity``, ``router_select_model``, and
-        ``semantic_cache_check`` in parallel via ``asyncio.gather`` when
-        ``pipeline_pre_retrieval_parallel_enabled`` is True (default).
-        Falls back to sequential execution when the flag is False so
-        byte-identical behaviour is preserved for bots that opt out.
-
-        Exception handling (return_exceptions=True contract):
-        - query_complexity exception → fallback ("simple", 0.0)
-        - router_select_model exception → skip (telemetry only)
-        - semantic_cache_preflight exception → skip (validation only)
-
-        Emit at INFO so the cascade routing chain is observable in the
-        production journal.
-        """
-        parallel_flag = bool(
-            _pcfg(
-                state,
-                "pipeline_pre_retrieval_parallel_enabled",
-                DEFAULT_PIPELINE_PRE_RETRIEVAL_PARALLEL_ENABLED,
-            )
-        )
-        if not parallel_flag:
-            # Sequential fallback — byte-identical to the pre-optimisation path.
-            return await _run_query_complexity(state)
-
-        complexity_result, router_result, sc_result = await asyncio.gather(
-            _run_query_complexity(state),
-            _run_router_select_model(state),
-            _run_semantic_cache_preflight(state),
-            return_exceptions=True,
-        )
-
-        # Branch A: query complexity — routing depends on this; fallback on exception.
-        if isinstance(complexity_result, BaseException):
-            logger.warning(
-                "pre_retrieval_parallel_complexity_failed",
-                error_type=type(complexity_result).__name__,
-                record_bot_id=str(state.get("record_bot_id") or ""),
-            )
-            merged: dict = {"complexity_label": "simple", "complexity_score": 0.0}
-        else:
-            merged = dict(complexity_result) if isinstance(complexity_result, dict) else {
-                "complexity_label": "simple", "complexity_score": 0.0,
-            }
-
-        # Branch B: router_select_model — telemetry only; log + skip on exception.
-        if isinstance(router_result, BaseException):
-            logger.warning(
-                "pre_retrieval_parallel_router_failed",
-                error_type=type(router_result).__name__,
-                record_bot_id=str(state.get("record_bot_id") or ""),
-            )
-
-        # Branch C: semantic_cache_preflight — validation only; log + skip on exception.
-        if isinstance(sc_result, BaseException):
-            logger.warning(
-                "pre_retrieval_parallel_sc_preflight_failed",
-                error_type=type(sc_result).__name__,
-                record_bot_id=str(state.get("record_bot_id") or ""),
-            )
-
-        return merged
-
-    async def adaptive_decompose(state: GraphState) -> dict:
-        """Adaptive Router L3 — LLM-based query decomposer.
-
-        Calls the domain-neutral decomposer with the bot-resolved LLM
-        spec. On any failure (LLM down, JSON parse error, single-item
-        return) the original query passes through unchanged so the
-        retrieve path stays functional. Multi-item results seed
-        ``sub_queries``; the S2 bypass in multi_query_fanout / retrieve
-        consumes that contract.
-        """
-        # Wave M3.7-P2 — name step ctx so adaptive_decompose LLM cost
-        # (typically 1.4s p50, 7% of turns) attributes to its row.
-        # Decompose may call llm.complete once per L3 question split;
-        # we accumulate per-call into _dc_agg and record at end-of-step.
-        async with state["step_tracker"].step("adaptive_decompose") as dc_ctx:
-            query_text = state.get("rewritten_query") or state.get("query") or ""
-            if not query_text:
-                return {}
-            if model_resolver is None or llm is None:
-                return {}
-
-            _dc_agg: dict[str, Any] = {
-                "model": "", "prompt_tokens": 0, "completion_tokens": 0, "cost_usd": 0.0,
-            }
-
-            async def _llm_invoker(
-                *, system: str, user: str, model: str, max_tokens: int,
-            ) -> str:
-                # Bot owner picks the binding by purpose ("decompose"); the
-                # decomposer model knob ("decomposer.model") tunes which
-                # underlying provider model gets called via the binding.
-                try:
-                    cfg = await model_resolver.resolve_runtime(
-                        record_tenant_id=state.get("record_tenant_id"),
-                        record_bot_id=state.get("record_bot_id"),
-                        purpose="decompose",
-                    )
-                except InvariantViolation as exc:
-                    logger.warning(
-                        "model_resolver_no_binding",
-                        purpose="decompose",
-                        record_bot_id=str(state.get("record_bot_id")),
-                        node="adaptive_decompose",
-                        error=str(exc)[:200],
-                    )
-                    # decompose_query() catches and falls back to [query].
-                    raise
-                messages = [
-                    {"role": "system", "content": system},
-                    {"role": "user", "content": user},
-                ]
-                # ``model_override`` was previously forwarded here but the
-                # underlying litellm call exposes it directly to providers
-                # (OpenAI), which reject any unrecognised kwarg with a 400.
-                # The runtime cfg already carries the correct model from
-                # ``resolve_runtime`` (or its llm_primary fallback). The
-                # ``decomposer.model`` config knob is consumed inside the
-                # decompose_query module (selects which binding purpose to
-                # request) and does NOT need to be re-passed to the LLM
-                # call. See plans/260515-multi-query-audit-fix/issues/
-                # issue-9-decompose-model-override-rejected.md.
-                resp = await llm.complete(
-                    cfg,
-                    messages=messages,
-                    purpose="decompose",
-                    max_tokens=max_tokens,
-                )
-                # Wave M3.7-P2 — accumulate per-call cost.
-                if isinstance(resp, dict):
-                    _dc_agg["model"] = resp.get("model_name") or _dc_agg["model"]
-                    _dc_agg["prompt_tokens"] += int(resp.get("prompt_tokens", 0) or 0)
-                    _dc_agg["completion_tokens"] += int(resp.get("completion_tokens", 0) or 0)
-                    _dc_agg["cost_usd"] += float(resp.get("cost_usd", 0.0) or 0.0)
-                else:
-                    _dc_agg["model"] = getattr(resp, "model_name", "") or _dc_agg["model"]
-                    _dc_agg["prompt_tokens"] += int(getattr(resp, "prompt_tokens", 0) or 0)
-                    _dc_agg["completion_tokens"] += int(getattr(resp, "completion_tokens", 0) or 0)
-                    _dc_agg["cost_usd"] += float(getattr(resp, "cost_usd", 0.0) or 0.0)
-                # ``LLMResponse`` and the legacy dict envelope both expose
-                # the text under different attrs; coalesce so the
-                # decomposer module stays envelope-agnostic.
-                if isinstance(resp, dict):
-                    return str(resp.get("text") or resp.get("content") or "")
-                return str(
-                    getattr(resp, "content", None)
-                    or getattr(resp, "text", None)
-                    or ""
-                )
-
-            sub_queries = await _decompose_query(
-                query_text, llm_invoker=_llm_invoker,
-            )
-            # Wave M3.7-P2 — record aggregated decompose cost.
-            if _dc_agg["prompt_tokens"] > 0:
-                dc_ctx.record_llm(
-                    model_used=str(_dc_agg["model"] or "") or None,
-                    prompt_tokens=_dc_agg["prompt_tokens"],
-                    completion_tokens=_dc_agg["completion_tokens"],
-                    cost_usd=_dc_agg["cost_usd"],
-                )
-            cleaned = [s for s in sub_queries if isinstance(s, str) and s.strip()]
-            if len(cleaned) >= 2:
-                logger.info(
-                    "adaptive_router_decomposed",
-                    original=query_text[:80],
-                    sub_count=len(cleaned),
-                    source="adaptive_router_l3",
-                )
-                return {"sub_queries": cleaned, "original_query": query_text}
-            return {}
+    adaptive_decompose = functools.partial(
+        _adaptive_decompose_node,
+        model_resolver=model_resolver,
+        llm=llm,
+    )
 
     graph = StateGraph(GraphState)
     graph.add_node("guard_input", guard_input)
