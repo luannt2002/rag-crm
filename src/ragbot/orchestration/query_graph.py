@@ -49,6 +49,13 @@ from ragbot.orchestration.nodes.persist import persist as _persist_node
 from ragbot.orchestration.nodes.reflect import reflect as _reflect_node
 from ragbot.orchestration.nodes.retrieve import retrieve as _retrieve_node
 from ragbot.orchestration.nodes.rerank import rerank as _rerank_node
+from ragbot.orchestration.nodes.mmr_dedup import mmr_dedup as _mmr_dedup_node
+from ragbot.orchestration.nodes.graph_retrieve import (
+    graph_retrieve_node as _graph_retrieve_node,
+)
+from ragbot.orchestration.nodes.neighbor_expand import (
+    neighbor_expand as _neighbor_expand_node,
+)
 from ragbot.orchestration.nodes.understand import (
     understand_query as _understand_query_node,
 )
@@ -63,7 +70,6 @@ from ragbot.orchestration.nodes.query_decomposer import (
     decompose_query as _decompose_query,
 )
 from ragbot.orchestration.nodes.cascade_router_helper import apply_cascade_routing
-from ragbot.infrastructure.graph.graph_retriever import graph_retrieve as _graph_retrieve
 from ragbot.shared.errors import (
     AuditEmitError,
     EmbeddingError,
@@ -71,7 +77,6 @@ from ragbot.shared.errors import (
     RetrievalError,
 )
 from ragbot.shared.embedding_cache import get_cached_embedding, set_cached_embedding
-from ragbot.shared.mmr import mmr_filter
 from ragbot.shared.prompt_compression import compress_chunks
 from ragbot.shared.prompt_token_opt import apply_token_opt
 from ragbot.shared.token_budget import compute_output_cap
@@ -351,12 +356,6 @@ from ragbot.shared.constants import (
     DEFAULT_MAX_REFLECT_RETRIES,
     DEFAULT_REFLECT_SKIP_IF_GROUNDED,
     DEFAULT_REFLECT_SKIP_TOP_SCORE_FLOOR,
-    DEFAULT_MMR_LAMBDA,
-    DEFAULT_MMR_SIMILARITY_THRESHOLD,
-    DEFAULT_NEIGHBOR_EXPAND_ENABLED,
-    DEFAULT_NEIGHBOR_MAX_CONCURRENCY,
-    DEFAULT_NEIGHBOR_TOKEN_BUDGET,
-    DEFAULT_NEIGHBOR_WINDOW_SIZE,
     DEFAULT_PROMPT_COMPRESSION_ENABLED,
     DEFAULT_PROMPT_COMPRESSION_MAX_CHARS_PER_CHUNK,
     DEFAULT_PROMPT_TOKEN_OPT_DEDUPE_JACCARD_THRESHOLD,
@@ -2909,113 +2908,11 @@ def build_graph(
         _lang=_lang,
     )
 
-    async def mmr_dedup(state: GraphState) -> dict:
-        """MMR dedup over reranked chunks before grade."""
-        async with state["step_tracker"].step("mmr_dedup") as mmr_ctx:
-            chunks = state.get("reranked_chunks", [])
-            # 260525 Bug #10 — per-intent MMR similarity threshold.
-            # aggregation queries collapse if row-shape CSV chunks (same
-            # column structure, different data values) get dedup'd as
-            # duplicates. Loosen the threshold for aggregation so distinct
-            # data rows survive.
-            _intent_for_mmr = state.get("intent") or ""
-            _thresh_by_intent = _pcfg(state, "mmr_similarity_threshold_by_intent", None)
-            _intent_override_mmr = False
-            if isinstance(_thresh_by_intent, dict) and _intent_for_mmr in _thresh_by_intent:
-                try:
-                    mmr_thresh = float(_thresh_by_intent[_intent_for_mmr])
-                    _intent_override_mmr = True
-                except (TypeError, ValueError):
-                    mmr_thresh = float(_pcfg(state, "mmr_similarity_threshold", DEFAULT_MMR_SIMILARITY_THRESHOLD))
-            else:
-                mmr_thresh = float(_pcfg(state, "mmr_similarity_threshold", DEFAULT_MMR_SIMILARITY_THRESHOLD))
-            mmr_lambda = float(_pcfg(state, "mmr_lambda", DEFAULT_MMR_LAMBDA))
-            filtered = mmr_filter(
-                chunks,
-                lambda_param=mmr_lambda,
-                similarity_threshold=mmr_thresh,
-                strip_embedding=True,
-            )
-            mmr_ctx.set_metadata(
-                before=len(chunks),
-                after=len(filtered),
-                similarity_threshold=mmr_thresh,
-                intent_override=_intent_override_mmr,
-                intent=_intent_for_mmr,
-            )
-            await _audit(
-                state,
-                "mmr_dedup",
-                {
-                    "before": len(chunks),
-                    "after": len(filtered),
-                    "lambda": mmr_lambda,
-                    "similarity_threshold": mmr_thresh,
-                    "intent_override": _intent_override_mmr,
-                },
-            )
-            return {"reranked_chunks": filtered}
+    mmr_dedup = functools.partial(_mmr_dedup_node, _pcfg=_pcfg, _audit=_audit)
 
-    async def neighbor_expand(state: GraphState) -> dict:
-        """M2 — expand ±N chunk_index neighbours after MMR.
-
-        Per-bot opt-in via ``plan_limits.neighbor_expand_enabled``. When
-        the flag is False (default) the node returns ``{}`` — a no-op
-        merge that LangGraph treats as identity, so production paths
-        stay byte-identical until bot owners opt in.
-
-        When enabled the node fetches adjacent chunks (window radius
-        ``neighbor_window_size``) from the same documents as the MMR
-        survivors, applies a token-budget cap (M22), and replaces
-        ``reranked_chunks`` with the expanded set. ``grade`` then sees
-        the broader context. HALLU=0 sacred is preserved — no
-        fabrication, only existing chunks surface.
-        """
-        enabled = bool(_pcfg(state, "neighbor_expand_enabled",
-                             DEFAULT_NEIGHBOR_EXPAND_ENABLED))
-        if not enabled:
-            return {}
-        seeds = state.get("reranked_chunks") or []
-        if not seeds:
-            return {}
-        session_factory = state.get("session_factory")
-        record_tenant_id = state.get("record_tenant_id")
-        if session_factory is None or record_tenant_id is None:
-            return {}
-        window = int(_pcfg(state, "neighbor_window_size",
-                           DEFAULT_NEIGHBOR_WINDOW_SIZE))
-        budget = int(_pcfg(state, "neighbor_token_budget",
-                           DEFAULT_NEIGHBOR_TOKEN_BUDGET))
-        max_conc = int(_pcfg(state, "neighbor_max_concurrency",
-                             DEFAULT_NEIGHBOR_MAX_CONCURRENCY))
-        from ragbot.orchestration.nodes.neighbor_expand import expand_neighbors
-        async with state["step_tracker"].step("neighbor_expand") as ne_ctx:
-            expanded = await expand_neighbors(
-                seeds,
-                session_factory=session_factory,
-                record_tenant_id=record_tenant_id,
-                window_size=window,
-                token_budget=budget,
-                max_concurrency=max_conc,
-            )
-            ne_ctx.set_metadata(
-                seeds_in=len(seeds),
-                chunks_out=len(expanded),
-                window_size=window,
-                token_budget=budget,
-                expanded_count=max(0, len(expanded) - len(seeds)),
-            )
-            await _audit(
-                state,
-                "neighbor_expand",
-                {
-                    "before": len(seeds),
-                    "after": len(expanded),
-                    "window_size": window,
-                    "token_budget": budget,
-                },
-            )
-            return {"reranked_chunks": expanded}
+    neighbor_expand = functools.partial(
+        _neighbor_expand_node, _pcfg=_pcfg, _audit=_audit,
+    )
 
     async def rewrite_retry(state: GraphState) -> dict:
         """CRAG retry path: rewrite query and increment retry counter."""
@@ -3163,19 +3060,7 @@ def build_graph(
         _resolved_oos_template=_resolved_oos_template,
     )
 
-    async def graph_retrieve_node(state: GraphState) -> dict:
-        """Retrieve additional context via knowledge graph (GraphRAG); empty on any failure."""
-        _kg = state.get("kg_service")
-        _sf = state.get("session_factory")
-        if _kg is None or _sf is None:
-            return {"graph_context": []}
-
-        async with state["step_tracker"].step("graph_retrieve"):
-            return await _graph_retrieve(
-                state,
-                kg_service=_kg,
-                session_factory=_sf,
-            )
+    graph_retrieve_node = _graph_retrieve_node
 
     async def _run_query_complexity(state: GraphState) -> dict:
         """Branch A of pre_retrieval_parallel: domain-neutral heuristic classifier.

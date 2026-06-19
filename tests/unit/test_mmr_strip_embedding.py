@@ -78,12 +78,15 @@ def test_mmr_dedup_node_passes_strip_embedding_true() -> None:
     import inspect
     import re
 
-    src = inspect.getsource(qg_module.build_graph)
+    # The mmr_filter call lives in the extracted mmr_dedup node module
+    # (query_graph.build_graph binds it via functools.partial).
+    from ragbot.orchestration.nodes.mmr_dedup import mmr_dedup as _mmr_dedup_node
+    src = inspect.getsource(_mmr_dedup_node)
     # Look for the mmr_filter invocation and confirm strip_embedding=True
     # is in its kwargs.
     pat = re.compile(r"mmr_filter\(([^)]*)\)", re.DOTALL)
     matches = pat.findall(src)
-    assert matches, "build_query_graph must invoke mmr_filter"
+    assert matches, "mmr_dedup node must invoke mmr_filter"
     assert any("strip_embedding=True" in m for m in matches), (
         f"mmr_dedup must pass strip_embedding=True; saw kwargs: {matches}"
     )

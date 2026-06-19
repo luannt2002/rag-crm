@@ -56,8 +56,10 @@ import structlog
 from sqlalchemy import text as sa_text
 from sqlalchemy.exc import SQLAlchemyError
 
+from ragbot.orchestration.state import GraphState
 from ragbot.shared.constants import (
     DEFAULT_CHARS_PER_TOKEN_ESTIMATE,
+    DEFAULT_NEIGHBOR_EXPAND_ENABLED,
     DEFAULT_NEIGHBOR_MAX_CONCURRENCY,
     DEFAULT_NEIGHBOR_TOKEN_BUDGET,
     DEFAULT_NEIGHBOR_WINDOW_SIZE,
@@ -452,9 +454,76 @@ async def expand_neighbors(
     )
 
 
+async def neighbor_expand(
+    state: GraphState,
+    *,
+    _pcfg: Any,
+    _audit: Any,
+) -> dict:
+    """M2 — expand ±N chunk_index neighbours after MMR.
+
+    Per-bot opt-in via ``plan_limits.neighbor_expand_enabled``. When
+    the flag is False (default) the node returns ``{}`` — a no-op
+    merge that LangGraph treats as identity, so production paths
+    stay byte-identical until bot owners opt in.
+
+    When enabled the node fetches adjacent chunks (window radius
+    ``neighbor_window_size``) from the same documents as the MMR
+    survivors, applies a token-budget cap (M22), and replaces
+    ``reranked_chunks`` with the expanded set. ``grade`` then sees
+    the broader context. HALLU=0 sacred is preserved — no
+    fabrication, only existing chunks surface.
+    """
+    enabled = bool(_pcfg(state, "neighbor_expand_enabled",
+                         DEFAULT_NEIGHBOR_EXPAND_ENABLED))
+    if not enabled:
+        return {}
+    seeds = state.get("reranked_chunks") or []
+    if not seeds:
+        return {}
+    session_factory = state.get("session_factory")
+    record_tenant_id = state.get("record_tenant_id")
+    if session_factory is None or record_tenant_id is None:
+        return {}
+    window = int(_pcfg(state, "neighbor_window_size",
+                       DEFAULT_NEIGHBOR_WINDOW_SIZE))
+    budget = int(_pcfg(state, "neighbor_token_budget",
+                       DEFAULT_NEIGHBOR_TOKEN_BUDGET))
+    max_conc = int(_pcfg(state, "neighbor_max_concurrency",
+                         DEFAULT_NEIGHBOR_MAX_CONCURRENCY))
+    async with state["step_tracker"].step("neighbor_expand") as ne_ctx:
+        expanded = await expand_neighbors(
+            seeds,
+            session_factory=session_factory,
+            record_tenant_id=record_tenant_id,
+            window_size=window,
+            token_budget=budget,
+            max_concurrency=max_conc,
+        )
+        ne_ctx.set_metadata(
+            seeds_in=len(seeds),
+            chunks_out=len(expanded),
+            window_size=window,
+            token_budget=budget,
+            expanded_count=max(0, len(expanded) - len(seeds)),
+        )
+        await _audit(
+            state,
+            "neighbor_expand",
+            {
+                "before": len(seeds),
+                "after": len(expanded),
+                "window_size": window,
+                "token_budget": budget,
+            },
+        )
+        return {"reranked_chunks": expanded}
+
+
 __all__ = [
     "expand_neighbors",
     "fetch_neighbors_sql",
     "merge_neighbors_with_seeds",
+    "neighbor_expand",
     "plan_neighbor_windows",
 ]
