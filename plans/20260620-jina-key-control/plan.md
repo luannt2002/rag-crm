@@ -74,7 +74,33 @@ Files: `src/ragbot/infrastructure/embedding/jina_embedder.py`,
   acquired tokens ≤ per-key ceiling (no key exceeds its bucket); round-robin
   spreads across keys.
 
-## Phase 2 — `api_keys` registry columns + admin API + pool-from-DB  [migration+code+test]
+## ⚠ Phase 2 BLOCKER discovered (2026-06-20) — two-table drift, reconcile FIRST
+There are **two empty key tables**:
+- **`ai_keys`** (cols: `api_key_encrypted, fingerprint, status, is_default,
+  last_health_check_at, last_health_status, last_used_at, rotated_at,
+  rotated_by_user_id`) — read by `DBBackedApiKeyPoolFactory._load_db_keys`
+  (the SELECT joins `ai_keys`→`ai_providers`, filters `status='active'`) AND by
+  `ProviderKeyResolver`. **This is the canonical pool/resolver table** + it
+  already has `status` + health columns.
+- **`api_keys`** (cols: `provider_code, label, value_plain, value_encrypted,
+  active, rotation_state`) — targeted by the admin routes
+  `GET/PUT/DELETE /admin/api-keys`.
+
+→ **Admin writes `api_keys`; the pool reads `ai_keys`.** They are disconnected,
+so "add a key via the API" would never reach the embedder pool. Phase 2 MUST
+first **reconcile to ONE canonical table** (recommend `ai_keys` — pool/resolver
+already use it + it has status/health), point the admin routes at it, drop/alias
+the other, THEN add `tpm_limit`/`max_concurrent`/`last_error_message`/
+`last_error_at` + wire the limits into the embedder. Doing this carefully (it
+touches secrets + two route sets + the pool) is the next focused increment — NOT
+to be rushed onto the drift.
+
+Phase 1 (per-key limiter, committed e17c0f4) already fixes the 429 recurrence
+independently of this table work (validated: thong-tu re-ingested 549 chunks,
+null_leaf=0, **0 Jina 429s**). So Phase 2 is ops-control/observability, not a
+blocker for correctness.
+
+## Phase 2 — `ai_keys` registry columns + admin API + pool-from-DB  [migration+code+test]
 Files: alembic migration, `models.py` (ApiKeyModel), `api_key_repository.py`,
 `routes/admin/provider_keys.py`, `ApiKeyPoolFactory` (DB source), bootstrap wiring, tests.
 - **Migration**: add to `api_keys`: `tpm_limit INT NULL`, `max_concurrent INT NULL`,
