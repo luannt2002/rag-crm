@@ -20,8 +20,14 @@
 ### 🗺️ Phase 2 (key-mgmt API) — BLOCKER, không rush (`35f086d` plan)
 - 2 bảng key TRÙNG rời rạc: **`ai_keys`** (status/health, pool+resolver đọc) vs **`api_keys`** (admin routes ghi) → admin ghi 1 bảng, pool đọc bảng kia. Phải **reconcile về `ai_keys`** trước khi thêm `tpm_limit/status/last_error` + API. Đã scope `plans/20260620-jina-key-control/plan.md`.
 
+### 📐 Scoring template + stats-noise fix (RAG-smartness)
+- **`docs/RAG_SCORING_TEMPLATE.md`** (`169eb95`): 1 template chấm cả 8 step × 3 layer (ekimetrics 6 intrinsic SC/ICC/CC/BI/SD/MRE + COVERAGE/HALLU). L1 composite 0.587 (LEXICAL — gap: chưa port embedding-cosine).
+- **stats-noise fix** (`316d20d`): CSV→stats extractor coi MỌI dòng có dấu phẩy là entity → prose/bullet (`- Giúp…`)/FAQ/name-less thành entity rác → synthetic chunk lẫn rác → bot đọc nhầm. Fix tầng INGEST: entity phải có name field-like (lọc bullet + field-like caps, domain-neutral). spa stats 501→345, **noise_rows=0**. 32 test pass.
+- **spa scenario ground-truth** (`c33039a`): noise fix lộ 2 expect SAI (đặt theo noise cũ): q09 "đắt nhất"=20tr KHÔNG có trong corpus (max thật Vikim 10tr) — old pass = bot đọc phantom = bịa; q06 "<500k"=129k → bot đúng trả Gội đầu 60k. Sửa về sự thật corpus (verify, KHÔNG fit bot). → **spa COVERAGE 0.80 thật** (8/10), HALLU=0.
+- **2 miss THẬT còn lại** (retrieval riêng): q01 list-completeness (liệt kê thiếu) · q12 entity-granularity ("Triệt lông nách"↛entity "Nách", 1199000 có trong stats).
+
 ### Còn lại
-- Phase 2 reconcile + admin API (next session). Config-driven limit qua `system_config`+`PUT /admin/config`. Revert `bypass_token_check` 3 bot. KG=0 dormant.
+- **q01 list + q12 entity** (retrieval-routing/entity, đang làm tiếp). **re-ingest xe** cho stats sạch (xe 0.86). Phase 2 reconcile + admin API. Config-driven limit qua `system_config`+`PUT /admin/config`. Revert `bypass_token_check` 3 bot. KG=0 dormant. L1 lexical→embedding. STEP-5 attribution harness bug (retr_miss=0 sai).
 
 ---
 
