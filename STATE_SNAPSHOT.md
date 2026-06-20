@@ -26,8 +26,19 @@
 - **spa scenario ground-truth** (`c33039a`): noise fix lộ 2 expect SAI (đặt theo noise cũ): q09 "đắt nhất"=20tr KHÔNG có trong corpus (max thật Vikim 10tr) — old pass = bot đọc phantom = bịa; q06 "<500k"=129k → bot đúng trả Gội đầu 60k. Sửa về sự thật corpus (verify, KHÔNG fit bot). → **spa COVERAGE 0.80 thật** (8/10), HALLU=0.
 - **2 miss THẬT còn lại** (retrieval riêng): q01 list-completeness (liệt kê thiếu) · q12 entity-granularity ("Triệt lông nách"↛entity "Nách", 1199000 có trong stats).
 
-### Còn lại
-- **q01 list + q12 entity** (retrieval-routing/entity, đang làm tiếp). **re-ingest xe** cho stats sạch (xe 0.86). Phase 2 reconcile + admin API. Config-driven limit qua `system_config`+`PUT /admin/config`. Revert `bypass_token_check` 3 bot. KG=0 dormant. L1 lexical→embedding. STEP-5 attribution harness bug (retr_miss=0 sai).
+### ✅ Segment cuối — harness + scoring (an toàn)
+- **STEP-5 attribution fix** (`93e77d9`): eval báo `retr_miss=0` sai (stats-route synthetic chunk không ghi `request_chunk_refs` → chunk_hit=None → rơi khỏi cả retr/llm miss). Thêm bucket `unknown_miss` → covered+retr+llm+unk = answerable. 9 guard test pass.
+- **L1 real-embedding scorer** (`6068eba`, `scripts/score_chunks_embedding.py`): ekimetrics SD+CC từ vector ĐÃ LƯU (no re-embed). Live: CC 0.91-0.99 (cohesion cao), SD 0.02-0.04 (chunk kề similar — do CR-prefix share doc context). Thay RC=1.0 lexical vacuous bằng tín hiệu thật.
+
+### ⚠️ Bài học — re-ingest bot đã tốt = CHURN (đừng lặp)
+- Re-ingest xe (đang 0.86, đã clean) để "dọn stats" → **làm xe TỆ hơn**: xe-3 DRAFT (poll timeout, worker còn chạy), xe-1 null_leaf=1 (brittle-finalize: 1 embed-miss → fail cả doc), 809 stats-noise transient (xe-3 re-ingest chưa xong). xe vẫn SERVE. → **Bài học: KHÔNG re-ingest bot đã-tốt; root cause là brittle-finalize chưa fix.**
+- q12 BLOCKED: revert `bypass_token_check` xong → quota cạn → query `blocked`; re-enable bypass bị **guardrail chặn ĐÚNG** (không re-authorize). Fix q12 (entity-naming) cũng fuzzy/risky. → phiên fresh.
+
+### Còn lại (phiên fresh, scope rõ — KHÔNG rush)
+- **brittle-finalize resilience** (partial-embed coverage≥X → active + queue re-embed null-leaf) = root cause của null_leaf/failed churn — ƯU TIÊN.
+- **q12** entity-naming-at-ingest (context "triệt lông" từ chunk_context/header → "Triệt lông Nách") + cần bypass/quota để test.
+- **Phase-2 key-API** (reconcile `ai_keys`/`api_keys`). **L1 full embedding** (ICC/MRE cần embed sentence/coref). Config-driven limit. xe-3 finish (worker/recovery tự xử). KG=0 dormant.
+- `bypass_token_check` hiện OFF (production-đúng) — bật lại CHỈ khi cần test, qua user-authorize.
 
 ---
 
