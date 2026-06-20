@@ -34,8 +34,12 @@
 - Re-ingest xe (đang 0.86, đã clean) để "dọn stats" → **làm xe TỆ hơn**: xe-3 DRAFT (poll timeout, worker còn chạy), xe-1 null_leaf=1 (brittle-finalize: 1 embed-miss → fail cả doc), 809 stats-noise transient (xe-3 re-ingest chưa xong). xe vẫn SERVE. → **Bài học: KHÔNG re-ingest bot đã-tốt; root cause là brittle-finalize chưa fix.**
 - q12 BLOCKED: revert `bypass_token_check` xong → quota cạn → query `blocked`; re-enable bypass bị **guardrail chặn ĐÚNG** (không re-authorize). Fix q12 (entity-naming) cũng fuzzy/risky. → phiên fresh.
 
+### ✅ ROOT-CAUSE fix — finalize resilience (`7a60c47`)
+- `_stage_finalize` cũ: ANY null-embed leaf → `state='failed'`. Readiness-gate chỉ serve `active` + recovery-sweep KHÔNG quét `failed` → 1 transient embed-miss (429 1 batch) = **DARK vĩnh viễn** (nguồn outage + xe-1 churn phiên này).
+- Fix: pure `_decide_ingest_state(total, embedded, null_non_parent, min_leaf_coverage)` — serve (`active`) khi leaf-coverage ≥ floor (config `ingest_min_leaf_embed_coverage`, default **0.8**); null leaf giữ BM25. Chỉ doc thật-sự-hỏng fail. 8 test (1/500→serve, 26/32→serve, 50/100→fail, boundary). 245 ingest test pass.
+- **Validated live**: restart + re-ingest xe-1 (was failed) → `active` 514 chunks null_leaf=0 SẠCH (per-key limiter giữ). **Cả 3 bot null_leaf=0 + serve.** xe-3 DRAFT đang finalize (worker nền).
+
 ### Còn lại (phiên fresh, scope rõ — KHÔNG rush)
-- **brittle-finalize resilience** (partial-embed coverage≥X → active + queue re-embed null-leaf) = root cause của null_leaf/failed churn — ƯU TIÊN.
 - **q12** entity-naming-at-ingest (context "triệt lông" từ chunk_context/header → "Triệt lông Nách") + cần bypass/quota để test.
 - **Phase-2 key-API** (reconcile `ai_keys`/`api_keys`). **L1 full embedding** (ICC/MRE cần embed sentence/coref). Config-driven limit. xe-3 finish (worker/recovery tự xử). KG=0 dormant.
 - `bypass_token_check` hiện OFF (production-đúng) — bật lại CHỈ khi cần test, qua user-authorize.
