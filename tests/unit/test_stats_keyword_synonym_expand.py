@@ -53,8 +53,13 @@ class _FakeSession:
         self._sink = sink
 
     async def execute(self, stmt, params):
-        self._sink["sql"] = str(stmt)
-        self._sink["params"] = params
+        # Capture the FORWARD query (first call). When it returns no rows the
+        # repo runs a reverse/token fallback (2026-06-20 q12 fix) as a 2nd
+        # execute — these tests assert on the forward synonym expansion, so we
+        # keep the first call and ignore the fallback's overwrite.
+        if "sql" not in self._sink:
+            self._sink["sql"] = str(stmt)
+            self._sink["params"] = params
         return _FakeResult()
 
 

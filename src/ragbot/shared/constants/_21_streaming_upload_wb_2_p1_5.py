@@ -29,6 +29,13 @@ SUBJECT_DOCUMENT_UPLOAD_STREAM: Final[str] = "document.upload_stream.v1"
 # --- Stats Index (document_service_index table) ----------------------------
 # Maximum rows returned from a single stats-index list/query call.
 DEFAULT_STATS_INDEX_QUERY_LIMIT: Final[int] = 1000
+# Reverse/token keyword fallback (query_by_name_keyword): when the forward match
+# (entity name CONTAINS the keyword) finds nothing, match entities whose NAME is
+# a word INSIDE the query — e.g. query "Triệt lông nách combo" vs entity "Nách".
+# Min entity-name length so 1-3 char zone words ("Mép", "sâu") can't over-match;
+# small result cap so a granular price-of-entity lookup stays focused, not a flood.
+DEFAULT_STATS_REVERSE_MATCH_MIN_LEN: Final[int] = 4
+DEFAULT_STATS_REVERSE_MATCH_LIMIT: Final[int] = 10
 # Threshold below which a numeric token is ignored by the price extractor
 # (avoids treating article numbers like "Điều 12" → 12 as prices).
 DEFAULT_STATS_PRICE_MIN_DIGITS: Final[int] = 4

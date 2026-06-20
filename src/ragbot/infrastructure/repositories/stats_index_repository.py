@@ -35,7 +35,11 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from ragbot.infrastructure.db.engine import session_with_tenant
-from ragbot.shared.constants import DEFAULT_STATS_INDEX_QUERY_LIMIT
+from ragbot.shared.constants import (
+    DEFAULT_STATS_INDEX_QUERY_LIMIT,
+    DEFAULT_STATS_REVERSE_MATCH_LIMIT,
+    DEFAULT_STATS_REVERSE_MATCH_MIN_LEN,
+)
 from ragbot.shared.document_stats import ParsedEntity
 
 logger = structlog.get_logger(__name__)
@@ -478,6 +482,32 @@ class StatsIndexRepository:
         async with self._sf() as session:
             result = await session.execute(text(sql), params)
             rows = result.fetchall()
+            # Reverse/token fallback: the forward match (entity name CONTAINS the
+            # keyword) misses a GRANULAR entity whose NAME is a word INSIDE the
+            # query — e.g. query "Triệt lông nách combo 10 buổi" vs entity "Nách".
+            # When forward finds nothing, match entities whose name is a substring
+            # of the query keyword, guarded by a min length so 1-3 char zone words
+            # ("Mép", "sâu") can't over-match. Only fires on an EMPTY forward
+            # result → cannot regress a working forward lookup. ORDER BY length
+            # DESC prefers the most specific (longest) entity name.
+            if not rows and kw:
+                rev_sql = (
+                    "SELECT id, record_document_id, record_chunk_id, entity_name, "
+                    "entity_category, price_primary, price_secondary, attributes_json "
+                    "FROM document_service_index "
+                    "WHERE record_bot_id = :bot_id "
+                    "AND char_length(entity_name) >= :min_len "
+                    "AND unaccent(:kwfull) ILIKE '%' || unaccent(entity_name) || '%' "
+                    "ORDER BY char_length(entity_name) DESC "
+                    "LIMIT :rev_limit"
+                )
+                result = await session.execute(text(rev_sql), {
+                    "bot_id": record_bot_id,
+                    "min_len": DEFAULT_STATS_REVERSE_MATCH_MIN_LEN,
+                    "kwfull": kw,
+                    "rev_limit": min(effective_limit, DEFAULT_STATS_REVERSE_MATCH_LIMIT),
+                })
+                rows = result.fetchall()
 
         return [
             {

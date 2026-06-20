@@ -241,6 +241,16 @@ def _extract_entity_from_row(
                 # Third+ price column → attributes
                 label = header[idx] if idx < len(header) else f"price_{idx}"
                 attributes[label] = money
+            # Also surface the price under its COLUMN HEADER so the synthetic
+            # list/keyword chunk keeps the column semantics that the positional
+            # price_primary/secondary drop: a "combo 10 buổi" query needs to see
+            # "Giá Combo 10 buổi: 1199000", not a bare price_secondary the LLM
+            # can't attribute (the spa q12 miss). Domain-neutral — the label IS
+            # the corpus header, no hardcoded term; skipped when the header is a
+            # number / blank, and ``setdefault`` keeps a 3rd+ labelled price.
+            _hdr = header[idx].strip() if idx < len(header) and header[idx] else ""
+            if _hdr and parse_money_vn(_hdr) is None:
+                attributes.setdefault(_hdr, money)
             continue
 
         # First non-money col → entity name, unless it's a pure ordinal

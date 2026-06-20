@@ -158,6 +158,26 @@ def test_parse_table_chunks_drops_noise_rows() -> None:
     assert len(entities) == 2, f"expected 2 real entities, got {names}"
 
 
+def test_price_columns_surfaced_under_header_labels() -> None:
+    """q12 fix (2026-06-20): a multi-price table (buổi lẻ + combo) must surface
+    BOTH prices under their COLUMN HEADERS in attributes, so a 'combo 10 buổi'
+    query can find the combo price (1199000) — the positional price_secondary
+    alone dropped the column semantics and the synthetic chunk only showed
+    price_primary (199000), so the bot answered 'chưa thấy'.
+    """
+    content = (
+        "STT,Vùng triệt,Giá buổi lẻ,Giá Combo 10 buổi\n"
+        "3,Nách,199000,1199000\n"
+    )
+    entities = parse_table_chunks([_make_chunk(content)])
+    nach = next(e for e in entities if e.name == "Nách")
+    assert nach.price_primary == 199_000
+    assert nach.price_secondary == 1_199_000
+    # Both prices now labelled by their corpus column header:
+    assert nach.attributes.get("Giá buổi lẻ") == 199_000
+    assert nach.attributes.get("Giá Combo 10 buổi") == 1_199_000
+
+
 def test_parse_table_chunks_quoted_field_with_commas() -> None:
     """A quoted CSV cell containing commas stays ONE column (RFC-4180).
 
