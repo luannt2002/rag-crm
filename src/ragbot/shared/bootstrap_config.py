@@ -122,6 +122,12 @@ _ALLOWED_KEYS: frozenset[str] = frozenset(
         # is OFF so existing ingest stays byte-identical; flipped in Phase 5
         # after re-ingest validation pass.
         "table_csv_emit_header_footer_chunks_enabled",
+        # 260620 — per-key Jina embedding TPM limiter, config-driven so the
+        # leader scales free→pro (or down) without a deploy. Read by
+        # build_embedder → JinaEmbedder(tpm_per_key=, tpm_safety_fraction=).
+        # Defaults: DEFAULT_JINA_EMBEDDING_TPM_LIMIT (100k) / _SAFETY_FRACTION (0.9).
+        "jina_embedding_tpm_per_key",
+        "jina_embedding_tpm_safety_fraction",
         # 260525-WHITELIST-COMPLETE — 9 keys that ``get_boot_config()`` was
         # already reading at runtime but the whitelist gate silently dropped
         # to constant defaults (zero-hardcode regression). Verified via grep

@@ -26,6 +26,10 @@ from ragbot.infrastructure.embedding.litellm_embedder import LiteLLMEmbedder
 from ragbot.infrastructure.embedding.zeroentropy_embedder import ZeroEntropyEmbedder
 from ragbot.shared.api_key_pool import ApiKeyPoolFactory
 from ragbot.shared.bootstrap_config import get_boot_config
+from ragbot.shared.constants import (
+    DEFAULT_JINA_EMBEDDING_TPM_LIMIT,
+    DEFAULT_JINA_EMBEDDING_TPM_SAFETY_FRACTION,
+)
 
 _REGISTRY: Final[dict[str, type[EmbeddingPort]]] = {
     "litellm": LiteLLMEmbedder,
@@ -98,6 +102,23 @@ def build_embedder(
         kwargs["model"] = model
     if ledger is not None:
         kwargs["ledger"] = ledger
+    # Config-driven per-key Jina TPM (leader scales free→pro without deploy).
+    # Only JinaEmbedder's ctor accepts these; the sig filter below drops them
+    # for providers that don't (LiteLLM / ZeroEntropy / bkai). get_boot_config
+    # returns the constant default when no system_config row is set.
+    if "tpm_per_key" in sig:
+        try:
+            kwargs["tpm_per_key"] = int(get_boot_config(
+                "jina_embedding_tpm_per_key", DEFAULT_JINA_EMBEDDING_TPM_LIMIT))
+        except (ValueError, TypeError):
+            kwargs["tpm_per_key"] = DEFAULT_JINA_EMBEDDING_TPM_LIMIT
+    if "tpm_safety_fraction" in sig:
+        try:
+            kwargs["tpm_safety_fraction"] = float(get_boot_config(
+                "jina_embedding_tpm_safety_fraction",
+                DEFAULT_JINA_EMBEDDING_TPM_SAFETY_FRACTION))
+        except (ValueError, TypeError):
+            kwargs["tpm_safety_fraction"] = DEFAULT_JINA_EMBEDDING_TPM_SAFETY_FRACTION
     return cls(**{k: v for k, v in kwargs.items() if k in sig})  # type: ignore[arg-type]
 
 
