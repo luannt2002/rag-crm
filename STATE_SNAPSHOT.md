@@ -39,8 +39,11 @@
 - Fix: pure `_decide_ingest_state(total, embedded, null_non_parent, min_leaf_coverage)` — serve (`active`) khi leaf-coverage ≥ floor (config `ingest_min_leaf_embed_coverage`, default **0.8**); null leaf giữ BM25. Chỉ doc thật-sự-hỏng fail. 8 test (1/500→serve, 26/32→serve, 50/100→fail, boundary). 245 ingest test pass.
 - **Validated live**: restart + re-ingest xe-1 (was failed) → `active` 514 chunks null_leaf=0 SẠCH (per-key limiter giữ). **Cả 3 bot null_leaf=0 + serve.** xe-3 DRAFT đang finalize (worker nền).
 
-### Còn lại (phiên fresh, scope rõ — KHÔNG rush)
-- **q12** entity-naming-at-ingest (context "triệt lông" từ chunk_context/header → "Triệt lông Nách") + cần bypass/quota để test.
+### ✅ Config-driven per-key Jina TPM (`3eafbc7`)
+- `build_embedder` đọc `jina_embedding_tpm_per_key` / `_safety_fraction` từ `system_config` (get_boot_config, allowlisted) → JinaEmbedder ctor. No row → default 100k×0.9=90k. Leader set qua `PUT /admin/config` → restart áp dụng (free 100k giờ, pro lớn hơn — không deploy). Sig-filter drop kwargs cho embedder không nhận. 5 test (default/override/pro/no-leak/bad-value-fallback).
+
+### Còn lại = TRULY next-session (blocked / big / separate-build — đã hết phần SAFE)
+- **q12** entity-naming-at-ingest (context "triệt lông" từ chunk_context/header → "Triệt lông Nách") — **BLOCKED**: cần bypass/quota để test (guardrail chặn re-enable đúng).
 - **Phase-2 key-API** (reconcile `ai_keys`/`api_keys`). **L1 full embedding** (ICC/MRE cần embed sentence/coref). Config-driven limit. xe-3 finish (worker/recovery tự xử). KG=0 dormant.
 - `bypass_token_check` hiện OFF (production-đúng) — bật lại CHỈ khi cần test, qua user-authorize.
 
