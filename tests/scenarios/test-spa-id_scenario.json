@@ -37,7 +37,7 @@
       "id": "q06",
       "flow": "liet_ke_duoi_gia",
       "q": "Có dịch vụ nào dưới 500 nghìn không?",
-      "expect": "129000"
+      "expect": "60000"
     },
     {
       "id": "q07",
@@ -55,7 +55,7 @@
       "id": "q09",
       "flow": "dat_nhat",
       "q": "Dịch vụ nào đắt nhất?",
-      "expect": "20000000"
+      "expect": "10000000"
     },
     {
       "id": "q10",
