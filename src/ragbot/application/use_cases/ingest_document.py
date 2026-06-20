@@ -5,8 +5,9 @@ Ref: PLAN_08 §ingest_document.py.
 
 from __future__ import annotations
 
+from dataclasses import replace
 from typing import TYPE_CHECKING
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import structlog
 from slugify import slugify
@@ -59,19 +60,31 @@ class IngestDocumentUseCase:
             source_url=str(cmd.source_url),
             corpus_version=0,
         )
-        if await self._idem.is_duplicate(idem_key):
+        tool_name = slugify(cmd.document_name)[:255]
+
+        # Natural-key identity: the (tenant, bot, tool_name) row owns the
+        # document, not the surrogate UUID. A surviving row — archived after a
+        # canonical DELETE, or a failed DRAFT — means the caller wants to
+        # re-ingest THIS logical doc. The surviving row is authoritative over
+        # the 24h source_url Redis key (registered at enqueue, never reconciled
+        # with the job outcome), so we honour the fast-path double-POST dedup
+        # ONLY when no row survives (a genuine first ingest before the row is
+        # created). Otherwise we fall through and reactivate it in place.
+        existing = await self._docs.get_by_tool_name(
+            cmd.record_bot_id, tool_name, record_tenant_id=cmd.record_tenant_id,
+        )
+        if existing is None and await self._idem.is_duplicate(idem_key):
             prior = await self._idem.get_prior_result_ref(idem_key)
             if prior:
                 logger.info("ingest_document.idempotency_hit", key=idem_key)
                 return IngestAcceptedDTO(
-                    job_id=JobId(__import__("uuid").UUID(prior)),
-                    tool_name=slugify(cmd.document_name)[:255],
+                    job_id=JobId(UUID(prior)),
+                    tool_name=tool_name,
                     status="queued",
                     trace_id=cmd.trace_id,
                 )
 
         job_id = JobId(uuid4())
-        tool_name = slugify(cmd.document_name)[:255]
 
         uow_call = self._uow_factory  # type: ignore[assignment]
         async with uow_call() as uow:  # type: ignore[operator]
@@ -89,6 +102,12 @@ class IngestDocumentUseCase:
                 acl=(),
                 created_at=self._clock.now(),
             )
+            if existing is not None:
+                # Reuse the surviving row's PK so save() UPDATEs (reactivates)
+                # in place instead of INSERTing a colliding (tenant, bot,
+                # tool_name) row → uq_doc_tool. Fixes re-ingest after a
+                # canonical DELETE (archived row) and after a failed DRAFT.
+                doc = replace(doc, id=existing.id)
             await self._docs.save(
                 doc,
                 record_tenant_id=cmd.record_tenant_id,
