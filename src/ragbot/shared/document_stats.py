@@ -24,8 +24,19 @@ import unicodedata
 from dataclasses import dataclass, field
 from typing import Any
 
-from ragbot.shared.constants import DEFAULT_PRICE_BUCKETS_VND, DEFAULT_PRICE_MIN_VND
+from ragbot.shared.constants import (
+    DEFAULT_PRICE_BUCKETS_VND,
+    DEFAULT_PRICE_MIN_VND,
+    DEFAULT_STATS_ATTR_MAX_CHARS,
+    DEFAULT_STATS_ATTR_MAX_WORDS,
+)
 from ragbot.shared.number_format import parse_money_vn as _canonical_parse_money
+
+# Bullet/list-marker leads. A first cell starting with one of these is a prose
+# DESCRIPTION line ("- Giúp nâng cơ, làm săn chắc da …"), not a catalog entity —
+# it merely contains a comma so the row-splitter mistakes it for a table row.
+# Domain-neutral: markdown/plain bullet syntax, no corpus literal.
+_STATS_BULLET_LEADS: frozenset[str] = frozenset({"-", "•", "*", "–", "—", "●", "·", "▪", "+"})
 
 # ---------------------------------------------------------------------------
 # Money-format regex patterns — Vietnamese currency conventions.
@@ -243,7 +254,31 @@ def _extract_entity_from_row(
             label = header[idx] if idx < len(header) else f"col_{idx}"
             attributes[label] = col
 
-    if name is None and price_primary is None:
+    # Reject NON-CATALOG rows: a prose/description/FAQ line that merely contains a
+    # delimiter is not a stats entity. Without this guard the row-splitter floods
+    # the stats index with noise — bullet descriptions ("- Giúp nâng cơ …"), long
+    # FAQ-answer sentences, and name-less stray-number cells — which then pollutes
+    # price/list/entity retrieval (a "dưới 500k" query surfaces "Hiện tại"/"- Giúp"
+    # instead of real services). A real catalog entity has a SHORT field-like
+    # label. Domain-neutral: bullet syntax + the shared field-like word/char caps,
+    # no corpus/brand literal.
+    if name is not None:
+        _lead = name.lstrip()[:1]
+        _label = name.lstrip("-•*–—●·▪+ \t").strip()
+        if (
+            not _label
+            or _lead in _STATS_BULLET_LEADS
+            or len(_label) > DEFAULT_STATS_ATTR_MAX_CHARS
+            or len(_label.split()) > DEFAULT_STATS_ATTR_MAX_WORDS
+        ):
+            name = None
+        else:
+            name = _label
+
+    # A row with no field-like catalog name is not an entity — its number (if any)
+    # is a prose figure, not a labelled catalog price. Previously kept (name="")
+    # which surfaced empty-named price rows as noise.
+    if name is None:
         return None
 
     return ParsedEntity(

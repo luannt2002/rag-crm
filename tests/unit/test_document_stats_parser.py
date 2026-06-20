@@ -131,6 +131,33 @@ def test_parse_table_chunks_basic_csv() -> None:
     assert by_name["Service B"].price_primary == 1_499_000
 
 
+def test_parse_table_chunks_drops_noise_rows() -> None:
+    """2026-06-20 stats-noise fix: prose/bullet/FAQ/name-less rows that merely
+    contain a comma must NOT become catalog entities. They flooded the stats
+    index ("- Giúp nâng cơ…", "Hiện tại dịch vụ…", name-less price cells) and
+    polluted price/list retrieval (spa "dưới 500k" surfaced noise, not services).
+    Real short-label services with prices must still survive.
+    """
+    content = (
+        "STT,Tên dịch vụ,Giá\n"
+        "1,Laser Carbon,1200000\n"               # real → keep
+        "2,Nano kim cương,2500000\n"             # real (3 words) → keep
+        "- Giúp nâng cơ, làm săn chắc da, đều màu sáng,199000\n"  # bullet desc → drop
+        "Hiện tại dịch vụ chăm sóc da chuyên sâu tại spa được thực hiện chuẩn y khoa giúp làm sạch sâu,700000\n"  # long FAQ prose → drop
+        ",,8000000\n"                            # name-less price cell → drop
+    )
+    entities = parse_table_chunks([_make_chunk(content)])
+    names = {e.name for e in entities}
+    assert "Laser Carbon" in names
+    assert "Nano kim cương" in names
+    # Noise must be gone:
+    assert not any(n.lstrip().startswith("-") for n in names), f"bullet leaked: {names}"
+    assert not any("chuẩn y khoa" in n for n in names), f"FAQ prose leaked: {names}"
+    assert "" not in names, f"name-less row leaked: {names}"
+    # Net: only the 2 real services survive.
+    assert len(entities) == 2, f"expected 2 real entities, got {names}"
+
+
 def test_parse_table_chunks_quoted_field_with_commas() -> None:
     """A quoted CSV cell containing commas stays ONE column (RFC-4180).
 
