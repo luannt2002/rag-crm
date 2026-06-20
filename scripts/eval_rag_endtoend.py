@@ -192,6 +192,16 @@ class BotScore:
         hallu = [r for r in traps if r.verdict == "HALLU_BREACH"]
         retr_miss = [r for r in answerable if r.verdict == "RETRIEVAL_MISS"]
         llm_miss = [r for r in answerable if r.verdict == "LLM_MISS"]
+        # Third bucket: a coverage-fail whose retrieved chunks are UNKNOWN
+        # (``request_chunk_refs`` not written) — e.g. the stats-index route
+        # returns a synthetic chunk with no real chunk FK, so chunk_hit is None.
+        # Previously these fell out of BOTH retr_miss and llm_miss → the summary
+        # showed retr_miss=0 while COVERAGE<1 (an invisible miss that misled
+        # layer attribution). Surface it so the three buckets + covered sum to
+        # the answerable set.
+        unknown_miss = [
+            r for r in answerable if r.verdict in ("WRONG", "REFUSE_GAP")
+        ]
         lats = sorted(r.latency_ms for r in self.results if r.latency_ms)
         p95 = lats[min(int(len(lats) * 0.95), len(lats) - 1)] if lats else 0
         n_ans = len(answerable)
@@ -204,6 +214,7 @@ class BotScore:
             "hallu_rate": round(len(hallu) / len(traps), 3) if traps else 0.0,
             "retrieval_miss": len(retr_miss),
             "llm_miss": len(llm_miss),
+            "unknown_miss": len(unknown_miss),
             "p95_ms": p95,
             "cost_usd": round(sum(r.cost_usd for r in self.results), 5),
         }
@@ -217,8 +228,8 @@ def render_md(scores: list[BotScore]) -> str:
         "= a retrieved chunk⊇expect · HALLU = trap answered (sacred=0). "
         "RETRIEVAL_MISS vs LLM_MISS pinpoints the failing layer.",
         "",
-        "| bot | Q | answerable | COVERAGE | CHUNK_RECALL | HALLU | retr_miss | llm_miss | p95ms | cost$ |",
-        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+        "| bot | Q | answerable | COVERAGE | CHUNK_RECALL | HALLU | retr_miss | llm_miss | unk_miss | p95ms | cost$ |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
     ]
     agg = {"cov": [], "rec": []}
     for s in scores:
@@ -228,8 +239,8 @@ def render_md(scores: list[BotScore]) -> str:
         lines.append(
             f"| {m['bot_id']} | {m['n_questions']} | {m['n_answerable']} | "
             f"{m['coverage']:.2f} | {m['chunk_recall']:.2f} | {m['hallu_rate']:.2f} "
-            f"| {m['retrieval_miss']} | {m['llm_miss']} | {m['p95_ms']} | "
-            f"{m['cost_usd']:.4f} |"
+            f"| {m['retrieval_miss']} | {m['llm_miss']} | {m['unknown_miss']} | "
+            f"{m['p95_ms']} | {m['cost_usd']:.4f} |"
         )
     if agg["cov"]:
         lines.append(
