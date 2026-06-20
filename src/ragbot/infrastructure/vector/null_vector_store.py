@@ -67,6 +67,20 @@ class NullVectorStore:
         )
         return 0
 
+    async def delete_by_tool_name(
+        self,
+        record_bot_id: UUID,
+        tool_name: str,
+        **_: Any,
+    ) -> int:
+        """No-op delete by tool_name (port parity with PgVectorStore)."""
+        logger.debug(
+            "null_vector_store_delete_by_tool_name_bypass",
+            record_bot_id=str(record_bot_id),
+            tool_name=tool_name,
+        )
+        return 0
+
     async def search(
         self,
         *,

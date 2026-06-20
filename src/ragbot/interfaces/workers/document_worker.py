@@ -50,6 +50,7 @@ from ragbot.infrastructure.observability.metrics import (
 )
 from ragbot.infrastructure.parser.registry import detect_parser
 from ragbot.shared.constants import (
+    DEFAULT_HTTP_TIMEOUT_S,
     DEFAULT_NARRATE_PROVIDER,
     DEFAULT_NARRATE_THEN_EMBED_ENABLED,
     SUBJECT_DOCUMENT_UPLOADED,
@@ -320,7 +321,13 @@ async def _handle_document_uploaded_inner(payload: dict[str, Any], container: Co
 
                 parser = detect_parser(mime_type or "", _ext)
                 if parser is not None:
-                    async with httpx.AsyncClient(timeout=30.0) as cli:
+                    # follow_redirects: Google Docs ``export?format=docx`` returns
+                    # a 307 to a googleusercontent.com host; without following it
+                    # raise_for_status() turns the redirect into an HTTPStatusError
+                    # and the ingest dies (doc stuck DRAFT, 0 chunks).
+                    async with httpx.AsyncClient(
+                        timeout=DEFAULT_HTTP_TIMEOUT_S, follow_redirects=True,
+                    ) as cli:
                         _resp = await cli.get(source_url)
                         _resp.raise_for_status()
                         _raw = _resp.content

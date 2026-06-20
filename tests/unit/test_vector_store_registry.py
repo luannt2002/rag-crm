@@ -125,3 +125,23 @@ def test_null_vector_store_tolerates_any_kwargs() -> None:
     """Constructor accepts arbitrary kwargs (mirrors registry kwargs filter)."""
     store = NullVectorStore(session_factory="anything", dimension=9999, foo="bar")
     assert isinstance(store, NullVectorStore)
+
+
+def test_concrete_stores_implement_every_port_method() -> None:
+    """Regression 2026-06-20: PgVectorStore was MISSING ``delete_by_tool_name``
+    (declared on ``VectorStorePort``) → the canonical ``DELETE /documents``
+    use-case raised ``AttributeError`` → HTTP 500, and the follow-up re-create
+    then hit a UniqueViolation. Pin that BOTH concrete stores implement every
+    public Protocol method so a port/impl drift can't 500 the canonical ingest
+    path again.
+    """
+    # The methods the pipeline / use-cases actually CALL — these MUST exist on
+    # every concrete store (the declared-but-uncalled port methods like
+    # ``health_check`` are harmless port-bloat and intentionally not asserted).
+    called_methods = (
+        "upsert_chunks", "delete_by_document", "delete_by_tool_name",
+        "hybrid_search",
+    )
+    for impl in (PgVectorStore, NullVectorStore):
+        missing = [m for m in called_methods if not hasattr(impl, m)]
+        assert not missing, f"{impl.__name__} missing called port methods: {missing}"

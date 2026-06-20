@@ -182,6 +182,37 @@ class PgVectorStore:
             await session.commit()
             return result.rowcount or 0
 
+    async def delete_by_tool_name(
+        self,
+        record_bot_id: UUID,
+        tool_name: str,
+        *,
+        record_tenant_id: UUID | None = None,
+    ) -> int:
+        """Delete every chunk of a bot's documents matching ``tool_name``.
+
+        Required by ``VectorStorePort`` and called from the canonical
+        ``DELETE /documents`` use-case. ``tool_name`` lives on ``documents``,
+        so we delete chunks whose ``record_document_id`` resolves to a matching
+        document — bot-scoped on both sides. Tenant-scoped via
+        ``session_with_tenant`` (RLS). Returns the number of chunks deleted.
+        """
+        async with session_with_tenant(
+            self._sf, record_tenant_id=record_tenant_id,
+        ) as session:
+            result = await session.execute(
+                text(
+                    "DELETE FROM document_chunks "
+                    "WHERE record_bot_id = :bot_id "
+                    "AND record_document_id IN ("
+                    "  SELECT id FROM documents "
+                    "  WHERE record_bot_id = :bot_id AND tool_name = :tool_name)"
+                ),
+                {"bot_id": record_bot_id, "tool_name": tool_name},
+            )
+            await session.commit()
+            return result.rowcount or 0
+
     def _doc_filter_sql(
         self,
         record_bot_id: UUID,
