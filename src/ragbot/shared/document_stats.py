@@ -38,6 +38,23 @@ from ragbot.shared.number_format import parse_money_vn as _canonical_parse_money
 # Domain-neutral: markdown/plain bullet syntax, no corpus literal.
 _STATS_BULLET_LEADS: frozenset[str] = frozenset({"-", "•", "*", "–", "—", "●", "·", "▪", "+"})
 
+# A real catalog entity name never LEADS with a "<bareword>: " metadata key. A
+# search-synonym / key-value source row (xe-3 "question: <40 variant spellings>",
+# "date1: 26", "quantity: 29") comma-splits to a short col[0] that passes the
+# field-like guard and floods the stats index with synonym/metadata noise (49% of
+# the xe entities). Reject on the prefix SHAPE — domain-neutral, no header literal.
+# A multi-word name with a LATER colon ("Giá Combo 10 buổi: …") is not a metadata
+# lead (the colon does not immediately follow the first word) and survives.
+_STATS_METADATA_LEAD_RE: re.Pattern[str] = re.compile(r"^\w+:\s")
+
+# An image / link column mis-picked as the entity name (Google-Drive URL cells in
+# the warehouse export). Keyed on URL/link SHAPE — scheme, domain/path, or the
+# image-dimension param — never a brand. Domain-neutral.
+_STATS_URL_NOISE_RE: re.Pattern[str] = re.compile(
+    r"https?://|[\w-]+\.(?:com|net|org|vn|io|co)/|=w\d+-h\d+|auditcontext",
+    re.IGNORECASE,
+)
+
 # ---------------------------------------------------------------------------
 # Money-format regex patterns — Vietnamese currency conventions.
 #
@@ -280,6 +297,8 @@ def _extract_entity_from_row(
             or _lead in _STATS_BULLET_LEADS
             or len(_label) > DEFAULT_STATS_ATTR_MAX_CHARS
             or len(_label.split()) > DEFAULT_STATS_ATTR_MAX_WORDS
+            or _STATS_METADATA_LEAD_RE.match(_label)
+            or _STATS_URL_NOISE_RE.search(_label)
         ):
             name = None
         else:

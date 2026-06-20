@@ -158,6 +158,62 @@ def test_parse_table_chunks_drops_noise_rows() -> None:
     assert len(entities) == 2, f"expected 2 real entities, got {names}"
 
 
+def test_parse_table_chunks_drops_key_value_metadata_names() -> None:
+    """2026-06-20 xe stats-noise fix: a synonym/metadata row whose first cell is
+    a "<bareword>: value" lead must NOT become a catalog entity.
+
+    xe-3 is a search-synonym table ("question: 155/80R13, <40 variant spellings>",
+    "date1: 26", "quantity: 29"). csv comma-split made col[0]="question: 155/80R13"
+    — short enough to pass the field-like guard — so 49% of the xe stats index was
+    synonym/metadata noise (1027 / 2112). A real catalog name never leads with
+    "<word>: ". Domain-neutral: keyed on the "<bareword>: " prefix SHAPE, no corpus
+    header / brand literal. A multi-word name with a LATER colon
+    ("Giá Combo 10 buổi: …") is NOT a metadata lead and must survive.
+    """
+    content = (
+        "question: 155/80R13, 155 80 13, 155 80R13, 155/80/13\n"  # synonym → drop
+        "date1: 26, foo, bar\n"                                   # metadata → drop
+        "quantity: 29, baz, qux\n"                                # metadata → drop
+        "Lốp xe NEOTERRA 195/65R16 92H NEOTOUR, 195/65R16, 972000\n"  # real → keep
+        "108/106T CITYTRAXX H/T, 215/60R16, 1200000\n"           # real → keep
+    )
+    entities = parse_table_chunks([_make_chunk(content)])
+    names = {e.name for e in entities}
+    # Metadata-lead noise gone:
+    assert not any(
+        re.match(r"^\w+:\s", n) for n in names
+    ), f"key-value metadata name leaked: {names}"
+    # Real products survive (one carries CITYTRAXX so the 'list types' answer
+    # can surface it):
+    assert any("NEOTERRA" in n for n in names), f"real product dropped: {names}"
+    assert any("CITYTRAXX" in n for n in names), f"CITYTRAXX product dropped: {names}"
+    assert len(entities) == 2, f"expected 2 real entities, got {names}"
+
+
+def test_parse_table_chunks_drops_url_valued_names() -> None:
+    """2026-06-20 xe stats-noise fix: an image/link column mis-picked as the
+    entity name (Google-Drive URL) must be rejected.
+
+    The xe warehouse CSV carries image-URL cells ("h3.google.com/u/0/d/…
+    =w1227-h892?auditContext=forDisplay"); when one landed in col[0] it became a
+    100-row noise set of URL "entities". Domain-neutral: keyed on URL/link SHAPE
+    (scheme, domain/path, image-dimension param), no brand literal.
+    """
+    content = (
+        "https://drive.google.com/drive/folders/abc123, 26, 29\n"       # URL → drop
+        "h3.google.com/u/0/d/1zx=w1227-h892?auditContext=forDisplay, 1, 2\n"  # drop
+        "Lốp xe ROVELO 165/70R13, 165/70R13, 850000\n"                  # real → keep
+    )
+    entities = parse_table_chunks([_make_chunk(content)])
+    names = {e.name for e in entities}
+    assert not any(
+        ("google.com" in n) or n.lower().startswith("http") or "auditcontext" in n.lower()
+        for n in names
+    ), f"URL-valued name leaked: {names}"
+    assert any("ROVELO" in n for n in names), f"real product dropped: {names}"
+    assert len(entities) == 1, f"expected 1 real entity, got {names}"
+
+
 def test_price_columns_surfaced_under_header_labels() -> None:
     """q12 fix (2026-06-20): a multi-price table (buổi lẻ + combo) must surface
     BOTH prices under their COLUMN HEADERS in attributes, so a 'combo 10 buổi'
