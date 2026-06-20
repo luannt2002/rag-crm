@@ -279,6 +279,24 @@ class TestSelectStrategyFeatureFlag:
         assert strategy in {"hdt", "semantic", "recursive", "hybrid", "proposition", "table_csv"}
         assert 0.0 <= conf <= 1.0
 
+    def test_csv_fastpath_wins_over_ekimetrics_when_flag_on(self):
+        """2026-06-20 placement fix: the ekimetrics path now runs AFTER the CSV
+        + HDT structural fast-paths. A CSV catalog must keep its table strategy
+        regardless of the flag — the earlier placement (ekimetrics first) would
+        have let the selector override it and break the spa stats / q12 price
+        path."""
+        csv = (
+            "STT,Tên dịch vụ,Giá\n1,Laser Carbon,1200000\n"
+            "2,Nano kim cương,2500000\n3,IPL,800000\n4,Peel,700000\n"
+        )
+        profile = analyze_document(csv)
+        on, _ = select_strategy(profile, ekimetrics_enabled=True, text=csv)
+        off, _ = select_strategy(profile, ekimetrics_enabled=False, text=csv)
+        assert on in {"table_csv", "table_dual_index"}, (
+            f"CSV fast-path must win over ekimetrics, got {on!r}"
+        )
+        assert on == off, "ekimetrics flag must not change a CSV doc's strategy"
+
 
 # ── Integration smoke: 10 sample docs ────────────────────────────────────
 

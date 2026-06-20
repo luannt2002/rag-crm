@@ -385,26 +385,6 @@ def select_strategy(
         callers that don't pass a policy.
     @return: (strategy_name, confidence) where confidence in [0, 1]
     """
-    # Feature-flagged Ekimetrics 5-metric rule-based path. Default OFF
-    # preserves the weighted-score behaviour; flipping the flag enables
-    # the LREC 2026 rule-based selector (arXiv 2603.25333).
-    if ekimetrics_enabled and text:
-        # Local import — break import cycle and keep weighted-score
-        # path zero-cost when the flag is OFF (the dataclass + regex
-        # pre-compile only load when the flag is actually flipped on).
-        from ragbot.shared.intrinsic_metrics import (
-            compute_intrinsic_metrics,
-            ekimetrics_select,
-        )
-
-        metrics = compute_intrinsic_metrics(text)
-        strategy, confidence, _reason = ekimetrics_select(
-            profile=profile,
-            metrics=metrics,
-            thresholds=ekimetrics_thresholds,
-        )
-        return (strategy, round(confidence, 2))
-
     # Derive shared features from profile (see DEFAULT_STRATEGY_WEIGHTS).
     total_headings = profile["total_headings"]
     total_words = profile.get("total_words", 0)
@@ -431,6 +411,25 @@ def select_strategy(
     # was letting recursive win on docs where avg_text_length was small.
     if (total_headings + vn_markers) >= DEFAULT_HIERARCHICAL_PROMOTE_MIN_MATCHES:
         return ("hdt", 1.0)
+
+    # Ekimetrics 5-metric selector (LREC 2026, arXiv 2603.25333) — runs ONLY for
+    # AMBIGUOUS PROSE docs, AFTER the structural certainties above (CSV → table,
+    # legal/admin → HDT) so it can NEVER override a doc whose shape is already
+    # known (a naive placement before the fast-paths would break the spa CSV
+    # stats path + thong-tu HDT). For ambiguous prose it replaces the weighted
+    # scorer with the paper's intrinsic-metric rules. Flag-gated
+    # (``ekimetrics_5metric_selector_enabled``, default OFF); caller resolves the
+    # flag + supplies raw ``text``.
+    if ekimetrics_enabled and text:
+        from ragbot.shared.intrinsic_metrics import (  # noqa: PLC0415
+            compute_intrinsic_metrics,
+            ekimetrics_select,
+        )
+        metrics = compute_intrinsic_metrics(text)
+        strategy, confidence, _reason = ekimetrics_select(
+            profile=profile, metrics=metrics, thresholds=ekimetrics_thresholds,
+        )
+        return (strategy, round(confidence, 2))
 
     avg_norm = min(avg_len / DEFAULT_SEMANTIC_AVG_LEN_NORM, 1.0)
 

@@ -483,6 +483,19 @@ class _StageChunkMixin:
                 if self._cfg is not None
                 else DEFAULT_ADAPCHUNK_BLOCK_PIPELINE_ENABLED
             )
+            # Ekimetrics 5-metric selector flag (LREC 2026, arXiv 2603.25333) —
+            # resolved once for both the block-pipeline + legacy paths. Default
+            # OFF preserves the weighted scorer. When ON, select_strategy runs
+            # the intrinsic-metric selector for AMBIGUOUS PROSE docs only (it
+            # sits AFTER the CSV→table + legal→HDT structural fast-paths, so
+            # those bots are unaffected).
+            ekimetrics_enabled = (
+                await self._cfg.get_bool(
+                    "ekimetrics_5metric_selector_enabled", False,
+                )
+                if self._cfg is not None
+                else False
+            )
 
             if block_pipeline_enabled:
                 # ── NEW AdapChunk-compliant Block pipeline ──
@@ -523,6 +536,7 @@ class _StageChunkMixin:
                 # (table_csv vs table_dual_index).
                 _chunking_strategy, _chunking_confidence = select_strategy(
                     _doc_profile, table_strategy=_table_strategy,
+                    ekimetrics_enabled=ekimetrics_enabled, text=content,
                 )
 
                 # Layer 5: cross-check overrides. ``apply_cross_check``
@@ -567,6 +581,7 @@ class _StageChunkMixin:
                 _doc_profile = analyze_document(content)
                 _chunking_strategy, _chunking_confidence = select_strategy(
                     _doc_profile, table_strategy=_table_strategy,
+                    ekimetrics_enabled=ekimetrics_enabled, text=content,
                 )
 
             # Phase A — owner/operator forced strategy wins over auto-detect
