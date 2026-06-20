@@ -42,8 +42,11 @@
 ### ✅ Config-driven per-key Jina TPM (`3eafbc7`)
 - `build_embedder` đọc `jina_embedding_tpm_per_key` / `_safety_fraction` từ `system_config` (get_boot_config, allowlisted) → JinaEmbedder ctor. No row → default 100k×0.9=90k. Leader set qua `PUT /admin/config` → restart áp dụng (free 100k giờ, pro lớn hơn — không deploy). Sig-filter drop kwargs cho embedder không nhận. 5 test (default/override/pro/no-leak/bad-value-fallback).
 
-### Còn lại = TRULY next-session (blocked / big / separate-build — đã hết phần SAFE)
-- **q12** entity-naming-at-ingest (context "triệt lông" từ chunk_context/header → "Triệt lông Nách") — **BLOCKED**: cần bypass/quota để test (guardrail chặn re-enable đúng).
+### ✅ q12 FIXED (`4d13dcf`) — spa COVERAGE 0.80→0.90
+- (Unblocked sau khi ops nạp credit OpenAI; Jina keys verified healthy.) Gốc rễ KHÔNG phải entity-naming: (1) **DATA** — synthetic chunk chỉ surface `price_primary` (199000 buổi lẻ); combo 1199000 (`price_secondary`) + header cột bị drop ở extraction. Fix: `_extract_entity_from_row` lưu mỗi giá dưới **header cột** (`Giá Combo 10 buổi: 1199000`, domain-neutral). (2) **RETRIEVAL** — forward keyword (entity CHỨA keyword) miss entity granular là 1 TỪ trong query (entity "Nách" vs query "Triệt lông nách combo"). Fix: `query_by_name_keyword` thêm **reverse/token fallback** (entity là substring của query, min-len 4 để "Mép"/"sâu" không over-match) — chỉ fire khi forward=0 → không regress. **Validated live: q12→1.199.000 ✅, full spa 0.90, ZERO regression. 213 stats/retrieval test pass.**
+- q01 còn "miss" = LLM liệt kê ví dụ từ 137 dịch vụ (hợp lý, không phải bug).
+
+### Còn lại = TRULY next-session (big / separate-build)
 - **Phase-2 key-API** (reconcile `ai_keys`/`api_keys`). **L1 full embedding** (ICC/MRE cần embed sentence/coref). Config-driven limit. xe-3 finish (worker/recovery tự xử). KG=0 dormant.
 - `bypass_token_check` hiện OFF (production-đúng) — bật lại CHỈ khi cần test, qua user-authorize.
 
