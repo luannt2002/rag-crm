@@ -126,6 +126,8 @@ class JinaEmbedder(EmbeddingPort):
         late_chunking: bool = DEFAULT_JINA_EMBEDDING_LATE_CHUNKING,
         window_tokens: int = DEFAULT_JINA_LATE_CHUNK_WINDOW_TOKENS,
         ledger: TokenLedgerPort | None = None,
+        tpm_per_key: int = DEFAULT_JINA_EMBEDDING_TPM_LIMIT,
+        tpm_safety_fraction: float = DEFAULT_JINA_EMBEDDING_TPM_SAFETY_FRACTION,
     ) -> None:
         self._model = model
         self._api_url = api_url
@@ -146,12 +148,21 @@ class JinaEmbedder(EmbeddingPort):
         n_keys = self._pool.key_count if self._pool is not None else 1
         per_key = _per_key_concurrency(self._PROVIDER_CODE, n_keys)
         total_concurrent = sum(per_key)
-        self._tpm_limiter = TpmRateLimiter(
-            int(DEFAULT_JINA_EMBEDDING_TPM_LIMIT * n_keys * DEFAULT_JINA_EMBEDDING_TPM_SAFETY_FRACTION)
+        # Per-key TPM ceiling — each API key gets its OWN limiter bucket sized to
+        # the provider's per-key quota × safety. Round-robin (ApiKeyPool) spreads
+        # requests across keys; the per-key limiter then guarantees no single key
+        # is paced past its quota even under uneven bursts. N keys → N× headroom,
+        # enforced INDEPENDENTLY. A single global bucket cannot make that
+        # guarantee (it let one key overrun while another idled → 429).
+        self._tpm_per_key_effective = max(
+            1, int(int(tpm_per_key) * float(tpm_safety_fraction)),
         )
+        self._tpm_limiters: dict[str, TpmRateLimiter] = {}
+        self._tpm_limiters_lock = asyncio.Lock()
         logger.info(
             "jina_embedder_concurrency",
             n_keys=n_keys, per_key=per_key, total_concurrent=total_concurrent,
+            tpm_per_key_effective=self._tpm_per_key_effective,
         )
         self._client: httpx.AsyncClient | None = None
         self._client_lock = asyncio.Lock()
@@ -180,6 +191,24 @@ class JinaEmbedder(EmbeddingPort):
             or os.environ.get("JINA_API_KEY")
         )
         return legacy, None
+
+    async def _limiter_for(self, key: str) -> TpmRateLimiter:
+        """Return the TPM limiter bucket for ``key`` (one per key, lazily built).
+
+        Per-key buckets are the core guarantee: combined with the round-robin
+        pool, each key is paced under its own provider quota, so a burst can
+        never push a single key past its cap (the failure mode a single global
+        bucket allowed). Keys arrive from the round-robin pool, so the dict
+        grows to the active key-ring size and then stays stable.
+        """
+        lim = self._tpm_limiters.get(key)
+        if lim is None:
+            async with self._tpm_limiters_lock:
+                lim = self._tpm_limiters.get(key)
+                if lim is None:
+                    lim = TpmRateLimiter(self._tpm_per_key_effective)
+                    self._tpm_limiters[key] = lim
+        return lim
 
     def _is_query(self, spec: EmbeddingSpec | None) -> bool:
         task = getattr(spec, "task", None) if spec is not None else None
@@ -260,7 +289,7 @@ class JinaEmbedder(EmbeddingPort):
         # queues here instead of 429-storming. Estimate = total input chars over
         # the (conservative) chars/token ratio.
         est_tokens = sum(len(t) for t in inputs) // _CHARS_PER_TOKEN + 1
-        await self._tpm_limiter.acquire(model, est_tokens)
+        await (await self._limiter_for(key)).acquire(model, est_tokens)
 
         async def _call() -> list[list[float]]:
             body: dict[str, Any] = {
