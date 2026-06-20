@@ -13,7 +13,10 @@ import pytest
 from ragbot.infrastructure.parser.kreuzberg_markdown_parser import (
     KreuzbergMarkdownParser,
 )
-from ragbot.infrastructure.parser.registry import detect_parser
+from ragbot.infrastructure.parser.registry import (
+    detect_parser,
+    detect_parser_robust,
+)
 
 _DOCX_MIME = (
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
@@ -65,3 +68,29 @@ async def test_parse_emits_markdown_headings() -> None:
 async def test_parse_empty_raises_valueerror() -> None:
     with pytest.raises(ValueError):
         await KreuzbergMarkdownParser().parse(b"   ", file_name="t.html")
+
+
+def test_robust_detect_sniffs_pdf_with_generic_mime_and_no_ext() -> None:
+    """Headless-BE one-flow rule: a URL PDF arriving with a generic mime and NO
+    extension must still route to the structured parser via byte-sniff, not
+    fall silently to flat OCR."""
+    pdf = b"%PDF-1.7\n1 0 obj<<>>endobj\n"
+    # the plain detector has no (mime, ext) signal to match on
+    assert detect_parser("application/octet-stream", "") is None
+    # robust sniffs the %PDF magic and routes to the structured parser
+    parser = detect_parser_robust("application/octet-stream", "", pdf)
+    assert parser is not None
+    assert parser.get_provider_name() == "kreuzberg_markdown"
+
+
+def test_robust_detect_passthrough_when_mime_already_matches() -> None:
+    parser = detect_parser_robust("application/pdf", ".pdf", None)
+    assert parser is not None
+    assert parser.get_provider_name() == "kreuzberg_markdown"
+
+
+def test_robust_detect_none_when_no_content_to_sniff() -> None:
+    """No (mime, ext) match and nothing to sniff → None (no false routing;
+    caller may fall through to OCR)."""
+    assert detect_parser_robust("application/octet-stream", "", None) is None
+    assert detect_parser_robust("application/octet-stream", "", b"") is None

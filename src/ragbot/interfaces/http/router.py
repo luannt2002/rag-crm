@@ -25,7 +25,6 @@ from ragbot.interfaces.http.routes import (
     chat_stream,
     crm,
     documents,
-    documents_stream_upload,
     feedback,
     health,
     health_models,
@@ -54,11 +53,15 @@ router.include_router(chat_stream.router, prefix=BASE)
 # feedback.thumbs writes message_feedback (training-loop analytics).
 router.include_router(feedback.router, prefix=BASE)
 router.include_router(documents.router, prefix=BASE)
-# WB-2 P1-5 — streaming upload for >50MB binaries.  Bypasses the JSON
-# /documents/create body path; multipart form data is read chunk-by-chunk
-# and persisted to a temp file before worker hand-off (caps resident
-# memory at DEFAULT_UPLOAD_STREAM_CHUNK_SIZE regardless of body size).
-router.include_router(documents_stream_upload.router, prefix=BASE)
+# DISABLED 2026-06-19 — orphaned streaming-upload route: it XADDs to
+# ``document.upload_stream.v1`` which has NO consumer → 202 then silent
+# data-loss (verified: a 526KB PDF stuck un-ingested). Violates the headless-BE
+# rule "document ingest = ĐÚNG 1 API canonical POST /documents/create" (CLAUDE.md).
+# Route CODE kept (``documents_stream_upload.py``) for a future, properly-consumed
+# streaming path; only the registration is removed so the data-losing endpoint
+# is no longer served. Re-enable by re-adding the import + include_router AFTER a
+# consumer for the stream subject exists.
+# router.include_router(documents_stream_upload.router, prefix=BASE)
 router.include_router(jobs.router, prefix=BASE)
 router.include_router(sync.router, prefix=BASE)
 # CRM analytics read-layer — operator console over request_logs/request_steps.

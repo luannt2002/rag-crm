@@ -16,22 +16,21 @@ import asyncio
 import hashlib
 import signal
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID, uuid4
 
+import httpx
 import structlog
+from sqlalchemy import text as _sql_text
 
+from ragbot.application.services import google_link_service
 from ragbot.application.services.chunk_context_enricher import ChunkContextEnricher
 from ragbot.application.services.document_service import DocumentService
 from ragbot.application.services.narrate_service import NarrateService
 from ragbot.application.services.step_tracker import StepTracker
 from ragbot.application.services.system_config_service import SystemConfigService
 from ragbot.bootstrap import Container
-from ragbot.infrastructure.llm.llm_chunk_context_provider import (
-    LLMChunkContextProvider,
-)
-from ragbot.infrastructure.narrate.registry import build_narrate
 from ragbot.config.logging import (
     bind_request_context,
     clear_request_context,
@@ -41,16 +40,26 @@ from ragbot.config.logging import (
 )
 from ragbot.config.settings import get_settings
 from ragbot.domain.events.document_events import DocumentFailed, DocumentIngested
+from ragbot.infrastructure.llm.llm_chunk_context_provider import (
+    LLMChunkContextProvider,
+)
+from ragbot.infrastructure.narrate.registry import build_narrate
 from ragbot.infrastructure.observability.metrics import (
     document_ingest_duration_seconds,
     document_ingest_total,
 )
+from ragbot.infrastructure.parser.registry import detect_parser
 from ragbot.shared.constants import (
     DEFAULT_NARRATE_PROVIDER,
     DEFAULT_NARRATE_THEN_EMBED_ENABLED,
     SUBJECT_DOCUMENT_UPLOADED,
 )
-from ragbot.shared.errors import WorkspaceIdInvalid
+from ragbot.shared.errors import (
+    EmbeddingError,
+    ExternalServiceError,
+    IngestError,
+    WorkspaceIdInvalid,
+)
 from ragbot.shared.types import (
     BotId,
     CorpusVersion,
@@ -228,7 +237,6 @@ async def _handle_document_uploaded_inner(payload: dict[str, Any], container: Co
         parsed_blocks: list[Any] | None = None
         if document_id:
             try:
-                from sqlalchemy import text as _sql_text  # noqa: PLC0415
                 sf = container.session_factory()
                 async with sf() as session:
                     row = await session.execute(
@@ -286,10 +294,25 @@ async def _handle_document_uploaded_inner(payload: dict[str, Any], container: Co
             try:
                 if not _fetchable:
                     raise _LocalSourceNotRefetchable(source_url)
-                from ragbot.infrastructure.parser.registry import (  # noqa: PLC0415
-                    detect_parser,
-                )
-                import httpx  # noqa: PLC0415
+
+                # Google Docs/Sheets viewer URL (``.../edit?gid=N``) → direct
+                # export URL so the fetch receives structured txt/csv, not an
+                # HTML login page. Setting mime/name routes it to the csv/sheets
+                # parser instead of OCR — fixes the xe-3 retry-storm where the
+                # HTML viewer parsed to empty text and looped to DLQ.
+                _export_url = google_link_service.to_export_url(source_url)
+                if _export_url != source_url:
+                    source_url = _export_url
+                    if "format=csv" in _export_url:
+                        mime_type, _doc_name = "text/csv", (_doc_name or "sheet.csv")
+                    elif "format=docx" in _export_url:
+                        mime_type = (
+                            "application/vnd.openxmlformats-"
+                            "officedocument.wordprocessingml.document"
+                        )
+                        _doc_name = _doc_name or "doc.docx"
+                    else:
+                        mime_type, _doc_name = "text/plain", (_doc_name or "doc.txt")
 
                 _ext = ""
                 if _doc_name and "." in _doc_name:
@@ -530,7 +553,7 @@ async def _handle_document_uploaded_inner(payload: dict[str, Any], container: Co
         async with uow_factory() as uow:
             await uow.add_outbox(
                 DocumentFailed(
-                    occurred_at=datetime.now(tz=timezone.utc),
+                    occurred_at=datetime.now(tz=UTC),
                     record_tenant_id=tenant_id,
                     trace_id=trace_id,
                     workspace_id=workspace_slug,
@@ -554,10 +577,6 @@ async def _handle_document_uploaded_inner(payload: dict[str, Any], container: Co
         # and retries up to dead-letter. Terminal errors (ValueError /
         # TypeError / KeyError = malformed payload) stay swallowed —
         # retrying them just burns rate-limit budget.
-        from ragbot.shared.errors import (  # noqa: PLC0415
-            ExternalServiceError, EmbeddingError, IngestError,
-        )
-        import httpx  # noqa: PLC0415
         if isinstance(
             exc,
             (
@@ -580,7 +599,7 @@ async def main() -> None:
 
     stop = asyncio.Event()
 
-    async def _handler(event: Any) -> None:  # noqa: ANN401
+    async def _handler(event: Any) -> None:
         # Z2-P0-2 fix: re-raise so the bus skips XACK on handler failure;
         # recover_pending_messages will XCLAIM and retry until the handler
         # writes a terminal job status, or dead-letter after 5 attempts.

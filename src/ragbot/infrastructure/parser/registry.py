@@ -33,6 +33,8 @@ from ragbot.infrastructure.parser.null_parser import NullParser
 from ragbot.infrastructure.parser.pdf_parser import PdfParser
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from ragbot.application.ports.document_parser_port import DocumentParserPort
 
 logger = structlog.get_logger(__name__)
@@ -111,4 +113,59 @@ def detect_parser(
     return None
 
 
-__all__ = ["build_parser", "detect_parser", "list_providers"]
+def _sniff_mime(content: bytes) -> str:
+    """Best-effort mime from the bytes themselves — used when mime/ext are
+    unreliable. A PDF fetched from a URL commonly arrives as
+    ``application/octet-stream`` with no extension; without sniffing it would
+    miss the registry and fall to the flat OCR path. Magic-number first
+    (cheap, no dep), then Kreuzberg's detector for the long tail."""
+    if not content:
+        return ""
+    if content[:5] == b"%PDF-":
+        return "application/pdf"
+    try:
+        import kreuzberg
+
+        detected = kreuzberg.detect_mime_type_from_bytes(content)
+        if detected:
+            return str(detected)
+    except (ImportError, ValueError, TypeError, OSError):
+        pass
+    return ""
+
+
+def detect_parser_robust(
+    mime_type: str,
+    file_ext: str,
+    content: bytes | None = None,
+    detector: "Callable[[str, str], DocumentParserPort | None] | None" = None,
+) -> "DocumentParserPort | None":
+    """``detect_parser`` + byte-sniff fallback (headless-BE one-flow rule).
+
+    Every source — local bytes AND a URL whose body arrives with an empty /
+    generic mime and no extension (e.g. a ``...?download`` PDF link) — must
+    route to the correct structured parser, never silently down to flat OCR.
+    Order: trust the declared ``(mime, ext)`` first; only sniff the body when
+    nothing matched. Returns ``None`` only when even the sniffed type has no
+    parser (a genuine OCR-fallback case, e.g. a scanned image).
+
+    ``detector`` defaults to the module ``detect_parser``; callers that inject
+    their own (e.g. DocumentService, for test isolation) pass it so BOTH the
+    primary AND the sniffed lookup honour the injected detector.
+    """
+    _detect = detector or detect_parser
+    parser = _detect(mime_type, file_ext)
+    if parser is not None:
+        return parser
+    sniffed = _sniff_mime(content or b"")
+    if sniffed and sniffed.lower() != (mime_type or "").lower():
+        return _detect(sniffed, "")
+    return None
+
+
+__all__ = [
+    "build_parser",
+    "detect_parser",
+    "detect_parser_robust",
+    "list_providers",
+]

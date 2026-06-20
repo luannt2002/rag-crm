@@ -460,11 +460,22 @@ Narrow exception classes available in `src/ragbot/shared/errors.py`: `AuditEmitE
 
 Stack: Python 3.12+ / FastAPI / LangGraph / pgvector / Redis Streams / structlog / Docker Compose. 2-tier cache: exact hash + semantic pgvector.
 
+**Đây là RAG platform LỚN, MULTI-TENANT — KHÔNG phải app đơn giản.** Phục vụ nhiều tenant độc lập (4-key identity + RLS scoping `record_tenant_id`), mỗi tenant nhiều bot/workspace, mỗi bot corpus + sysprompt + model-binding riêng. **Ingest ĐA ĐỊNH DẠNG = tính năng first-class** (KHÔNG được coi nhẹ): **PDF · DOCX/DOC · XLSX/XLS · CSV · Google Sheets/Docs · PPTX · HTML · TXT · MD** — MỌI format đi **CÙNG 1 luồng canonical** (`POST /api/ragbot/documents/create`) → verify `mime → file-ext → byte-sniff` → `detect_parser` registry → parser structured-markdown → **một output markdown-CÓ-CẤU-TRÚC thống nhất** (giữ heading/table/atomic-block) cho chunking. Thêm format mới = thêm **1 parser adapter** vào registry (Port+Strategy), KHÔNG sửa orchestrator/luồng. Quality bar phải đạt cho mọi format, không chỉ PDF.
+
 - `RAGBOT_MASTER.md` → table of contents.
 - `docs/master/` → 13 sub-files (A-M).
 - `shared/constants.py` → all defaults (SSoT).
 - `shared/bot_limits.py` → bot-limit resolve chain (column > plan_limits > system_config > schema default).
 - `plans/` → implementation plans.
+
+## HEADLESS BE PLATFORM — API-only, KHÔNG UI cho consumer — TUYỆT ĐỐI
+
+Ragbot là **backend platform**, được **các BE app khác gọi server-to-server (B2B)**. **KHÔNG có end-user UI.** Mọi tính năng expose qua **REST API BE**, không qua màn hình.
+
+1. **UI test GIỮ LẠI — KHÔNG xóa, nhưng KHÔNG cấp external**: routes `/api/ragbot/test/*` + `interfaces/http/routes/test_chat/pages.py` là **test harness nội bộ — GIỮ NGUYÊN để dev/QA test**, **KHÔNG xóa code**. Chỉ là **KHÔNG BAO GIỜ deploy/expose domain UI đó cho consumer external** (chặn ở gateway/network/auth-scope, không phải xóa route). Consumer external **chỉ** gọi API BE (`/api/ragbot/documents/*`, `/api/ragbot/chat`, `/api/ragbot/admin/*`...).
+2. **Document ingest = ĐÚNG 1 API canonical**: `POST /api/ragbot/documents/create` (`interfaces/http/routes/documents.py` — BE-to-BE idempotent qua `X-Idempotency-Key`). **CẤM thêm endpoint upload song song** (vd `/documents/upload-stream` orphan = data-loss, phải gỡ). Mọi nguồn (bytes local, URL pdf/docx/xlsx/sheet, mọi format) đi **CÙNG 1 luồng**.
+3. **Robust type-detection trong luồng đó**: sau khi nhận data, verify loại theo thứ tự **mime → file-ext → byte-sniff** (`kreuzberg.detect_mime_type_from_bytes` / magic `%PDF-`), KHÔNG chỉ tin mime/ext (URL PDF thường có `application/octet-stream` rỗng ext → phải sniff bytes mới route đúng). Sau verify → `detect_parser` registry → parser structured-markdown (`kreuzberg_markdown` cho pdf/pptx/html; dedicated cho docx/xlsx/sheet/csv/md) → **một output markdown-có-cấu-trúc thống nhất** cho chunking.
+4. **Tính năng mới = API BE mới** (versioning qua header `X-Schema-Version`, KHÔNG URL `/v2`), KHÔNG phải UI. Mọi route mới phải hỏi: "BE consumer gọi được server-to-server không?" — nếu cần UI mới dùng được → sai hướng.
 
 ## Test rules
 

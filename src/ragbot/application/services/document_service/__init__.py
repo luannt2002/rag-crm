@@ -109,7 +109,10 @@ from ragbot.infrastructure.doc_profile.registry import build_doc_profile_analyze
 from ragbot.shared.text_normalization import normalize_vn
 from ragbot.shared.vi_tokenizer import segment_vi_compounds
 from ragbot.infrastructure.graph.knowledge_graph import KnowledgeGraphService
-from ragbot.infrastructure.parser.registry import detect_parser as _registry_detect_parser
+from ragbot.infrastructure.parser.registry import (
+    detect_parser as _registry_detect_parser,
+    detect_parser_robust,
+)
 from ragbot.application.services.content_type_router import (
     emit_type_histogram,
     group_by_block_type,
@@ -727,6 +730,13 @@ class DocumentService(_IngestMixin):
         """
         ext = self._file_ext_from(file_name)
         parser = self._parser_detector(mime_type, ext)
+        if parser is None and raw_bytes:
+            # Headless-BE one-flow rule (CLAUDE.md): a URL pdf/docx fetched with
+            # an empty/generic mime and no extension must still route to the
+            # structured parser via byte-sniff, not silently fall to flat OCR.
+            parser = detect_parser_robust(
+                mime_type, ext, raw_bytes, detector=self._parser_detector
+            )
         if parser is None:
             logger.warning(
                 "ingest_no_parser_match",

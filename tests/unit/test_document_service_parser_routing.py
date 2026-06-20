@@ -124,7 +124,8 @@ async def test_excel_mime_routes_to_excel_parser() -> None:
 
 @pytest.mark.asyncio
 async def test_csv_mime_passthrough_when_no_parser() -> None:
-    """CSV is not in the registry → detector returns None → caller falls back."""
+    """No matching parser → byte-sniff fallback retries → still None → caller
+    falls back (passthrough). detector may be called twice (declared + sniffed)."""
     detector = MagicMock(return_value=None)
     svc = _make_service(detector)
 
@@ -132,7 +133,7 @@ async def test_csv_mime_passthrough_when_no_parser() -> None:
         b"a,b,c\n1,2,3\n", mime_type=_MIME_CSV, file_name="data.csv",
     )
 
-    detector.assert_called_once_with(_MIME_CSV, ".csv")
+    detector.assert_any_call(_MIME_CSV, ".csv")
     assert extracted is None
 
 
@@ -146,7 +147,7 @@ async def test_plain_text_mime_passthrough_when_no_parser() -> None:
         b"hello world", mime_type=_MIME_PLAIN, file_name="doc.txt",
     )
 
-    detector.assert_called_once_with(_MIME_PLAIN, ".txt")
+    detector.assert_any_call(_MIME_PLAIN, ".txt")
     assert extracted is None
 
 

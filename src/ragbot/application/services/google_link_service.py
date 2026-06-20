@@ -202,6 +202,33 @@ async def fetch_content(
     return None
 
 
+def to_export_url(url: str) -> str:
+    """Rewrite a Google Docs/Sheets *viewer* URL (``.../edit?gid=N``) to its
+    direct ``export`` URL (txt/csv). Pure, no I/O — the worker fetch path calls
+    this BEFORE fetching so a Google Sheets link ingests as structured CSV
+    instead of an HTML login page (the xe-3 retry-storm root cause: the viewer
+    URL returned HTML, Kreuzberg OCR'd it → "empty after parse" → misclassified
+    transient → retry-storm). Returns the URL unchanged when it is not a
+    recognised Google Docs/Sheets link.
+    """
+    if "docs.google.com" not in (url or ""):
+        return url
+    match = re.search(r"/d/([a-zA-Z0-9_-]+)", url)
+    if not match:
+        return url
+    doc_id = match.group(1)
+    if "/spreadsheets/" in url:
+        gid = re.search(r"[?&]gid=([0-9]+)", url) or re.search(r"#gid=([0-9]+)", url)
+        export = f"https://docs.google.com/spreadsheets/d/{doc_id}/export?format=csv"
+        return export + (f"&gid={gid.group(1)}" if gid else "")
+    if "/document/" in url:
+        # Export as docx (not txt): the docx parser recovers heading styles
+        # (# Chương / ## Điều — 87 headings on a Thông tư vs 0 for flat txt),
+        # giving structured chunks instead of one flat block.
+        return f"https://docs.google.com/document/d/{doc_id}/export?format=docx"
+    return url
+
+
 def _detect_type(hostname: str, path: str) -> str | None:
     """Nhận diện loại tài liệu Google từ hostname và path.
     @param hostname: tên miền của URL

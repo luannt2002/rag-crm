@@ -201,16 +201,17 @@ def test_constants_exposed_and_sane() -> None:
     assert SUBJECT_DOCUMENT_UPLOAD_STREAM.startswith("document.upload_stream")
 
 
-def test_route_registered_on_composed_app() -> None:
-    """Composed router must expose the streaming path."""
+def test_route_disabled_on_composed_app() -> None:
+    """The orphaned streaming-upload route is DISABLED on the composed app:
+    its stream subject has no consumer (silent data-loss), and the headless-BE
+    rule mandates ONE canonical ingest API (POST /documents/create). The route
+    handler stays unit-tested in isolation below, but must NOT be served live."""
     from ragbot.interfaces.http.router import router as composed
 
     from tests.unit._helpers_routes import leaf_paths
 
-    # FastAPI lazy-composes include_router(...) as _IncludedRouter wrappers;
-    # flatten to the real leaf paths the live app serves.
     paths = leaf_paths(composed.routes)
-    assert "/api/ragbot/documents/upload-stream" in paths
+    assert "/api/ragbot/documents/upload-stream" not in paths
 
 
 def test_small_file_streams_to_temp_and_enqueues(tmp_path: Path) -> None:
