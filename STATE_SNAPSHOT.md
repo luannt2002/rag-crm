@@ -3,7 +3,23 @@
 > Always-updated current state. Git history was reset on 2026-06-14 (fresh start);
 > commit-SHA anchors no longer apply — this file is the source of truth.
 
-## Session 2026-06-20 — Canonical re-ingest fix + Jina per-key TPM control  ⟵ LATEST
+## Session 2026-06-20 (cont) — Full 8-step eval + xe stats-noise extraction fix (re-ingested)  ⟵ LATEST
+
+**[user: "đọc CLAUDE.md, thử code hiện tại, check TẤT CẢ luồng, fix triệt để"]**
+
+### ✅ Full end-to-end eval 42 câu / 3 bot (runtime)
+- mean COVERAGE **0.95**, HALLU=**0**, null_leaf=**0** cả 3 bot. spa **1.00**, thong-tu **1.00**, xe **0.86** (chỉ q02 fail). Reports `reports/validate_20260620/`.
+
+### ✅ xe stats-noise extraction fix (`e6e56cc`) — committed + RE-INGESTED + verified
+- Root cause q02 ("liệt kê các loại lốp") + ~49% xe stats noise = **extraction layer** (KHÔNG sysprompt/LLM, HALLU=0 giữ). xe-3 search-synonym rows (`question: <40 variant>`, `date1: 26`, `quantity: 29`) + Google-Drive image-URL → comma-split col[0] ngắn lọt field-like guard → entity rác chôn sản phẩm CITYTRAXX thật.
+- Fix `_extract_entity_from_row`: 2 reject domain-neutral keyed-on-SHAPE — URL/link (scheme/domain-path/image-dim param) + `<bareword>: ` metadata-lead prefix. Multi-word + colon-cuối (`Giá Combo 10 buổi: …`) survive. 35 test (2 TDD red→green).
+- **Re-ingest xe canonical** (RechunkDocumentUseCase, per-key Jina limiter + finalize-resilience): `question:/date1:` noise **927→0**, url 100→20, **null_leaf=0 cả 4 doc — KHÔNG churn (khác lần trước; finalize-resilience `7a60c47` giữ)**. xe **0.86 ZERO regression**, spa/thong-tu giữ **1.00**.
+- ⚠️ **New finding (chưa fix, future):** narration-sentence entities (`Đoạn X nằm trong phần…`, `Đoạn chứa liên kết hình ảnh`) = noise-type KHÁC, pre-existing, fix này không target → total stats vẫn ~2107. Tách việc riêng.
+
+### ⚖️ q02 — ACCEPTED limitation (evidence-driven, không risk verified-good)
+- Sau noise-fix q02 vẫn cần model-line granularity. Cả **3a** (routing enumerate→list_all) + **3b** (model-line auto-derivation) đều REGRESS spa/thong-tu (1.00): 3b token-frequency rò `THÔNG/TRONG/THUỘC` (từ thường VN) thành model-line dù đã gate dimension (thong-tu 46 dimensioned entity). → ACCEPT q02 (faithful, HALLU=0, câu hỏi mơ hồ; root = granularity corpus 2112 SKU không có entity model-line). Plan + evidence: `plans/20260620-xe-stats-noise-modelline/plan.md`.
+
+## Session 2026-06-20 — Canonical re-ingest fix + Jina per-key TPM control
 
 **[user: "test lại từ đầu" (xóa hết doc → re-ingest) → surfaced 5 ingest bugs; build expert per-key rate-limit control "như chatgpt, xoay tua nhiều key", status/error per key, không lặp lại.]**
 
