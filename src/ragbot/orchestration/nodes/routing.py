@@ -27,6 +27,7 @@ from ragbot.shared.constants import (
     DEFAULT_REFLECTION_ENABLED,
     DEFAULT_SKIP_REFLECT_INTENTS,
     DEFAULT_SKIP_REWRITE_INTENTS,
+    INTENT_COMPARISON,
     INTENT_MULTI_HOP,
     INTENT_SYNTHESIS,
 )
@@ -102,7 +103,14 @@ def _router_route(state: GraphState) -> str:
     All intents flow through retrieve → generate.
     """
     intent = state.get("intent", DEFAULT_INTENT_FALLBACK)
-    if intent == INTENT_MULTI_HOP and _pcfg(state, "decompose_enabled", True):
+    # Comparison ("so sánh X với Y") is multi-entity: a single embedding of the
+    # whole sentence dilutes (token overlap pulls a co-occurring service, e.g.
+    # "trẻ hóa" -> Ultherapy, not the two compared entities). Route it to
+    # decompose so each entity becomes its own sub-query and both sides get
+    # retrieved (paired with the stats-route skip for comparison in retrieve).
+    if intent in (INTENT_MULTI_HOP, INTENT_COMPARISON) and _pcfg(
+        state, "decompose_enabled", True,
+    ):
         _query_text = (state.get("query") or "").strip()
         _decompose_min = int(_pcfg(
             state, "decompose_min_tokens", DEFAULT_DECOMPOSE_MIN_TOKENS,

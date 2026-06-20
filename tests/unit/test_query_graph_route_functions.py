@@ -118,6 +118,7 @@ def test_cache_route_miss_uses_backcompat_condense_when_flag_off(routes) -> None
     "intent,expected",
     [
         ("multi_hop", "decompose"),
+        ("comparison", "decompose"),  # 2026-06-20: multi-entity -> decompose
         ("factoid", "retrieve"),
         ("greeting", "retrieve"),
         ("out_of_scope", "retrieve"),
@@ -126,7 +127,7 @@ def test_cache_route_miss_uses_backcompat_condense_when_flag_off(routes) -> None
 )
 def test_router_route_matrix(routes, intent: str, expected: str) -> None:
     state: dict = {"intent": intent}
-    if intent == "multi_hop":
+    if intent in ("multi_hop", "comparison"):
         # decompose path requires query >= DEFAULT_DECOMPOSE_MIN_TOKENS (8 words)
         # and intent_confidence >= DEFAULT_DECOMPOSE_CONFIDENCE_GATE (0.7).
         state["query"] = "compare cost benefit risk reward roi tco roe metric snapshot"
