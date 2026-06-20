@@ -473,6 +473,17 @@ class PgVectorStore:
                     for i, pat in enumerate(structural_filter_patterns)
                 }
                 params.update(_struct_params)
+                # Sparse branch: add the structural anchor as an OR-branch (NOT
+                # an AND filter). A structural-pointer query ("Điều 56 quy định
+                # về việc gì?") whose natural-language tokens AND-restrict
+                # websearch_to_tsquery to ZERO rows must still retrieve the
+                # literal-anchor chunks. Verified 2026-06-19: that exact query →
+                # 0 sparse matches; the prior assumption "BM25 already matches
+                # the literal token" holds for keyword queries, not natural
+                # questions. Precise (only anchor chunks, no OR-of-all-tokens
+                # flood) and gated to structural queries so the LIKE seq-scan is
+                # bounded.
+                _sparse_predicate = f"({_sparse_predicate}) OR ({_struct_or})"
 
             # Embedding propagated end-to-end so downstream MMR computes true cosine
             # diversity. Cast to ``float4[]`` because SQLAlchemy returns ``vector`` as str.
@@ -526,13 +537,15 @@ class PgVectorStore:
                     "structural_prefilter_no_match_fallback",
                     patterns=structural_filter_patterns,
                 )
+                # Remove ONLY the dense AND-filter (the over-restrictive clause
+                # that excluded every row). The sparse branch keeps its additive
+                # OR-anchor, which STILL references ``:struct_pN`` — so the struct
+                # params MUST stay bound. The old code stripped ``struct_p*`` from
+                # the bind dict while the sparse ``OR (...)`` still referenced
+                # them → InvalidRequestError "struct_p0 has no value" on every
+                # structural-pointer query that hit the no-match fallback.
                 sql_no_struct = sql.replace(_struct_clause, "")
-                params_no_struct = {
-                    k: v for k, v in params.items() if not k.startswith("struct_p")
-                }
-                result = await session.execute(
-                    text(sql_no_struct), params_no_struct,
-                )
+                result = await session.execute(text(sql_no_struct), params)
                 rows = list(result.mappings().all())
             return [
                 {

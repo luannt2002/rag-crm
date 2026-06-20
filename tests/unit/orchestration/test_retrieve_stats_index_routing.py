@@ -387,6 +387,107 @@ def test_stats_index_chunks_linked_to_evidence() -> None:
     doc_repo.find_chunks_by_ids.assert_called_once()
 
 
+def test_stats_index_synthetic_chunk_surfaces_field_like_col_attribute() -> None:
+    """Regression (2026-06-20): the synthetic stats chunk MUST surface a
+    field-like ``col_N`` attribute (e.g. a delivery date parsed into ``col_2``)
+    instead of stripping every ``col_\\d+`` key.
+
+    Root cause: the corpus CSV header had no names, so the parser stored the
+    delivery-date column as ``col_2``; the synthetic-chunk builder skipped every
+    ``col_\\d+`` key, leaving only the bare entity name (~27 chars). The LLM then
+    had no date/stock to answer "ngày nào về hàng" / size-availability queries
+    (live eval: chinh-sach-xe q04/q05/q10 deflected). ``_is_field_like`` already
+    filters the huge variant/synonym mega-cell (>120 chars / >12 words), so a
+    short ``col_*`` value like "28-thg 11" is safe to surface.
+    """
+    chunk_uuid = str(uuid4())
+    fake_entities = [
+        {
+            "entity_name": "185/55R16 83V CITYTRAXX G/P",
+            "price_primary": None,
+            # delivery date landed in a generic ``col_2`` (no CSV header name);
+            # ``variants`` is the mega-cell the col_* skip was really meant for.
+            "attributes_json": {
+                "col_2": "28-thg 11",
+                "chunk_index": "0",
+                "variants": "code1, code2, code3, code4, code5",
+            },
+            "record_chunk_id": chunk_uuid,
+        },
+    ]
+    stats_repo = MagicMock()
+    stats_repo.query_by_price_range = AsyncMock(return_value=fake_entities)
+
+    doc_repo = MagicMock()
+    doc_repo.find_chunks_by_ids = AsyncMock(
+        return_value=[{"content": "evidence", "chunk_id": chunk_uuid, "score": 1.0}]
+    )
+    doc_repo.fetch_summaries_by_bot = AsyncMock(return_value=[])
+
+    tracker = _RecordingStepTracker()
+    state = _base_state(tracker, intent="aggregation")
+    compiled = _build_compiled(stats_index_repo=stats_repo, doc_repo=doc_repo)
+
+    result = _invoke_retrieve(compiled, state)
+
+    retrieved = result.get("retrieved_chunks") or []
+    synthetic = [c for c in retrieved if c.get("source") == "stats_index"]
+    assert synthetic, "expected a synthetic stats_index chunk"
+    content = synthetic[0]["content"]
+    # field-like col_2 (the date) MUST be surfaced …
+    assert "28-thg 11" in content, f"col_2 date stripped: {content!r}"
+    # … while the explicit non-field keys stay out (chunk_index) and the
+    # mega-cell ``variants`` is still filtered (explicit skip + length gate).
+    assert "chunk_index" not in content
+    assert "code5" not in content
+
+
+def test_stats_index_list_all_fallback_when_keyword_misses() -> None:
+    """Regression (2026-06-20): an enumerate-all query ("liệt kê tất cả dịch vụ",
+    "shop có những loại lốp nào") strips to a GENERIC category keyword
+    ("dịch vụ", "lốp") that names the whole corpus, not a value in any entity
+    NAME — so ``query_by_name_keyword`` ILIKE returns 0 and the route used to
+    collapse to top-k vector (an incomplete list). The keyword branch now falls
+    back to ``list_all_entities`` so the LLM receives EVERY record to list.
+    """
+    chunk_uuid = str(uuid4())
+    all_entities = [
+        {"entity_name": "Laser Carbon", "price_primary": 1_200_000,
+         "record_chunk_id": chunk_uuid},
+        {"entity_name": "Gội đầu thư giãn", "price_primary": 60_000,
+         "record_chunk_id": chunk_uuid},
+    ]
+    stats_repo = MagicMock()
+    stats_repo.query_by_price_range = AsyncMock(return_value=[])
+    stats_repo.query_by_name_keyword = AsyncMock(return_value=[])  # generic kw → 0
+    stats_repo.list_all_entities = AsyncMock(return_value=all_entities)
+
+    doc_repo = MagicMock()
+    doc_repo.find_chunks_by_ids = AsyncMock(
+        return_value=[{"content": "evidence", "chunk_id": chunk_uuid, "score": 1.0}]
+    )
+    doc_repo.fetch_summaries_by_bot = AsyncMock(return_value=[])
+
+    tracker = _RecordingStepTracker()
+    state = _base_state(tracker, intent="aggregation")
+    # Real eval query: parse_list_query yields operation="keyword" with a noisy
+    # residual ("Spa gì") that matches no entity NAME → query_by_name_keyword
+    # returns [] → the list_all fallback must fire.
+    state["query"] = "Spa có những dịch vụ gì, liệt kê tất cả"
+    state["original_query"] = "Spa có những dịch vụ gì, liệt kê tất cả"
+    compiled = _build_compiled(stats_index_repo=stats_repo, doc_repo=doc_repo)
+
+    result = _invoke_retrieve(compiled, state)
+
+    # keyword ILIKE missed → the list_all fallback must have fired …
+    stats_repo.list_all_entities.assert_called_once()
+    # … and produced a synthetic chunk carrying every entity to list.
+    retrieved = result.get("retrieved_chunks") or []
+    synthetic = [c for c in retrieved if c.get("source") == "stats_index"]
+    assert synthetic, "list-all fallback must produce a synthetic chunk"
+    assert "Laser Carbon" in synthetic[0]["content"]
+
+
 # ---------------------------------------------------------------------------
 # 8. doc-summary routing
 # ---------------------------------------------------------------------------

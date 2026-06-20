@@ -2255,6 +2255,17 @@ def build_graph(
                     synonyms=_resolve_stats_keyword_synonyms(state, _stats_kw),
                     limit=stats_limit,
                 )
+                if not entities:
+                    # "liệt kê tất cả / có những <generic category> nào" — the
+                    # category word ("lốp", "dịch vụ") names the WHOLE corpus,
+                    # not a value inside any entity NAME, so the keyword ILIKE
+                    # returns 0. An enumerate-all query must list EVERY record
+                    # (top-k vector retrieve gives an incomplete list), so fall
+                    # back to the full table instead of collapsing to vector.
+                    entities = await stats_index_repo.list_all_entities(
+                        record_bot_id=state["record_bot_id"],
+                        limit=stats_limit,
+                    )
             elif _operation in ("max", "min"):
                 # Superlative ("đắt nhất"/"rẻ nhất"): no bound → ORDER BY price.
                 entities = await stats_index_repo.top_by_price(
@@ -2370,16 +2381,20 @@ def build_graph(
                 # image/...) generically so a record-shaped bot (e.g. an n8n
                 # results[] consumer) gets every field, not just the price. The
                 # column names come from the corpus header — domain-neutral, no
-                # hard-coded field list. Skip internal keys + mega-cells (the
-                # huge synonym/variant column that would dilute the chunk).
+                # hard-coded field list. Skip internal keys + the synonym/variant
+                # mega-cell. A generic ``col_N`` name (header-less CSV) is NOT
+                # skipped: the ``_is_field_like`` gate below already drops the
+                # huge mega-cell (>120 chars / >12 words), so a short ``col_*``
+                # value like a delivery date "28-thg 11" stays groundable instead
+                # of being stripped — stripping every ``col_\d+`` left date/stock
+                # queries unanswerable (the chunk became the bare entity name).
                 _cat = str(_e.get("entity_category") or "").strip()
                 if _is_field_like(_cat):
                     _parts.append(f"category: {_cat}")
                 _attrs = _e.get("attributes_json")
                 if isinstance(_attrs, dict):
                     for _k, _v in _attrs.items():
-                        if _k in ("chunk_index", "question", "variants") \
-                                or re.fullmatch(r"col_\d+", str(_k)):
+                        if _k in ("chunk_index", "question", "variants"):
                             continue
                         _vs = str(_v).strip()
                         if _is_field_like(_vs):

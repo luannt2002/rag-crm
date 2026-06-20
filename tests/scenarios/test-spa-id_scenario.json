@@ -49,13 +49,13 @@
       "id": "q08",
       "flow": "re_nhat",
       "q": "Dịch vụ nào rẻ nhất ở spa?",
-      "expect": "99000"
+      "expect": "60000"
     },
     {
       "id": "q09",
       "flow": "dat_nhat",
       "q": "Dịch vụ nào đắt nhất?",
-      "expect": "3000000"
+      "expect": "20000000"
     },
     {
       "id": "q10",
