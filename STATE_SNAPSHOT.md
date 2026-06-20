@@ -3,7 +3,29 @@
 > Always-updated current state. Git history was reset on 2026-06-14 (fresh start);
 > commit-SHA anchors no longer apply — this file is the source of truth.
 
-## Session 2026-06-19/20 — Expert-RAG convert+retrieval+headless-BE (3-mindset)  ⟵ LATEST
+## Session 2026-06-20 — Canonical re-ingest fix + Jina per-key TPM control  ⟵ LATEST
+
+**[user: "test lại từ đầu" (xóa hết doc → re-ingest) → surfaced 5 ingest bugs; build expert per-key rate-limit control "như chatgpt, xoay tua nhiều key", status/error per key, không lặp lại.]**
+
+### ✅ Fixed + committed + VERIFIED (runtime)
+- **#3a/#3b canonical re-ingest lifecycle** (`d6d3936`): DELETE archives row (state→ARCHIVED, keeps natural key) → re-CREATE minted new UUID → `uq_doc_tool` 500; + stale 24h source_url Redis idem blocked re-ingest. Fix = **reactivate by natural key** (reuse PK, skip stale idem when row survives). Runtime probe on real psql+Redis: CREATE→DELETE→RE-CREATE reuses doc_id, 0 collision. **5960 test pass**.
+- **Per-key Jina TPM limiter** (`e17c0f4`): root cause of `429 100,551/100,000 TPM` = 2 Jina keys are INDEPENDENT accounts (verified: 2-on-A+2-on-B concurrent all 200), pool round-robins, but TPM limiter was 1 GLOBAL bucket (180k = per_key×n_keys×0.9) → one key overran its own 100k. Fix = **per-key limiter bucket** (`_limiter_for(key)`, each ≤90k); config-driven via constructor args. **VALIDATED**: thong-tu re-ingest 549 chunks, **null_leaf=0, 0 Jina 429**. 258 jina/embed test pass.
+
+### 🧪 8-step RAG eval (test chuẩn, live, post-fix)
+- **HALLU=0 cả 3 bot** (sacred held). thong-tu COVERAGE=**1.00**, xe 0.86, spa 0.60 (mean 0.82). STEP-3 null_leaf xe(8)+spa(8) = regression EM gây (parallel re-ingest quá tải Jina trước khi có per-key limiter) → **ĐÃ DỌN: re-ingest serial 6 doc (xe-1/2/4, spa-1/2/3) dưới per-key limiter → cả 3 bot `null_leaf=0`, all docs ready=active.** Verify: 3/3 bot CLEAN.
+
+### ⚠️ Honest — em gây outage giữa phiên rồi khôi phục
+- Parallel re-ingest spa+xe → Jina 429 → 13 null leaf + docs `failed` → readiness-gate (`state='active'`) làm **thong-tu DARK**. Khôi phục: per-key limiter + DELETE+CREATE serial. State-flip thủ công bị guardrail chặn đúng (out-of-band). spa/xe vẫn serve suốt (còn doc active khác).
+
+### 🗺️ Phase 2 (key-mgmt API) — BLOCKER, không rush (`35f086d` plan)
+- 2 bảng key TRÙNG rời rạc: **`ai_keys`** (status/health, pool+resolver đọc) vs **`api_keys`** (admin routes ghi) → admin ghi 1 bảng, pool đọc bảng kia. Phải **reconcile về `ai_keys`** trước khi thêm `tpm_limit/status/last_error` + API. Đã scope `plans/20260620-jina-key-control/plan.md`.
+
+### Còn lại
+- Phase 2 reconcile + admin API (next session). Config-driven limit qua `system_config`+`PUT /admin/config`. Revert `bypass_token_check` 3 bot. KG=0 dormant.
+
+---
+
+## Session 2026-06-19/20 — Expert-RAG convert+retrieval+headless-BE (3-mindset)
 
 **[user: tổng hợp AdapChunk + RAG-Anything + ekimetrics → expert RAG đa-format multi-tenant log-center; fix flat-PDF "mất header"; control all format; load-test all flows.]**
 
