@@ -1,0 +1,141 @@
+{
+  "aggregate": {
+    "adaptive_eq_oracle": 0,
+    "documents": 8,
+    "mean_adaptive": 0.6713,
+    "mean_oracle": 0.7741,
+    "mean_recursive": 0.6704
+  },
+  "budget_chars": 1024,
+  "documents": [
+    {
+      "adaptive_confidence": 1.0,
+      "adaptive_pick": "table_csv",
+      "bot_id": "chinh-sach-xe",
+      "doc_id": "60e8fe8f-f12d-44f3-9e31-ace73c857311",
+      "gap": 0.328,
+      "oracle_best": "hdt",
+      "scores": {
+        "hdt": 0.928,
+        "hybrid": 0.6,
+        "proposition": 0.6,
+        "recursive": 0.6,
+        "semantic": 0.6
+      }
+    },
+    {
+      "adaptive_confidence": 0.73,
+      "adaptive_pick": "recursive",
+      "bot_id": "chinh-sach-xe",
+      "doc_id": "92e50a4c-02aa-45ae-83b2-074a25c2b8d0",
+      "gap": 0.071,
+      "oracle_best": "hdt",
+      "scores": {
+        "hdt": 0.6248,
+        "hybrid": 0.5587,
+        "proposition": 0.5591,
+        "recursive": 0.5538,
+        "semantic": 0.4299
+      }
+    },
+    {
+      "adaptive_confidence": 1.0,
+      "adaptive_pick": "table_csv",
+      "bot_id": "chinh-sach-xe",
+      "doc_id": "9dd883da-653f-4027-a5b4-bd3f6fe78e15",
+      "gap": 0.0177,
+      "oracle_best": "hdt",
+      "scores": {
+        "hdt": 0.6981,
+        "hybrid": 0.6804,
+        "proposition": 0.6804,
+        "recursive": 0.6804,
+        "semantic": 0.6762
+      }
+    },
+    {
+      "adaptive_confidence": 1.0,
+      "adaptive_pick": "table_csv",
+      "bot_id": "test-spa-id",
+      "doc_id": "022fcaea-a292-4559-87f2-3e5f432fbd1b",
+      "gap": 0.1595,
+      "oracle_best": "hdt",
+      "scores": {
+        "hdt": 0.6729,
+        "hybrid": 0.5134,
+        "proposition": 0.5134,
+        "recursive": 0.5134,
+        "semantic": 0.5134
+      }
+    },
+    {
+      "adaptive_confidence": 1.0,
+      "adaptive_pick": "table_csv",
+      "bot_id": "test-spa-id",
+      "doc_id": "42b8d7f4-9ab2-4228-bf24-8d34c04eb14b",
+      "gap": 0.0,
+      "oracle_best": "recursive",
+      "scores": {
+        "hdt": 1.0,
+        "hybrid": 1.0,
+        "proposition": 1.0,
+        "recursive": 1.0,
+        "semantic": 1.0
+      }
+    },
+    {
+      "adaptive_confidence": 1.0,
+      "adaptive_pick": "table_csv",
+      "bot_id": "test-spa-id",
+      "doc_id": "64c8c90c-40ff-40ae-b7cf-abc307b271b0",
+      "gap": 0.0,
+      "oracle_best": "recursive",
+      "scores": {
+        "hdt": 0.8,
+        "hybrid": 0.8,
+        "proposition": 0.8,
+        "recursive": 0.8,
+        "semantic": 0.8
+      }
+    },
+    {
+      "adaptive_confidence": 1.0,
+      "adaptive_pick": "recursive",
+      "bot_id": "test-spa-id",
+      "doc_id": "c852544c-bb62-4eba-a9f2-0b668bd2dd87",
+      "gap": 0.1598,
+      "oracle_best": "hdt",
+      "scores": {
+        "hdt": 0.7581,
+        "hybrid": 0.5963,
+        "proposition": 0.6026,
+        "recursive": 0.5983,
+        "semantic": 0.4732
+      }
+    },
+    {
+      "adaptive_confidence": 1.0,
+      "adaptive_pick": "hdt",
+      "bot_id": "thong-tu-09-2020-tt-nhnn",
+      "doc_id": "c887d1f0-e1a9-41ea-af7d-1b65a1fc08d3",
+      "gap": 0.0866,
+      "oracle_best": "proposition",
+      "scores": {
+        "hdt": 0.6242,
+        "hybrid": 0.6198,
+        "proposition": 0.7108,
+        "recursive": 0.6174,
+        "semantic": 0.4848
+      }
+    }
+  ],
+  "metric_impl": "lexical",
+  "schema_version": 1,
+  "strategies": [
+    "recursive",
+    "hdt",
+    "semantic",
+    "hybrid",
+    "proposition"
+  ]
+}

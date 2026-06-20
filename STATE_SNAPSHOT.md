@@ -3,7 +3,36 @@
 > Always-updated current state. Git history was reset on 2026-06-14 (fresh start);
 > commit-SHA anchors no longer apply — this file is the source of truth.
 
-## Session 2026-06-19 — RLS role-split (Phase 1+2) + clean rebuild & 5-criteria load-test  ⟵ LATEST
+## Session 2026-06-19/20 — Expert-RAG convert+retrieval+headless-BE (3-mindset)  ⟵ LATEST
+
+**[user: tổng hợp AdapChunk + RAG-Anything + ekimetrics → expert RAG đa-format multi-tenant log-center; fix flat-PDF "mất header"; control all format; load-test all flows.]**
+
+### ✅ Fix bug T1 (verified + test)
+- **Tầng-1 parser flat → Kreuzberg-markdown** (committed `5dddfc0`): registry route PDF sang `pdf_parser` pypdfium2 FLAT (0 `#` heading) → fix `KreuzbergMarkdownParser`+`OutputFormat.MARKDOWN` (kreuzberg 4.9.9 = AdapChunk Layer-1 winner pyproject). **TT09 0→72 heading**. Docling head-to-head FAILED (needs accelerate+GB torch) → gỡ. Đa-format: PDF 72h / DOCX #+table / XLSX row+stats / HTML #.
+- **Byte-sniff robust** (`detect_parser_robust`+`_sniff_mime` magic `%PDF-`): URL-PDF mime rỗng/`octet-stream` → structured, không rớt OCR flat.
+- **Sheet-URL fix** (`google_link_service.to_export_url`): Google `edit?gid=`→`export?csv`(sheets)/`export?docx`(docs). **xe-3 retry-storm DỨT** (real: 187 row-chunk; thongtu doc docx **87 heading** vs 0 txt). Wired worker fetch.
+- **BM25 sparse 0-match (Điều 56)** → structural-OR branch (`pgvector_store` sparse: tsquery AND-of-N=0 → `OR content LIKE anchor`). **0→2 precise** (không flood 415), gated structural-query.
+- **Stack-align migration** `align_model_stack_jina` (**APPLIED live DB, UNCOMMITTED**): reranker cohere→jina-reranker-v3 (verified 422 cohere), embedding→jina-embeddings-v3, dim 1536→1024 (khớp stored vector). Giải quyết gap #6 phiên trước.
+
+### ✅ Headless-BE — 1 API (CLAUDE.md rule mới)
+- Rule "HEADLESS BE — API-only": ragbot = BE cho BE khác (server-to-server), **UI test-only (GIỮ, không expose external)**, **ĐÚNG 1 API `POST /documents/create`**, byte-sniff type-detect.
+- **Gỡ orphan `/documents/upload-stream`** (no consumer → data-loss): comment registration (giữ code) + đảo test. 499 pass.
+- **Import-hoist** worker (6 inline → top); giữ `import kreuzberg`/`litellm` inline (fail-soft). Khôi phục 9 `# noqa: BLE001` bị `ruff --fix` strip (regression guard).
+
+### 🗺️ Verify 3-framework — code ~90% expert
+- AdapChunk 7 tầng (parser fixed·block-atomic·profile 9/10·executor 4-strategy·narrate-Port·eval-RAGAS) + ekimetrics-select(code) + KG-skeleton + log-center(token_ledger 4-key) + 4-key multi-tenant.
+- **OFF cần A/B (KHÔNG blind-flip)**: T5 cross-check·T7 narrate·ekimetrics. **DISABLED cần plan**: RAG-Anything KG·VLM. **Đính chính rule#0**: "embedding gap 221 chunk"=parent by-design (null_non_parent=0), KHÔNG bug.
+- Docs: `docs/EXPERT_RAG_BLUEPRINT.md` · `plans/260619-expert-rag-2phase/` · `scripts/verify_rag_health.py`.
+
+### ⚠️ Còn lại
+- **Load-test upload→query 9 file** = LIVE+gated (re-ingest DB + quota reset classifier-denied) — CHƯA chạy.
+- Phase-1 coverage: wire **HyDE** (dead-stub `llm_hyde` 140 dòng sẵn) · cross-check/narrate A/B (cần quota).
+- Phase-2: log-center hoàn thiện (streaming-gen chưa vào ledger · model_invocations thiếu bot_id · embed/rerank cost NULL) · RLS-enforce cutover.
+- **UNCOMMITTED nhiều** (user defer): 6 file M + migration đã-apply + 3 docs + 2 plans + tests. Full suite **5944 pass** (sau khôi phục noqa). Commit duy nhất phiên: `5dddfc0`.
+
+---
+
+## Session 2026-06-19 — RLS role-split (Phase 1+2) + clean rebuild & 5-criteria load-test
 
 **[user: "tiếp tục tích + fix RLS" → "tự động làm hết: xóa DB+cache → init 3 bot+sysprompt → upload 9 file → load-test tất cả luồng → Expert RAG 5 tiêu chí".]**
 
