@@ -232,6 +232,16 @@ DEFAULT_RECOVERY_STUCK_THRESHOLD_S: Final[int] = 900
 # cannot self-DoS the worker pool. 100 docs/5min = 20 docs/min replay,
 # well below DEFAULT_RL_UPLOAD_PER_MIN=30 ingest tier cap.
 DEFAULT_RECOVERY_BATCH_SIZE: Final[int] = 100
+# Ingest finalize resilience: minimum LEAF-embed coverage (embedded leaves /
+# all leaves) for a doc to flip state='active' despite some NULL-embedding
+# leaves. A few TRANSIENT embed failures (a provider 429 on one batch) must not
+# take the whole doc dark — the readiness gate requires state='active' and the
+# recovery sweep does NOT re-process 'failed', so a brittle fail-on-ANY-null-leaf
+# made a 1/500 miss = PERMANENT dark. At/above this floor the doc SERVES (the
+# null leaves keep BM25 retrievability); below it the doc is genuinely broken and
+# fails. 0.8 = serve a doc missing ≤20% of its leaf vectors. Override via
+# system_config.ingest_min_leaf_embed_coverage.
+DEFAULT_INGEST_MIN_LEAF_EMBED_COVERAGE: Final[float] = 0.8
 # Replay-suppression cooldown. The anti-dup join hides a doc that already has a
 # recent replay outbox row so a sweep does not re-emit while the worker is still
 # processing. WITHOUT a time bound this becomes PERMANENT: once a replay is

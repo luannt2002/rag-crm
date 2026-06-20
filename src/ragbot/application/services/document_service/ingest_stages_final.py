@@ -37,6 +37,7 @@ from ragbot.shared.constants import (
     DEFAULT_CLEANBASE_QUALITY_THRESHOLD,
     DEFAULT_CONTENT_TYPE_DISPATCH_ENABLED,
     DEFAULT_CLEANBASE_TIER0_ENABLED,
+    DEFAULT_INGEST_MIN_LEAF_EMBED_COVERAGE,
     DEFAULT_DOC_PROFILE_ANALYZER_PROVIDER,
     DEFAULT_CONTEXTUAL_RETRIEVAL_ENABLED,
     DEFAULT_CR_CONTEXT_MAX_TOKENS,
@@ -116,6 +117,36 @@ logger = structlog.get_logger(__name__)
 from ragbot.application.services.document_service.ingest_stages import _IngestCtx
 
 
+def _decide_ingest_state(
+    total: int,
+    embedded: int,
+    null_non_parent: int,
+    *,
+    min_leaf_coverage: float,
+) -> str:
+    """Pure finalize decision → ``"active"`` | ``"failed"`` from chunk counts.
+
+    Resilience (2026-06-20): the readiness gate serves only ``state='active'``
+    and the recovery sweep does NOT re-process ``'failed'`` — so the old
+    fail-on-ANY-null-leaf policy turned a single TRANSIENT embed miss (a provider
+    429 on one batch) into PERMANENT dark on a 1/500 doc. Serve when leaf-embed
+    coverage (embedded leaves / all leaves) is at/above the floor — the null
+    leaves keep BM25 retrievability. Only a genuinely broken doc fails:
+
+    - zero chunks persisted, or nothing embedded at all → ``failed``
+    - all leaves embedded → ``active``
+    - some null leaves but coverage >= floor → ``active`` (serve degraded)
+    - coverage below floor → ``failed`` (re-ingest needed)
+    """
+    if total <= 0 or embedded <= 0:
+        return "failed"
+    if null_non_parent <= 0:
+        return "active"
+    leaf_total = embedded + null_non_parent
+    coverage = embedded / leaf_total if leaf_total else 0.0
+    return "active" if coverage >= min_leaf_coverage else "failed"
+
+
 class _StageFinalizeMixin:
     async def _stage_finalize(self, ctx: _IngestCtx) -> IngestResult:
         session_with_tenant = _core.session_with_tenant
@@ -179,31 +210,52 @@ class _StageFinalizeMixin:
                 _total = int(_row[0]) if _row else 0
                 _embedded = int(_row[1]) if _row else 0
                 _null_non_parent = int(_row[2]) if _row else 0
-                if _total == 0:
-                    # Fail-LOUD (audit 2026-06-13): zero persisted chunks is an
-                    # ingest FAILURE, not a warning. ERROR level + state=failed
-                    # so monitoring + the recovery sweep both see it; the doc is
-                    # NOT advertised as ingested below (gated on _final_state).
+                # Resilience floor (config-overridable): serve a doc that is
+                # MOSTLY embedded rather than taking the bot dark on a transient
+                # 1/500 embed miss. See ``_decide_ingest_state``.
+                _min_cov = DEFAULT_INGEST_MIN_LEAF_EMBED_COVERAGE
+                if self._cfg is not None:
+                    try:
+                        _min_cov = float(await self._cfg.get(
+                            "ingest_min_leaf_embed_coverage",
+                            DEFAULT_INGEST_MIN_LEAF_EMBED_COVERAGE,
+                        ))
+                    except (ValueError, TypeError):
+                        _min_cov = DEFAULT_INGEST_MIN_LEAF_EMBED_COVERAGE
+                _final_state = _decide_ingest_state(
+                    _total, _embedded, _null_non_parent, min_leaf_coverage=_min_cov,
+                )
+                _final_step = _final_state
+                _leaf_total = _embedded + _null_non_parent
+                _cov = round(_embedded / _leaf_total, 4) if _leaf_total else 0.0
+                if _total == 0 or _embedded == 0:
+                    # Fail-LOUD (audit 2026-06-13): zero persisted chunks / nothing
+                    # embedded is an ingest FAILURE. ERROR so monitoring + recovery
+                    # sweep both see it; doc NOT advertised as ingested below.
                     logger.error(
                         "ingest_zero_chunks_persisted_failed",
                         document_id=str(doc_id), title=title,
+                        chunks_total=_total, chunks_embedded=_embedded,
                     )
-                    _final_state = "failed"
-                    _final_step = "failed"
+                elif _null_non_parent > 0 and _final_state == "active":
+                    # Partial embed but coverage >= floor → SERVE degraded (null
+                    # leaves keep BM25; a recovery re-embed can fill them later).
+                    logger.warning(
+                        "ingest_partial_embedding_serving_degraded",
+                        document_id=str(doc_id), title=title,
+                        chunks_total=_total, chunks_embedded=_embedded,
+                        chunks_null_leaf=_null_non_parent,
+                        leaf_coverage=_cov, min_leaf_coverage=_min_cov,
+                    )
                 elif _null_non_parent > 0:
-                    # Only fail if leaf (non-parent) chunk has NULL embed
-                    # — parent chunks legitimately have NULL by design.
+                    # Coverage below floor → genuinely broken, re-ingest needed.
                     logger.warning(
                         "ingest_partial_embedding_marking_failed",
                         document_id=str(doc_id), title=title,
                         chunks_total=_total, chunks_embedded=_embedded,
                         chunks_null_leaf=_null_non_parent,
+                        leaf_coverage=_cov, min_leaf_coverage=_min_cov,
                     )
-                    _final_state = "failed"
-                    _final_step = "failed"
-                else:
-                    _final_state = "active"
-                    _final_step = "active"
                 await session.execute(
                     text(
                         """
