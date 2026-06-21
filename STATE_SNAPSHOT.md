@@ -3,7 +3,23 @@
 > Always-updated current state. Git history was reset on 2026-06-14 (fresh start);
 > commit-SHA anchors no longer apply — this file is the source of truth.
 
-## Session 2026-06-20 (cont) — Full 8-step eval + xe stats-noise extraction fix (re-ingested)  ⟵ LATEST
+## Session 2026-06-21 — B-1 attribution + Tier-1 (COVERAGE 1.00) + B-2 rigor + ref_rag masterplan + infra-secure  ⟵ LATEST
+
+**[user: lên 5/5 RAG · so AdapChunk/RAG-Anything · "tại sao thua dù có code" · plan có-hết+hơn]**
+
+### ✅ Shipped — 9 commits PUSHED (`e6e56cc`→`d263098`, branch `expert-rag-squash-…`)
+- **B-1 STEP-5 attribution** (`61b7a7a`): stats route ghi `request_chunk_refs` từ entities' `record_chunk_id` (alembic backfill 0→100% qua chunk_index join; **decouple HALLU-safe** — LLM context giữ synthetic-only, `find_chunks_by_ids` không feed context). **CHUNK_RECALL 0.31→0.85 THẬT**. 4-round A/B gated.
+- **Tier-1 F1+F2+F3**: F1 q02 keyword-pollution (`e175e0c`) — gốc THẬT = "Shop"/"giúp" lọt `_LIST_STRIP_PHRASES` (KHÔNG phải granularity → **chuộc accept SAI**); F2 reranker tie-break `(-score,-retrieval_score,chunk_index)` deterministic (3-run verified); F3 (`362d440`) parse_table_chunks ưu tiên `raw_chunk` (narration "Đoạn X…" noise). → **COVERAGE 0.95→1.00 cả 3 bot · 0/42 fail · HALLU=0**. 3 rag-debugger agent song song tìm gốc.
+- **B-2 rigor harness** (`2472f57`, `scripts/eval_rigor.py`): N-run + flip-rate + **Wilcoxon significance** — vòng đo đóng (gate mọi A/B; "1-run pass" ≠ evidence, rule #0). **Verified LIVE N=2: cả 3 bot COVERAGE 1.0±0.0 · flip=0 · HALLU=0** (rock-solid, zero variance — không phải 1 run may).
+- **Infra-secure** (`d263098`): redis `--requirepass ${REDIS_PASSWORD}` (var-ref, no leak) + loopback `127.0.0.1:6380` (fix protected-mode AN TOÀN, không weaken) + `scripts/devstack.sh` control (status/health/server-*/redis-fix-help).
+
+### 🧭 Master plan ref_rag (`plans/20260621-refrag-masterplan/`) — "tại sao thua + cách hơn"
+ragbot **⊇ ~90%** AdapChunk(MIT,chunking) + RAG-Anything(MIT,KG+multimodal) ở **scaffolding**. Thua vì **DORMANT/chưa-đo, KHÔNG vắng mặt**: AdapChunk 4/7-layer wired (L4 ekimetrics-selector STUB, L3/L7 flag-off), KG `KnowledgeGraphService`+`knowledge_edges` **0-callsite (KG rỗng)**. Thật-sự-thiếu DUY NHẤT = **multimodal VLM**. Gốc rễ = **không có vòng đo → idea built nhưng unproven → để OFF**. Đường vượt: **đo→bật-dormant(KG/chunking)→build-multimodal→thắng HALLU/multi-tenant/VN/live (4 trục họ cấu trúc không có)**. Fix-plan F1-F11: `reports/BCD_DEBUG_FIXPLAN_20260621.md`. Consolidated: `reports/CONSOLIDATED_ASSESSMENT_PLAN_20260621.md`.
+
+### Còn lại (multi-session, gated trên B-2; stack live+controllable)
+KG-at-ingest (T1 cao nhất) · chunking-activate (L4 ekimetrics + L7 narrate context-aware) · multimodal-build · D1 robust-JSON · **ops: OOM-guard (W-O1 — server chết dưới concurrent+big-embed) · revert `bypass_token_check`** (vẫn ON).
+
+## Session 2026-06-20 (cont) — Full 8-step eval + xe stats-noise extraction fix (re-ingested)
 
 **[user: "đọc CLAUDE.md, thử code hiện tại, check TẤT CẢ luồng, fix triệt để"]**
 

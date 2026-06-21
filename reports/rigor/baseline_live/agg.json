@@ -1,0 +1,249 @@
+{
+  "n_runs": 2,
+  "per_bot": {
+    "chinh-sach-xe": {
+      "coverage_mean": 1.0,
+      "coverage_std": 0.0,
+      "flip_queries": 0,
+      "hallu_breaches": 0
+    },
+    "test-spa-id": {
+      "coverage_mean": 1.0,
+      "coverage_std": 0.0,
+      "flip_queries": 0,
+      "hallu_breaches": 0
+    },
+    "thong-tu-09-2020-tt-nhnn": {
+      "coverage_mean": 1.0,
+      "coverage_std": 0.0,
+      "flip_queries": 0,
+      "hallu_breaches": 0
+    }
+  },
+  "per_query": {
+    "chinh-sach-xe|q02": {
+      "bot": "chinh-sach-xe",
+      "qid": "q02",
+      "kind": "answerable",
+      "pass_rate": 1.0,
+      "flip": false,
+      "hallu": 0
+    },
+    "chinh-sach-xe|q03": {
+      "bot": "chinh-sach-xe",
+      "qid": "q03",
+      "kind": "answerable",
+      "pass_rate": 1.0,
+      "flip": false,
+      "hallu": 0
+    },
+    "chinh-sach-xe|q04": {
+      "bot": "chinh-sach-xe",
+      "qid": "q04",
+      "kind": "answerable",
+      "pass_rate": 1.0,
+      "flip": false,
+      "hallu": 0
+    },
+    "chinh-sach-xe|q05": {
+      "bot": "chinh-sach-xe",
+      "qid": "q05",
+      "kind": "answerable",
+      "pass_rate": 1.0,
+      "flip": false,
+      "hallu": 0
+    },
+    "chinh-sach-xe|q06": {
+      "bot": "chinh-sach-xe",
+      "qid": "q06",
+      "kind": "answerable",
+      "pass_rate": 1.0,
+      "flip": false,
+      "hallu": 0
+    },
+    "chinh-sach-xe|q07": {
+      "bot": "chinh-sach-xe",
+      "qid": "q07",
+      "kind": "answerable",
+      "pass_rate": 1.0,
+      "flip": false,
+      "hallu": 0
+    },
+    "chinh-sach-xe|q10": {
+      "bot": "chinh-sach-xe",
+      "qid": "q10",
+      "kind": "answerable",
+      "pass_rate": 1.0,
+      "flip": false,
+      "hallu": 0
+    },
+    "chinh-sach-xe|q13": {
+      "bot": "chinh-sach-xe",
+      "qid": "q13",
+      "kind": "trap",
+      "pass_rate": 1.0,
+      "flip": false,
+      "hallu": 0
+    },
+    "chinh-sach-xe|q14": {
+      "bot": "chinh-sach-xe",
+      "qid": "q14",
+      "kind": "trap",
+      "pass_rate": 1.0,
+      "flip": false,
+      "hallu": 0
+    },
+    "test-spa-id|q02": {
+      "bot": "test-spa-id",
+      "qid": "q02",
+      "kind": "answerable",
+      "pass_rate": 1.0,
+      "flip": false,
+      "hallu": 0
+    },
+    "test-spa-id|q03": {
+      "bot": "test-spa-id",
+      "qid": "q03",
+      "kind": "answerable",
+      "pass_rate": 1.0,
+      "flip": false,
+      "hallu": 0
+    },
+    "test-spa-id|q04": {
+      "bot": "test-spa-id",
+      "qid": "q04",
+      "kind": "answerable",
+      "pass_rate": 1.0,
+      "flip": false,
+      "hallu": 0
+    },
+    "test-spa-id|q05": {
+      "bot": "test-spa-id",
+      "qid": "q05",
+      "kind": "answerable",
+      "pass_rate": 1.0,
+      "flip": false,
+      "hallu": 0
+    },
+    "test-spa-id|q06": {
+      "bot": "test-spa-id",
+      "qid": "q06",
+      "kind": "answerable",
+      "pass_rate": 1.0,
+      "flip": false,
+      "hallu": 0
+    },
+    "test-spa-id|q07": {
+      "bot": "test-spa-id",
+      "qid": "q07",
+      "kind": "answerable",
+      "pass_rate": 1.0,
+      "flip": false,
+      "hallu": 0
+    },
+    "test-spa-id|q08": {
+      "bot": "test-spa-id",
+      "qid": "q08",
+      "kind": "answerable",
+      "pass_rate": 1.0,
+      "flip": false,
+      "hallu": 0
+    },
+    "test-spa-id|q09": {
+      "bot": "test-spa-id",
+      "qid": "q09",
+      "kind": "answerable",
+      "pass_rate": 1.0,
+      "flip": false,
+      "hallu": 0
+    },
+    "test-spa-id|q11": {
+      "bot": "test-spa-id",
+      "qid": "q11",
+      "kind": "answerable",
+      "pass_rate": 1.0,
+      "flip": false,
+      "hallu": 0
+    },
+    "test-spa-id|q13": {
+      "bot": "test-spa-id",
+      "qid": "q13",
+      "kind": "answerable",
+      "pass_rate": 1.0,
+      "flip": false,
+      "hallu": 0
+    },
+    "test-spa-id|q17": {
+      "bot": "test-spa-id",
+      "qid": "q17",
+      "kind": "trap",
+      "pass_rate": 1.0,
+      "flip": false,
+      "hallu": 0
+    },
+    "test-spa-id|q18": {
+      "bot": "test-spa-id",
+      "qid": "q18",
+      "kind": "trap",
+      "pass_rate": 1.0,
+      "flip": false,
+      "hallu": 0
+    },
+    "thong-tu-09-2020-tt-nhnn|q01": {
+      "bot": "thong-tu-09-2020-tt-nhnn",
+      "qid": "q01",
+      "kind": "answerable",
+      "pass_rate": 1.0,
+      "flip": false,
+      "hallu": 0
+    },
+    "thong-tu-09-2020-tt-nhnn|q03": {
+      "bot": "thong-tu-09-2020-tt-nhnn",
+      "qid": "q03",
+      "kind": "answerable",
+      "pass_rate": 1.0,
+      "flip": false,
+      "hallu": 0
+    },
+    "thong-tu-09-2020-tt-nhnn|q04": {
+      "bot": "thong-tu-09-2020-tt-nhnn",
+      "qid": "q04",
+      "kind": "answerable",
+      "pass_rate": 1.0,
+      "flip": false,
+      "hallu": 0
+    },
+    "thong-tu-09-2020-tt-nhnn|q05": {
+      "bot": "thong-tu-09-2020-tt-nhnn",
+      "qid": "q05",
+      "kind": "answerable",
+      "pass_rate": 1.0,
+      "flip": false,
+      "hallu": 0
+    },
+    "thong-tu-09-2020-tt-nhnn|q06": {
+      "bot": "thong-tu-09-2020-tt-nhnn",
+      "qid": "q06",
+      "kind": "answerable",
+      "pass_rate": 1.0,
+      "flip": false,
+      "hallu": 0
+    },
+    "thong-tu-09-2020-tt-nhnn|q09": {
+      "bot": "thong-tu-09-2020-tt-nhnn",
+      "qid": "q09",
+      "kind": "trap",
+      "pass_rate": 1.0,
+      "flip": false,
+      "hallu": 0
+    },
+    "thong-tu-09-2020-tt-nhnn|q10": {
+      "bot": "thong-tu-09-2020-tt-nhnn",
+      "qid": "q10",
+      "kind": "trap",
+      "pass_rate": 1.0,
+      "flip": false,
+      "hallu": 0
+    }
+  }
+}
