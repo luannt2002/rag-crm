@@ -3,7 +3,29 @@
 > Always-updated current state. Git history was reset on 2026-06-14 (fresh start);
 > commit-SHA anchors no longer apply — this file is the source of truth.
 
-## Session 2026-06-21 — B-1 attribution + Tier-1 (COVERAGE 1.00) + B-2 rigor + ref_rag masterplan + infra-secure  ⟵ LATEST
+## Session 2026-06-21 (cont) — Live conversational QA exposes hidden retrieval bugs + Phase-1 fix shipped  ⟵ LATEST
+
+**[user: "load test thì sao?" → "3 con bot, 3 agent QA/QC hội thoại theo nghiệp vụ người dùng, verify trực tiếp" → "luồng sâu hơn (giá/so sánh/liệt kê/đặt lịch)" → start plan → tiếp]**
+
+### 🎯 Headline — conversational QA lật ngược "COVERAGE 1.00"
+- B-2 rigor chấm 3 bot **1.00** nhưng dùng **entity-name** (đường stats-index dễ). User thật hỏi **size/liệt kê/so sánh/ngưỡng** (đường vector) → **vỡ**. 3 agent QA/QC (Sonnet, READ-ONLY, `scripts/qa_chat.py` multi-turn + verify DB) chạy 2 vòng; **mọi HALLU claim re-adjudicate ở main session vs DB** (rule #0). Verdict: `reports/qa_live/QA_LIVE_VERDICT_20260621.md`.
+- **xe**: BỊA GIÁ — "1.150.000đ" có trong **0 chunk** (verified) nhưng quote lặp; cùng câu "205/55R16 giá?" → **5 đáp án** (1.5M/972k/1.15M/refuse/0đ). **spa**: lõi tốt (0 HALLU, giá ổn định, booking PASS) nhưng liệt kê omit zone (triệt lông). **legal**: MFA threshold **0/4 đúng** (nói cấp độ 2/3; thật **cấp độ 4** Điều 30.6/chunk 289) + cite "đoạn N" (chunk-index) làm căn cứ pháp lý.
+
+### ✅ Shipped — retrieval-fix track (plan `plans/20260621-retrieval-fix-qa/`, gated D13-first)
+- **Root-cause xe** (`01351a9`, 5-step): 1 sản phẩm tách ≥2 index row notation lệch, giá chỉ gắn 1 — "205/55R16"(R, NULL) vs "205/55/16 GP"(slash, 1044000); query R-notation khớp dòng NULL → LLM được chunk-không-giá → bịa.
+- **Phase 0 — D13 conversational gate** (`35b389d`+`dbdce0a`): eval hội thoại hand-verified 3 bot. Baseline lộ gap: **xe 0.14 · spa 0.33 · legal 0.80** vs factoid 1.00.
+- **Phase 1 — xe FIX** (`2ae5331`): notation-fold trong `query_by_name_keyword` (gộp 1 separator giữa 2 digit, domain-neutral, 0 over-match) + prefer-priced ORDER BY. **D13 xe 0.14→0.86 · "205/55R16"→1.044.000 ổn định 3/3 · phantom diệt · HALLU=0 · 42-q 1.00 no-regression cả 3 bot**.
+- **Phase 2 legal** (`a202491`) + **Phase 3 spa** (`6a596b7`) **DIAGNOSE + DEFER**: cả 2 test lever measure-first đều fail (bm25-boost không kéo chunk 289 = semantic gap; hạ min_len over-match "da mặt"↔zone). Cần effort **data/extraction/retrieval nâng cao**, không patch. **Cả 2 hiện SAFE — faithful refuse, HALLU=0** (coverage gap, không phải breach).
+
+### ✅ Cũng shipped phiên này (measurement + ops + KG)
+- **auto-qrels = generator-noise** (`a3dde09`): power-eval dao động 0.36↔0.95 chỉ do đổi mẫu (code-price/dup-name/brand-không-bán) → **đo noise generator, KHÔNG phải RAG**; số đáng tin vẫn hand-42q. **Intrinsic chunking ≈ AdapChunk** (SC 99.8/CC 0.97) — finding ĐỨNG VỮNG. Rule #0 áp vào chính metric.
+- **KG measure-first probe** (`52752cb`, `scripts/kg_probe.py`): dry-run extract → **legal=ENABLE** (triple faithful cross-clause), **catalog=DON'T** (SKU-variant noise) → gate per-bot, KHÔNG flip global.
+- **Ops** (`fc60c47`): điều tra rule #0 → **OOM chưa từng verify** (dmesg sạch, 54Gi free) → thêm memory-visibility vào `devstack status` thay vì cap rủi ro; **bypass_token_check = giữ ON** (prod-safe server_default=false, revert phá eval).
+
+### Còn lại (fresh session, effort data/extraction; gate D13 sẵn)
+legal query-expansion/reranker + citation-strip (narration "Đoạn N" baked in content, đụng mọi bot) · spa zone category/full-name + listing aggregation (source chunk = "Buffet CNC", không có signal triệt-lông → derive không sạch) · KG backfill+enable per-bot legal-first · chunking-activate · multimodal-build.
+
+## Session 2026-06-21 — B-1 attribution + Tier-1 (COVERAGE 1.00) + B-2 rigor + ref_rag masterplan + infra-secure
 
 **[user: lên 5/5 RAG · so AdapChunk/RAG-Anything · "tại sao thua dù có code" · plan có-hết+hơn]**
 
