@@ -18,7 +18,15 @@ from ragbot.shared.types import Role, TenantId, TraceId
 @dataclass(frozen=True, slots=True)
 class LLMMessage:
     role: Role
-    content: str
+    # ``str`` for text turns (the overwhelming default). For multimodal turns,
+    # an OpenAI-style content-part list — e.g.
+    #   [{"type": "text", "text": "..."},
+    #    {"type": "image_url", "image_url": {"url": "data:image/png;base64,..."}}]
+    # LiteLLM forwards this shape natively, so the router passes ``content``
+    # through unchanged. Backward-compatible: every existing caller passes ``str``.
+    # A multipart message is only ever CONSTRUCTED against a vision-capable model
+    # (guarded at the VLM call site), never silently sent to a text model.
+    content: str | list[dict[str, Any]]
     name: str | None = None  # for tool messages
     tool_call_id: str | None = None
 

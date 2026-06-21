@@ -95,6 +95,15 @@ The scaffolding is wired; only the VLM call is missing ("dormant-not-absent"):
 
 ## Status / next
 - Phase 0 ✅ (fixtures + eval gate + model locked).
-- Phase 1 (extend `LLMMessage.content` to multipart + ADR + `supports_vision` guard) is the
-  next unit — it touches the core LLM Port (every completion flows through it), so it wants
-  careful work + the ADR. Recommended as the first task of a fresh session; the gate is ready.
+- Phase 1 ✅ (`ab94092`→this): `LLMMessage.content` widened to `str | list[dict[str, Any]]`
+  (`llm_port.py`); router already forwards verbatim (no change). Test
+  `tests/unit/test_llm_message_multipart.py` (3 pass: str backward-compat + vision
+  round-trip + mixed batch) · LLM/router suite **293 pass, 0 fail** no-regression · ADR
+  `docs/adr/0002-llm-message-multipart-vision.md`. The `supports_vision` guard is deferred
+  to Phase 2 BY DESIGN (no caller constructs a multipart message yet → nothing unsafe
+  enabled; the guard ships with the first vision call).
+- **Phase 2 next** (vertical slice): `vlm_image_parser.py` (image MIME → base64 → VLM
+  caption via gpt-4.1-mini) + registry line + Null OFF default + flip
+  `ai_models.supports_vision=true` (gpt-4.1-mini) via alembic + the `supports_vision`
+  fail-loud guard. Gate: `tests/fixtures/multimodal/EVAL_SPEC.md` (coverage 3 values +
+  HALLU trap blank panel). Touches ingest + a real VLM call → fresh-session unit.
