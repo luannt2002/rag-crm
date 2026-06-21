@@ -304,6 +304,19 @@ class JinaReranker:
             enriched["reranker_used"] = self.mode
             output.append(enriched)
 
+        # Deterministic tie-break (D5a): the API may return tied-score results
+        # (scores rounded to DEFAULT_JINA_RERANKER_SCORE_PRECISION) in an
+        # unstable arrival order across identical calls → answer flip. Resolve
+        # ties by higher original-retrieval score then stable document position
+        # (chunk_index). Sort order only — same chunks, HALLU/context unchanged.
+        output.sort(
+            key=lambda c: (
+                -float(c.get("score", 0) or 0),
+                -float(c.get("retrieval_score") or 0),
+                int(c.get("chunk_index", 0) or 0),
+            )
+        )
+
         logger.info(
             "jina_rerank_done",
             model=effective_model,

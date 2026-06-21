@@ -461,3 +461,14 @@ def test_parse_list_filler_preserves_multiword_service() -> None:
     result = parse_list_query("có dịch vụ về ủ trắng body không?")
     assert result is not None
     assert "trắng" in (result.keyword or "")
+
+
+def test_parse_list_strips_shop_and_help_fillers() -> None:
+    """q02 (xe): 'Shop có những loại lốp nào, liệt kê giúp mình' left 'Shop' +
+    'giúp' in the keyword ('Shop lốp , giúp') → ILIKE matched nothing → list_all
+    fallback (oldest rows) missed the answer entity (CITYTRAXX). 'shop' (store
+    colloquialism) + 'giúp' (help verb) are domain-neutral conversational
+    fillers; after stripping, the keyword is the clean category noun 'lốp'."""
+    rf = parse_list_query("Shop có những loại lốp nào, liệt kê giúp mình")
+    assert rf is not None
+    assert rf.keyword.strip() == "lốp", f"polluted keyword: {rf.keyword!r}"

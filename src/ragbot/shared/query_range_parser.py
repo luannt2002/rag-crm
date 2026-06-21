@@ -353,6 +353,11 @@ _LIST_STRIP_PHRASES: Final[tuple[str, ...]] = (
     # function words, domain-neutral.
     "về", "ve", "vào", "vao",
     "không", "khong", "có", "co", "ạ", "à", "ra", "mình", "minh",
+    # Store-ownership colloquialisms + help verbs that wrap the real noun in
+    # B2C chat ("Shop có … liệt kê giúp mình") — they polluted the keyword
+    # ("Shop lốp , giúp") so the ILIKE matched nothing → list_all fallback
+    # (oldest rows) missed the answer entity. Domain-neutral function words.
+    "shop", "cửa hàng", "cua hang", "giúp mình", "giup minh", "giúp", "giup",
 )
 
 

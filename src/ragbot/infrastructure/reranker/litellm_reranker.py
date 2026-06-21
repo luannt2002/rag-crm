@@ -104,8 +104,16 @@ class LiteLLMReranker:
                     }
                     scored.append(chunk)
 
-            # Sort by rerank score descending
-            scored.sort(key=lambda c: c.get("score", 0), reverse=True)
+            # Sort by rerank score descending, with a deterministic tie-break
+            # (D5a): higher original-retrieval score then stable chunk_index, so
+            # tied rerank scores never flip order across identical calls.
+            scored.sort(
+                key=lambda c: (
+                    -float(c.get("score", 0) or 0),
+                    -float(c.get("retrieval_score") or 0),
+                    int(c.get("chunk_index", 0) or 0),
+                )
+            )
             logger.info(
                 "rerank_done",
                 model=effective_model,
