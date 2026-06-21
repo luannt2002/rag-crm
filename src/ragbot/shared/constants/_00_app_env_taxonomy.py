@@ -128,6 +128,12 @@ DEFAULT_CONVO_SUMMARY_TRIGGER_TURNS: Final[int] = 8
 # of the raw query so the vector lives closer to declarative chunk text.
 DEFAULT_HYDE_ENABLED: Final[bool] = False
 DEFAULT_HYDE_PROVIDER: Final[str] = "null"
+# Multimodal VLM image captioning. Default OFF (Null Object): an image upload is
+# parsed by the legacy OCR path until an operator flips ``system_config.vlm_provider``
+# to ``"vlm_image"``. When ON, the ingest worker routes image MIMEs to the VLM
+# parser (a vision model captions the image into retrievable text). Model is locked
+# to a vision-capable binding (gpt-4.1-mini, supports_vision=true).
+DEFAULT_VLM_PROVIDER: Final[str] = "null"
 # Admin override 2026-05-12: HyDE is a utility task (not user-facing answer)
 # so the platform default uses gpt-4.1-mini — Haiku is banned by the
 # higher-tier admin policy regardless of cost savings.

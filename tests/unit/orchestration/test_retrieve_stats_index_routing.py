@@ -375,16 +375,22 @@ def test_stats_index_chunks_linked_to_evidence() -> None:
 
     result = _invoke_retrieve(compiled, state)
 
-    # The stats route now PREPENDS a synthetic chunk built from the filtered
-    # entities (name + price) so the LLM answers from the clean aggregation
-    # result, then appends the evidence-linked chunks. graded_chunks is seeded
-    # too so the stats→generate route can skip rerank/grade.
+    # The stats route returns the synthetic clean record as the LLM CONTEXT
+    # (name + price) and does NOT re-feed the raw per-entity source chunks —
+    # that re-introduced the variant-blob noise the synthetic route exists to
+    # avoid (B-1 STEP-5 decouple). Evidence linkage is preserved for ATTRIBUTION
+    # via ``stats_entities`` (each carries ``record_chunk_id``), consumed by the
+    # callback to write request_chunk_refs — NOT by putting evidence in context.
     retrieved = result.get("retrieved_chunks")
     assert retrieved[0]["source"] == "stats_index"
     assert "Dịch vụ A" in retrieved[0]["content"]
-    assert fake_chunks[0] in retrieved
+    # context is synthetic-only — the raw evidence chunk is NOT in retrieved
+    assert fake_chunks[0] not in retrieved
     assert result.get("graded_chunks") == retrieved
-    doc_repo.find_chunks_by_ids.assert_called_once()
+    # attribution preserved: the entity's record_chunk_id flows via stats_entities
+    assert result.get("stats_entities")[0]["record_chunk_id"] == chunk_uuid
+    # find_chunks_by_ids context-fetch was removed (HALLU-safe synthetic-only context)
+    doc_repo.find_chunks_by_ids.assert_not_called()
 
 
 def test_stats_index_synthetic_chunk_surfaces_field_like_col_attribute() -> None:

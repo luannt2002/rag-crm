@@ -203,8 +203,11 @@ async def test_list_all_entities_pagination() -> None:
 
     bot_id = uuid.uuid4()
     doc_id = uuid.uuid4()
+    # 7 columns mirroring the SELECT (id, record_document_id, entity_name,
+    # entity_category, price_primary, price_secondary, record_chunk_id) — the last
+    # added by the B-1 STEP-5 attribution wiring (record_chunk_id).
     fake_rows = [
-        (uuid.uuid4(), doc_id, f"Entity {i}", None, 100_000 * (i + 1), None)
+        (uuid.uuid4(), doc_id, f"Entity {i}", None, 100_000 * (i + 1), None, uuid.uuid4())
         for i in range(3)
     ]
     sf = _make_mock_session_factory(fake_rows=fake_rows)
@@ -216,6 +219,7 @@ async def test_list_all_entities_pagination() -> None:
         assert "record_document_id" in row
         assert "entity_name" in row
         assert "price_primary" in row
+        assert "record_chunk_id" in row
 
 
 @pytest.mark.asyncio

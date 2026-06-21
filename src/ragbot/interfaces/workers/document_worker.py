@@ -48,11 +48,12 @@ from ragbot.infrastructure.observability.metrics import (
     document_ingest_duration_seconds,
     document_ingest_total,
 )
-from ragbot.infrastructure.parser.registry import detect_parser
+from ragbot.infrastructure.parser.registry import build_parser, detect_parser
 from ragbot.shared.constants import (
     DEFAULT_HTTP_TIMEOUT_S,
     DEFAULT_NARRATE_PROVIDER,
     DEFAULT_NARRATE_THEN_EMBED_ENABLED,
+    DEFAULT_VLM_PROVIDER,
     SUBJECT_DOCUMENT_UPLOADED,
 )
 from ragbot.shared.errors import (
@@ -115,6 +116,57 @@ async def handle_document_uploaded(payload: dict[str, Any], container: Container
         await _handle_document_uploaded_inner(payload, container)
     finally:
         clear_request_context()
+
+
+async def _try_build_vlm_image_parser(
+    container: Container,
+    *,
+    bot_id: Any,
+    tenant_id: Any,
+    trace_id: Any,
+    mime_type: str,
+) -> Any | None:
+    """Build the VLM image parser for an image upload — or None (fall back to OCR).
+
+    Gated by ``system_config.vlm_provider`` (default ``"null"`` = OFF). Resolves a
+    vision spec; if no vision-capable model is available the function degrades to None
+    (the legacy OCR path) rather than crashing the ingest — a missing capability must
+    not break the document. Returns a ready ``VlmImageParser`` only when VLM is enabled
+    AND the resolved model has ``supports_vision``.
+    """
+    if not (mime_type or "").lower().startswith("image/"):
+        return None
+    try:
+        _cfg = SystemConfigService(
+            session_factory=container.session_factory(),
+            redis_client=container.redis_client(),
+        )
+        provider = str(await _cfg.get("vlm_provider", DEFAULT_VLM_PROVIDER))
+        if provider == "null":
+            return None
+        spec = await container.model_resolver().resolve_llm(
+            UUID(str(bot_id)),
+            record_tenant_id=UUID(str(tenant_id)),
+            intent="enrichment",  # type: ignore[arg-type]
+        )
+        if not getattr(spec, "supports_vision", False):
+            logger.warning(
+                "vlm_image_no_vision_model",
+                model=getattr(spec, "model_name", "?"),
+                detail="vlm_provider enabled but resolved model lacks vision; OCR fallback",
+            )
+            return None
+        return build_parser(
+            provider,
+            llm=container.llm(),
+            spec=spec,
+            record_tenant_id=UUID(str(tenant_id)),
+            trace_id=str(trace_id) if trace_id else "ingest",
+        )
+    except (AttributeError, ValueError, TypeError, KeyError) as exc:
+        # Resolver / config / construction surfaces — degrade to OCR, never crash ingest.
+        logger.warning("vlm_image_parser_build_failed", error=str(exc))
+        return None
 
 
 async def _handle_document_uploaded_inner(payload: dict[str, Any], container: Container) -> None:
@@ -319,7 +371,16 @@ async def _handle_document_uploaded_inner(payload: dict[str, Any], container: Co
                 if _doc_name and "." in _doc_name:
                     _ext = _doc_name[_doc_name.rfind("."):].lower()
 
-                parser = detect_parser(mime_type or "", _ext)
+                # VLM image branch (multimodal Phase 2): an image upload is captioned
+                # by a vision model when ``vlm_provider`` is enabled, else falls through
+                # to the legacy OCR path. The VLM parser needs injected llm+spec, so it
+                # is built here explicitly (detect_parser's no-arg probe cannot).
+                parser = await _try_build_vlm_image_parser(
+                    container, bot_id=bot_id, tenant_id=tenant_id,
+                    trace_id=trace_id, mime_type=mime_type or "",
+                )
+                if parser is None:
+                    parser = detect_parser(mime_type or "", _ext)
                 if parser is not None:
                     # follow_redirects: Google Docs ``export?format=docx`` returns
                     # a 307 to a googleusercontent.com host; without following it
