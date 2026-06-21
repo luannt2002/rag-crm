@@ -3,7 +3,33 @@
 > Always-updated current state. Git history was reset on 2026-06-14 (fresh start);
 > commit-SHA anchors no longer apply — this file is the source of truth.
 
-## Session 2026-06-21 (cont) — Live conversational QA exposes hidden retrieval bugs + Phase-1 fix shipped  ⟵ LATEST
+## Session 2026-06-22 — Multimodal track (Phase 0→A1) + multi-agent RAG scorecard + deep improvement analysis  ⟵ LATEST
+
+**[user: build multimodal (gap thật vs RAG-Anything) → "chỉ gpt-4.1-mini/nano" → "chưa cần ảnh, text first" → chấm điểm + multi-agent debug + so AdapChunk + "sao thua" + "làm sao cải thiện"]**
+
+### ✅ Multimodal VLM — capability MỚI, code-path đủ, OFF-by-default (dormant an toàn)
+- **Phase 0** (`ab94092`): fixtures PIL (`price_table.png` coverage + `blank_panel.png` HALLU-trap) + `EVAL_SPEC.md` gate + model **gpt-4.1-mini** (user constraint).
+- **Phase 1** (`1b6aa47`): `LLMMessage.content` → `str | list[dict]` (vision multipart) — cú enable cốt lõi (mọi LLM call qua port này; litellm/router forward verbatim). **ADR 0002**. Test 3 pass + 293 LLM-suite no-reg.
+- **Spike** (`817e39b`): gpt-4.1-mini caption fixture THẬT — coverage 3/3 + HALLU-trap PASS → premise PROVEN trước khi build wiring.
+- **Phase 2 adapter** (`d7e4db2`): `vlm_image_parser.py` (base64 + magic-byte MIME → vision msg → caption) + `LLMSpec.supports_vision` + registry (detect_parser fail-soft skip) + fail-loud guard + **alembic flip gpt-4.1-mini supports_vision=true**. 5 test + 431 no-reg.
+- **Phase 2 A1** (`b62ad96`): worker `_try_build_vlm_image_parser` — ảnh MIME + `vlm_provider` ON → VLM; OFF/no-vision → OCR fallback graceful. `DEFAULT_VLM_PROVIDER="null"`. 4 branch test + **fixed 2 stale B-1 test** (pagination 7-col + linked_to_evidence synthetic-only contract). 592 pass/0 fail.
+- Còn lại: **operator-gated activation** (flip `vlm_provider` + run ingest worker + upload → EVAL_SPEC) + Phase 3 ảnh nhúng PDF/DOCX. Code đã sẵn, không phải dev work.
+
+### 📊 RAG scorecard hiện tại (multi-agent re-score LIVE, `reports/RAG_SCORECARD_20260621.md`)
+- **Faithfulness: A** — HALLU=0 SACRED end-to-end (12 trap + 4 spot-check all refuse, 0 fabricate).
+- **Coverage: B−** — factoid **1.00 cả 3 bot**; D13 hội thoại **xe ~1.0** (0.86 là harness format-variance artifact, live ×3 = 1.044.000 ổn định) / **spa 0.33** / **legal 0.60**. **Mọi miss = RETRIEVAL_MISS, 0 LLM_MISS** → gap thuần data/ingest, không phải generation.
+- Ingest lõi xanh (null_leaf=0 sacred, tsvector 100%, dim 1024). Lever #1 = **stats_index extraction noise** (xe 26% entity ≤5-char + 18% narrative + 93% null-price + 2 date-as-price; legal 41% narrative).
+- L1 intrinsic lexical 0.54-0.66 NHƯNG real-embedding SC 99.8/CC 0.97 ≈ AdapChunk (chunking thực tốt).
+
+### ⚖️ So AdapChunk + "sao thua" + cách cải thiện (`reports/DEEP_IMPROVEMENT_ANALYSIS_20260621.md`)
+- Ragbot RỘNG HƠN (9 strategy vs 4, VN hierarchy, atomic block, multimodal, multi-tenant, HALLU=0, live). THUA 3: metrics lexical(#1), no-coref(#2), selector dormant(#3).
+- **Sao thua (gốc rễ):** #2 coref = **thua GIẢ** (maverick-coref English-only/non-commercial + corpora structured mật độ coref thấp → bỏ qua). #1 metrics = **thua THẬT dễ fix** (embedding version ĐÃ có, chưa wire). #3 selector = **dependency-blocked** (cần #1 + block-list B1). Meta: AdapChunk=offline-research-benchmark, ragbot=live-commercial → 3 thua phần lớn là **giá của production** + **thiếu vòng đo để dám bật dormant**.
+- **5 lever cải thiện (cơ chế + gate):** L1 stats validation (đụng 3 bot) → L2 spa zone category → L3 legal clause header → L4 lexical→embedding metrics (mở khóa selector) → L5 activate selector+B1. Đều data/ingest-layer, gated D13, HALLU=0 sacred.
+
+### Còn lại (fresh session, plan sẵn `plans/20260621-fix-all-master/`)
+Wave B2/C2 (citation-strip, spa listing) → B1/C1 (legal re-chunk, spa extraction) → D1 (KG) → multimodal activation. Tất cả gap có root-cause + fix-spec + gate D13.
+
+## Session 2026-06-21 (cont) — Live conversational QA exposes hidden retrieval bugs + Phase-1 fix shipped
 
 **[user: "load test thì sao?" → "3 con bot, 3 agent QA/QC hội thoại theo nghiệp vụ người dùng, verify trực tiếp" → "luồng sâu hơn (giá/so sánh/liệt kê/đặt lịch)" → start plan → tiếp]**
 

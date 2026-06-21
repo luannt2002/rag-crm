@@ -2,6 +2,18 @@
 
 > **Session resume prompt mới**: `plans/SESSION_RESUME_PROMPT_RAGBOT_20260506.md` — paste vào new session.
 
+## 2026-06-21→22 — Conversational QA + xe price fix + multimodal track + RAG scorecard (marathon session)
+
+Long session, 21 commits. Summary (detail in STATE_SNAPSHOT.md + reports/qa_live/ + reports/RAG_SCORECARD_20260621.md):
+
+- **Measurement-rigor findings**: auto-qrels generator measures its OWN noise (COVERAGE swung 0.36↔0.95 by re-sampling), NOT RAG quality — rule #0 applied to the metric itself; reliable number = hand-curated. Intrinsic chunking ≈ AdapChunk (real-embedding SC 99.8/CC 0.97). KG measure-first probe → per-bot gate (legal faithful, catalog noise). Ops: no kernel OOM evidence → memory-visibility in devstack instead of a risky cap; bypass_token_check left ON (prod-safe).
+- **Live conversational QA (user-directed, 3 agents)** overturned the factoid "COVERAGE 1.00": found xe price FABRICATION ("1.150.000đ" in 0 chunks), spa listing-omission, legal MFA-threshold wrong (cấp độ 2/3 vs truth 4) + "đoạn N" citation-leak. Built the D13 conversational gate (xe 0.14/spa 0.33/legal 0.80 baseline vs factoid 1.00) — the eval that matters.
+- **xe price FIXED** (`2ae5331`): notation-fold in `query_by_name_keyword` (collapse 1 separator between 2 digits, domain-neutral, 0 over-match) + prefer-priced ORDER BY → D13 0.14→0.86, "205/55R16"→1.044.000 stable 3/3 (phantom killed), HALLU=0, 42-q 1.00 no-reg all 3 bots. The ONE bug with a clean query-lever.
+- **legal/spa DEFERRED with evidence**: legal MFA tested 4 query-levers (bm25/HyDE-override/HyDE-sim/hybrid) — ALL fail; chunk 289 not query-retrievable → needs data/re-chunk. spa min-len 4 blocks 3-char zones but lowering over-matches ("da mặt"↔zone) → needs extraction category. Both SAFE (HALLU=0, faithful refuse).
+- **Multimodal VLM** (dormant-not-absent → built): Phase 0 fixtures+gate, Phase 1 `LLMMessage.content` vision multipart + ADR 0002, spike (gpt-4.1-mini caption proven), Phase 2 adapter + alembic supports_vision, A1 worker branch (OFF-by-default). Code-path complete; operator-gated activation + Phase 3 (embedded images) remain.
+- **Multi-agent RAG scorecard**: Faithfulness A (HALLU=0 sacred), Coverage B− (factoid 1.00, conversational data-layer gaps, 0 LLM_MISS). vs AdapChunk: ragbot broader (9 strategies, VN, atomic, multimodal, multi-tenant, live) but behind on lexical-not-embedding metrics + no-coref + dormant selector. "Sao thua" = production-constraints + missing measurement-loop (not capability). 5 improvement levers (all data/ingest-layer, gated D13) in DEEP_IMPROVEMENT_ANALYSIS.
+- **Plans for next**: `plans/20260621-fix-all-master/` (Waves A-D), `plans/20260621-retrieval-fix-qa/`, `plans/20260621-multimodal-vlm/`. Recurring lesson: every gap is data/ingest-layer; fix the data the LLM receives, right-layer (no sysprompt patch), gated on the conversational D13 set, HALLU=0 sacred.
+
 ## 2026-05-06 (evening) — CLAUDE.md updated với "No version-ref rule" (User explicit)
 
 User mandate: "DEFAULT_EMBEDDING_COLUMN_V3 -> clear -> DEFAULT_EMBEDDING_COLUMN thôi không có v1 v2 v3 nào ở đây hết, sai role CLAUDE.md, fix all đi".
