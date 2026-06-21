@@ -76,6 +76,21 @@ Cause: generic-level chunk (356, "cấp độ 2") outranks the specific MFA chun
       citations, level-4 coverage>0, HALLU=0, defensive traps still refused.
 
 ## Phase 3 — spa: multi-chunk listing
+> **DIAGNOSIS 2026-06-21 (measure-first, deferred — threshold trade-off, no clean lever):**
+> the single-zone miss (D13 spa d02 "Mép", d04 "Mặt") is `DEFAULT_STATS_REVERSE_MATCH_MIN_LEN
+> = 4` blocking 3-char zone names — "Nách" (4) matches (d03 PASS) but "Mép"/"Mặt" (3)
+> don't. Lowering it to 3 is NOT safe: confirmed over-match surface — the 3-char entities
+> are "Mặt" (249k), "Mép" (129k), and "sâu" (NULL price). A facial query "chăm sóc da MẶT"
+> or "trị mụn chuyên SÂU" would then wrongly match the triệt-lông zone "Mặt" / the "sâu"
+> entity → a NEW bug. The threshold is a genuine under-match/over-match trade-off. Root
+> data problem: the zone entities have EMPTY entity_category and bare 3-char names — the
+> right fix is at EXTRACTION (give them category "triệt lông" or full names "Triệt lông
+> mép") so forward-match works and the risky bare-name reverse-match isn't needed; plus
+> listing aggregation for d05. That is a data/extraction effort, deferred to its own
+> session. Current behaviour is SAFE: faithful refusal ("chưa thấy trong danh mục"),
+> HALLU=0 — a coverage gap (lost bookings), not a breach. spa D13 baseline 0.33.
+
+
 Cause: listing/comparison retrieve ONE chunk → sibling services in other chunks are
 silently denied (triệt lông, Vikim, trị mụn, CSD).
 - [ ] For listing/enumeration intent, gather ALL sibling chunks of the category (raise
