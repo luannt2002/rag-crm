@@ -1,0 +1,62 @@
+{
+  "bot_id": "chinh-sach-xe",
+  "channel_type": "web",
+  "workspace_id": "xe",
+  "note": "D13 conversational eval — REAL usage shapes (size-query R-notation, listing, comparison, trap) with HAND-VERIFIED ground-truth from document_service_index. Targets the retrieval bug the 42-q factoid set hid: user types R-notation (205/55R16), priced row uses slash (205/55/16). expect = number-format-agnostic substring of the correct answer. Each price verified unique per size.",
+  "questions": [
+    {
+      "id": "d01",
+      "flow": "hoi_gia_theo_size",
+      "q": "Lốp 185/55R15 giá bao nhiêu vậy shop?",
+      "expect": "810000"
+    },
+    {
+      "id": "d02",
+      "flow": "hoi_gia_theo_size",
+      "q": "Cho mình hỏi giá lốp 195/55R15",
+      "expect": "963000"
+    },
+    {
+      "id": "d03",
+      "flow": "hoi_gia_theo_size",
+      "q": "Lốp size 205/65R15 bao nhiêu tiền một cái?",
+      "expect": "999000"
+    },
+    {
+      "id": "d04",
+      "flow": "hoi_gia_theo_size",
+      "q": "Lốp 205/55R16 giá bao nhiêu?",
+      "expect": "1044000"
+    },
+    {
+      "id": "d05",
+      "flow": "hoi_gia_theo_size",
+      "q": "205/60R16 giá sao shop?",
+      "expect": "1098000"
+    },
+    {
+      "id": "d06",
+      "flow": "liet_ke_san_pham",
+      "q": "Shop liệt kê giúp mình các dòng lốp CITYTRAXX đang có",
+      "expect": "CITYTRAXX"
+    },
+    {
+      "id": "d07",
+      "flow": "so_sanh_gia",
+      "q": "So sánh lốp 185/55R15 và 195/55R15, loại nào rẻ hơn và giá bao nhiêu?",
+      "expect": "810000"
+    },
+    {
+      "id": "d08",
+      "flow": "hallu_trap",
+      "q": "Lốp Michelin Pilot Sport 4 giá bao nhiêu shop?",
+      "expect": null
+    },
+    {
+      "id": "d09",
+      "flow": "oos_trap",
+      "q": "Shop có bán mâm xe và nước rửa kính không?",
+      "expect": null
+    }
+  ]
+}
