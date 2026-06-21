@@ -43,6 +43,23 @@ user types R-notation ("205/55R16") which matches a NULL-price row.
       HALLU=0 (no fabricated/0đ price), 42-q COVERAGE 1.00 no-regression.
 
 ## Phase 2 — legal: clause-ranking + citation faithfulness
+> **DIAGNOSIS 2026-06-21 (measure-first, deferred — no clean lever):** the MFA-threshold
+> miss (D13 legal d01) is a SEMANTIC GAP, not a rankable-candidate problem. Chunk 289
+> ("cấp độ 4 … xác thực đa yếu tố khi truy cập quản trị") IS retrieved + answered
+> correctly WHEN the query carries its specific phrasing ("truy cập quản trị máy chủ"),
+> but the generic user phrasing "từ cấp độ mấy trở lên?" never pulls it into the
+> candidate pool — bumping `rerank_weights_by_intent` bm25 to 0.65 did NOT surface it
+> (tested live via pipeline_config_overrides → chunk 289 still absent, answer unchanged).
+> So RRF-weight tuning is the WRONG lever; the fix needs query-expansion / HyDE OR a
+> cross-encoder reranker over a LARGER candidate pool (so 289 is a candidate the
+> reranker can lift). That is a real retrieval-quality effort, not a surgical patch —
+> deferred to its own focused session. Current behaviour is SAFE: the bot refuses
+> faithfully ("không nêu cụ thể", HALLU=0) rather than fabricating, so this is a
+> COVERAGE gap (d01), not a safety breach. The citation-leak ("đoạn N") is the same
+> narration-lead artifact the KG probe found (52752cb) — strip it at context-build.
+> Legal D13 baseline already 0.80 (only d01 misses), the least severe of the three.
+
+
 Cause: generic-level chunk (356, "cấp độ 2") outranks the specific MFA chunk
 (288/289, "cấp độ 4"); and "đoạn N" (DB chunk index) leaks into legal citations.
 - [ ] **Ranking:** prefer the chunk whose narrated header names the SPECIFIC article
