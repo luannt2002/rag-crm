@@ -364,7 +364,22 @@ class _StageFinalizeMixin:
                 aggregate_summary,
                 parse_table_chunks,
             )
-            _stats_entities = parse_table_chunks(rows)
+            # Feed RAW pre-enrichment row text to the extractor — a narrate/CR
+            # prefix in ``content`` ("Đoạn X nằm trong phần…") would otherwise be
+            # parsed as a noise entity. The raw row text lives in each row's
+            # ``meta.raw_chunk`` (set when the chunk was enrichment-persisted).
+            def _raw_row(_r: dict) -> dict:
+                _m = _r.get("meta")
+                if _m:
+                    try:
+                        _parsed = json.loads(_m) if isinstance(_m, str) else _m
+                        _raw = _parsed.get("raw_chunk")
+                        if _raw:
+                            return {**_r, "raw_chunk": _raw}
+                    except (ValueError, TypeError, AttributeError):
+                        pass
+                return _r
+            _stats_entities = parse_table_chunks([_raw_row(_r) for _r in rows])
             if _stats_entities:
                 if is_reindex:
                     # Delete stale stats rows before inserting updated ones.

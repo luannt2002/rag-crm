@@ -339,7 +339,14 @@ def parse_table_chunks(chunks: list[dict]) -> list[ParsedEntity]:
     entities: list[ParsedEntity] = []
 
     for chunk_idx, chunk in enumerate(chunks):
-        content: str = chunk.get("content", "") or ""
+        # Prefer the RAW pre-enrichment chunk text when present: the persisted
+        # ``content`` may carry a narrate/CR prefix ("Đoạn X nằm trong phần…")
+        # that is prose, not a catalog row — parsing it floods the stats index
+        # with narration-sentence noise (18-40% of entities). The raw row text
+        # is the clean source of truth for entity extraction.
+        content: str = (
+            chunk.get("raw_chunk") or chunk.get("content", "") or ""
+        )
         lines = [ln.rstrip() for ln in content.splitlines()]
         if not lines:
             continue

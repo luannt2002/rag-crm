@@ -190,6 +190,26 @@ def test_parse_table_chunks_drops_key_value_metadata_names() -> None:
     assert len(entities) == 2, f"expected 2 real entities, got {names}"
 
 
+def test_parse_table_chunks_prefers_raw_chunk_over_narrated_content() -> None:
+    """F3 stats-noise fix: when a row carries ``raw_chunk`` (pre-enrichment
+    text), the extractor parses THAT, not the narrate/CR-prefixed ``content``.
+    The CR prefix ("Đoạn X nằm trong phần…") is prose — parsing it floods the
+    stats index with narration-sentence noise entities (18-40% of entities)."""
+    content = (
+        "Đoạn 40 nằm trong phần kho lốp LANDSPIDER, liệt kê chi tiết các loại.\n"
+        ",Tên hàng,Giá\n"
+        "Lốp CITYTRAXX H/T,1200000\n"
+    )
+    raw = ",Tên hàng,Giá\nLốp CITYTRAXX H/T,1200000\n"
+    ents = parse_table_chunks([{"content": content, "raw_chunk": raw}])
+    names = {e.name for e in ents}
+    assert not any("Đoạn" in n for n in names), f"narration leaked: {names}"
+    assert any("CITYTRAXX" in n for n in names), f"real product missing: {names}"
+    # Without raw_chunk it falls back to content (back-compat).
+    ents2 = parse_table_chunks([{"content": raw}])
+    assert any("CITYTRAXX" in e.name for e in ents2)
+
+
 def test_parse_table_chunks_drops_url_valued_names() -> None:
     """2026-06-20 xe stats-noise fix: an image/link column mis-picked as the
     entity name (Google-Drive URL) must be rejected.
