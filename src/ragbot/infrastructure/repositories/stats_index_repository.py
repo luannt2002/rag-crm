@@ -101,16 +101,24 @@ class StatsIndexRepository:
             }
             value_clauses: list[str] = []
             for i, entity in enumerate(entities):
+                # record_chunk_id is resolved from (record_document_id,
+                # chunk_index) at INSERT time so the stats route can attribute
+                # each entity to its REAL source chunk (STEP-5 / CHUNK_RECALL).
+                # NULL when chunk_index has no matching chunk (defensive).
                 value_clauses.append(
                     f"(:tenant_id, :workspace_id, :bot_id, :doc_id, "
                     f":entity_name_{i}, :entity_category_{i}, "
                     f":price_primary_{i}, :price_secondary_{i}, "
-                    f"CAST(:attributes_json_{i} AS jsonb))"
+                    f"CAST(:attributes_json_{i} AS jsonb), "
+                    f"(SELECT id FROM document_chunks "
+                    f"WHERE record_document_id = :doc_id "
+                    f"AND chunk_index = :chunk_index_{i} LIMIT 1))"
                 )
                 params[f"entity_name_{i}"] = entity.name or ""
                 params[f"entity_category_{i}"] = entity.category
                 params[f"price_primary_{i}"] = entity.price_primary
                 params[f"price_secondary_{i}"] = entity.price_secondary
+                params[f"chunk_index_{i}"] = entity.chunk_index
                 # Merge chunk_index into attributes_json for traceability.
                 attrs = dict(entity.attributes) if entity.attributes else {}
                 attrs["chunk_index"] = entity.chunk_index
@@ -120,7 +128,8 @@ class StatsIndexRepository:
                 "INSERT INTO document_service_index "
                 "(record_tenant_id, workspace_id, record_bot_id, "
                 "record_document_id, entity_name, entity_category, "
-                "price_primary, price_secondary, attributes_json) "
+                "price_primary, price_secondary, attributes_json, "
+                "record_chunk_id) "
                 f"VALUES {', '.join(value_clauses)}"
             )
             await session.execute(text(sql), params)
@@ -231,7 +240,8 @@ class StatsIndexRepository:
 
         sql = (
             "SELECT id, record_document_id, entity_name, "
-            "entity_category, price_primary, price_secondary, attributes_json "
+            "entity_category, price_primary, price_secondary, attributes_json, "
+            "record_chunk_id "
             f"FROM document_service_index WHERE {where_sql} "
             f"ORDER BY price_primary ASC NULLS LAST "
             f"LIMIT :limit"
@@ -249,6 +259,7 @@ class StatsIndexRepository:
                 "price_primary": row[4],
                 "price_secondary": row[5],
                 "attributes_json": row[6],
+                "record_chunk_id": row[7],
             }
             for row in rows
         ]
@@ -394,7 +405,7 @@ class StatsIndexRepository:
         effective_limit = min(limit, DEFAULT_STATS_INDEX_QUERY_LIMIT)
         sql = (
             "SELECT id, record_document_id, entity_name, "
-            "entity_category, price_primary, price_secondary "
+            "entity_category, price_primary, price_secondary, record_chunk_id "
             "FROM document_service_index "
             "WHERE record_bot_id = :bot_id "
             "ORDER BY created_at ASC "
@@ -415,6 +426,7 @@ class StatsIndexRepository:
                 "entity_category": row[3],
                 "price_primary": row[4],
                 "price_secondary": row[5],
+                "record_chunk_id": row[6],
             }
             for row in rows
         ]

@@ -203,6 +203,30 @@ async def _persist_and_callback(
         final_state.get("graded_chunks") or []
         if isinstance(final_state, dict) else []
     )
+    _refs = [
+        {
+            "chunk_id": c.get("chunk_id") or c.get("id"),
+            "rank": idx,
+            "score": float(c.get("score", 0) or 0),
+        }
+        for idx, c in enumerate(_graded_for_refs)
+    ]
+    # STEP-5 attribution decouple: the stats route answers from a SYNTHETIC
+    # chunk (sentinel id → FK-skipped → its retrieval is invisible to
+    # CHUNK_RECALL). Attribute it to the REAL source chunks of the matched
+    # entities WITHOUT feeding those raw chunks to the LLM — generate's context
+    # is left untouched (re-adding the raw table rows is exactly what risks
+    # variant-blob price fabrication / HALLU). Entities carry the backfilled
+    # ``record_chunk_id``; append any not already referenced as low-rank refs.
+    _stats_entities = (
+        final_state.get("stats_entities") if isinstance(final_state, dict) else None
+    ) or []
+    _seen_ref_ids = {r["chunk_id"] for r in _refs if r.get("chunk_id")}
+    for _e in _stats_entities:
+        _cid = _e.get("record_chunk_id") if isinstance(_e, dict) else None
+        if _cid and _cid not in _seen_ref_ids:
+            _seen_ref_ids.add(_cid)
+            _refs.append({"chunk_id": _cid, "rank": len(_refs), "score": None})
     await request_log_repo.finalize_request_log(
         request_id, record_tenant_id=record_tenant_id,
         answer_hash=content_hash_required(answer_text) if answer_text else None,
@@ -212,14 +236,7 @@ async def _persist_and_callback(
         completion_tokens=completion_tokens,
         cost_usd=cost_usd,
         status="success",
-        retrieved_chunks=[
-            {
-                "chunk_id": c.get("chunk_id") or c.get("id"),
-                "rank": idx,
-                "score": float(c.get("score", 0) or 0),
-            }
-            for idx, c in enumerate(_graded_for_refs)
-        ],
+        retrieved_chunks=_refs,
         citations=citations,
     )
 

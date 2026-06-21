@@ -66,6 +66,37 @@ from ragbot.config.logging import (
 router = APIRouter(tags=["test"])
 
 
+def _build_stats_attributed_refs(
+    graded_chunks: list[dict] | None, final_state: dict | None,
+) -> list[dict]:
+    """request_chunk_refs from graded chunks + STEP-5 stats attribution.
+
+    The stats route answers from a synthetic chunk (sentinel id → FK-skipped),
+    so its retrieval is invisible to CHUNK_RECALL. Attribute it to the matched
+    entities' REAL source chunks (``record_chunk_id``) WITHOUT feeding the raw
+    chunks to the LLM — the generate context stays synthetic-only (HALLU-safe).
+    """
+    refs: list[dict] = [
+        {
+            "chunk_id": c.get("chunk_id") or c.get("id"),
+            "rank": idx,
+            "score": float(c.get("score", 0) or 0),
+        }
+        for idx, c in enumerate(graded_chunks or [])
+    ]
+    stats_entities = (
+        (final_state or {}).get("stats_entities") or []
+        if isinstance(final_state, dict) else []
+    )
+    seen = {r["chunk_id"] for r in refs if r.get("chunk_id")}
+    for e in stats_entities:
+        cid = e.get("record_chunk_id") if isinstance(e, dict) else None
+        if cid and cid not in seen:
+            seen.add(cid)
+            refs.append({"chunk_id": cid, "rank": len(refs), "score": None})
+    return refs
+
+
 @router.post("/chat")
 async def test_chat(req: TestChatRequest, request: Request) -> dict:
     """Chat test: dùng cùng pipeline production (query_graph) + extras cho demo.
@@ -570,12 +601,11 @@ async def test_chat(req: TestChatRequest, request: Request) -> dict:
                 error_message=llm_error,
                 # G15: only refs (chunk_id + rank + score) -- previews
                 # used to live in inline JSONB; relational table stores
-                # FK-validated refs only, no PII.
-                retrieved_chunks=[{
-                    "chunk_id": c.get("chunk_id") or c.get("id"),
-                    "rank": idx,
-                    "score": float(c.get("score", 0) or 0),
-                } for idx, c in enumerate(graded_chunks)],
+                # FK-validated refs only, no PII. Stats-route turns are
+                # attributed to their real source chunks (STEP-5) here.
+                retrieved_chunks=_build_stats_attributed_refs(
+                    graded_chunks, final_state
+                ),
             )
         except (SQLAlchemyError, ValueError, TypeError) as exc:
             logger.warning(
@@ -950,12 +980,11 @@ async def test_chat_stream(req: TestChatRequest, request: Request) -> StreamingR
                 error_message=llm_error,
                 # G15: only refs (chunk_id + rank + score) -- previews
                 # used to live in inline JSONB; relational table stores
-                # FK-validated refs only, no PII.
-                retrieved_chunks=[{
-                    "chunk_id": c.get("chunk_id") or c.get("id"),
-                    "rank": idx,
-                    "score": float(c.get("score", 0) or 0),
-                } for idx, c in enumerate(graded_chunks)],
+                # FK-validated refs only, no PII. Stats-route turns are
+                # attributed to their real source chunks (STEP-5) here.
+                retrieved_chunks=_build_stats_attributed_refs(
+                    graded_chunks, final_state
+                ),
             )
         except (SQLAlchemyError, ValueError, TypeError) as exc:
             logger.warning(

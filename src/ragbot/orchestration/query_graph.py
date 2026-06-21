@@ -2302,21 +2302,16 @@ def build_graph(
                 for e in entities
                 if e.get("record_document_id")
             ]
+            # B-1 (STEP-5): ``record_chunk_id`` is now populated, but the precise
+            # per-entity chunks are intentionally NOT fetched into the LLM
+            # context — re-feeding raw rows changed answers (spa q11) and is a
+            # separate quality change (W-I9, Phase C, its own A/B). Context stays
+            # pre-B1: the synthetic record if built, else the doc-level fallback
+            # below. STEP-5 attribution rides on the entities' ``record_chunk_id``
+            # (the callback writes request_chunk_refs from them) — measurement
+            # without touching the answer. ``chunk_ids`` retained for that.
             linked_chunks: list[dict] = []
-            if chunk_ids and doc_repo is not None and hasattr(
-                doc_repo, "find_chunks_by_ids"
-            ):
-                try:
-                    linked_chunks = await doc_repo.find_chunks_by_ids(
-                        chunk_ids,
-                        record_bot_id=state["record_bot_id"],
-                    )
-                except (OSError, RuntimeError, ValueError, KeyError,
-                        AttributeError):
-                    logger.warning(
-                        "stats_index_chunk_fetch_failed",
-                        exc_info=True,
-                    )
+            _ = chunk_ids  # entities carry record_chunk_id for attribution
             # Surface the filtered/ranked rows as a synthetic context chunk.
             # The stats rows carry no chunk FK, so the only alternative is the
             # doc-level dump of the WHOLE table — the LLM then has to re-filter
@@ -2446,9 +2441,18 @@ def build_graph(
                         "stats_index_doc_chunk_fetch_failed",
                         exc_info=True,
                     )
+            # LLM CONTEXT = the synthetic clean record only. Do NOT append the
+            # raw per-entity source chunks (``linked_chunks``): re-feeding the raw
+            # table rows changed answers (spa COVERAGE 1.00->0.90 in the B-1 A/B)
+            # and reintroduces the variant-blob noise the synthetic route exists
+            # to avoid. STEP-5 attribution rides on ``entities`` (each carries
+            # ``record_chunk_id``) — the callback writes ``request_chunk_refs``
+            # from those WITHOUT polluting the context. Fall back to the raw
+            # chunks only when no synthetic record could be built.
             return {
                 "entities": entities,
-                "linked_chunks": synthetic_chunks + linked_chunks,
+                "linked_chunks": synthetic_chunks if synthetic_chunks
+                else linked_chunks,
                 "range_filter": range_filter,
             }
         except (OSError, RuntimeError, ValueError, KeyError,
