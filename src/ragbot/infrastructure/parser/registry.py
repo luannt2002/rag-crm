@@ -31,6 +31,7 @@ from ragbot.infrastructure.parser.google_sheets_parser import GoogleSheetsParser
 from ragbot.infrastructure.parser.markdown_parser import MarkdownParser
 from ragbot.infrastructure.parser.null_parser import NullParser
 from ragbot.infrastructure.parser.pdf_parser import PdfParser
+from ragbot.infrastructure.parser.vlm_image_parser import VlmImageParser
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -51,6 +52,11 @@ _REGISTRY: dict[str, type] = {
     "pdf": PdfParser,
     "docx": DocxParser,
     "markdown": MarkdownParser,
+    # Image captioner (PNG/JPEG/…) via a vision model. Constructed ONLY with injected
+    # llm+spec (build_parser("vlm_image", llm=…, spec=…, record_tenant_id=…, trace_id=…));
+    # detect_parser's no-arg probe raises TypeError → fail-soft skip, so this never
+    # auto-fires — the worker selects it explicitly for image MIMEs when VLM is enabled.
+    "vlm_image": VlmImageParser,
 }
 
 

@@ -40,6 +40,10 @@ class LLMSpec(BaseModel):
     fallback_chain: list[str] = Field(default_factory=list)  # LiteLLM model names
     cost_tier: Literal["cheap", "mid", "premium"] = "mid"
     variant: str | None = None  # for A/B
+    # Mirrors ai_models.supports_vision — gates multimodal (image) message content.
+    # Default False: a text-only spec; the VLM call site fails loud rather than send
+    # an image to a non-vision model. Resolved from the DB flag by the model resolver.
+    supports_vision: bool = False
     extra_params: dict[str, Any] = Field(default_factory=dict)
 
     def to_litellm_kwargs(self) -> dict[str, Any]:
