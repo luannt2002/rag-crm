@@ -26,6 +26,7 @@ from typing import Any
 
 from ragbot.shared.constants import (
     DEFAULT_PRICE_BUCKETS_VND,
+    DEFAULT_PRICE_MAX_VND,
     DEFAULT_PRICE_MIN_VND,
     DEFAULT_STATS_ATTR_MAX_CHARS,
     DEFAULT_STATS_ATTR_MAX_WORDS,
@@ -128,7 +129,9 @@ def parse_money_vn(text: str) -> int | None:
     first and call once per cell. The ingest floor ``DEFAULT_PRICE_MIN_VND``
     keeps ordinal/SKU numbers (row index 3, year 2024) out of the price index.
     """
-    return _canonical_parse_money(text, min_value=DEFAULT_PRICE_MIN_VND)
+    return _canonical_parse_money(
+        text, min_value=DEFAULT_PRICE_MIN_VND, max_value=DEFAULT_PRICE_MAX_VND,
+    )
 
 
 @dataclass(frozen=True)

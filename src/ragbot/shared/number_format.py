@@ -136,12 +136,24 @@ def _normalize_literal(token: str, *, suffix_context: bool = False) -> float | N
     return float(f"{before}.{after}")
 
 
-def _guard(value: int, min_value: int) -> int | None:
-    """Return value when >= min_value, else None (rejects ordinal/SKU numbers)."""
-    return value if value >= min_value else None
+def _guard(value: int, min_value: int, max_value: int | None = None) -> int | None:
+    """Return value when in [min_value, max_value], else None.
+
+    Rejects ordinal/SKU numbers below the floor AND implausibly-large numbers
+    above the ceiling — a 13-digit date like ``2025122435548`` (a Google-Sheet
+    timestamp leaking into a price column) is not a price; the ceiling keeps it
+    out of the stats index instead of poisoning every price-range query.
+    """
+    if value < min_value:
+        return None
+    if max_value is not None and value > max_value:
+        return None
+    return value
 
 
-def parse_money_vn(text: str, *, min_value: int = 0) -> int | None:
+def parse_money_vn(
+    text: str, *, min_value: int = 0, max_value: int | None = None,
+) -> int | None:
     """Parse the FIRST money amount in *text* to integer VND per the standard.
 
     Handles every form in the module docstring: grouped thousands
@@ -150,7 +162,10 @@ def parse_money_vn(text: str, *, min_value: int = 0) -> int | None:
 
     @param min_value: amounts below this are rejected (ingest passes the price
         floor so a row index / SKU never registers as a price; query passes 0).
-    @return integer VND, or None when no money token is present / below floor.
+    @param max_value: amounts above this are rejected (ingest passes the price
+        ceiling so a date/timestamp/barcode never registers as a price; None =
+        no ceiling, the query side keeps it open).
+    @return integer VND, or None when no money token is present / out of band.
     """
     if not text or not text.strip():
         return None
@@ -162,7 +177,7 @@ def parse_money_vn(text: str, *, min_value: int = 0) -> int | None:
         base = _normalize_literal(m.group(1), suffix_context=True)
         if base is not None:
             extra = int(m.group(2)) * 1_000 if m.group(2) else 0
-            return _guard(round(base * 1_000_000 + extra), min_value)
+            return _guard(round(base * 1_000_000 + extra), min_value, max_value)
 
     # 2. number + unit suffix.
     m = _SUFFIX_RE.search(s)
@@ -170,14 +185,14 @@ def parse_money_vn(text: str, *, min_value: int = 0) -> int | None:
         base = _normalize_literal(m.group(1), suffix_context=True)
         mult = _SUFFIX_MULT.get(_fold(m.group(2)))
         if base is not None and mult is not None:
-            return _guard(round(base * mult), min_value)
+            return _guard(round(base * mult), min_value, max_value)
 
     # 3. bare / grouped number (no suffix).
     m = _NUMERIC_RE.search(s)
     if m:
         val = _normalize_literal(m.group(0), suffix_context=False)
         if val is not None:
-            return _guard(round(val), min_value)
+            return _guard(round(val), min_value, max_value)
 
     return None
 

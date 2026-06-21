@@ -50,6 +50,11 @@ DEFAULT_PRICE_BUCKETS_VND: Final[tuple[int, ...]] = (
 )
 # Minimum amount considered a valid price (filters ordinal numbers / row IDs).
 DEFAULT_PRICE_MIN_VND: Final[int] = 10_000
+# Maximum amount considered a valid price (filters dates / timestamps / barcodes
+# leaking into a price column — e.g. a Google-Sheet serial "2025122435548").
+# 500M VND comfortably covers any single catalog item; a real price above this is
+# vanishingly rare and not worth poisoning every range query for.
+DEFAULT_PRICE_MAX_VND: Final[int] = 500_000_000
 
 # --- Stats-index query routing (B3 — Self-Query Retrieval) ------------------
 # Max rows returned from document_service_index when routing an
