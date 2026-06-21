@@ -474,13 +474,26 @@ class StatsIndexRepository:
                 variants.append(t)
         effective_limit = min(limit, DEFAULT_STATS_INDEX_QUERY_LIMIT)
         params: dict = {"bot_id": record_bot_id, "limit": effective_limit}
+        # Notation-variant folding: collapse a single separator BETWEEN two digits
+        # so a size/code asked in one notation matches the row stored in another
+        # ("205/55R16" ≡ "205/55/16" ≡ "205 55 16"). Domain-neutral — folds ANY
+        # single non-digit between digits, no tire/size vocabulary. Applied twice
+        # to catch overlapping digit-sep-digit triples. Without this the forward
+        # ILIKE only matches the same-notation row, which for some products is the
+        # NULL-price variant while the price sits on a different-notation sibling.
+        def _fold(expr: str) -> str:
+            once = f"regexp_replace(lower({expr}), '([0-9])[^0-9]([0-9])', '\\1\\2', 'g')"
+            return f"regexp_replace({once}, '([0-9])[^0-9]([0-9])', '\\1\\2', 'g')"
+
         or_clauses: list[str] = []
         for i, v in enumerate(variants):
             or_clauses.append(
                 f"unaccent(entity_name) ILIKE unaccent(:kw{i}) "
-                f"OR unaccent(entity_category) ILIKE unaccent(:kw{i})"
+                f"OR unaccent(entity_category) ILIKE unaccent(:kw{i}) "
+                f"OR {_fold('entity_name')} LIKE '%' || {_fold(f':kwn{i}')} || '%'"
             )
             params[f"kw{i}"] = f"%{v}%"
+            params[f"kwn{i}"] = v
         where_match = " OR ".join(f"({c})" for c in or_clauses)
         sql = (
             "SELECT id, record_document_id, record_chunk_id, entity_name, "
@@ -488,7 +501,10 @@ class StatsIndexRepository:
             "FROM document_service_index "
             "WHERE record_bot_id = :bot_id "
             f"AND ({where_match}) "
-            "ORDER BY entity_name ASC "
+            # Prefer a priced row: a price query must never surface a NULL-price
+            # notation-variant when a priced sibling also matches the fold.
+            "ORDER BY (price_primary IS NOT NULL OR price_secondary IS NOT NULL) DESC, "
+            "entity_name ASC "
             "LIMIT :limit"
         )
         async with self._sf() as session:
