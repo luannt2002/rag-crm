@@ -62,12 +62,30 @@ bigger, fairer set** (so the "≥ AdapChunk" claim got STRONGER + more credible)
 exposing 6 concrete fix targets (stats keyword-match on long SKU names → a Tier-2/
 F4-class retrieval fix).
 
-## Bottom line
-Weak-point #1 (measurement rigor) — DELIVERED:
-1. **Intrinsic** → CHECKED: chunking is real-good (SC 99.8/CC 0.97 ≈ AdapChunk); the
-   0.59 lexical composite was an artifact, NOT weak chunking.
-2. **Power** → BUILT + RAN: ground-truth generator (xe 7→40, spa 10→25) immediately
-   recalibrated COVERAGE 1.00→0.85 and exposed 6 real price-retrieval failures.
-→ Rigor's first run already converted "we believe" into measured truth + a fix-list.
-Next: (a) fix the long-SKU-name stats match (the 6 failures), (b) ICC/BI/RC paper-grade
-(sentence-embed + commercial coref), (c) thong-tu article-factoid generator.
+## D. The auto-qrels saga — rule #0 applied to the MEASUREMENT itself
+
+Iterating the generator, each "fix" exposed a new GROUND-TRUTH artifact, not a RAG bug:
+
+| generator version | xe COVERAGE | what the number really reflected |
+|---|--:|---|
+| hand-7 (curated) | **1.00** | trustworthy but small + cherry-picked |
+| 40 raw entities | 0.85–0.95 | swung by sample; a 13-digit code parsed as "price" |
+| 25 clean-name "Giá X" | 0.52 | "Giá X" phrasing didn't route (entity-first only) |
+| 25 entity-first "X giá" | 0.52 | DUPLICATE names (1 SKU, 2 prices → either answer "wrong") |
+| 22 unique-name | 0.36 | entities the owner DOESN'T SELL (DAVANTI) → correct refusal counted as miss |
+
+**The tell: the number swung 0.36 ↔ 0.95 purely from re-sampling the generator** — same RAG, same bot, same day. A metric that unstable to ground-truth selection is measuring the GENERATOR, not the system. (Not cherry-picking the low end: 0.95 was as real as 0.36 — both are sampling noise.)
+
+**Live spot-checks proved the bot is RIGHT, the generator is WRONG:**
+- "INSTINCT-AS01 giá?" → bot: "ROVELO INSTINCT-AS01 giá 1.152.000đ" ✓ (eval expected the duplicate's 1.170.000 → false-miss).
+- "DAVANTI ... giá?" → bot correctly refuses ("chỉ phân phối Landspider và Rovelo" — owner's gate; DAVANTI is reference data not sold) → counted as miss but is CORRECT.
+
+**Conclusion (honest):** the low auto-numbers (0.85→0.36) measure **GENERATOR NOISE, not RAG quality**. Auto-generating qrels from raw stats is unreliable — the ground-truth is contaminated by codes, duplicate names, and non-sold brands the generator can't distinguish. **Rule #0 applies to the eval itself: don't trust a number until its ground-truth is verified.**
+
+## Bottom line (corrected)
+Weak-point #1 (measurement rigor) — what actually held up:
+1. **Intrinsic** ✅ TRUSTWORTHY: chunking is real-good (SC 99.8 / CC 0.97 ≈ AdapChunk); the 0.59 lexical composite was an artifact. This finding STANDS.
+2. **Power via auto-qrels** ❌ FAILED HONESTLY: auto-gen from noisy stats measured its own noise, not the RAG. The reliable RAG number remains the **hand-curated 42q = COVERAGE 1.00 (live N=2, std=0, flip=0)**.
+3. **The real lesson**: statistical POWER needs **human-curated ground-truth** (the program's D13 human track — independent labeler), NOT auto-generation from contaminated stats. The generator (`gen_qrels.py`, now with code/dup/noise filters) is a *starting point* a human must curate, not a trustworthy oracle.
+
+→ Net: the intrinsic check is a solid win (chunking ≈ AdapChunk). The power lever requires human curation — auto-gen alone is untrustworthy, which is itself a rule-#0 finding worth keeping.

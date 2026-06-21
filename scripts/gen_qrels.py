@@ -55,9 +55,25 @@ def main(argv: list[str] | None = None) -> int:
         FROM document_service_index si JOIN bots b ON si.record_bot_id = b.id
         WHERE b.bot_id = %s
           AND COALESCE(price_primary, price_secondary) IS NOT NULL
+          -- plausible VND price range: excludes barcodes / date-codes /
+          -- quantities mis-parsed into the price column (e.g. 2025122435548).
+          AND COALESCE(price_primary, price_secondary) BETWEEN 1000 AND 500000000
           AND record_chunk_id IS NOT NULL
           AND char_length(entity_name) BETWEEN 4 AND 60
+          -- a clean single-product name (no comma = not a synonym/variant list);
+          -- a real user queries one product, not a mega-cell of spelling variants.
+          AND entity_name NOT LIKE '%%,%%'
           AND entity_name !~* 'google|http|^date|^question|^quantity|^chunk|Đoạn '
+          -- UNAMBIGUOUS ground-truth: the name must map to exactly ONE price.
+          -- Stats has duplicate-name rows (same SKU, 2 list prices) → a query
+          -- on that name has no single correct answer (the bot may quote either,
+          -- a false-negative). Keep only names with a single distinct price.
+          AND si.entity_name IN (
+              SELECT s2.entity_name FROM document_service_index s2
+              WHERE s2.record_bot_id = b.id
+              GROUP BY s2.entity_name
+              HAVING count(DISTINCT COALESCE(s2.price_primary, s2.price_secondary)) = 1
+          )
         ORDER BY md5(si.id::text)
         LIMIT %s
         """,
@@ -75,7 +91,7 @@ def main(argv: list[str] | None = None) -> int:
         # number-normaliser matches "1.199.000" vs "1199000").
         questions.append({
             "id": qid, "flow": "gen_price_factoid",
-            "q": f"Giá {name} bao nhiêu?",
+            "q": f"{name} giá bao nhiêu?",
             "expect": str(int(price)),
         })
         qrels[f"{a.bot}|{qid}"] = [str(chunk_id)]
