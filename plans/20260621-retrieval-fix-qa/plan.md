@@ -58,6 +58,24 @@ user types R-notation ("205/55R16") which matches a NULL-price row.
 > COVERAGE gap (d01), not a safety breach. The citation-leak ("đoạn N") is the same
 > narration-lead artifact the KG probe found (52752cb) — strip it at context-build.
 > Legal D13 baseline already 0.80 (only d01 misses), the least severe of the three.
+>
+> **UPDATE 2026-06-21 (exhaustive — 4 query-levers tested, ALL fail):** confirmed NOT
+> query-fixable. Chunk 289 (cấp độ 4 MFA) does not retrieve for ANY natural phrasing of
+> "MFA từ cấp độ mấy" under: (1) RRF bm25-weight 0.65, (2) per-request `hyde_enabled`
+> override [no-op — the HyDE generator is built container-level from
+> `system_config.hyde_provider`="null", so the flag can't wire it], (3) manual HyDE
+> simulation [gpt-4.1-mini drafts the wrong prior "cấp độ 2" → embeds away from 289],
+> (4) hybrid+bm25 weight 0.7. The ONLY query that retrieves 289 is one containing its own
+> discriminating phrase "truy cập quản trị máy chủ" — which no natural question carries.
+> Worse, a DISTRACTOR chunk ("cấp độ 2 trở lên phải áp dụng biện pháp an toàn") DOES
+> retrieve and the LLM conflates it as the MFA threshold → "cấp độ 2". This is a
+> retrieval-PRECISION + distractor problem, not a weight/expansion problem. The real fix
+> is DATA/INGEST layer: a clause-level chunk that isolates "MFA ⇒ cấp độ 4 ⇒ truy cập
+> quản trị" as its own retrievable unit (re-chunk Điều 30.6), OR a query-understanding
+> layer that extracts {control=MFA, ask=threshold} → targeted clause lookup. Both are
+> substantial efforts deserving their own session. Current behaviour SAFE-ish (the bot
+> states a wrong-but-non-fabricated level from a real chunk; faithfulness-to-chunk holds,
+> but it's a real correctness gap). Do NOT keep throwing query-levers — 4 is conclusive.
 
 
 Cause: generic-level chunk (356, "cấp độ 2") outranks the specific MFA chunk
