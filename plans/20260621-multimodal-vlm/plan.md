@@ -82,8 +82,19 @@ The scaffolding is wired; only the VLM call is missing ("dormant-not-absent"):
   answer path is unchanged (the LLM answers from retrieved caption-chunks like any other).
 - Each phase its own commit; ship the vertical slice (Phase 2) before the harder Phase 3.
 
-## Open questions for approval
-- **Vision model choice**: reuse an existing vision-capable binding (the resolver already
-  has `supports_vision`) — confirm a vision model is provisioned, or that is a prerequisite.
-- **Scope this session**: Phase 0 (fixture+eval) + Phase 1 (port+ADR) are the safe first
-  unit; Phase 2/3 are follow-on. Confirm starting at Phase 0/1.
+## Decisions locked
+- **Vision model = `gpt-4.1-mini`** (user constraint 2026-06-21: ONLY gpt-4.1-mini /
+  gpt-4.1-nano). Both are provisioned (`ai_models`); the gpt-4.1 family is multimodal, so
+  no new model — just flip `ai_models.supports_vision=true` for gpt-4.1-mini via alembic
+  (ai_models is in the no-psql list). nano stays text-only (lower vision quality); mini is
+  the captioner. Cost is already capped by this constraint.
+- **Phase 0 DONE** (this session): fixtures `tests/fixtures/multimodal/{price_table,
+  blank_panel}.png` + `scripts/gen_multimodal_fixture.py` (deterministic) + gate
+  `tests/fixtures/multimodal/EVAL_SPEC.md` (coverage: 3 priced rows; HALLU trap: blank
+  panel must invent nothing). Baseline today = 0 (no VLM path).
+
+## Status / next
+- Phase 0 ✅ (fixtures + eval gate + model locked).
+- Phase 1 (extend `LLMMessage.content` to multipart + ADR + `supports_vision` guard) is the
+  next unit — it touches the core LLM Port (every completion flows through it), so it wants
+  careful work + the ADR. Recommended as the first task of a fresh session; the gate is ready.
