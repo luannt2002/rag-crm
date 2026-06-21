@@ -21,6 +21,15 @@ PY
 }
 _server_pid() { ss -ltnp 2>/dev/null | grep ":$PORT" | grep -oE "pid=[0-9]+" | head -1 | cut -d= -f2; }
 _health() { curl -s -o /dev/null -w "%{http_code}" "http://localhost:$PORT/api/ragbot/health" 2>/dev/null; }
+# Resource visibility — so a suspected OOM is a NUMBER, not a guess (rule #0).
+# Past "server OOM" claims had no kernel evidence; surface RSS + host headroom +
+# redis working set here, the one place an operator looks before/after a heavy run.
+_server_rss_mb() { local p="$1"; [ -n "$p" ] && awk '/VmRSS/{printf "%d", $2/1024}' "/proc/$p/status" 2>/dev/null; }
+_host_mem_avail() { free -m 2>/dev/null | awk '/^Mem:/{printf "%d/%d MB avail/total", $7, $2}'; }
+_redis_used_mb() {
+  docker exec rag-crm-redis-1 redis-cli -a "${REDIS_PASSWORD:-}" --no-auth-warning \
+    INFO memory 2>/dev/null | awk -F: '/used_memory_human/{gsub(/\r/,"");print $2}'
+}
 
 status() {
   echo "== containers =="
@@ -30,6 +39,9 @@ status() {
   echo "== ragbot server =="
   local pid; pid=$(_server_pid)
   echo "  pid: ${pid:-DOWN} · health: $(_health)"
+  echo "== memory (evidence for OOM claims, not a guess) =="
+  local rss="—"; [ -n "$pid" ] && rss="$(_server_rss_mb "$pid") MB"
+  echo "  server RSS: $rss · host: $(_host_mem_avail) · redis used: $(_redis_used_mb)"
 }
 health() { status; }
 
