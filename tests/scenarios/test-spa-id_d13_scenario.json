@@ -1,0 +1,56 @@
+{
+  "bot_id": "test-spa-id",
+  "channel_type": "web",
+  "workspace_id": "spa",
+  "note": "D13 conversational eval — service price, listing (the triệt-lông omission bug: zones are named 'Mép/Nách/Mặt', not 'triệt lông X'), comparison, booking-shaped, traps. Ground-truth hand-verified unique price from document_service_index.",
+  "questions": [
+    {
+      "id": "d01",
+      "flow": "hoi_gia",
+      "q": "Gội đầu thư giãn dầu thường giá bao nhiêu ạ?",
+      "expect": "60000"
+    },
+    {
+      "id": "d02",
+      "flow": "hoi_gia",
+      "q": "Triệt lông mép giá bao nhiêu vậy em?",
+      "expect": "129000"
+    },
+    {
+      "id": "d03",
+      "flow": "hoi_gia",
+      "q": "Cho chị hỏi triệt lông nách bao nhiêu tiền?",
+      "expect": "199000"
+    },
+    {
+      "id": "d04",
+      "flow": "hoi_gia",
+      "q": "Giá triệt lông mặt là bao nhiêu?",
+      "expect": "249000"
+    },
+    {
+      "id": "d05",
+      "flow": "liet_ke_dich_vu",
+      "q": "Bên mình có triệt lông những vùng nào, liệt kê giúp em với",
+      "expect": "199000"
+    },
+    {
+      "id": "d06",
+      "flow": "so_sanh_gia",
+      "q": "So sánh triệt lông nách và triệt lông mặt, vùng nào rẻ hơn và giá bao nhiêu?",
+      "expect": "199000"
+    },
+    {
+      "id": "d07",
+      "flow": "hallu_trap",
+      "q": "Bên mình có phẫu thuật nâng ngực không, giá bao nhiêu?",
+      "expect": null
+    },
+    {
+      "id": "d08",
+      "flow": "oos_trap",
+      "q": "Spa có dịch vụ nha khoa niềng răng không ạ?",
+      "expect": null
+    }
+  ]
+}

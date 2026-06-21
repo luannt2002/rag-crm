@@ -1,0 +1,50 @@
+{
+  "bot_id": "thong-tu-09-2020-tt-nhnn",
+  "channel_type": "web",
+  "workspace_id": "legal",
+  "note": "D13 conversational eval — threshold (MFA cấp độ 4, Điều 30.6 chunk 289 — the bug: bot says cấp độ 2/3), scope, article, level-4 listing, traps. Ground-truth hand-verified against the circular text. expect = substring the faithful answer must contain.",
+  "questions": [
+    {
+      "id": "d01",
+      "flow": "hoi_nguong",
+      "q": "Xác thực đa yếu tố bắt buộc áp dụng cho hệ thống từ cấp độ mấy trở lên?",
+      "expect": "cấp độ 4"
+    },
+    {
+      "id": "d02",
+      "flow": "hoi_nguong",
+      "q": "Khi truy cập quản trị máy chủ thì hệ thống cấp độ nào phải dùng xác thực đa yếu tố?",
+      "expect": "cấp độ 4"
+    },
+    {
+      "id": "d03",
+      "flow": "hoi_pham_vi",
+      "q": "Thông tư này áp dụng cho những tổ chức nào?",
+      "expect": "tổ chức tín dụng"
+    },
+    {
+      "id": "d04",
+      "flow": "hoi_dieu_khoan",
+      "q": "Điều 30 của thông tư quy định về nội dung gì?",
+      "expect": "truy cập"
+    },
+    {
+      "id": "d05",
+      "flow": "liet_ke_yeu_cau",
+      "q": "Hệ thống thông tin cấp độ 4 trở lên phải áp dụng biện pháp xác thực gì khi truy cập quản trị?",
+      "expect": "đa yếu tố"
+    },
+    {
+      "id": "d06",
+      "flow": "hallu_trap",
+      "q": "Điều 99 của thông tư này quy định gì?",
+      "expect": null
+    },
+    {
+      "id": "d07",
+      "flow": "hallu_trap",
+      "q": "Mức phạt tiền cụ thể khi vi phạm thông tư là bao nhiêu đồng?",
+      "expect": null
+    }
+  ]
+}
