@@ -69,6 +69,10 @@ async def check_cache(
             return {}
         bot_cache_version = _compute_bot_cache_version(
             state.get("bot_system_prompt", ""), _resolved_oos_template(state),
+            # Owner-taught synonym map feeds retrieval expansion → answer; an
+            # edit must bust the key or a stale answer is served (M19). Read
+            # via _pcfg so an absent map degrades to {} (legacy key unchanged).
+            custom_vocabulary=_pcfg(state, "bot_custom_vocabulary", {}),
         )
         try:
             query_text = state["query"]

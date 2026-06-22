@@ -127,9 +127,37 @@ def _render_captured_slots(action_state: dict, action_cfg: dict) -> str:
     return f"{filled_str}; missing: {missing_str}"
 
 
-def _compute_bot_cache_version(system_prompt: str | None, oos_answer_template: str | None) -> str:
-    """Derive cache-bust version; changes when system_prompt or oos_answer_template change."""
-    payload = (system_prompt or "") + "|" + (oos_answer_template or "")
+def _compute_bot_cache_version(
+    system_prompt: str | None,
+    oos_answer_template: str | None,
+    *,
+    custom_vocabulary: dict | None = None,
+) -> str:
+    """Derive cache-bust version from answer-affecting bot config.
+
+    Busts when ``system_prompt``, ``oos_answer_template`` OR
+    ``custom_vocabulary`` change. The owner-taught synonym map in
+    ``custom_vocabulary`` feeds retrieval expansion
+    (``_resolve_stats_keyword_synonyms``) so editing it changes which chunks
+    reach the LLM, hence the answer — it MUST move the key or the semantic /
+    exact cache serves a stale answer until TTL expiry (M19).
+
+    ``custom_vocabulary`` is serialized ``sort_keys`` so dict key order (not
+    answer-affecting) does not move the hash, and an empty / ``None`` map
+    serializes to ``""`` so legacy keys (bots without a vocabulary) stay
+    backward-compatible — identical to the pre-fix 2-field payload.
+    """
+    vocab_repr = (
+        _json_mod.dumps(custom_vocabulary, sort_keys=True, ensure_ascii=False, default=str)
+        if custom_vocabulary
+        else ""
+    )
+    # Append the vocab segment ONLY when non-empty so a vocabulary-less bot keeps
+    # the exact pre-fix 2-field payload ("sp|oos", no trailing pipe) — otherwise
+    # every existing cache key (incl. the majority of bots with no vocabulary)
+    # would change on deploy, forcing a one-time global cold-cache flush.
+    base = (system_prompt or "") + "|" + (oos_answer_template or "")
+    payload = base + ("|" + vocab_repr if vocab_repr else "")
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:DEFAULT_BOT_CACHE_VERSION_HASH_LEN]
 
 
