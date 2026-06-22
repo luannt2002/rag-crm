@@ -32,6 +32,20 @@
 - ✅ Happy-case data → L1→L7 GREEN (7 tầng pass-through).
 - 🔲 **THIẾU gate validate** → plan `plans/20260622-happy-case-input-control/plan.md`: Phase1 API `/documents/check` (code-only, report-card, log) · Phase2 wire gate vào `/create` (422 NON_HAPPY) · Phase3 clean upload code. **Chưa làm — từ từ theo plan.**
 
+### 🔬 QUERY-flow audit (multi-agent, adversarial-verified) — luồng trả lời câu hỏi
+- **8-agent audit + adversarial verify** (9 bug bị bác bỏ, 6 confirmed). Verdict 8 luồng: **1 EXPERT (L3 stats — code em) · 4 OK_MINOR (L1/L4-5/L6/retrieval) · 3 HAS_GAPS (L2/L7/generate)**.
+- **6 bug confirmed (đều PRE-EXISTING, KHÔNG phải session em)**: ① `blocks.py:196` regex header match prose-có-pipe (BLOCKER, upload-L2) · ② `blocks.py:257` heading không tag riêng · ③ `ingest_stages_store.py:659` parent chunks thiếu narrate (BLOCKER) · ④ `llm_narrate.py:58` prompt VN hardcode (domain) · ⑤ `generate.py:227` **`price_buoi_le/price_goc` hardcode + comment spa** (domain) · ⑥ `generate.py:218` **extract giá bằng CSV split-comma → KHÔNG khớp happy-case markdown `| table |`**.
+- **Nóng nhất: Q7 `generate.py`** (#5+#6) — answer-node còn parse giá kiểu CSV cũ + domain literal. NHƯNG `price_buoi_le` là **feature price-lock COUPLED** (generate.py viết + `conversation_state.py:193` đọc) → fix cần TDD, không rush.
+
+### 📋 LUỒNG UPLOAD vs QUERY — trạng thái (rule #0)
+| | UPLOAD (7 step L1→L7) | QUERY (8 step Q1→Q8) |
+|---|---|---|
+| Verify | ✅ `verify_happy_case_pipeline.py` ALL GREEN | 🟡 load test 22/23 (96%) + 6 bug audit |
+| Data happy-case | ✅ 12 docs/1518 chunks embed thật | ✅ retrieve/factoid/liệt-kê/aggregate work |
+| Gap | L2 #1/#2 (block-detect) | Q7 generate #5/#6 (CSV-extract chưa khớp markdown), Q3/Q4 xe-tire-size, Q8 stale-cache |
+| Plan | done | **`plans/20260622-rag-query-flow-audit/plan.md`** (8-step deep-debug protocol + fix P1-P4) |
+→ **Upload PASS; Query mostly-pass (96%) nhưng answer-node `generate.py` chưa đồng bộ happy-case markdown** → cần fix P1 (Q7) qua TDD.
+
 ### 🚀 RUNTIME end-to-end (ingest THẬT + load test — rule #0, số thật)
 - **Ingest 12 doc happy-case vào DB** (qua API sync, embed+store THẬT): spa 5 (+ summary 27 chunks) · xe 5 (+ summary 78) · legal 2 (+ summary 22) = **1518 chunks, embeddings real** (647 leaf embedded). Script `ingest_happy_case_via_api.py`.
 - **Summary-doc/bot** (`build_bot_summary.py`, deterministic no-LLM) — fix câu "liệt kê/tóm tắt" (1 chunk = full list). spa 58 dịch vụ · xe 192 sản phẩm · legal TOC 80 mục.
