@@ -21,12 +21,15 @@ import pytest
 from ragbot.orchestration.nodes.speculative_retrieve import (
     cosine_similarity,
     decide_keep_speculative,
+    intent_consumes_mq,
 )
 from ragbot.shared.constants import (
+    DEFAULT_MULTI_QUERY_ENABLED_BY_INTENT,
     DEFAULT_SPECULATIVE_RETRIEVE_ENABLED,
     DEFAULT_SPECULATIVE_RETRIEVE_TIMEOUT_S,
     DEFAULT_SPECULATIVE_SIMILARITY_THRESHOLD,
 )
+from ragbot.application.dto.llm_schemas import UnderstandOutput
 
 
 # ---------------------------------------------------------------------------
@@ -177,6 +180,73 @@ def test_decide_keep_speculative_empty_embed_returns_false() -> None:
     rewritten = [0.5, 0.3]
     keep = decide_keep_speculative(raw, rewritten, threshold=0.85)
     assert keep is False
+
+
+# ---------------------------------------------------------------------------
+# 3b. intent_consumes_mq — speculative MQ consume-gate (M16 regression).
+#
+# The speculative multi-query expansion stashes paraphrases under
+# ``_mq_speculative_variants`` ONLY when the resolved intent benefits from
+# multi-query fanout. The gate MUST decide using the canonical intent
+# taxonomy (the classifier's ``UnderstandOutput.intent`` Literal); a label
+# the classifier never emits is dead — its branch can never match and the
+# already-paid-for variants are silently discarded.
+# ---------------------------------------------------------------------------
+def test_intent_consumes_mq_accepts_mq_enabled_canonical_intents() -> None:
+    """Every intent flagged True in the per-intent MQ map must consume the
+    speculative variants. ``aggregation`` + ``comparison`` were dropped by
+    the old hardcoded set — this pins them back in."""
+    mq_map = DEFAULT_MULTI_QUERY_ENABLED_BY_INTENT
+    for label, enabled in mq_map.items():
+        if enabled:
+            assert intent_consumes_mq(label, mq_map) is True, (
+                f"MQ-enabled intent {label!r} must consume speculative variants"
+            )
+
+
+def test_intent_consumes_mq_rejects_mq_disabled_canonical_intents() -> None:
+    """Lightweight intents (factoid/chitchat/greeting/…) skip MQ fanout —
+    the gate must NOT keep variants for them."""
+    mq_map = DEFAULT_MULTI_QUERY_ENABLED_BY_INTENT
+    for label, enabled in mq_map.items():
+        if not enabled:
+            assert intent_consumes_mq(label, mq_map) is False, (
+                f"MQ-disabled intent {label!r} must not consume variants"
+            )
+
+
+def test_intent_consumes_mq_only_uses_canonical_classifier_labels() -> None:
+    """M16 root-cause guard: the gate must operate over labels the
+    classifier can actually emit. Phantom labels (``synthesis``,
+    ``compound``, ``docs_only``) are NOT in ``UnderstandOutput.intent`` —
+    they can never match a resolved intent, so the gate must treat them as
+    non-consuming (no accidental keep on a label that never occurs)."""
+    valid_labels = set(UnderstandOutput.model_fields["intent"].annotation.__args__)
+    for phantom in ("synthesis", "compound", "docs_only"):
+        assert phantom not in valid_labels, (
+            f"{phantom!r} leaked into the classifier taxonomy"
+        )
+        assert (
+            intent_consumes_mq(phantom, DEFAULT_MULTI_QUERY_ENABLED_BY_INTENT)
+            is False
+        )
+
+
+def test_intent_consumes_mq_aggregation_is_consumed() -> None:
+    """Direct regression: ``aggregation`` (a real synthesis-bucket intent
+    that pays for MQ variants) was silently discarded by the old set."""
+    assert (
+        intent_consumes_mq("aggregation", DEFAULT_MULTI_QUERY_ENABLED_BY_INTENT)
+        is True
+    )
+
+
+def test_intent_consumes_mq_honours_per_bot_override_map() -> None:
+    """When a bot supplies its own ``multi_query_enabled_by_intent`` map the
+    gate must follow it (config-driven, not a hardcoded constant)."""
+    override = {"factoid": True, "multi_hop": False}
+    assert intent_consumes_mq("factoid", override) is True
+    assert intent_consumes_mq("multi_hop", override) is False
 
 
 # ---------------------------------------------------------------------------

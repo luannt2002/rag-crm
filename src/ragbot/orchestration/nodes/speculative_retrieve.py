@@ -25,7 +25,7 @@ free of DI and trivially testable).
 from __future__ import annotations
 
 import math
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 
 
 def cosine_similarity(v1: Sequence[float], v2: Sequence[float]) -> float:
@@ -74,4 +74,28 @@ def decide_keep_speculative(
     return sim >= threshold
 
 
-__all__ = ["cosine_similarity", "decide_keep_speculative"]
+def intent_consumes_mq(
+    intent: str,
+    intent_mq_map: Mapping[str, bool],
+) -> bool:
+    """Return ``True`` when a resolved intent should keep speculative
+    multi-query variants.
+
+    The speculative paraphrase task pre-pays an LLM call so the downstream
+    ``retrieve`` node can skip its inline expansion. Whether the variants
+    are useful is governed by the SAME per-intent gate the producer uses
+    (``multi_query_enabled_by_intent`` — per-bot override, else the
+    ``DEFAULT_MULTI_QUERY_ENABLED_BY_INTENT`` map). Deciding here against
+    that map (rather than a separate hardcoded label set) keeps producer
+    and consumer in lockstep and confines the decision to labels the
+    classifier actually emits — a label absent from the map yields
+    ``False`` (no keep), so a phantom label can never accidentally match.
+    """
+    return bool(intent_mq_map.get(intent, False))
+
+
+__all__ = [
+    "cosine_similarity",
+    "decide_keep_speculative",
+    "intent_consumes_mq",
+]

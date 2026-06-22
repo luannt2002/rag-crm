@@ -4,10 +4,11 @@ LLM expand BEFORE retrieve).
 
 The patch adds a 4th parallel task in ``cache_check_and_understand_parallel``
 that fires the paraphrase LLM call ALONGSIDE the understand router.
-When the router lands on a multi-hop / synthesis / docs-only intent the
-variants are already cached in state; the downstream retrieve node
-reuses them via the ``_mq_speculative_variants`` slot, saving ~250-
-400ms p95 per qualifying turn.
+When the router lands on an MQ-enabled intent (aggregation / comparison /
+multi_hop per the per-intent MQ map) the variants are already cached in
+state; the downstream retrieve node reuses them via the
+``_mq_speculative_variants`` slot, saving ~250-400ms p95 per qualifying
+turn.
 
 Cancellation discipline (Async Rule 5):
 
@@ -63,16 +64,24 @@ def test_speculative_mq_task_cancels_for_non_consumable_intent() -> None:
 
     This prevents an orphan LLM task lingering past graph completion
     and bills tokens that no node consumes.
+
+    The consume-gate is decided by ``intent_consumes_mq`` against the
+    per-intent MQ map (same source of truth as the producer) — NOT a
+    hardcoded label set with phantom intents the classifier never emits
+    (M16 regression).
     """
     from ragbot.orchestration import query_graph as qg  # noqa: PLC0415
     src = inspect.getsource(qg.build_graph)
-    # The consume-set + the cancellation branch both present. The set uses the
-    # INTENT_MULTI_HOP constant (not a bare "multi_hop" literal) for the
-    # multi-hop entry, alongside the "synthesis" literal.
-    assert "INTENT_MULTI_HOP" in src
-    assert "synthesis" in src
+    # The consume-gate uses the shared per-intent helper + the per-intent
+    # MQ map, and the cancellation branch is present.
+    assert "_intent_consumes_mq" in src
+    assert "multi_query_enabled_by_intent" in src
     assert "spec_mq_task.cancel()" in src
     assert "pipeline_multi_query_speculative_cancelled" in src
+    # M16: the dead phantom labels must be gone from the consume-gate —
+    # the classifier never emits these, so they can never match.
+    assert '"compound"' not in src
+    assert '"docs_only"' not in src
 
 
 def test_speculative_mq_result_stashed_in_state_for_retrieve_node() -> None:

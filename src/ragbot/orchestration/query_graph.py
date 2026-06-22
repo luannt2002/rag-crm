@@ -73,6 +73,7 @@ from ragbot.orchestration.nodes.understand import (
 )
 from ragbot.orchestration.nodes.speculative_retrieve import (
     decide_keep_speculative as _decide_keep_speculative,
+    intent_consumes_mq as _intent_consumes_mq,
 )
 from ragbot.orchestration.state import GraphState
 from ragbot.orchestration.nodes.query_complexity import (
@@ -149,7 +150,12 @@ try:
 except ImportError:
     _litellm_module = None  # type: ignore[assignment]
     _L3Extractor = None  # type: ignore[assignment,misc]
-    DEFAULT_METADATA_EXTRACTION_FALLBACK_MODEL = "gpt-4.1-nano"  # type: ignore[assignment]
+    # litellm is the only optional dependency here — the constants module is
+    # pure-data and never fails to import, so pull the fallback model name from
+    # its single source of truth instead of re-pinning the literal.
+    from ragbot.shared.constants import (  # noqa: F401 — fallback re-bind from SSoT
+        DEFAULT_METADATA_EXTRACTION_FALLBACK_MODEL,
+    )
 
 try:  # metrics optional in tests
     from ragbot.infrastructure.observability.metrics import (
@@ -329,6 +335,7 @@ from ragbot.shared.constants import (
     DEFAULT_HALLU_TRAP_KEYWORDS,
     DEFAULT_EMBEDDING_COLUMN,
     DEFAULT_EMBEDDING_DIM,
+    DEFAULT_EMBEDDING_FALLBACK_VERSION,
     DEFAULT_EMBEDDING_TASK_QUERY,
     DEFAULT_ENTITY_GROUNDING_ENABLED,
     DEFAULT_ENTITY_GROUNDING_MAX_ENTITIES,
@@ -1634,7 +1641,7 @@ def build_graph(
                     "record_bot_id": state["record_bot_id"],
                     "channel_type": _required_channel_type(state),
                     "corpus_version": await _resolve_corpus_version(state),
-                    "embedding_model_version": "v1",
+                    "embedding_model_version": DEFAULT_EMBEDDING_FALLBACK_VERSION,
                     "limit": _top_k,
                 }
                 # mega-sprint-G1: thread tenant for RLS-enforced runtime DSN.
@@ -1839,16 +1846,21 @@ def build_graph(
                 merged["_speculative_chunks"] = spec_chunks
         if spec_mq_task is not None:
             # Decide whether the resolved intent benefits from the
-            # speculative paraphrase set. Multi-hop / synthesis / docs-
-            # only consume MQ; chitchat / OOS / factoid_single discard.
-            # When the intent is incompatible we cancel + suppress so
-            # the task leaves no orphan and the LLM cost is bounded by
+            # speculative paraphrase set, using the SAME per-intent gate the
+            # producer (``_run_multi_query_expansion``) applies: the per-bot
+            # ``multi_query_enabled_by_intent`` override, else the default
+            # map. Keeping both gates on one source of truth (the canonical
+            # intent taxonomy) means MQ-enabled intents (aggregation /
+            # comparison / multi_hop) actually consume the already-paid-for
+            # variants; chitchat / OOS / factoid discard. When the intent
+            # does not consume MQ we cancel + suppress so the task leaves no
+            # orphan and the LLM cost is bounded by
             # ``pipeline_multi_query_speculative_timeout_s``.
             _resolved_intent = (merged.get("intent") or "").strip().lower()
-            _mq_consumable_intents = {
-                INTENT_MULTI_HOP, "synthesis", "compound", "docs_only",
-            }
-            if _resolved_intent in _mq_consumable_intents:
+            _mq_intent_map = _pcfg(state, "multi_query_enabled_by_intent", None)
+            if not isinstance(_mq_intent_map, dict):
+                _mq_intent_map = DEFAULT_MULTI_QUERY_ENABLED_BY_INTENT
+            if _intent_consumes_mq(_resolved_intent, _mq_intent_map):
                 try:
                     mq_variants = await spec_mq_task
                 except asyncio.TimeoutError:

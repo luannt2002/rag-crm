@@ -84,6 +84,7 @@ from ragbot.shared.constants import (
     DEFAULT_METADATA_LAYER3_LLM_ENABLED,
     DEFAULT_EMBEDDING_COLUMN,
     DEFAULT_EMBEDDING_DIM,
+    DEFAULT_EMBEDDING_FALLBACK_VERSION,
     DEFAULT_EMBEDDING_TASK_QUERY,
     DEFAULT_ENTITY_GROUNDING_ENABLED,
     DEFAULT_ENTITY_GROUNDING_MAX_ENTITIES,
@@ -339,7 +340,7 @@ async def retrieve(
                                     "record_bot_id": state["record_bot_id"],
                                     "channel_type": _required_channel_type(state),
                                     "corpus_version": await _resolve_corpus_version(state),
-                                    "embedding_model_version": "v1",
+                                    "embedding_model_version": DEFAULT_EMBEDDING_FALLBACK_VERSION,
                                     "limit": _rv_top_k,
                                 }
                                 _rv_sig = inspect.signature(
@@ -1010,7 +1011,7 @@ async def retrieve(
                     "record_bot_id": state["record_bot_id"],
                     "channel_type": _required_channel_type(state),
                     "corpus_version": await _resolve_corpus_version(state),
-                    "embedding_model_version": "v1",
+                    "embedding_model_version": DEFAULT_EMBEDDING_FALLBACK_VERSION,
                     "limit": _branch_top_k,
                 }
                 # mega-sprint-G1: thread tenant for RLS-enforced runtime DSN.
