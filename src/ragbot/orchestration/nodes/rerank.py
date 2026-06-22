@@ -462,23 +462,34 @@ async def rerank(
                 # survive the downstream CRAG absolute-floor + context-cap
                 # ordering — otherwise their raw RRF score (~0.01) is below
                 # crag_min_fallback_score (0.3) and they get dropped, defeating
-                # the safety-net. Use the lowest surviving rerank score (these
-                # chunks ARE top-of-retrieval, just under-ranked by zerank-2).
+                # the safety-net. Lift each injected chunk UP to the lowest
+                # surviving rerank score (these chunks ARE top-of-retrieval, just
+                # under-ranked by zerank-2). When the min-score/cliff stage has
+                # already emptied the surviving pool there is no floor to lift
+                # to — keep the chunk's own real retrieval score instead, so a
+                # genuinely-retrieved chunk reports its true score rather than a
+                # collapsed 0.0 (M18: stamping 0.0 made the absolute-floor drop
+                # the very chunk the safety-net re-injected).
                 _kept_scores = [float(c.get("score", 0) or 0) for c in out]
-                _stamp = min(_kept_scores) if _kept_scores else 0.0
+                _stamp = min(_kept_scores) if _kept_scores else None
                 _added = 0
                 for _c in inp[:_safety_n]:
                     _cid = _c.get("chunk_id") or _c.get("id")
                     if _cid and _cid not in _kept_ids:
                         _c = dict(_c)
-                        _c["score"] = _stamp
+                        if _stamp is not None:
+                            _c["score"] = _stamp
                         _c["_safety_injected"] = True
                         out.append(_c)
                         _kept_ids.add(_cid)
                         _added += 1
                 if _added:
                     await _audit(state, "rerank_retrieval_safety_net", {
-                        "added": _added, "safety_n": _safety_n, "stamp_score": round(_stamp, 4),
+                        "added": _added,
+                        "safety_n": _safety_n,
+                        # None when the surviving pool was empty: the injected
+                        # chunks kept their own real retrieval score (no lift).
+                        "stamp_score": round(_stamp, 4) if _stamp is not None else None,
                     })
 
         # Propagate the score scale so the CRAG fallback gate can calibrate:
