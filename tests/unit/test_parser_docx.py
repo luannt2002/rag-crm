@@ -55,38 +55,32 @@ def _build_docx() -> bytes:
 
 @pytest.mark.skipif(not _PYTHON_DOCX, reason="python-docx not installed")
 @pytest.mark.asyncio
-async def test_docx_parser_emits_per_h1_block_plus_table() -> None:
+async def test_docx_parser_emits_structured_markdown_table_in_place() -> None:
     from ragbot.infrastructure.parser.docx_parser import DocxParser
 
     parser = DocxParser()
     chunks = await parser.parse(_build_docx(), file_name="sample.docx")
 
-    # 2 H1 sections + 1 table block.
-    assert len(chunks) == 3
+    # ONE structured-markdown document (AdapChunk L1), tables in document order.
+    assert len(chunks) == 1
+    md = chunks[0]["content"]
+    assert chunks[0]["metadata"]["format"] == "markdown"
+    assert chunks[0]["metadata"]["parser"] == "docx"
+    assert chunks[0]["metadata"]["file_name"] == "sample.docx"
 
-    # First chunk: Section A and its sub-heading + body.
-    first = chunks[0]
-    assert first["content"].startswith("# Section A")
-    assert "## Sub of A" in first["content"]
-    assert "Body of section A." in first["content"]
-    assert "Detail line one." in first["content"]
-    assert first["metadata"]["heading"] == "Section A"
-    assert first["metadata"]["heading_level"] == 1
-    assert first["metadata"]["parser"] == "docx"
-    assert first["metadata"]["file_name"] == "sample.docx"
+    # Headings + bodies preserved with their levels.
+    assert "# Section A" in md and "## Sub of A" in md and "# Section B" in md
+    assert "Body of section A." in md and "Detail line one." in md
+    assert "Body of section B." in md
 
-    # Second chunk: Section B body.
-    second = chunks[1]
-    assert second["content"].startswith("# Section B")
-    assert "Body of section B." in second["content"]
-    assert second["metadata"]["heading"] == "Section B"
-
-    # Third chunk: the table, pipe-formatted.
-    third = chunks[2]
-    assert third["metadata"]["block_kind"] == "table"
-    assert "| ColX | ColY |" in third["content"]
-    assert "| --- | --- |" in third["content"]
-    assert "| valX | valY |" in third["content"]
+    # The table is rendered as markdown UNDER its preceding heading (Section B),
+    # NOT appended at the document end bound to the wrong section (B3 fix).
+    assert "| ColX | ColY |" in md
+    assert "| --- | --- |" in md
+    assert "| valX | valY |" in md
+    assert md.index("# Section B") < md.index("| ColX | ColY |"), (
+        "table must stay under its in-document section, not moved to the end"
+    )
 
 
 @pytest.mark.skipif(not _PYTHON_DOCX, reason="python-docx not installed")
