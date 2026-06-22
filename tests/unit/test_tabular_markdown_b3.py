@@ -53,3 +53,27 @@ def test_chamsoc_zone_not_cross_contaminated() -> None:
     )}
     # The chăm-sóc-da row keeps its OWN section, not the triệt-lông one.
     assert ents["Chăm sóc da chuyên sâu"].category == "Dịch vụ chăm sóc da"
+
+
+def test_chunker_reattaches_section_heading_then_extraction_binds() -> None:
+    """Full chain: structured markdown → smart_chunk → parse_table_chunks.
+
+    The size-based splitter can sever a '## section' from its table; the
+    contextual-chunking re-attach (AdapChunk B3) keeps every chunk self-describing
+    so the category survives end-to-end even when heading + table land apart.
+    """
+    from ragbot.shared.chunking import smart_chunk
+
+    # Pad the chăm-sóc section so the splitter is likely to cut before the
+    # triệt-lông table — exercising the re-attach path.
+    rows = [["Dịch vụ chăm sóc da", "", ""], ["STT", "Tên", "Giá"]]
+    rows += [[str(i), f"Dịch vụ số {i} mô tả dài để đẩy kích thước", str(100000 + i)] for i in range(40)]
+    rows += [["", "", ""], ["Dịch vụ triệt lông", "", ""], ["STT", "Vùng triệt", "Giá buổi lẻ"]]
+    rows += [["1", "Mép", "129000"], ["2", "Mặt", "249000"]]
+    md = rows_to_structured_markdown(rows)
+    chunks = smart_chunk(md)
+    ents = {e.name: e for e in parse_table_chunks([{"content": c} for c in chunks])}
+    assert "Mép" in ents, "zone row lost across chunk boundary"
+    assert ents["Mép"].category == "Dịch vụ triệt lông", (
+        "section heading was not re-attached → category lost across the split"
+    )

@@ -369,6 +369,46 @@ def _smart_chunk_with_atomic_protect(
     return [c.strip() for c in chunks if c.strip()]
 
 
+_MD_HEADING_LINE_RE = re.compile(r"^#{1,6} .+$", re.MULTILINE)
+
+
+def _prefix_section_headings(text: str, chunks: list[str]) -> list[str]:
+    """Prepend each chunk's active markdown section heading when the splitter cut
+    it off (Anthropic Contextual Retrieval + AdapChunk B3).
+
+    A "## Dịch vụ triệt lông" title and the table under it can land in different
+    chunks after a size-based split, stranding the table with no service context.
+    For every chunk we locate its position in the source, find the nearest
+    preceding ``##`` heading, and prepend it when the chunk does not already start
+    with / contain it — so each chunk is self-describing for BOTH embedding and
+    stats extraction. Domain-neutral; no-op without markdown headings.
+    """
+    headings = [(m.start(), m.group(0).strip()) for m in _MD_HEADING_LINE_RE.finditer(text)]
+    if not headings:
+        return chunks
+    out: list[str] = []
+    search_from = 0
+    for chunk in chunks:
+        c = chunk.strip()
+        fp = c.split("\n", 1)[0][:60] if c else ""
+        pos = text.find(fp, search_from) if fp else -1
+        if pos < 0 and fp:
+            pos = text.find(fp)
+        if pos >= 0:
+            search_from = pos + 1
+        active: str | None = None
+        for hpos, htext in headings:
+            if pos < 0 or hpos <= pos:
+                active = htext
+            else:
+                break
+        if active and not c.startswith("#") and active not in chunk:
+            out.append(f"{active}\n{chunk}")
+        else:
+            out.append(chunk)
+    return out
+
+
 def smart_chunk(
     text: str,
     chunk_size: int = DEFAULT_CHUNK_SIZE,
@@ -503,6 +543,14 @@ def smart_chunk(
         chunks = _chunk_proposition(text, chunk_size, chunk_overlap)
     else:
         chunks = _chunk_recursive_with_tables(text, chunk_size, chunk_overlap)
+
+    # Re-attach each section's markdown heading to any chunk the splitter severed
+    # it from, so every chunk is self-describing (Anthropic Contextual Retrieval +
+    # AdapChunk B3): a "## Dịch vụ triệt lông" table stays linked to its service so
+    # both the embedding AND the stats extractor can bind the row to its section.
+    # No-op when the doc carries no markdown headings.
+    if strategy != "hdt" and "#" in text:
+        chunks = _prefix_section_headings(text, chunks)
 
     logger.debug(
         "smart_chunk_result",
