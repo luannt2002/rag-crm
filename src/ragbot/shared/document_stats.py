@@ -56,6 +56,40 @@ _STATS_URL_NOISE_RE: re.Pattern[str] = re.compile(
     re.IGNORECASE,
 )
 
+# Extraction-artefact name SHAPES that are never a catalog entity — domain-neutral
+# (grammar / structure only, no service/brand/price literal):
+#   - tag lead: a leaked structure tag ("<chunk_context>…") mis-read as a name.
+#   - section/step enumeration lead: a roman/numbered outline marker ("II/ …",
+#     "Bước 1: …") — a heading, not a priced row.
+#   - discourse/temporal opener: a consultation-script SENTENCE comma-split into a
+#     row leaves a grammar opener as the "name" ("Hiện tại …", "Khi đến với …") with
+#     an incidental number mis-read as a price — the spa "Hiện tại"×20 HALLU source.
+# Deliberately NO short-code rule (^[A-Z/+]{2,5}$): it false-drops real all-caps
+# service/package codes (IPL/VIP/HIFU). The shapes below are unambiguous.
+_STATS_TAG_LEAD: str = "<"
+_STATS_SECTION_LEAD_RE: re.Pattern[str] = re.compile(
+    r"^([IVXLCDM]+\s*[/.)]|\w+\s+\d+\s*[:.])", re.IGNORECASE
+)
+_STATS_DISCOURSE_OPENERS: frozenset[str] = frozenset(
+    {"hiện tại", "hiện nay", "bây giờ", "tuy nhiên"}
+)
+_STATS_CLAUSE_OPENER_FIRST: frozenset[str] = frozenset(
+    {"khi", "nếu", "vì", "tuy", "do", "bởi"}
+)
+
+
+def _is_discourse_opener(label: str) -> bool:
+    """True when *label* IS a temporal adverb or STARTS with a clause conjunction.
+
+    A catalog entity name never does; only a prose sentence mis-split into a row
+    does ("Hiện tại …", "Khi đến với …"). Pure VN grammar — domain-neutral.
+    """
+    low = label.lower().strip()
+    if low in _STATS_DISCOURSE_OPENERS:
+        return True
+    parts = low.split()
+    return bool(parts) and parts[0] in _STATS_CLAUSE_OPENER_FIRST
+
 # ---------------------------------------------------------------------------
 # Money-format regex patterns — Vietnamese currency conventions.
 #
@@ -298,10 +332,13 @@ def _extract_entity_from_row(
         if (
             not _label
             or _lead in _STATS_BULLET_LEADS
+            or _label.startswith(_STATS_TAG_LEAD)
             or len(_label) > DEFAULT_STATS_ATTR_MAX_CHARS
             or len(_label.split()) > DEFAULT_STATS_ATTR_MAX_WORDS
             or _STATS_METADATA_LEAD_RE.match(_label)
+            or _STATS_SECTION_LEAD_RE.match(_label)
             or _STATS_URL_NOISE_RE.search(_label)
+            or _is_discourse_opener(_label)
         ):
             name = None
         else:
