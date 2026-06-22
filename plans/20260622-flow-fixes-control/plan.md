@@ -23,8 +23,8 @@ Ship từng cái có TDD; verify load-test KHÔNG tụt 22/23 sau mỗi fix.
 | ID | Sev | Flow | File:line | Vấn đề | Fix approach | Prio | Status |
 |----|-----|------|-----------|--------|--------------|------|--------|
 | **A** | WARN-domain | L7 narrate | `llm_narrate.py:58-72` | prompt narrate hardcode tiếng Việt | chuyển prompt sang `system_config`/`language_packs` (per-locale), default domain-neutral | **P1** | TODO |
-| **B** | WARN-domain | Q7 generate | `generate.py:227-229` | `price_buoi_le`/`price_goc` + comment spa hardcode | đổi key generic (`price_primary`/`price_secondary`); sửa cả `conversation_state.py:193` đọc (COUPLED) | **P1** | TODO |
-| **C** | WARN | Q7 generate | `generate.py:218-230` | extract giá bằng CSV `split(",")` — không khớp happy-case markdown | dùng stats-index `ParsedEntity` (đã có price) thay vì re-parse; HOẶC markdown `\|`-aware | **P2** | TODO |
+| **B** | WARN-domain | Q7 generate | `generate.py` | ~~`price_buoi_le`/`price_goc`~~ → generic | đổi key generic + `conversation_state.py` back-compat | **P1** | ✅ DONE |
+| **C** | WARN | Q7 generate | `generate.py` | ~~CSV-only extract~~ → delimiter-aware (`,` + `\|`) | helper `_extract_locked_prices` markdown+CSV, test 5/5 | **P2** | ✅ DONE |
 | **D** | BLOCKER | Q6/L7 | `ingest_stages_store.py:659` | parent chunks thiếu narrate metadata | narrate parent trước store HOẶC Q6-expand dùng leaf-narrate | **P2** | TODO |
 | **E** | BLOCKER | L2 upload | `blocks.py:196` | regex header `^[A-Z...]+\|` match prose-có-pipe | siết: chỉ match khi ≥2 cell label-like + no money (tái dùng `_looks_header`) | **P3** | TODO |
 | **F** | WARN | L2 upload | `blocks.py:257-265` | markdown heading không tag riêng (gộp text) | thêm branch `# ## ###` → block-type `heading` (hoặc giữ — HDT đã xử ở L4/L6) | **P3** | TODO |

@@ -190,7 +190,9 @@ class JsonbConversationState(ConversationStatePort):
 
         locked = prior_state.get("service_locked") or {}
         locked_name = locked.get("name")
-        locked_price = locked.get("price_buoi_le")
+        # Generic primary-price key; fall back to the prior price_buoi_le key for any
+        # in-flight conversation state written before the rename.
+        locked_price = locked.get("price_primary") or locked.get("price_buoi_le")
         ans = proposed_answer.lower()
 
         # Service drift: proposed answer mentions a different service name

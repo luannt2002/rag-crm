@@ -87,6 +87,28 @@ except ImportError:
     llm_resolved_purpose_total = None  # type: ignore[assignment]
 
 
+_PRICE_CELL_RE = re.compile(r"^[\d.,]{4,}$")
+
+
+def _extract_locked_prices(
+    preview: str, service_lower: str,
+) -> tuple[str | None, str | None]:
+    """Extract (primary, secondary) price strings for a service from its source
+    chunk, for the cross-turn price-lock. Delimiter-aware: splits each line on BOTH
+    pipe and comma, so it works for happy-case markdown tables (``| name | price |``)
+    AND legacy CSV rows (``name,price``). Returns the first two price-shaped cells on
+    the line that names the service; ``(None, None)`` when absent. Domain-neutral:
+    SHAPE only — no service/brand literal."""
+    for line in preview.splitlines():
+        if service_lower not in line.lower():
+            continue
+        cells = [c.strip() for c in re.split(r"[,|]", line)]
+        prices = [c for c in cells if _PRICE_CELL_RE.match(c)]
+        if prices:
+            return prices[0], (prices[-1] if len(prices) > 1 else None)
+    return None, None
+
+
 async def generate(
     state: GraphState,
     *,
@@ -210,24 +232,15 @@ async def generate(
                             "source_chunk_id": chunk.get("chunk_id", ""),
                             "locked_at_turn": state.get("message_id"),
                         }
-                        # Capture price_buoi_le literal from source chunk
-                        # — line containing service literal + adjacent
-                        # price field. CSV-row format dominant in corpus:
-                        # "4,Chăm sóc da chuyên sâu,199.000,800.000"
-                        # (col 3 = preferential price, col 4 = official).
-                        for line in preview.splitlines():
-                            if _service_lower not in line.lower():
-                                continue
-                            _cells = [c.strip() for c in line.split(",")]
-                            _prices_in_line = [
-                                _c for _c in _cells
-                                if re.match(r"^[\d\.,]{4,}$", _c)
-                            ]
-                            if _prices_in_line:
-                                _locked_entry["price_buoi_le"] = _prices_in_line[0]
-                                if len(_prices_in_line) > 1:
-                                    _locked_entry["price_goc"] = _prices_in_line[-1]
-                                break
+                        # Capture the service's price from its source chunk for the
+                        # cross-turn price-lock. Delimiter-aware (happy-case markdown
+                        # "| name | price | price |" OR legacy CSV row) — generic
+                        # primary/secondary keys, no domain literal.
+                        _pp, _ps = _extract_locked_prices(preview, _service_lower)
+                        if _pp:
+                            _locked_entry["price_primary"] = _pp
+                            if _ps:
+                                _locked_entry["price_secondary"] = _ps
                         _action_state_new["service_locked"] = _locked_entry
                         break
 
