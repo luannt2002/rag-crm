@@ -121,6 +121,134 @@ def percentile(vals: list[float], pct: float) -> float:
     return s[idx]
 
 
+def extract_tokens(resp: dict[str, Any]) -> tuple[int | None, int | None]:
+    """Map the chat response usage block → (tokens_in, tokens_out).
+
+    The ``/test/chat`` body exposes real usage under
+    ``tokens.{prompt,completion}`` (chat_routes.py). ``prompt`` = input
+    tokens, ``completion`` = output tokens. When the ``tokens`` field is
+    absent (e.g. the error / timeout path returns only ``error`` +
+    ``latency_ms``) we record ``None`` — NOT a fabricated 0 — so the ledger
+    never invents a measurement that did not happen (HALLU=0 applies to
+    eval artefacts too). A real ``{prompt:0, completion:0}`` (quota-blocked
+    path) is preserved as ``(0, 0)``.
+    """
+    usage = resp.get("tokens")
+    if not isinstance(usage, dict):
+        return (None, None)
+    p = usage.get("prompt")
+    c = usage.get("completion")
+    tokens_in = int(p) if isinstance(p, (int, float)) else None
+    tokens_out = int(c) if isinstance(c, (int, float)) else None
+    return (tokens_in, tokens_out)
+
+
+def build_record(
+    turn: dict[str, Any], resp: dict[str, Any], *, verdict: str,
+) -> dict[str, Any]:
+    """Assemble one per-question ledger row from a turn + its chat response."""
+    answer = resp.get("answer", "") or ""
+    tokens_in, tokens_out = extract_tokens(resp)
+    if tokens_in is None and tokens_out is None and not resp.get("error"):
+        # Successful turn with no usage block is anomalous — surface it so a
+        # missing column is never mistaken for a zero-token answer.
+        print(
+            f"  [tokens] WARN id={turn.get('id')} bot={turn.get('bot_id')} "
+            f"response carried no usage block (tokens_in/out=null)",
+            flush=True,
+        )
+    return {
+        "id": turn["id"],
+        "industry": turn.get("industry"),
+        "persona": turn.get("persona"),
+        "intent_expected": turn.get("intent_expected"),
+        "bot_id": turn["bot_id"],
+        "hallu_trap": bool(turn.get("hallu_trap")),
+        "trap_kind": turn.get("trap_kind"),
+        "expected_verdict": turn.get("expected_verdict"),
+        "question": turn["question"][:200],
+        "answer": answer[:600],
+        "answer_type": resp.get("answer_type"),
+        "verdict": verdict,
+        "top_score": resp.get("top_score"),
+        "chunks_used": resp.get("chunks_used", 0),
+        "latency_ms": resp.get("latency_ms"),
+        "cost_usd": resp.get("cost_usd"),
+        "tokens_in": tokens_in,
+        "tokens_out": tokens_out,
+        "trace_id": resp.get("trace_id"),
+        "request_id": resp.get("request_id"),
+        "error": resp.get("error"),
+    }
+
+
+def summarize(results: list[dict[str, Any]], *, label: str) -> dict[str, Any]:
+    """Aggregate per-question rows into the run summary.
+
+    Token totals/averages count ONLY rows with a real (non-null) measurement —
+    null rows (error/timeout turns that carried no usage block) are excluded so
+    averages are not diluted by fabricated zeros.
+    """
+    counts: dict[str, int] = {}
+    for r in results:
+        counts[r["verdict"]] = counts.get(r["verdict"], 0) + 1
+
+    trap_total = sum(1 for r in results if r["hallu_trap"])
+    hallu_breach = sum(
+        1 for r in results
+        if r["hallu_trap"] and r["verdict"] == "HALLU_BREACH"
+    )
+    non_trap = sum(1 for r in results if not r["hallu_trap"])
+    refuse_gap = sum(
+        1 for r in results
+        if not r["hallu_trap"] and r["verdict"] == "REFUSE_GAP"
+    )
+    answered_pass = sum(
+        1 for r in results
+        if not r["hallu_trap"] and r["verdict"] == "PASS_ANSWERED"
+    )
+    err = counts.get("ERR", 0)
+
+    lats = [r["latency_ms"] for r in results if r.get("latency_ms")]
+    costs = [
+        r["cost_usd"] for r in results
+        if isinstance(r.get("cost_usd"), (int, float))
+    ]
+    toks_in = [
+        r["tokens_in"] for r in results
+        if isinstance(r.get("tokens_in"), int)
+    ]
+    toks_out = [
+        r["tokens_out"] for r in results
+        if isinstance(r.get("tokens_out"), int)
+    ]
+
+    return {
+        "label": label,
+        "total": len(results),
+        "verdict_counts": counts,
+        "hallu_trap_total": trap_total,
+        "hallu_breach": hallu_breach,
+        "hallu_zero_sacred": hallu_breach == 0,
+        "non_trap_total": non_trap,
+        "answered_pass": answered_pass,
+        "refuse_gap": refuse_gap,
+        "answered_pass_rate": (
+            round(answered_pass / non_trap * 100, 1) if non_trap else 0.0
+        ),
+        "err": err,
+        "p50_latency_ms": percentile(lats, 50),
+        "p95_latency_ms": percentile(lats, 95),
+        "avg_cost_usd": (sum(costs) / len(costs)) if costs else 0.0,
+        "total_cost_usd": sum(costs),
+        "total_tokens_in": sum(toks_in),
+        "total_tokens_out": sum(toks_out),
+        "avg_tokens_in": (sum(toks_in) / len(toks_in)) if toks_in else 0.0,
+        "avg_tokens_out": (sum(toks_out) / len(toks_out)) if toks_out else 0.0,
+        "tokens_measured": len(toks_in),
+    }
+
+
 async def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument(
@@ -166,27 +294,7 @@ async def main() -> None:
                 is_trap=bool(t.get("hallu_trap")),
                 expected_verdict=t.get("expected_verdict", "ANSWERED"),
             )
-            rec = {
-                "id": t["id"],
-                "industry": t.get("industry"),
-                "persona": t.get("persona"),
-                "intent_expected": t.get("intent_expected"),
-                "bot_id": t["bot_id"],
-                "hallu_trap": bool(t.get("hallu_trap")),
-                "trap_kind": t.get("trap_kind"),
-                "expected_verdict": t.get("expected_verdict"),
-                "question": t["question"][:200],
-                "answer": (answer or "")[:600],
-                "answer_type": resp.get("answer_type"),
-                "verdict": verdict,
-                "top_score": resp.get("top_score"),
-                "chunks_used": resp.get("chunks_used", 0),
-                "latency_ms": resp.get("latency_ms"),
-                "cost_usd": resp.get("cost_usd"),
-                "trace_id": resp.get("trace_id"),
-                "request_id": resp.get("request_id"),
-                "error": resp.get("error"),
-            }
+            rec = build_record(t, resp, verdict=verdict)
             results.append(rec)
             short = (answer or "")[:60].replace("\n", " ")
             print(
@@ -201,51 +309,7 @@ async def main() -> None:
                 await asyncio.sleep(args.pace)
 
     # Aggregate
-    counts: dict[str, int] = {}
-    for r in results:
-        counts[r["verdict"]] = counts.get(r["verdict"], 0) + 1
-
-    trap_total = sum(1 for r in results if r["hallu_trap"])
-    hallu_breach = sum(
-        1 for r in results
-        if r["hallu_trap"] and r["verdict"] == "HALLU_BREACH"
-    )
-    non_trap = sum(1 for r in results if not r["hallu_trap"])
-    refuse_gap = sum(
-        1 for r in results
-        if not r["hallu_trap"] and r["verdict"] == "REFUSE_GAP"
-    )
-    answered_pass = sum(
-        1 for r in results
-        if not r["hallu_trap"] and r["verdict"] == "PASS_ANSWERED"
-    )
-    err = counts.get("ERR", 0)
-
-    lats = [r["latency_ms"] for r in results if r.get("latency_ms")]
-    costs = [
-        r["cost_usd"] for r in results
-        if isinstance(r.get("cost_usd"), (int, float))
-    ]
-
-    summary = {
-        "label": args.label,
-        "total": len(results),
-        "verdict_counts": counts,
-        "hallu_trap_total": trap_total,
-        "hallu_breach": hallu_breach,
-        "hallu_zero_sacred": hallu_breach == 0,
-        "non_trap_total": non_trap,
-        "answered_pass": answered_pass,
-        "refuse_gap": refuse_gap,
-        "answered_pass_rate": (
-            round(answered_pass / non_trap * 100, 1) if non_trap else 0.0
-        ),
-        "err": err,
-        "p50_latency_ms": percentile(lats, 50),
-        "p95_latency_ms": percentile(lats, 95),
-        "avg_cost_usd": (sum(costs) / len(costs)) if costs else 0.0,
-        "total_cost_usd": sum(costs),
-    }
+    summary = summarize(results, label=args.label)
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     with open(out_path, "w") as f:
