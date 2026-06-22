@@ -166,6 +166,16 @@ class GraphState(TypedDict, total=False):
     # fall back to the single-query path even when paraphrases are ready.
     _mq_queries: list[str]
 
+    # Speculative sibling of ``_mq_queries``: the router's speculative
+    # multi-query wrapper races the paraphrase LLM concurrently with the
+    # rewrite branch and stashes its variants here; ``retrieve`` prefers
+    # the committed ``_mq_queries`` and falls back to this slot. Same
+    # hand-off shape (paraphrase strings) → same annotation / reducer.
+    # MUST be declared here — an un-declared key is dropped by LangGraph's
+    # reducer across node hops, silently discarding the already-paid-for
+    # speculative paraphrases.
+    _mq_speculative_variants: list[str]
+
     # ─── Heuristic Layer-1 intent classify markers ───
     # ``intent_source`` identifies which path produced the intent label:
     #   "heuristic" — regex fast-path (Layer 1); no LLM call fired.
