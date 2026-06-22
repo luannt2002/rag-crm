@@ -1,0 +1,158 @@
+{
+  "bot_id": "test-spa-id",
+  "channel_type": "web",
+  "workspace_id": "spa",
+  "note": "AUTO-GENERATED from document_service_index (ground-truth price + qrel chunk). Deterministic, no LLM. B-2 power booster.",
+  "questions": [
+    {
+      "id": "g001",
+      "flow": "gen_price_factoid",
+      "q": "Giá Hiện tại bao nhiêu?",
+      "expect": "499000"
+    },
+    {
+      "id": "g002",
+      "flow": "gen_price_factoid",
+      "q": "Giá 1/2 tay bao nhiêu?",
+      "expect": "349000"
+    },
+    {
+      "id": "g003",
+      "flow": "gen_price_factoid",
+      "q": "Giá Trẻ hóa IPL bao nhiêu?",
+      "expect": "1200000"
+    },
+    {
+      "id": "g004",
+      "flow": "gen_price_factoid",
+      "q": "Giá Hiện tại bao nhiêu?",
+      "expect": "199000"
+    },
+    {
+      "id": "g005",
+      "flow": "gen_price_factoid",
+      "q": "Giá CSD Nâng cơ 7 điểm vàng bao nhiêu?",
+      "expect": "800000"
+    },
+    {
+      "id": "g006",
+      "flow": "gen_price_factoid",
+      "q": "Giá Hiện tại bao nhiêu?",
+      "expect": "99000"
+    },
+    {
+      "id": "g007",
+      "flow": "gen_price_factoid",
+      "q": "Giá Chăm sóc da dưỡng sinh mắt bao nhiêu?",
+      "expect": "800000"
+    },
+    {
+      "id": "g008",
+      "flow": "gen_price_factoid",
+      "q": "Giá Nano collagen trẻ hóa da bao nhiêu?",
+      "expect": "2500000"
+    },
+    {
+      "id": "g009",
+      "flow": "gen_price_factoid",
+      "q": "Giá Hiện tại bao nhiêu?",
+      "expect": "99000"
+    },
+    {
+      "id": "g010",
+      "flow": "gen_price_factoid",
+      "q": "Giá Hiện tại bao nhiêu?",
+      "expect": "99000"
+    },
+    {
+      "id": "g011",
+      "flow": "gen_price_factoid",
+      "q": "Giá Laser Carbon bao nhiêu?",
+      "expect": "1200000"
+    },
+    {
+      "id": "g012",
+      "flow": "gen_price_factoid",
+      "q": "Giá Hiện tại bao nhiêu?",
+      "expect": "499000"
+    },
+    {
+      "id": "g013",
+      "flow": "gen_price_factoid",
+      "q": "Giá CSD Thải độc da bao nhiêu?",
+      "expect": "800000"
+    },
+    {
+      "id": "g014",
+      "flow": "gen_price_factoid",
+      "q": "Giá Hiện tại bao nhiêu?",
+      "expect": "299000"
+    },
+    {
+      "id": "g015",
+      "flow": "gen_price_factoid",
+      "q": "Giá CSD Cấp oxi tươi bao nhiêu?",
+      "expect": "800000"
+    },
+    {
+      "id": "g016",
+      "flow": "gen_price_factoid",
+      "q": "Giá Dịch vụ bao nhiêu?",
+      "expect": "6000000"
+    },
+    {
+      "id": "g017",
+      "flow": "gen_price_factoid",
+      "q": "Giá Cả tay bao nhiêu?",
+      "expect": "499000"
+    },
+    {
+      "id": "g018",
+      "flow": "gen_price_factoid",
+      "q": "Giá Lưng bao nhiêu?",
+      "expect": "699000"
+    },
+    {
+      "id": "g019",
+      "flow": "gen_price_factoid",
+      "q": "Giá Peel trị thâm Inno A bao nhiêu?",
+      "expect": "2500000"
+    },
+    {
+      "id": "g020",
+      "flow": "gen_price_factoid",
+      "q": "Giá Trị mụn chuyên sâu bao nhiêu?",
+      "expect": "700000"
+    },
+    {
+      "id": "g021",
+      "flow": "gen_price_factoid",
+      "q": "Giá Vikim Medic (Nano màng sinh học) bao nhiêu?",
+      "expect": "1800000"
+    },
+    {
+      "id": "g022",
+      "flow": "gen_price_factoid",
+      "q": "Giá Nách bao nhiêu?",
+      "expect": "199000"
+    },
+    {
+      "id": "g023",
+      "flow": "gen_price_factoid",
+      "q": "Giá Hiện tại bao nhiêu?",
+      "expect": "299000"
+    },
+    {
+      "id": "g024",
+      "flow": "gen_price_factoid",
+      "q": "Giá CSD Nano kim cương bao nhiêu?",
+      "expect": "1500000"
+    },
+    {
+      "id": "g025",
+      "flow": "gen_price_factoid",
+      "q": "Giá dịch vụ chăm sóc da công nghệ cao</chunk_context> bao nhiêu?",
+      "expect": "6000000"
+    }
+  ]
+}

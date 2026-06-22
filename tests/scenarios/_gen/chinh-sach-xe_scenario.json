@@ -1,0 +1,140 @@
+{
+  "bot_id": "chinh-sach-xe",
+  "channel_type": "web",
+  "workspace_id": "xe",
+  "note": "AUTO-GENERATED from document_service_index (ground-truth price + qrel chunk). Deterministic, no LLM. B-2 power booster.",
+  "questions": [
+    {
+      "id": "g001",
+      "flow": "gen_price_factoid",
+      "q": "DVT 215/60/17 DX640 giá bao nhiêu?",
+      "expect": "1485000"
+    },
+    {
+      "id": "g002",
+      "flow": "gen_price_factoid",
+      "q": "RCMX+ giá bao nhiêu?",
+      "expect": "774000"
+    },
+    {
+      "id": "g003",
+      "flow": "gen_price_factoid",
+      "q": "108/106T CITYTRAXX H/T giá bao nhiêu?",
+      "expect": "1467000"
+    },
+    {
+      "id": "g004",
+      "flow": "gen_price_factoid",
+      "q": "185R14C RCMX+ giá bao nhiêu?",
+      "expect": "1098000"
+    },
+    {
+      "id": "g005",
+      "flow": "gen_price_factoid",
+      "q": "CITYTRAXX H/T giá bao nhiêu?",
+      "expect": "1944000"
+    },
+    {
+      "id": "g006",
+      "flow": "gen_price_factoid",
+      "q": "DVT 275/40/21 DX640 giá bao nhiêu?",
+      "expect": "3240000"
+    },
+    {
+      "id": "g007",
+      "flow": "gen_price_factoid",
+      "q": "DVT 215/45/18 DX640 giá bao nhiêu?",
+      "expect": "1404000"
+    },
+    {
+      "id": "g008",
+      "flow": "gen_price_factoid",
+      "q": "85R16 giá bao nhiêu?",
+      "expect": "2358516"
+    },
+    {
+      "id": "g009",
+      "flow": "gen_price_factoid",
+      "q": "235/50R19 103W INSTINCT SUV giá bao nhiêu?",
+      "expect": "1791000"
+    },
+    {
+      "id": "g010",
+      "flow": "gen_price_factoid",
+      "q": "DVT 235/45/19 DX640 giá bao nhiêu?",
+      "expect": "1998000"
+    },
+    {
+      "id": "g011",
+      "flow": "gen_price_factoid",
+      "q": "235/55R19 INSTINCT SUV giá bao nhiêu?",
+      "expect": "1800000"
+    },
+    {
+      "id": "g012",
+      "flow": "gen_price_factoid",
+      "q": "CITYTRAXX H/T giá bao nhiêu?",
+      "expect": "1944000"
+    },
+    {
+      "id": "g013",
+      "flow": "gen_price_factoid",
+      "q": "RCM-X+ giá bao nhiêu?",
+      "expect": "972000"
+    },
+    {
+      "id": "g014",
+      "flow": "gen_price_factoid",
+      "q": "235/65 LPD giá bao nhiêu?",
+      "expect": "1872000"
+    },
+    {
+      "id": "g015",
+      "flow": "gen_price_factoid",
+      "q": "DVT 205/55/17 DX640 giá bao nhiêu?",
+      "expect": "1152000"
+    },
+    {
+      "id": "g016",
+      "flow": "gen_price_factoid",
+      "q": "75R15 giá bao nhiêu?",
+      "expect": "2357515"
+    },
+    {
+      "id": "g017",
+      "flow": "gen_price_factoid",
+      "q": "1535 giá bao nhiêu?",
+      "expect": "810000"
+    },
+    {
+      "id": "g018",
+      "flow": "gen_price_factoid",
+      "q": "RVL 295/35/21 INSTINCT giá bao nhiêu?",
+      "expect": "3420000"
+    },
+    {
+      "id": "g019",
+      "flow": "gen_price_factoid",
+      "q": "DVT 285/45/19 DX640 giá bao nhiêu?",
+      "expect": "2520000"
+    },
+    {
+      "id": "g020",
+      "flow": "gen_price_factoid",
+      "q": "70R17 giá bao nhiêu?",
+      "expect": "2857017"
+    },
+    {
+      "id": "g021",
+      "flow": "gen_price_factoid",
+      "q": "65R18 giá bao nhiêu?",
+      "expect": "2856518"
+    },
+    {
+      "id": "g022",
+      "flow": "gen_price_factoid",
+      "q": "DVT 255/50/19 DX640 giá bao nhiêu?",
+      "expect": "2205000"
+    }
+  ]
+}

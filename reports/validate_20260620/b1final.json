@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "bots": [
+    {
+      "bot_id": "chinh-sach-xe",
+      "n_questions": 14,
+      "n_answerable": 7,
+      "coverage": 0.857,
+      "chunk_recall": 0.143,
+      "hallu_rate": 0.0,
+      "retrieval_miss": 0,
+      "llm_miss": 0,
+      "unknown_miss": 1,
+      "p95_ms": 6090,
+      "cost_usd": 0.01915
+    },
+    {
+      "bot_id": "test-spa-id",
+      "n_questions": 18,
+      "n_answerable": 10,
+      "coverage": 0.9,
+      "chunk_recall": 0.2,
+      "hallu_rate": 0.0,
+      "retrieval_miss": 0,
+      "llm_miss": 0,
+      "unknown_miss": 1,
+      "p95_ms": 10954,
+      "cost_usd": 0.02097
+    },
+    {
+      "bot_id": "thong-tu-09-2020-tt-nhnn",
+      "n_questions": 10,
+      "n_answerable": 5,
+      "coverage": 1.0,
+      "chunk_recall": 0.6,
+      "hallu_rate": 0.0,
+      "retrieval_miss": 0,
+      "llm_miss": 0,
+      "unknown_miss": 0,
+      "p95_ms": 11524,
+      "cost_usd": 0.01052
+    }
+  ]
+}

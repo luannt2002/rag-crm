@@ -1,0 +1,20 @@
+{
+  "bot_id": "thong-tu-09-2020-tt-nhnn",
+  "channel_type": "web",
+  "workspace_id": "legal",
+  "note": "AUTO-GENERATED from document_service_index (ground-truth price + qrel chunk). Deterministic, no LLM. B-2 power booster.",
+  "questions": [
+    {
+      "id": "g001",
+      "flow": "gen_price_factoid",
+      "q": "Giá b) Hệ thống thông tin phục vụ khách hàng có xử lý bao nhiêu?",
+      "expect": "10000000"
+    },
+    {
+      "id": "g002",
+      "flow": "gen_price_factoid",
+      "q": "Giá b) Hệ thống thông tin phục vụ khách hàng có xử lý bao nhiêu?",
+      "expect": "10000000"
+    }
+  ]
+}
