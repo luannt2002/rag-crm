@@ -22,6 +22,8 @@
 
 ## What changed & why (latest phase — 2026-06-19)
 
+> **Happy-case input control (2026-06-22)** — thay vì cố parse mọi format bẩn (vô hạn), platform định nghĩa **1 happy-case template chuẩn** (structured-markdown: `## section` + `| table |`) + **checker code-only** chấm điểm data đầu vào + **normalizer** kéo source về template + **per-bot summary-doc** (deterministic, fix câu "liệt kê/tóm tắt" qua giới hạn topK). Verified end-to-end: upload 7-step (L1→L7) + query 8-step (Q1→Q8), answer **11/11 × 3 lượt stable, 0 HALLU**. Spec: `docs/dev/HAPPY_CASE_DOCUMENT_FORMAT.md` · tools: `scripts/check_happy_case.py`, `verify_happy_case_pipeline.py`, `verify_query_flow.py`, `verify_answer_quality.py`.
+
 Engine swaps vs a textbook RAG (deliberate, policy-driven): Qdrant → **pgvector** (1 DB, RLS-capable); Mistral OCR (cloud) → **Kreuzberg** (self-hosted, data-sovereignty); LLM chunk-selector → **rule-based scorer** (deterministic, 0 LLM-cost/doc); sbert/BGE → **Jina v3** (embed+rerank, 1 vendor).
 
 **Latest phase (2026-06-19)** — each measured, with the reason:

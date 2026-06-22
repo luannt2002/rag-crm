@@ -3,7 +3,9 @@
 > Always-updated current state. Git history was reset on 2026-06-14 (fresh start);
 > commit-SHA anchors no longer apply — this file is the source of truth.
 
-## Session 2026-06-22 (d) — Happy-case INPUT CONTROL: scope template + checker + 9-file styled L1→L7 GREEN  ⟵ LATEST
+## Session 2026-06-22 (d) — Happy-case INPUT CONTROL + verify end-to-end (answer 11/11×3 stable)  ⟵ LATEST
+
+> **✅ FINAL VERIFIED (deep, 3 lượt)**: upload 7-step L1→L7 GREEN · query 8-step Q1→Q8 healthy · **answer-quality 11/11 × 3 lượt = 100% đúng ground-truth, ỔN ĐỊNH, 0 HALLU** (factoid/aggregate/list/refuse-trap/legal). Full-suite 6095 pass. Bug-fixes B/C/E (generate domain-literal + markdown-extract, blocks prose-pipe) có TDD. Tools: `verify_query_flow.py` · `verify_answer_quality.py` (trace + chấm ground-truth). Plan: `plans/20260622-flow-fixes-control/` (B/C/E done; A/D/F/G/H = polish/i18n/defer).
 
 **[user: "không control hết MỌI format được → dựng TEMPLATE riêng, bắt user sửa data về scope. Code nhẹ KHÔNG LLM. Test 9 file styled theo scope xem chuẩn không"]**
 
