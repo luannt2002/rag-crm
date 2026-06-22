@@ -183,14 +183,17 @@ class LanguagePackService(LanguagePackPort):
             # Defensive: legacy module is a pure dict lookup, but a non-str
             # ``language`` or future hot-swap must never break the caller.
             return ""
-        # ``LanguagePack`` field naming: ``prompt_<key>`` for everything
-        # except the special ``greeting_answer`` field.
-        attr = (
-            "greeting_answer"
-            if prompt_key == "greeting_answer"
-            else f"prompt_{prompt_key}"
-        )
-        value = getattr(pack, attr, "")
+        # ``LanguagePack`` field naming is mixed: most prompt keys map to
+        # ``prompt_<key>`` (e.g. ``generator`` → ``prompt_generator``) while a
+        # few are bare (``greeting_answer``, ``refuse_message``,
+        # ``sysprompt_default_rules``). Resolve against the real dataclass:
+        # prefer the bare field name, else the ``prompt_<key>`` convention.
+        # A blind ``prompt_<key>`` lookup read a non-existent attribute and
+        # swallowed the configured refuse text to ``""``.
+        if hasattr(pack, prompt_key):
+            value = getattr(pack, prompt_key)
+        else:
+            value = getattr(pack, f"prompt_{prompt_key}", "")
         return str(value or "")
 
     async def _cache_get(self, key: str) -> str | None:
