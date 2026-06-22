@@ -1,0 +1,89 @@
+{
+  "bot_id": "thong-tu-09-2020-tt-nhnn",
+  "channel_type": "web",
+  "workspace_id": "legal",
+  "note": "M26 conversational suite (register line 97): legal has no priced entities, so the value-lookup family is THRESHOLD lookup (cấp độ 4) instead of price. KEY hidden bug: the MFA threshold is 'cấp độ 4 trở lên' (chunk 289) but the bot was answering cấp độ 2/3 — so the multi-phrasing threshold cases probe exactly that. Covers existence (does this circular cover MFA), listing (the obligations under Điều 30 access-management), threshold lookup with MULTIPLE phrasings, comparison (cấp độ 3 vs 4 MFA obligation), fuzzy/synonym ('2FA' / 'xác thực 2 lớp'), multi-turn follow-up, refusal-traps. Ground-truth lifted LITERALLY from live document_chunks: chunk 019ee422-64ba-...3c (Đoạn 289) 'Đối với các hệ thống thông tin từ cấp độ 4 trở lên phải áp dụng xác thực đa yếu tố khi truy cập quản trị các máy chủ, ứng dụng và các thiết bị mạng...'; Điều 1 'Thông tư này áp dụng đối với các tổ chức tín dụng, chi nhánh ngân hàng nước ngoài...'; '[QUẢN LÝ TRUY CẬP > Điều 30. Quản lý truy cập hệ thống thông tin và ứng dụng]'. Refusal traps verified ABSENT in corpus: max article = Điều 57 (psql), so Điều 99 does not exist; no specific 'mức phạt tiền ... đồng' amount (the 2 'phạt' chunks are generic inspection-authority responsibility, no numeric penalty).",
+  "questions": [
+    {
+      "id": "legal-exist-01",
+      "intent_label": "existence",
+      "question": "Thông tư này có quy định về xác thực đa yếu tố không ạ?",
+      "expected_substrings": ["đa yếu tố"],
+      "must_refuse": false
+    },
+    {
+      "id": "legal-exist-02",
+      "intent_label": "existence",
+      "question": "Thông tư có điều khoản nào về quản lý truy cập hệ thống không?",
+      "expected_substrings": ["truy cập"],
+      "must_refuse": false
+    },
+    {
+      "id": "legal-list-01",
+      "intent_label": "listing",
+      "question": "Thông tư này áp dụng cho những tổ chức nào, liệt kê giúp tôi?",
+      "expected_substrings": ["tổ chức tín dụng", "chi nhánh ngân hàng"],
+      "must_refuse": false
+    },
+    {
+      "id": "legal-list-02",
+      "intent_label": "listing",
+      "question": "Điều 30 về quản lý truy cập gồm những yêu cầu gì?",
+      "expected_substrings": ["truy cập"],
+      "must_refuse": false
+    },
+    {
+      "id": "legal-threshold-lead",
+      "intent_label": "threshold",
+      "question": "Xác thực đa yếu tố bắt buộc áp dụng cho hệ thống từ cấp độ mấy trở lên?",
+      "expected_substrings": ["cấp độ 4"],
+      "must_refuse": false
+    },
+    {
+      "id": "legal-threshold-trail",
+      "intent_label": "threshold",
+      "question": "Hệ thống từ cấp độ 4 trở lên khi truy cập quản trị phải dùng biện pháp xác thực gì?",
+      "expected_substrings": ["đa yếu tố", "cấp độ 4"],
+      "must_refuse": false
+    },
+    {
+      "id": "legal-compare-01",
+      "intent_label": "comparison",
+      "question": "Hệ thống cấp độ 3 và cấp độ 4 khác nhau thế nào về yêu cầu xác thực đa yếu tố khi truy cập quản trị?",
+      "expected_substrings": ["cấp độ 4", "đa yếu tố"],
+      "must_refuse": false
+    },
+    {
+      "id": "legal-fuzzy-01",
+      "intent_label": "fuzzy_synonym",
+      "question": "Hệ thống nào bắt buộc xác thực 2 lớp khi truy cập quản trị máy chủ?",
+      "expected_substrings": ["cấp độ 4"],
+      "must_refuse": false
+    },
+    {
+      "id": "legal-multiturn-01",
+      "intent_label": "multi_turn",
+      "question": "Vậy cấp độ mấy trở lên thì bắt buộc áp dụng?",
+      "history": [
+        "Thông tư có yêu cầu xác thực đa yếu tố không?",
+        "Yêu cầu đó áp dụng khi nào?"
+      ],
+      "expected_substrings": ["cấp độ 4"],
+      "must_refuse": false
+    },
+    {
+      "id": "legal-refuse-01",
+      "intent_label": "refusal_trap",
+      "question": "Điều 99 của thông tư này quy định gì?",
+      "expected_substrings": [],
+      "must_refuse": true
+    },
+    {
+      "id": "legal-refuse-02",
+      "intent_label": "refusal_trap",
+      "question": "Mức phạt tiền cụ thể khi vi phạm thông tư là bao nhiêu đồng?",
+      "expected_substrings": [],
+      "must_refuse": true
+    }
+  ]
+}

@@ -1,0 +1,110 @@
+{
+  "bot_id": "test-spa-id",
+  "channel_type": "web",
+  "workspace_id": "spa",
+  "note": "M26 conversational suite (register line 97): exercises the REAL gaps the factoid set hid — existence, listing (the triệt-lông omission: zones are named 'Mép/Nách/Mặt/Râu/Cả tay', NOT 'triệt lông X'), price-of-entity with LEADING ('Giá X bao nhiêu') AND TRAILING phrasing + SHORT zone names (Mép/Râu), comparison, fuzzy/synonym, multi-turn follow-up (coreference), refusal-traps. Ground-truth lifted LITERALLY from live document_chunks (chunk 019ee501-6b40-...279 'STT,Vùng triệt,Giá buổi lẻ,Giá Combo 10 buổi 1,Mép,129.000,899000 2,Mặt,249.000,1499000 3,Nách,199.000,1199000 ... 5,Cả tay,499.000 ... 12,Râu (nam),249.000,1499000'; gội-đầu table chunk '1,Gội đầu thư giãn - dầu thường,30 phút,60000 2,...dầu cặp,30 phút,120000 ... 4,Gội đầu dưỡng sinh,60 phút,350000'; massage chunk '1,Massage cổ vai gáy,60 phút,400000 2,Massage cổ vai gáy,90 phút,500000'). Refusal traps verified ABSENT in corpus: nâng ngực/niềng răng/nha khoa = 0 chunks (psql). expected_substrings = bare digit groups (format-agnostic).",
+  "questions": [
+    {
+      "id": "spa-exist-01",
+      "intent_label": "existence",
+      "question": "Bên mình có dịch vụ triệt lông không ạ?",
+      "expected_substrings": ["triệt lông"],
+      "must_refuse": false
+    },
+    {
+      "id": "spa-exist-02",
+      "intent_label": "existence",
+      "question": "Spa có làm gội đầu dưỡng sinh không em?",
+      "expected_substrings": ["gội đầu", "350000"],
+      "must_refuse": false
+    },
+    {
+      "id": "spa-list-01",
+      "intent_label": "listing",
+      "question": "Bên mình triệt lông được những vùng nào, liệt kê hết giúp em với?",
+      "expected_substrings": ["Mép", "Nách", "Mặt", "Cả tay"],
+      "must_refuse": false
+    },
+    {
+      "id": "spa-list-02",
+      "intent_label": "listing",
+      "question": "Dịch vụ gội đầu bên mình có mấy loại, kể giúp em?",
+      "expected_substrings": ["dầu thường", "dầu cặp", "dưỡng sinh"],
+      "must_refuse": false
+    },
+    {
+      "id": "spa-price-lead-mep",
+      "intent_label": "price_of_entity",
+      "question": "Giá triệt lông mép bao nhiêu vậy em?",
+      "expected_substrings": ["129000"],
+      "must_refuse": false
+    },
+    {
+      "id": "spa-price-trail-mep",
+      "intent_label": "price_of_entity",
+      "question": "Triệt lông mép hết bao nhiêu tiền ạ?",
+      "expected_substrings": ["129000"],
+      "must_refuse": false
+    },
+    {
+      "id": "spa-price-lead-rau",
+      "intent_label": "price_of_entity",
+      "question": "Giá triệt lông râu cho nam là bao nhiêu?",
+      "expected_substrings": ["249000"],
+      "must_refuse": false
+    },
+    {
+      "id": "spa-price-trail-cata",
+      "intent_label": "price_of_entity",
+      "question": "Triệt lông cả tay buổi lẻ giá bao nhiêu ạ?",
+      "expected_substrings": ["499000"],
+      "must_refuse": false
+    },
+    {
+      "id": "spa-price-goidau",
+      "intent_label": "price_of_entity",
+      "question": "Gội đầu thư giãn dầu thường giá bao nhiêu?",
+      "expected_substrings": ["60000"],
+      "must_refuse": false
+    },
+    {
+      "id": "spa-compare-01",
+      "intent_label": "comparison",
+      "question": "Triệt lông nách với triệt lông mặt, vùng nào rẻ hơn và giá mỗi vùng bao nhiêu?",
+      "expected_substrings": ["199000", "249000"],
+      "must_refuse": false
+    },
+    {
+      "id": "spa-fuzzy-01",
+      "intent_label": "fuzzy_synonym",
+      "question": "Cho em hỏi massage vai gáy giá nhiêu ạ?",
+      "expected_substrings": ["400000"],
+      "must_refuse": false
+    },
+    {
+      "id": "spa-multiturn-01",
+      "intent_label": "multi_turn",
+      "question": "Thế còn nách thì sao em?",
+      "history": [
+        "Bên mình có triệt lông không em?",
+        "Triệt lông mép giá bao nhiêu vậy?"
+      ],
+      "expected_substrings": ["199000"],
+      "must_refuse": false
+    },
+    {
+      "id": "spa-refuse-01",
+      "intent_label": "refusal_trap",
+      "question": "Bên mình có phẫu thuật nâng ngực không, giá bao nhiêu?",
+      "expected_substrings": [],
+      "must_refuse": true
+    },
+    {
+      "id": "spa-refuse-02",
+      "intent_label": "refusal_trap",
+      "question": "Spa có dịch vụ nha khoa niềng răng không ạ?",
+      "expected_substrings": [],
+      "must_refuse": true
+    }
+  ]
+}

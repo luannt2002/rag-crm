@@ -1,0 +1,103 @@
+{
+  "bot_id": "chinh-sach-xe",
+  "channel_type": "web",
+  "workspace_id": "xe",
+  "note": "M26 conversational suite (register line 97): exercises the REAL gaps the factoid set hid. KEY hidden bug (M16-style): user types tyre size in R-notation (205/55R16) but the priced corpus row uses slash (205/55/16) — same size, different surface form. Each price case asks in R-notation; ground-truth = bare digit price from the slash row. Covers existence, listing (CITYTRAXX product line — a real line in corpus), price-of-entity with LEADING ('Giá size X bao nhiêu') + TRAILING phrasing incl. 16-inch sizes, comparison, fuzzy (size typed with space/no-R), multi-turn follow-up, refusal-traps. Ground-truth lifted LITERALLY from live document_service_index / document_chunks: '185/55/15 ... 810000', '195/55/15 ... 963000', '205/65/15 ... 999000', '205/55/16 ... 1044000', '205/60/16 ... 1098000' (each price verified unique per size via psql). Refusal traps verified ABSENT: michelin = 0 chunks, mâm xe = 0 chunks (psql). expected_substrings = bare digit groups (format-agnostic).",
+  "questions": [
+    {
+      "id": "xe-exist-01",
+      "intent_label": "existence",
+      "question": "Shop có lốp size 205/55R16 không vậy?",
+      "expected_substrings": ["205/55"],
+      "must_refuse": false
+    },
+    {
+      "id": "xe-exist-02",
+      "intent_label": "existence",
+      "question": "Bên mình có dòng lốp CITYTRAXX không shop?",
+      "expected_substrings": ["CITYTRAXX"],
+      "must_refuse": false
+    },
+    {
+      "id": "xe-list-01",
+      "intent_label": "listing",
+      "question": "Shop liệt kê giúp mình các mẫu lốp CITYTRAXX đang có với?",
+      "expected_substrings": ["CITYTRAXX"],
+      "must_refuse": false
+    },
+    {
+      "id": "xe-list-02",
+      "intent_label": "listing",
+      "question": "Lốp size vành 15 inch shop có những size nào, kể giúp mình?",
+      "expected_substrings": ["185/55", "195/55", "205/65"],
+      "must_refuse": false
+    },
+    {
+      "id": "xe-price-lead-205-55-16",
+      "intent_label": "price_of_entity",
+      "question": "Giá lốp 205/55R16 bao nhiêu một cái vậy shop?",
+      "expected_substrings": ["1044000"],
+      "must_refuse": false
+    },
+    {
+      "id": "xe-price-trail-205-55-16",
+      "intent_label": "price_of_entity",
+      "question": "Lốp 205/55R16 hết bao nhiêu tiền ạ?",
+      "expected_substrings": ["1044000"],
+      "must_refuse": false
+    },
+    {
+      "id": "xe-price-lead-205-60-16",
+      "intent_label": "price_of_entity",
+      "question": "Giá size 205/60R16 là bao nhiêu shop?",
+      "expected_substrings": ["1098000"],
+      "must_refuse": false
+    },
+    {
+      "id": "xe-price-trail-185-55-15",
+      "intent_label": "price_of_entity",
+      "question": "Lốp 185/55R15 giá bao nhiêu một cái?",
+      "expected_substrings": ["810000"],
+      "must_refuse": false
+    },
+    {
+      "id": "xe-compare-01",
+      "intent_label": "comparison",
+      "question": "So sánh lốp 195/55R15 và 205/65R15, loại nào rẻ hơn và giá mỗi loại bao nhiêu?",
+      "expected_substrings": ["963000", "999000"],
+      "must_refuse": false
+    },
+    {
+      "id": "xe-fuzzy-01",
+      "intent_label": "fuzzy_synonym",
+      "question": "Cho mình hỏi giá lốp 205 55 16 (không có chữ R) bao nhiêu?",
+      "expected_substrings": ["1044000"],
+      "must_refuse": false
+    },
+    {
+      "id": "xe-multiturn-01",
+      "intent_label": "multi_turn",
+      "question": "Thế còn size 205/60R16 thì sao shop?",
+      "history": [
+        "Shop có lốp 205/55R16 không?",
+        "Lốp 205/55R16 giá bao nhiêu vậy?"
+      ],
+      "expected_substrings": ["1098000"],
+      "must_refuse": false
+    },
+    {
+      "id": "xe-refuse-01",
+      "intent_label": "refusal_trap",
+      "question": "Lốp Michelin Pilot Sport 4 giá bao nhiêu shop?",
+      "expected_substrings": [],
+      "must_refuse": true
+    },
+    {
+      "id": "xe-refuse-02",
+      "intent_label": "refusal_trap",
+      "question": "Shop có bán mâm xe và nước rửa kính không?",
+      "expected_substrings": [],
+      "must_refuse": true
+    }
+  ]
+}
