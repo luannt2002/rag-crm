@@ -506,12 +506,13 @@ class _StageChunkMixin:
                 from ragbot.shared.chunking import apply_cross_check
                 from ragbot.shared.context_buffer import attach_context_buffer
 
-                # Wave B1 will surface a parser-produced ``blocks`` list on
-                # the ingest scope; until then no upstream variable carries
-                # it, so we start with an empty list and the buffer call is
-                # a no-op. This keeps the wiring honest (visible call site)
-                # without inventing a fake source.
-                parsed_blocks: list = []
+                # The upstream parser threads its typed ``Block`` list onto
+                # ``ctx.blocks`` (ingest_core builds it from the ``blocks``
+                # param). Feed it directly so the Layer-2 buffer runs on the
+                # real atomic blocks. ``None`` / empty (direct-text API,
+                # parsers that emit no blocks) → empty list, the buffer call
+                # is skipped and the text-flatten fallback below stays the path.
+                parsed_blocks: list = list(ctx.blocks or [])
                 if parsed_blocks:
                     parsed_blocks = attach_context_buffer(parsed_blocks)
 
