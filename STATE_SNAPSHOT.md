@@ -26,8 +26,15 @@
 - **Sao thua (gốc rễ):** #2 coref = **thua GIẢ** (maverick-coref English-only/non-commercial + corpora structured mật độ coref thấp → bỏ qua). #1 metrics = **thua THẬT dễ fix** (embedding version ĐÃ có, chưa wire). #3 selector = **dependency-blocked** (cần #1 + block-list B1). Meta: AdapChunk=offline-research-benchmark, ragbot=live-commercial → 3 thua phần lớn là **giá của production** + **thiếu vòng đo để dám bật dormant**.
 - **5 lever cải thiện (cơ chế + gate):** L1 stats validation (đụng 3 bot) → L2 spa zone category → L3 legal clause header → L4 lexical→embedding metrics (mở khóa selector) → L5 activate selector+B1. Đều data/ingest-layer, gated D13, HALLU=0 sacred.
 
+### ✅ Đo + Lever #1 bắt đầu
+- **Intrinsic embedding-cosine THẬT đo lại**: CC xe 0.974 / spa 0.972 / legal 0.906 → **≈ AdapChunk confirmed** (chunking thực tốt, không phải lo lexical).
+- **Lever #1 piece 1** (`0b5bd18`): price-ceiling — `parse_money_vn` thêm `max_value` + `DEFAULT_PRICE_MAX_VND=500M` → kill date-as-price corruption (xe `2025122435548`). 4 test + 201 no-reg. Guard future ingest + re-index.
+- **Lever #1 còn lại** (đã có cơ chế): entity-noise filter — data lộ rõ: xe rác = all-caps code (`H/P,HP,GP,LPD,date1`), spa zone hợp lệ = Title-case VN (`Mặt,Mép,Nách,Lưng`) → reject `^[A-Z/+]{2,5}$`/`date1`, GIỮ Title-case (tách sạch, không giết spa zone) + **re-index** rows corrupted hiện có (re-extract stats, KHÔNG re-embed).
+
+### Merge → main (2026-06-22): toàn bộ 60 commit branch + eval artifacts → main (ff, có đủ data).
+
 ### Còn lại (fresh session, plan sẵn `plans/20260621-fix-all-master/`)
-Wave B2/C2 (citation-strip, spa listing) → B1/C1 (legal re-chunk, spa extraction) → D1 (KG) → multimodal activation. Tất cả gap có root-cause + fix-spec + gate D13.
+Lever #1 finish (entity-filter + re-index) → L2 spa-category → L3 legal-header → L4 embedding-metrics → L5 selector. Wave B2/C2 (citation-strip, spa listing) → B1/C1 → D1 (KG) → multimodal activation. Tất cả gap có root-cause + fix-spec + gate D13.
 
 ## Session 2026-06-21 (cont) — Live conversational QA exposes hidden retrieval bugs + Phase-1 fix shipped
 
