@@ -12,6 +12,7 @@ entities — idempotent (delete-by-document before insert).
 from __future__ import annotations
 
 import asyncio
+import json
 import os
 import uuid
 
@@ -31,23 +32,45 @@ async def main() -> None:
         docs = (await conn.execute(text(
             """SELECT DISTINCT d.id, d.record_bot_id, d.record_tenant_id, b.workspace_id
                FROM documents d JOIN bots b ON b.id = d.record_bot_id
-               JOIN document_chunks dc ON dc.record_document_id = d.id
-               WHERE dc.chunk_type = 'table'"""
+               JOIN document_chunks dc ON dc.record_document_id = d.id"""
         ))).fetchall()
 
     total_docs = total_entities = 0
     for doc_id, bot_id, tenant_id, workspace_id in docs:
         async with eng.connect() as conn:
             rows = (await conn.execute(text(
-                """SELECT dc.id, dc.chunk_index, dc.content, dc.chunk_type
+                # ALL chunk types (not just 'table'): production extracts stats
+                # from ctx.rows = every chunk of the doc; a priced catalog row can
+                # land in a 'text'-typed chunk. parse_table_chunks self-guards on
+                # delimiters, so prose chunks are skipped harmlessly.
+                """SELECT dc.id, dc.chunk_index, dc.content, dc.chunk_type,
+                          dc.metadata_json
                    FROM document_chunks dc
-                   WHERE dc.record_document_id = :d AND dc.chunk_type = 'table'
+                   WHERE dc.record_document_id = :d
                    ORDER BY dc.chunk_index"""
             ), {"d": doc_id})).fetchall()
-        chunk_dicts = [
-            {"id": str(r[0]), "chunk_index": r[1], "content": r[2], "chunk_type": r[3]}
-            for r in rows
-        ]
+        # Prefer the RAW pre-enrichment row text (metadata_json.raw_chunk) — the
+        # persisted ``content`` carries an enrichment prose prefix ("Đoạn trong
+        # phần Kho lốp …") that parse_table_chunks would otherwise mis-extract as
+        # noise AND splits the real table rows wrong (mirrors the production
+        # extraction path in ingest_stages_final._raw_row).
+        def _raw_of(meta: object) -> str | None:
+            if isinstance(meta, dict):
+                return meta.get("raw_chunk")
+            if isinstance(meta, str):
+                try:
+                    return json.loads(meta).get("raw_chunk")
+                except (ValueError, AttributeError):
+                    return None
+            return None
+
+        chunk_dicts = []
+        for r in rows:
+            _d = {"id": str(r[0]), "chunk_index": r[1], "content": r[2], "chunk_type": r[3]}
+            _raw = _raw_of(r[4])
+            if _raw:
+                _d["raw_chunk"] = _raw
+            chunk_dicts.append(_d)
         entities = parse_table_chunks(chunk_dicts)
         if not entities:
             continue
