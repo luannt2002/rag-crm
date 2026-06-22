@@ -192,8 +192,11 @@ def _is_table_line(line: str) -> bool:
             and not stripped.endswith((";", ":"))
             and not _VN_CLAUSE_MARKER_RE.match(stripped)):
         return True
-    # Header-like: "STT | Dịch vụ | Giá"
-    if re.match(r"^[A-ZÀ-Ỹa-zà-ỹ\s]+[|]", stripped):
+    # Header-like (no leading pipe): "Cột A | Cột B | Cột C". Require ≥2 pipes (≥3
+    # cells) so a PROSE line with a single incidental "|" is NOT mis-tagged a table
+    # (item E) — a happy-case table always has leading/trailing pipes (caught above)
+    # or ≥2 internal pipes here.
+    if stripped.count("|") >= 2 and re.match(r"^[A-ZÀ-Ỹa-zà-ỹ\s]+[|]", stripped):  # noqa: PLR2004 — ≥3 cells = real header
         return True
     return False
 # VN legal-structure helpers extracted to vn_structural (strangler split).

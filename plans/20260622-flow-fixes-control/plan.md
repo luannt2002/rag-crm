@@ -26,7 +26,7 @@ Ship từng cái có TDD; verify load-test KHÔNG tụt 22/23 sau mỗi fix.
 | **B** | WARN-domain | Q7 generate | `generate.py` | ~~`price_buoi_le`/`price_goc`~~ → generic | đổi key generic + `conversation_state.py` back-compat | **P1** | ✅ DONE |
 | **C** | WARN | Q7 generate | `generate.py` | ~~CSV-only extract~~ → delimiter-aware (`,` + `\|`) | helper `_extract_locked_prices` markdown+CSV, test 5/5 | **P2** | ✅ DONE |
 | **D** | BLOCKER | Q6/L7 | `ingest_stages_store.py:659` | parent chunks thiếu narrate metadata | narrate parent trước store HOẶC Q6-expand dùng leaf-narrate | **P2** | TODO |
-| **E** | BLOCKER | L2 upload | `blocks.py:196` | regex header `^[A-Z...]+\|` match prose-có-pipe | siết: chỉ match khi ≥2 cell label-like + no money (tái dùng `_looks_header`) | **P3** | TODO |
+| **E** | BLOCKER | L2 upload | `analyze.py:196` | ~~regex match prose-1-pipe~~ → yêu cầu ≥2 pipe | `_is_table_line` header-branch + `count('\|')>=2`, test 4/4 | **P3** | ✅ DONE |
 | **F** | WARN | L2 upload | `blocks.py:257-265` | markdown heading không tag riêng (gộp text) | thêm branch `# ## ###` → block-type `heading` (hoặc giữ — HDT đã xử ở L4/L6) | **P3** | TODO |
 | **G** | MINOR | Q1 understand | intent prompt | superlative "đắt nhất" → `factoid` (đáng `aggregation`); rewrite rỗng | thêm ví dụ superlative vào intent prompt; rewrite fallback = query gốc (đã có) | **P4** | TODO |
 | **H** | MINOR | Q3/Q4 retrieve | retrieval/BM25 | xe tire-size "165/80R13" miss (notation cross-match) | BM25 AND + notation normalize; cần ADR (đổi retrieval) | **P4** | DEFER-ADR |
