@@ -102,6 +102,11 @@ reports/agent_d_raw_responses.jsonl
 reports/agent_d_per_stage_metrics.csv
 reports/V14b_raw_jsonl_backup.jsonl
 
+# Tenant data — real customer document dumps + happy-case rewrites (contain real
+# service names, prices, Google Drive URLs). NEVER track tenant content.
+reports/happy_case_clone/
+reports/SPA_RAW_DATA_FROM_SOURCE_*.md
+
 # Local pull of external reference repos (NOT installed, read-only)
 _external_refs/
 

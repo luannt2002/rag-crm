@@ -32,19 +32,20 @@ from ragbot.shared.constants import (
     DEFAULT_STATS_ATTR_MAX_WORDS,
 )
 from ragbot.shared.number_format import parse_money_vn as _canonical_parse_money
+from ragbot.shared.tabular_markdown import _is_pure_money
 
 # Bullet/list-marker leads. A first cell starting with one of these is a prose
-# DESCRIPTION line ("- Giúp nâng cơ, làm săn chắc da …"), not a catalog entity —
+# DESCRIPTION line ("- Mô tả công dụng dài, nhiều mệnh đề …"), not a catalog entity —
 # it merely contains a comma so the row-splitter mistakes it for a table row.
 # Domain-neutral: markdown/plain bullet syntax, no corpus literal.
 _STATS_BULLET_LEADS: frozenset[str] = frozenset({"-", "•", "*", "–", "—", "●", "·", "▪", "+"})
 
 # A real catalog entity name never LEADS with a "<bareword>: " metadata key. A
-# search-synonym / key-value source row (xe-3 "question: <40 variant spellings>",
-# "date1: 26", "quantity: 29") comma-splits to a short col[0] that passes the
-# field-like guard and floods the stats index with synonym/metadata noise (49% of
-# the xe entities). Reject on the prefix SHAPE — domain-neutral, no header literal.
-# A multi-word name with a LATER colon ("Giá Combo 10 buổi: …") is not a metadata
+# search-synonym / key-value source row (a warehouse export "question: <variant
+# spellings>", "date1: 26", "quantity: 29") comma-splits to a short col[0] that
+# passes the field-like guard and floods the stats index with synonym/metadata
+# noise. Reject on the prefix SHAPE — domain-neutral, no header literal.
+# A multi-word name with a LATER colon ("Đơn giá gói N: …") is not a metadata
 # lead (the colon does not immediately follow the first word) and survives.
 _STATS_METADATA_LEAD_RE: re.Pattern[str] = re.compile(r"^\w+:\s")
 
@@ -63,7 +64,8 @@ _STATS_URL_NOISE_RE: re.Pattern[str] = re.compile(
 #     "Bước 1: …") — a heading, not a priced row.
 #   - discourse/temporal opener: a consultation-script SENTENCE comma-split into a
 #     row leaves a grammar opener as the "name" ("Hiện tại …", "Khi đến với …") with
-#     an incidental number mis-read as a price — the spa "Hiện tại"×20 HALLU source.
+#     an incidental number mis-read as a price — a real HALLU source from a
+#     consultation-script corpus.
 # Deliberately NO short-code rule (^[A-Z/+]{2,5}$): it false-drops real all-caps
 # service/package codes (IPL/VIP/HIFU). The shapes below are unambiguous.
 _STATS_TAG_LEAD: str = "<"
@@ -117,15 +119,47 @@ def _is_discourse_opener(label: str) -> bool:
 # (after accent normalisation). Substring containment is too broad because
 # entity names like "Service A" would match the "service" token.
 # ---------------------------------------------------------------------------
-# Exact-match (normalised) column label keywords — generic, domain-neutral.
-_HEADER_EXACT_TOKENS: frozenset[str] = frozenset({
-    # Vietnamese column labels (normalised, no accents)
-    "stt", "ten", "gia", "vung", "loai", "dich vu", "buoi", "combo",
-    "goi", "danh muc", "phi",
-    # English column labels
-    "service", "price", "name", "category", "type", "amount", "cost",
-    "no", "id", "qty", "quantity",
+# ════════════════════════════════════════════════════════════════════════════
+# INPUT SCOPE — SINGLE SOURCE OF TRUTH (happy-case column vocabulary)
+# ════════════════════════════════════════════════════════════════════════════
+# These role token sets DEFINE what column headers the platform parses cleanly.
+# They are THE scope: the happy-case spec (docs/dev/HAPPY_CASE_DOCUMENT_FORMAT.md)
+# documents them and the format checker (scripts/check_happy_case.py) IMPORTS them —
+# so spec, checker, and parser can never drift. Add a header alias = add it HERE.
+# A document whose headers fall outside these sets is "out of scope" → the checker
+# flags it and the customer fixes the SOURCE (we do NOT grow the parser per format).
+#
+# Column-ROLE token sets (normalised, accent-stripped) — generic domain-neutral
+# grammar/structure words, NO service/brand literal. SOTA cell-role (TATR / Docling
+# row-header): name → entity-name column, category → stub/group column, price → value.
+_NAME_COL_TOKENS: frozenset[str] = frozenset({
+    "ten", "name", "dich vu", "service", "san pham", "goi", "combo",
+    "ten dich vu", "ten san pham", "ten goi", "product", "item",
 })
+_CATEGORY_COL_TOKENS: frozenset[str] = frozenset({
+    "nhom", "danh muc", "category", "loai", "vung", "type", "khu vuc",
+})
+_PRICE_COL_TOKENS: frozenset[str] = frozenset({
+    "gia", "price", "phi", "amount", "cost",
+    "don gia", "gia le", "gia goc", "gia sale", "gia ban", "thanh tien", "unit price",
+})
+# Non-role header words (ordinals / ids) — used for header DETECTION only, no role.
+_HEADER_EXTRA_TOKENS: frozenset[str] = frozenset({
+    "stt", "buoi", "no", "id", "qty", "quantity",
+})
+# Exact-match (normalised) column label keywords — union of all roles, for
+# _is_header_row(). Generic, domain-neutral.
+_HEADER_EXACT_TOKENS: frozenset[str] = (
+    _NAME_COL_TOKENS | _CATEGORY_COL_TOKENS | _PRICE_COL_TOKENS | _HEADER_EXTRA_TOKENS
+)
+# Aggregate / structural-label words that are NEVER a catalog entity name — a
+# transposed / key-value / total row promotes one of these to a "name" ("Giá"=100k,
+# "Tổng cộng"=300k). Reject on EXACT normalised match so a real name carrying a
+# label word ("Giá vàng" → "gia vang" ≠ "gia") is NOT dropped. Domain-neutral.
+_AGGREGATE_TOKENS: frozenset[str] = frozenset({
+    "tong", "tong cong", "total", "subtotal", "cong", "thuoc tinh", "chi so",
+})
+_REJECT_NAME_TOKENS: frozenset[str] = _HEADER_EXACT_TOKENS | _AGGREGATE_TOKENS
 
 # Separator-line detection: a line is a separator when every comma/pipe-split
 # field matches only dashes, equals, or spaces.
@@ -231,9 +265,12 @@ def _is_separator_line(line: str) -> bool:
 
 def _split_cols(line: str) -> list[str]:
     """Split a CSV / TSV / pipe-delimited line into stripped columns."""
-    # Try pipe first (common for Markdown tables)
+    # Try pipe first (common for Markdown tables). Split on UNESCAPED pipes only —
+    # a cell whose content contains a literal pipe is markdown-escaped as ``\|`` (by
+    # the converter's _md_escape); splitting on every "|" would shatter that cell and
+    # drop the row. Restore the literal pipe in each field after the split.
     if "|" in line:
-        parts = [c.strip() for c in line.split("|")]
+        parts = [c.replace("\\|", "|").strip() for c in re.split(r"(?<!\\)\|", line)]
         # Strip leading/trailing empty parts from Markdown pipe tables
         if parts and not parts[0]:
             parts = parts[1:]
@@ -259,19 +296,46 @@ def _split_cols(line: str) -> list[str]:
     return [c.strip() for c in row]
 
 
+def _column_roles(header: list[str]) -> dict[str, Any]:
+    """Assign each header column a ROLE by its normalised token: the NAME column, a
+    CATEGORY/stub column, and the PRICE column(s). Lets a data row bind its entity to
+    the right column instead of blindly taking col-0 — which may be a category stub
+    (``Nhóm | Tên | Giá`` → name is col-1, not the "Cao cấp" group in col-0). SOTA
+    cell-role (Microsoft TATR / Docling row-header). Returns
+    ``{"name": idx|None, "category": idx|None, "price": [idx, ...]}``.
+    """
+    name_idx: int | None = None
+    cat_idx: int | None = None
+    price_idxs: list[int] = []
+    for i, cell in enumerate(header):
+        token = _normalise(cell.strip()) if cell else ""
+        if not token:
+            continue
+        if name_idx is None and token in _NAME_COL_TOKENS:
+            name_idx = i
+        elif cat_idx is None and token in _CATEGORY_COL_TOKENS:
+            cat_idx = i
+        elif token in _PRICE_COL_TOKENS:
+            price_idxs.append(i)
+    return {"name": name_idx, "category": cat_idx, "price": price_idxs}
+
+
 def _extract_entity_from_row(
     cols: list[str],
     header: list[str],
     chunk_index: int,
     current_category: str | None,
+    roles: dict[str, Any] | None = None,
 ) -> ParsedEntity | None:
     """Build a ParsedEntity from a split data row.
 
-    Rules (domain-neutral):
-    - First non-empty, non-ordinal column is the entity name.
-    - Columns that parse as money → price_primary (first), price_secondary (second).
-    - Remaining columns go into attributes keyed by header label (if available).
-    - Returns None when the row yields no entity name and no price.
+    Role-aware (domain-neutral): when the header assigns column roles, the NAME
+    comes from the name column, prices from PRICE columns, and the CATEGORY/stub
+    column is skipped (its value is forward-filled by the caller). With no roles it
+    falls back to POSITIONAL (first non-money col = name). A cell is a PRICE only when
+    it is PURELY money (``_is_pure_money``) so a name carrying a money phrase ("Gói 6
+    triệu") is no longer misread as a value and dropped. Returns None when the row
+    yields no field-like catalog name.
     """
     if not cols or all(c == "" for c in cols):
         return None
@@ -281,11 +345,31 @@ def _extract_entity_from_row(
     price_secondary: int | None = None
     attributes: dict[str, Any] = {}
 
+    name_idx = roles.get("name") if roles else None
+    cat_idx = roles.get("category") if roles else None
+    price_cols = set(roles["price"]) if roles and roles.get("price") else None
+    # A category/stub column is a SEPARATE axis only when a distinct NAME column
+    # also exists (``Nhóm | Tên | Giá``). In a 2-col ``Vùng | Giá`` the category-token
+    # column IS the entity name — skipping it would drop the row (no name left).
+    if name_idx is None:
+        cat_idx = None
+
     for idx, col in enumerate(cols):
         if not col:
             continue
+        if cat_idx is not None and idx == cat_idx:
+            continue  # category/stub column — resolved + forward-filled by the caller
 
-        money = parse_money_vn(col)
+        # Price detection is column-role aware:
+        #   * KNOWN price column → parse even when the cell carries extra words
+        #     ("500k/buổi", "từ 500k", "Giá: 300k"); the column context already
+        #     asserts it is a price, so the pure-money guard would only lose data.
+        #   * UNKNOWN column (no header role) → require PURE money so a NAME that
+        #     merely contains a money phrase ("Gói 6 triệu") is not read as a value.
+        if price_cols is not None:
+            money = parse_money_vn(col) if idx in price_cols else None
+        else:
+            money = parse_money_vn(col) if _is_pure_money(col) else None
         if money is not None:
             if price_primary is None:
                 price_primary = money
@@ -297,9 +381,9 @@ def _extract_entity_from_row(
                 attributes[label] = money
             # Also surface the price under its COLUMN HEADER so the synthetic
             # list/keyword chunk keeps the column semantics that the positional
-            # price_primary/secondary drop: a "combo 10 buổi" query needs to see
-            # "Giá Combo 10 buổi: 1199000", not a bare price_secondary the LLM
-            # can't attribute (the spa q12 miss). Domain-neutral — the label IS
+            # price_primary/secondary drop: a "gói N buổi" query needs to see
+            # "Đơn giá gói N: 1199000", not a bare price_secondary the LLM
+            # can't attribute (a combo-query attribution miss). Domain-neutral — the label IS
             # the corpus header, no hardcoded term; skipped when the header is a
             # number / blank, and ``setdefault`` keeps a 3rd+ labelled price.
             _hdr = header[idx].strip() if idx < len(header) and header[idx] else ""
@@ -307,16 +391,19 @@ def _extract_entity_from_row(
                 attributes.setdefault(_hdr, money)
             continue
 
-        # First non-money col → entity name, unless it's a pure ordinal
-        if name is None:
+        # Non-money cell. The name comes from the NAME column (role-aware) or the
+        # first eligible column (positional fallback); everything else → attributes.
+        eligible_name = name is None and (name_idx is None or idx == name_idx)
+        if eligible_name:
             stripped = col.strip()
             # Skip pure ordinal row numbers (1, 2, 3 … or 1. 2. etc.)
             if re.match(r"^\d{1,3}\.?$", stripped):
                 continue
-            # Skip an over-long first cell: a description / search-synonym blob
-            # (the xe warehouse "question" column is a 1000+ char notation list),
-            # NOT a catalog name. Keep it as an attribute (it stays searchable) and
-            # let the next field-like column (code / product name) be the name.
+            # OUT-OF-SCOPE DEFENSE: skip an over-long first cell — a search-synonym /
+            # description blob (a warehouse export's synonym column, 1000+ chars) is
+            # NOT a template name. Happy-case names are short, so this never fires on
+            # in-scope data; it only salvages a non-template row whose source should
+            # really be restyled. Keep the blob as an attribute (stays searchable).
             if len(stripped) > DEFAULT_STATS_ATTR_MAX_CHARS:
                 attributes[header[idx] if idx < len(header) else f"col_{idx}"] = stripped
                 continue
@@ -325,17 +412,22 @@ def _extract_entity_from_row(
             label = header[idx] if idx < len(header) else f"col_{idx}"
             attributes[label] = col
 
-    # Reject NON-CATALOG rows: a prose/description/FAQ line that merely contains a
-    # delimiter is not a stats entity. Without this guard the row-splitter floods
-    # the stats index with noise — bullet descriptions ("- Giúp nâng cơ …"), long
-    # FAQ-answer sentences, and name-less stray-number cells — which then pollutes
-    # price/list/entity retrieval (a "dưới 500k" query surfaces "Hiện tại"/"- Giúp"
-    # instead of real services). A real catalog entity has a SHORT field-like
-    # label. Domain-neutral: bullet syntax + the shared field-like word/char caps,
-    # no corpus/brand literal.
+    # ══ OUT-OF-SCOPE DEFENSE — NOT happy-case behaviour, defence-in-depth only ══
+    # A row that conforms to the template (short name cell + a price column) NEVER
+    # trips the guard below — it is a NO-OP on in-scope data. It exists solely to
+    # reject NON-template rows that slip in before the checker is wired as a
+    # pre-ingest gate: a prose/description/FAQ line that merely contains a delimiter
+    # (bullet "- mô tả …", long FAQ sentences, name-less stray-number cells).
+    # The RIGHT fix for such input is at the DATA layer (restyle the source to the
+    # template) — we do NOT grow parser tolerance to absorb arbitrary formats.
+    # Domain-neutral: bullet/grammar SHAPE + shared word/char caps, no brand literal.
     if name is not None:
         _lead = name.lstrip()[:1]
         _label = name.lstrip("-•*–—●·▪+ \t").strip()
+        # Strip balanced surrounding quotes ("Item A, bản đặc biệt" → Item A, …) left
+        # by an upstream CSV cell that kept its quoting. Only when both ends match.
+        if len(_label) >= 2 and _label[0] == '"' and _label[-1] == '"':  # noqa: PLR2004
+            _label = _label[1:-1].strip()
         if (
             not _label
             or _lead in _STATS_BULLET_LEADS
@@ -346,10 +438,27 @@ def _extract_entity_from_row(
             or _STATS_SECTION_LEAD_RE.match(_label)
             or _STATS_URL_NOISE_RE.search(_label)
             or _is_discourse_opener(_label)
+            or _normalise(_label) in _REJECT_NAME_TOKENS
+            or _is_pure_money(_label)
         ):
             name = None
         else:
             name = _label
+
+    # Row-level prose-noise guard: when the NAME was taken from a LATER column
+    # (role-based name_idx skipped col0), the row's natural LEAD cell must still be a
+    # structured field. A bullet / discourse-opener / long-prose lead means the whole
+    # row is a description that merely comma-split — positional extraction caught this
+    # via col0, role-based must too (else "- mô tả …, nhiều mệnh đề, …" leaks the
+    # clean middle column as a fake entity). Domain-neutral: same SHAPE guards.
+    if name is not None:
+        first_cell = next((c.strip() for c in cols if c.strip()), "")
+        if first_cell and first_cell != name and (
+            first_cell[:1] in _STATS_BULLET_LEADS
+            or _is_discourse_opener(first_cell)
+            or len(first_cell) > DEFAULT_STATS_ATTR_MAX_CHARS
+        ):
+            name = None
 
     # A row with no field-like catalog name is not an entity — its number (if any)
     # is a prose figure, not a labelled catalog price. Previously kept (name="")
@@ -371,10 +480,10 @@ def _extract_entity_from_row(
 # terminator; a prose sentence does. Grammar/punctuation only — domain-neutral.
 _STATS_SENTENCE_END: tuple[str, ...] = (".", "!", "?", "…", "。")
 
-# A markdown section heading ("## Dịch vụ triệt lông") — the authoritative B3
+# A markdown section heading ("## Nhóm dịch vụ A") — the authoritative B3
 # section title emitted by the structure-aware parser.
 _MD_HEADING_RE: re.Pattern[str] = re.compile(r"^#{1,6}\s+(.+?)\s*$")
-# A single-col line carrying a thousands-grouped number ("Giá 1 buổi: 1.600.000 đ")
+# A single-col line carrying a thousands-grouped number ("Đơn giá: 1.600.000 đ")
 # is a price NOTE, not a section title — must not become a category. Shape-only.
 _STATS_PRICE_NOTE_RE: re.Pattern[str] = re.compile(r"\d[.,]\d{3}")
 
@@ -439,6 +548,8 @@ def parse_table_chunks(chunks: list[dict]) -> list[ParsedEntity]:
             continue
 
         header: list[str] = []
+        roles: dict[str, Any] = {}
+        stub_fill: str | None = None
         current_category: str | None = None
 
         for line in lines:
@@ -448,10 +559,10 @@ def parse_table_chunks(chunks: list[dict]) -> list[ParsedEntity]:
             if _is_separator_line(line):
                 continue
 
-            # Markdown section heading ("## Dịch vụ triệt lông") — AUTHORITATIVE
+            # Markdown section heading ("## Nhóm dịch vụ A") — AUTHORITATIVE
             # category for the rows that follow (AdapChunk B3 context-binding). The
             # structure-aware parser emits one above each sub-table; binding it here
-            # is what lets a "triệt lông" query reach the zone rows ("Mép"). A real
+            # is what lets a sub-category query reach its section's rows. A real
             # heading always wins over a stray single-col note below it.
             _hmatch = _MD_HEADING_RE.match(stripped_line)
             if _hmatch:
@@ -465,12 +576,14 @@ def parse_table_chunks(chunks: list[dict]) -> list[ParsedEntity]:
             # Detect header row (exact token match, no prices)
             if _is_header_row(cols):
                 header = cols
+                roles = _column_roles(cols)
+                stub_fill = None  # new table → reset rowspan forward-fill
                 continue
 
             # Single non-delimiter col → category heading. Reject noise candidates so
             # a DESCRIPTION line never overwrites a real section title (M5 + B3):
             # tag-lead, discourse opener, section-enum, bullet description, and a
-            # note carrying a price ("Giá 1 buổi: 1.600.000 đ").
+            # note carrying a price ("Đơn giá: 1.600.000 đ").
             if len(cols) == 1:
                 candidate = cols[0].strip()
                 if (
@@ -490,7 +603,22 @@ def parse_table_chunks(chunks: list[dict]) -> list[ParsedEntity]:
             if _is_prose_row(cols):
                 continue
 
-            entity = _extract_entity_from_row(cols, header, chunk_idx, current_category)
+            # Resolve the row category: a stub/category column (role-based, with
+            # rowspan forward-fill for a blank continuation cell) takes precedence
+            # over the section heading (SOTA T-11 vertical-span).
+            forced_category = current_category
+            _cat_idx = roles.get("category")
+            # Stub category only when a SEPARATE name column exists — else the
+            # category-token column is the entity name (2-col "Vùng | Giá").
+            if _cat_idx is not None and roles.get("name") is not None:
+                _raw_cat = cols[_cat_idx].strip() if _cat_idx < len(cols) else ""
+                if _raw_cat and not _is_pure_money(_raw_cat):
+                    stub_fill = _raw_cat
+                forced_category = stub_fill or current_category
+
+            entity = _extract_entity_from_row(
+                cols, header, chunk_idx, forced_category, roles
+            )
             if entity is not None:
                 entities.append(entity)
 

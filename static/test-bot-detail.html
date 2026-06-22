@@ -122,6 +122,11 @@ body { font-family: 'Google Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI'
 .btn-outline { background: white; color: var(--primary); border: 1px solid var(--gray-300); }
 .btn-outline:hover { border-color: var(--primary); background: var(--primary-light); }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+/* VIEW-ONLY MODE — document add / delete is HIDDEN so the canonical happy-case
+   corpus on the demo bots cannot be mutated by accident from the test harness.
+   The backend routes + JS are kept intact (CLAUDE.md: don't delete test code);
+   only the controls are hidden. Re-enable by removing this block. */
+.doc-actions, .add-doc-form, [data-delete-doc] { display: none !important; }
 .btn svg { width: 14px; height: 14px; }
 
 /* Documents tab */

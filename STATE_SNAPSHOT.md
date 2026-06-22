@@ -3,7 +3,84 @@
 > Always-updated current state. Git history was reset on 2026-06-14 (fresh start);
 > commit-SHA anchors no longer apply — this file is the source of truth.
 
-## Session 2026-06-22 (b) — B3 structure-binding ROOT FIX: mọi format → STRUCTURED MARKDOWN (input-flow unified)  ⟵ LATEST
+## Session 2026-06-22 (d) — Happy-case INPUT CONTROL: scope template + checker + 9-file styled L1→L7 GREEN  ⟵ LATEST
+
+**[user: "không control hết MỌI format được → dựng TEMPLATE riêng, bắt user sửa data về scope. Code nhẹ KHÔNG LLM. Test 9 file styled theo scope xem chuẩn không"]**
+
+### 🎯 Triết lý chốt (binding)
+> **Scope = TEMPLATE bắt user theo. Sửa styling ở tầng DATA (user/normalizer). KHÔNG phình string ở tầng CODE.** Không parse mọi format bẩn — định nghĩa template + gate → user sửa source. Khớp SOTA "fix source first" (Databricks/unstructured) + Crestan-Pantel taxonomy.
+
+### ✅ Toolkit happy-case (6 mảnh + verified)
+- **Spec** `docs/dev/HAPPY_CASE_DOCUMENT_FORMAT.md` (quy chuẩn sheet/doc + anti-pattern + decision-tree).
+- **Template golden** `docs/dev/templates/` (3 mẫu user copy) + **contract test 4/4** ("conform→0 sai" LOCKED).
+- **Scope SSoT**: token-set (`_NAME/_PRICE/_CATEGORY_COL_TOKENS` trong document_stats) = từ-vựng-template FIXED; checker IMPORT chung → **hết drift**.
+- **Checker** `scripts/check_happy_case.py` — code-only (KHÔNG LLM), chấm điểm + recommendation sửa source.
+- **Normalizer** `scripts/normalize_to_happy_case.py` — fix styling tầng DATA, **data-preserving** (xe-3 giữ 62 synonym).
+- **Verifier** `scripts/verify_happy_case_pipeline.py` — L1→L7 per-layer assertion.
+
+### 📊 9 file thật (3 bot) styled theo scope → kết quả (rule #0)
+- **BEFORE** (data gốc): 4 HAPPY · 2 MINOR · **3 NON-HAPPY** (spa-4 script, xe-3 synonym-export, xe-4 prose).
+- **AFTER** (normalize, 0 mất data gốc): **7 HAPPY · 2 MINOR · 0 NON-HAPPY**. xe-3 **237k synonym→9k catalog, 1→171 priced (99%)**, synonym giữ trong cột Aliases.
+- **L1→L7 verifier: ALL 9 FILES GREEN** (mỗi file 7 tầng pass). spa 100/86/100% · legal 87-heading · xe inventory/manifest đúng (0 giá = no price col) · xe-3 99% · doc narrate ✓.
+
+### 🧹 Clean code
+- Out-of-scope defensive code đã **mark rõ** (`OUT-OF-SCOPE DEFENSE` comments — code "chiều data bẩn", no-op trên data chuẩn).
+- Genericize comment (0 domain literal). **Full suite 6086 passed.**
+
+### 📋 Luồng upload — done tới đâu (honest)
+- ✅ Kỹ thuật: canonical `/documents/create` · byte-sniff (`sniff_real_mime`) · detect_parser registry.
+- ✅ Happy-case data → L1→L7 GREEN (7 tầng pass-through).
+- 🔲 **THIẾU gate validate** → plan `plans/20260622-happy-case-input-control/plan.md`: Phase1 API `/documents/check` (code-only, report-card, log) · Phase2 wire gate vào `/create` (422 NON_HAPPY) · Phase3 clean upload code. **Chưa làm — từ từ theo plan.**
+
+### 🚀 RUNTIME end-to-end (ingest THẬT + load test — rule #0, số thật)
+- **Ingest 12 doc happy-case vào DB** (qua API sync, embed+store THẬT): spa 5 (+ summary 27 chunks) · xe 5 (+ summary 78) · legal 2 (+ summary 22) = **1518 chunks, embeddings real** (647 leaf embedded). Script `ingest_happy_case_via_api.py`.
+- **Summary-doc/bot** (`build_bot_summary.py`, deterministic no-LLM) — fix câu "liệt kê/tóm tắt" (1 chunk = full list). spa 58 dịch vụ · xe 192 sản phẩm · legal TOC 80 mục.
+- **LOAD TEST 23 câu/3 bot = 22/23 (96%) answered**: factoid (triệt-lông-mép 129k, Điều 4) ✅ · liệt-kê (summary-doc xổ list+giá) ✅ · aggregate ("rẻ nhất") ✅ · refuse-trap HALLU=0 ✅ · legal 6/6 ✅. Gap: xe tire-size cross-match (165/80R13 miss) = class retrieval khác.
+- **Sysprompt spa** thêm rule "LIỆT KÊ TOÀN BỘ → xổ từ summary, không né" — **QUA admin-API có audit_log** (rule #7, KHÔNG psql). Verified: broad query → xổ list. Nội dung tenant → git-ignored (`reports/happy_case_clone/spa-sysprompt-MOI.txt`), KHÔNG vào git.
+- **UI test → VIEW-ONLY**: ẩn nút thêm/xóa document + xóa bot (CSS, backend giữ nguyên — CLAUDE.md không xóa test code).
+- **Compliance (multi-agent audit)**: code session **0 BLOCKER**, ruff file em sạch (document_stats 9 lỗi pre-existing).
+
+### Files: tabular_markdown.py, document_stats.py (scope SSoT + out-of-scope marks + genericize comment), check_happy_case.py, build_bot_summary.py, ingest_happy_case_via_api.py, verify_*.py, normalize_to_happy_case.py, table_taxonomy_stress_test.py, docs/dev/HAPPY_CASE_DOCUMENT_FORMAT.md + templates, tests/test_table_taxonomy + test_happy_case_template, static/test-bot-detail+test-bots.html (view-only), STATE, .gitignore, plans/.
+
+---
+
+## Session 2026-06-22 (c) — Table-taxonomy robustness: L1/L3 generalize cho MỌI cấu trúc bảng (no-hardcode)
+
+**[user: "1 dạng tài liệu mới code control tốt không? đang hardcode cho spa?" → stress-test 27 cấu trúc bảng SOTA → fix 5 bug generic → chuẩn expert no-hardcode]**
+
+### 🎯 Vấn đề (evidence, không đoán)
+- User lo code overfit 3 bot. Em dựng `scripts/table_taxonomy_stress_test.py` (27 cấu trúc theo taxonomy SOTA: Docling/Microsoft-TATR/PubTables-1M/SciTSR/Lautert/unstructured.io) đẩy qua **code production thật**.
+- **Baseline: PASS=9 GRACEFUL=5 PARTIAL=5 FAIL=4 RISK=3** → code chuẩn cho **row-oriented (~90% thực tế)** nhưng BUG thật ở: name-chứa-tiền, stub-nhóm, total-row, transposed/KV (đẻ entity rác), 2 lỗi section.
+
+### ✅ Fix 5 cái (P1+P2, shape-based 100% no-hardcode)
+- **P1.1** `_is_pure_money` (residue-based, SSoT `tabular_markdown`): "Gói 6 triệu"=TÊN, "1tr499"/"1.5tr"=GIÁ → L3 gate price-detection ⇒ không drop dòng name-chứa-tiền.
+- **P1.2** `_column_roles` (SOTA cell-role TATR/Docling): tách `_NAME_/_CATEGORY_/_PRICE_COL_TOKENS` → name từ cột-name, **category-stub forward-fill** (rowspan blank kế thừa), KHÔNG lấy nhầm cột-nhóm làm name.
+- **P1.3** section-in-header split (`<title>,,col,col` → `## title` + header span-cols). **P1.4** long-title lookahead (bỏ cap-8-từ cứng, dùng "đứng trên bảng"; guard price-note vs year).
+- **P2.1** reject name = label/aggregate token (`_AGGREGATE_TOKENS`: tong/total/thuoc tinh… exact-match → "Giá vàng"≠"gia" KHÔNG false-drop) ⇒ transposed/KV/total hết đẻ rác.
+
+### 📊 Verify (rule #0)
+- **Corpus: PASS 9→15 · RISK 3→1 · PARTIAL 5→0** (`table_taxonomy_stress_test.py`). 5 bug mục tiêu xanh hết + category bind đúng (Cao cấp/Phổ thông + forward-fill).
+- **`tests/unit/test_table_taxonomy.py` MỚI: 10/10 pass** (regression gate vĩnh viễn, fixtures generic no-tenant). **Broader: 973 passed 0 fail.**
+- **No-hardcode grep: 0 domain literal** (kể cả docstring/comment đã genericize).
+- Còn FAIL=3 (T-06/T-09 pivot/year-cols, T-21 ragged) = **P3 territory (cần ML như TATR/Docling)** — defer, đã ghi plan. RISK=1 (T-27 nav, price=None harm thấp, P2.2 accepted).
+
+### 📋 AdapChunk 7-TẦNG — status map (evidence-based)
+| Tầng | Code | Control? | Verify session này? |
+|---|---|---|---|
+| L1 parse→structured-md | `parser/*` + `shared/tabular_markdown.py` | ✅ | ✅ **corpus 15/27 PASS+7 graceful** (P3 gap: pivot/ragged) |
+| L2 block detect & tag | `chunking/blocks.py`,`analyze.py` | ✅ | ⚪ không đụng (verified session b) |
+| L3 feature/stats extract | `doc_profile/*` + `shared/document_stats.py` | ✅ | ✅ **column-role + reject hardened, corpus pass** |
+| L4 strategy selector | `chunking/analyze.py::select_strategy` | ✅ | ⚪ không đụng |
+| L5 rule cross-check | `chunking/analyze.py::apply_cross_check` | ✅ | ⚪ không đụng |
+| L6 chunking executor | `chunking/strategies.py`,`vn_structural.py` | ✅ | ⚪ không đụng (verified session b) |
+| L7 narrate→embed | `narrate/*` + embedding | ✅ | ⚪ không đụng |
+→ **Đang xử lý: L1+L3** (hoàn tất session này). L2/L4-L7 = exist+control, verified phiên trước, KHÔNG đụng phiên này.
+
+### Plan: `plans/20260622-table-taxonomy-robustness/plan.md` (P1✅ P2✅ P3=deferred). Chưa push (cộng dồn).
+
+---
+
+## Session 2026-06-22 (b) — B3 structure-binding ROOT FIX: mọi format → STRUCTURED MARKDOWN (input-flow unified)
 
 **[user: deep-debug "có data mà bot không trả lời" (spa "triệt lông") → audit toàn luồng → fix systemic B3 → "đưa mọi data về markdown có cấu trúc" → unify fetch-path]**
 

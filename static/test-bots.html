@@ -79,6 +79,10 @@ body { font-family: 'Google Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI'
 .bot-card .card-stat .num { font-weight: 600; color: var(--gray-700); }
 .bot-card .delete-btn { position: absolute; top: 12px; right: 12px; width: 28px; height: 28px; border-radius: 50%; background: transparent; border: none; color: var(--gray-500); cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity .15s, background .15s; z-index: 2; }
 .bot-card:hover .delete-btn { opacity: 1; }
+/* VIEW-ONLY MODE — the bot delete control wipes ALL documents + chunks, so it is
+   hidden to protect the canonical happy-case corpus on the demo bots. Backend +
+   JS kept intact (CLAUDE.md); remove this rule to re-enable. */
+.bot-card .delete-btn { display: none !important; }
 .bot-card .delete-btn:hover { background: var(--danger-light); color: var(--danger); }
 
 /* Modal */

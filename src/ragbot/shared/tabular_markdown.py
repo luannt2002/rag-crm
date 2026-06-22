@@ -2,10 +2,9 @@
 
 A spreadsheet/CSV is NOT "one table with the first row as the header" — a single
 sheet routinely stacks MANY sub-tables, each with its own SECTION TITLE and its
-own local HEADER (the spa price sheet has chăm-sóc-da / massage / gội-đầu /
-triệt-lông tables in one tab). The legacy row-as-chunk parsers took row-1 as the
-global header, so a "Mép | 129.000" triệt-lông row got mislabelled with the
-chăm-sóc-da title and lost its service context entirely.
+own local HEADER (e.g. a price sheet with several service groups in one tab). The
+legacy row-as-chunk parsers took row-1 as the global header, so a data row under a
+later section got mislabelled with the first section's title and lost its context.
 
 This module rebuilds the structure with a small, DOMAIN-NEUTRAL state machine
 (shape-based only — no service/brand vocabulary):
@@ -34,16 +33,20 @@ _MAX_LABEL_CHARS = 40
 _BULLET_LEAD = ("-", "•", "*", "–", "—", "●", "·", "▪", "+", "✓", "→")  # noqa: RUF001 — real corpus bullet chars
 
 
-# A cell that is PURELY a money value — digits + thousands separators + an optional
-# VN/EN currency unit, with NO descriptive words. This distinguishes a real PRICE
-# ("899000", "1.499.000", "6 triệu") from a package NAME that merely contains a
-# number ("Gói 6 triệu") or a column label with a trailing digit ("date1",
-# "date2"). The latter are LABELS/NAMES, not prices — they must NOT block header
-# detection or be treated as a value. Shape-only, domain-neutral.
-_PURE_MONEY_RE = re.compile(
-    r"^\s*\d[\d.,\s]*\s*(đ|vnd|k|tr|triệu|trieu|m|nghìn|nghin|ngàn|ngan)?\s*$",
+# Currency-unit tokens (VN + EN shorthand), LONGEST first so "triệu" is consumed
+# before the "tr" shorthand. Used to strip the money skeleton from a cell so any
+# LEFTOVER letters reveal a descriptive word (→ a NAME, not a price).
+_MONEY_UNIT_RE = re.compile(
+    r"(triệu|trieu|nghìn|nghin|ngàn|ngan|vnd|tr|đ|k|m)",
     re.IGNORECASE,
 )
+# Any Unicode letter (incl. accented VN). Residue after stripping the money
+# skeleton: a pure price leaves none, "Gói 6 triệu" leaves "Gói".
+_RESIDUE_LETTER_RE = re.compile(r"[^\W\d_]", re.UNICODE)
+# A thousands-grouped number ("1.600.000", "129,000") inside a single cell marks a
+# price NOTE ("Đơn giá: 1.600.000 đ"), not a section title — distinct from a bare
+# incidental number like a year ("… cao cấp 2026", which IS a valid title). Shape.
+_PRICE_NOTE_RE = re.compile(r"\d[.,]\d{3}")
 
 
 def _nonempty(cells: list[str]) -> list[str]:
@@ -51,8 +54,18 @@ def _nonempty(cells: list[str]) -> list[str]:
 
 
 def _is_pure_money(cell: str) -> bool:
+    """True when *cell* is PURELY a money value (digits + separators + currency
+    unit, NO descriptive word). Distinguishes a real PRICE ("899000", "1.499.000",
+    "6 triệu", "1tr499", "1.5tr") from a NAME that merely contains a number ("Gói 6
+    triệu") or a duration ("30 phút"). Shape-only, domain-neutral: strip the money
+    skeleton (units + digits + separators); any remaining LETTER = a descriptive
+    word, so the cell is a name, not a price."""
     c = cell.strip()
-    return bool(c) and _PURE_MONEY_RE.match(c) is not None and parse_money_vn(c) is not None
+    if not c or parse_money_vn(c) is None:
+        return False
+    residue = _MONEY_UNIT_RE.sub(" ", c)
+    residue = re.sub(r"[\d.,\s/]", "", residue)
+    return not _RESIDUE_LETTER_RE.search(residue)
 
 
 def _has_money(cells: list[str]) -> bool:
@@ -76,7 +89,7 @@ def _is_label_like(cell: str) -> bool:
 def _looks_header(cells: list[str]) -> bool:
     """A header row: text column-labels, no PRICE value (a priced row is DATA)."""
     ne = _nonempty(cells)
-    if len(ne) < 2:  # noqa: PLR2004
+    if len(ne) < 2:  # noqa: PLR2004 — a header needs ≥2 column-label cells
         return False
     if any(_is_pure_money(c) for c in ne):
         return False
@@ -89,7 +102,7 @@ def _md_escape(cell: str) -> str:
     return cell.replace("|", "\\|").replace("\n", " ").strip()
 
 
-def rows_to_structured_markdown(rows: list[list[str]]) -> str:
+def rows_to_structured_markdown(rows: list[list[str]]) -> str:  # noqa: PLR0915 — one linear state machine; splitting the row classifier hurts readability
     """Convert raw spreadsheet rows into section-bound structured markdown."""
     out: list[str] = []
     header: list[str] | None = None
@@ -101,8 +114,31 @@ def rows_to_structured_markdown(rows: list[list[str]]) -> str:
             out.append("")  # blank line after a table
             table_open = False
 
-    for raw in rows:
-        cells = [(c or "").strip() for c in raw]
+    def open_header(hdr_cells: list[str]) -> None:
+        nonlocal header, table_open
+        header = [(c or "").strip() or f"col{i + 1}" for i, c in enumerate(hdr_cells)]
+        while header and not header[-1].strip():  # trim trailing empty header cols
+            header.pop()
+        cols = [_md_escape(h or f"col{i + 1}") for i, h in enumerate(header)]
+        out.append("| " + " | ".join(cols) + " |")
+        out.append("| " + " | ".join("---" for _ in cols) + " |")
+        table_open = True
+
+    norm = [[(c or "").strip() for c in raw] for raw in rows]
+    n = len(norm)
+
+    def _precedes_table(i: int) -> bool:
+        """Lookahead: is the next non-empty row a header/data row? A LONG 1-cell
+        line is a section title only when a table follows it (structure signal),
+        not a hard word cap — a standalone long prose line stays a NOTE."""
+        for j in range(i + 1, n):
+            nj = _nonempty(norm[j])
+            if not nj:
+                return False
+            return _looks_header(norm[j]) or _has_money(norm[j]) or len(nj) >= 2  # noqa: PLR2004 — a tabular row has ≥2 cells
+        return False
+
+    for i, cells in enumerate(norm):
         ne = _nonempty(cells)
 
         # SEPARATOR — close any open table, table boundary.
@@ -111,42 +147,58 @@ def rows_to_structured_markdown(rows: list[list[str]]) -> str:
             header = None
             continue
 
-        # SECTION_TITLE — exactly one short, non-money, non-bullet cell.
+        # SECTION_TITLE — one short non-money non-bullet cell. A LONG title (>8
+        # words) is still a title when a table follows it (lookahead), so a real
+        # multi-word section heading is no longer dropped (B-L1.2).
         if len(ne) == 1:
             only = ne[0]
-            is_title = (
+            base = (
                 len(only) <= _MAX_LABEL_CHARS * 2
-                and parse_money_vn(only) is None
+                and not _is_pure_money(only)
+                and not _PRICE_NOTE_RE.search(only)
                 and only[:1] not in _BULLET_LEAD
                 and not only.endswith((".", "…"))
-                and len(only.split()) <= 8  # noqa: PLR2004
             )
-            if is_title:
+            short = len(only.split()) <= 8  # noqa: PLR2004 — short-title word cap (lookahead handles longer)
+            if base and (short or _precedes_table(i)):
                 close_table()
                 header = None
                 out.append(f"\n## {only}\n")
             else:
-                # NOTE (prose / bullet / "Giá 1 buổi: …") — keep as text.
+                # NOTE (prose / bullet / "Đơn giá: …") — keep as text.
                 close_table()
                 out.append(only)
+            continue
+
+        # SECTION-IN-HEADER — "<title> | <gap> | col | col": a section title sits in
+        # col0 followed by an empty gap then ≥2 column labels (a colspan section row
+        # above a header). Split into a section heading + a real header that SPANS
+        # all columns (col0/gap become positional placeholders so DATA rows keep
+        # their alignment). Shape-only — the gap right after col0 is the signal a
+        # true header has not (B-L1.1).
+        if (
+            len(cells) >= 3  # noqa: PLR2004 — "title | gap | col" needs ≥3 cells
+            and cells[0].strip()
+            and not cells[1].strip()
+            and not _is_pure_money(cells[0])
+            and cells[0][:1] not in _BULLET_LEAD
+            and _looks_header(cells[2:])
+        ):
+            close_table()
+            header = None
+            out.append(f"\n## {cells[0].strip()}\n")
+            open_header(["", *cells[1:]])
             continue
 
         # HEADER — opens a new markdown table under the current section.
         if _looks_header(cells) and not _has_money(cells):
             close_table()
-            header = [(c or "").strip() or f"col{i + 1}" for i, c in enumerate(cells)]
-            # Trim trailing empty header columns.
-            while header and not header[-1].strip():
-                header.pop()
-            cols = [_md_escape(h or f"col{i + 1}") for i, h in enumerate(header)]
-            out.append("| " + " | ".join(cols) + " |")
-            out.append("| " + " | ".join("---" for _ in cols) + " |")
-            table_open = True
+            open_header(cells)
             continue
 
         # DATA row.
         if table_open and header:
-            vals = [(cells[i] if i < len(cells) else "") for i in range(len(header))]
+            vals = [(cells[k] if k < len(cells) else "") for k in range(len(header))]
             out.append("| " + " | ".join(_md_escape(v) for v in vals) + " |")
         else:
             # Data row with no open header → emit a bare pipe row so structure
