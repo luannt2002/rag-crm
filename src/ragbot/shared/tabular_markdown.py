@@ -31,7 +31,7 @@ from ragbot.shared.number_format import parse_money_vn
 # only (shape, not vocabulary). Headers + section titles are short; prose notes
 # and description bullets are long or punctuated.
 _MAX_LABEL_CHARS = 40
-_BULLET_LEAD = ("-", "•", "*", "–", "—", "●", "·", "▪", "+", "✓", "→")
+_BULLET_LEAD = ("-", "•", "*", "–", "—", "●", "·", "▪", "+", "✓", "→")  # noqa: RUF001 — real corpus bullet chars
 
 
 # A cell that is PURELY a money value — digits + thousands separators + an optional
