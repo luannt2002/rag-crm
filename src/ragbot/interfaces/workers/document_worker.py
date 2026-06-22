@@ -288,7 +288,13 @@ async def _handle_document_uploaded_inner(payload: dict[str, Any], container: Co
         # fallback path surfaces typed Blocks today; the registry path keeps
         # its row-dict side-channel, so this stays None there.
         parsed_blocks: list[Any] | None = None
-        if document_id:
+        # Reuse stored raw_content ONLY for a non-refetchable (local://) source —
+        # there it is the only copy. A refetchable Google URL is ALWAYS re-fetched
+        # + re-parsed below via to_export_url (docx/csv → structured markdown), so a
+        # flat pre-stored body (e.g. a Doc fetched as txt for the upload "has-data"
+        # probe) can never bypass the structure-aware parser. Removes the fetch-path
+        # divergence between the upload probe and the worker.
+        if document_id and not _is_refetchable_url(source_url):
             try:
                 sf = container.session_factory()
                 async with sf() as session:
@@ -314,25 +320,15 @@ async def _handle_document_uploaded_inner(payload: dict[str, Any], container: Co
                     error=str(exc),
                 )
 
-        # Fallback: fetch source_url and parse. Try the registry parser
-        # first (handles CSV / Excel / Sheets / DOCX / MD via shape-aware
-        # adapters) and only fall through to OCR when no parser matches
-        # the (mime_type, ext) pair or the parser yielded no chunks.
-        #
-        # 260525 Phase C — Bug #4 fix. Previously the worker dispatched
-        # straight to ``container.ocr().parse(source_url, ...)`` which
-        # made the OCR engine refetch the URL. Google Sheets ``edit?gid=``
-        # links returned an HTML viewer (no auth), Kreuzberg OCR'd that
-        # HTML and emitted zero blocks → "empty document text after
-        # parse". The registry parser path lets ``GoogleSheetsParser``
-        # (and ExcelOpenpyxlParser) handle these mime types without
-        # touching the OCR engine.
+        # Fallback: fetch source_url and parse via the registry parser first
+        # (CSV / Excel / Sheets / DOCX / MD → structured markdown), falling
+        # through to OCR only when no parser matches the (mime_type, ext) pair
+        # or the parser yields no chunks. The registry path keeps a Google
+        # ``edit?gid=`` viewer URL off the OCR engine (which would OCR the HTML
+        # login page to zero blocks).
         parsed_language: str | None = None
-        # Document name for parser ext-detection + file_name. Was referenced
-        # as an undefined ``document_name`` (NameError caught by the broad
-        # except below → registry fast-path was DEAD, every doc fell through
-        # to OCR). Lift it from the payload so structured parsers (Excel /
-        # CSV / DOCX) actually run for their mime types.
+        # Document name drives parser ext-detection + file_name; lift from the
+        # payload so the structured parsers run for their mime types.
         _doc_name = payload.get("document_name") or ""
         if not full_text.strip():
             # A locally-uploaded file is stored under a ``local://`` pseudo-URL

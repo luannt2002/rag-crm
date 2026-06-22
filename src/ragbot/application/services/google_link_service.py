@@ -129,52 +129,35 @@ async def fetch_content(
     *,
     max_download_size: int | None = None,
 ) -> str | None:
-    """Tải nội dung text thuần từ Google Docs/Sheets qua export URL.
+    """Upload "has-data" probe — fetch a Google Doc/Sheet via its STRUCTURED export.
 
-    For Sheets: parses the `gid` parameter (either as `?gid=N` query OR
-    `#gid=N` fragment, both are valid Google URL forms) and forwards it
-    to the export endpoint. Without this each tab of the same workbook
-    exported to the SAME default sheet, breaking content_hash dedup
-    (two distinct tabs reported as duplicate) and silently dropping
-    every tab the user thought they'd ingested except the first.
+    Uses ``to_export_url`` (the single export-format source the worker also uses):
+    a Sheet → csv (with its per-tab gid, so distinct tabs don't collapse to the
+    default sheet and break content_hash dedup), a Doc → docx. Confirms the source
+    is readable before queuing the worker. Returns the decoded csv for a Sheet
+    (text, previewable); for the binary docx it returns a short readable-marker —
+    the worker re-fetches + parses the Doc structured, so this probe never carries
+    the Doc's bytes.
 
     @param url: URL tài liệu Google
     @param doc_type: loại tài liệu ("docs" hoặc "sheets")
     @param max_download_size: giới hạn byte tối đa (None = dùng default 10MB)
-    @return: nội dung text hoặc None nếu thất bại
+    @return: csv text (Sheet) / readable-marker (Doc) / None nếu không đọc được
     """
-    match = re.search(r"/d/([a-zA-Z0-9_-]+)", url)
-    if not match:
-        return None
-    doc_id = match.group(1)
-
-    if doc_type == "docs":
-        export_url = f"https://docs.google.com/document/d/{doc_id}/export?format=txt"
-    elif doc_type == "sheets":
-        # Try query string first, then fragment.
-        # Examples we must handle:
-        #   .../edit?gid=1394860155#gid=1394860155
-        #   .../edit#gid=0
-        #   .../edit?gid=0
-        gid: str | None = None
-        gid_match = re.search(r"[?&]gid=([0-9]+)", url)
-        if gid_match:
-            gid = gid_match.group(1)
-        else:
-            frag_match = re.search(r"#gid=([0-9]+)", url)
-            if frag_match:
-                gid = frag_match.group(1)
-        export_url = f"https://docs.google.com/spreadsheets/d/{doc_id}/export?format=csv"
-        if gid is not None:
-            export_url += f"&gid={gid}"
-    else:
-        return None
+    # Single source of export-format truth: ``to_export_url`` picks docx for a Doc
+    # (structured — the docx parser recovers headings) and csv for a Sheet (with
+    # its gid), matching EXACTLY what the ingest worker fetches. No duplicated /
+    # hardcoded export URLs here (the old code exported a Doc as flat txt, diverging
+    # from the worker's structured docx).
+    export_url = to_export_url(url)
+    if export_url == url:
+        return None  # not a recognised Google Docs / Sheets URL
 
     try:
         client = _get_client()
         resp = await client.get(export_url)
         if resp.status_code == 200:
-            # Guard against unbounded memory usage from huge documents
+            # Guard against unbounded memory usage from huge documents.
             max_download_bytes = max_download_size or MAX_DOWNLOAD_BYTES
             if len(resp.content) > max_download_bytes:
                 logger.warning(
@@ -186,9 +169,16 @@ async def fetch_content(
                 raise ValueError(
                     f"Document too large: {len(resp.content)} bytes (max {max_download_bytes})"
                 )
-            content = resp.text
-            if content and len(content.strip()) > DEFAULT_GOOGLE_DOC_MIN_CONTENT_CHARS:
-                return content.strip()
+            # "Has data?" probe — measured on raw BYTES so it works for the binary
+            # docx export too. A Sheets csv export returns its decoded text (valid
+            # to preview); the binary Docs export is validated by size only — this
+            # probe never needs the Doc's bytes (the worker re-fetches + parses it
+            # structured), so a short readable-marker is returned instead of garbage.
+            if len(resp.content.strip()) <= DEFAULT_GOOGLE_DOC_MIN_CONTENT_CHARS:
+                return None
+            if doc_type == "sheets":
+                return resp.text.strip()
+            return f"[google-doc readable: {len(resp.content)} bytes]"
     except ValueError:
         raise
     except (httpx.HTTPError, OSError) as exc:
