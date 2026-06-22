@@ -111,3 +111,24 @@ Mỗi step GREEN = evidence số thật (chunk count, score, answer trace). Đ�
 - **"Bao nhiêu step debug?"** → **8 step query** (Q1→Q8), nhiều hơn 7 step upload 1 step (thêm
   Q8 post-process/cache).
 - Sau fix P1-P3 + verify 8 step → query flow mới expert đồng bộ với upload.
+
+---
+
+## 8. KẾT QUẢ DEEP-DEBUG (runtime, `scripts/verify_query_flow.py` — 2026-06-22)
+
+Chạy Q1→Q8 trên 5+ câu (factoid/list/aggregate/procedure/legal), evidence từ `debug` block:
+
+- **Routing THÔNG MINH (confirmed)**: price/list/aggregate/name-filter → **stats-index SQL route**
+  (`retrieve.py:180`, synthetic pipe-delimited chunk, top_k=1, score 1.0, "(không tên)"); procedure/
+  prose/definition → **vector route** (top_k=20, real scores). Cả 2 nhánh answer ĐÚNG.
+- **Q7 main answer KHÔNG dùng CSV-extract (#6)** — dùng stats-chunk (price) hoặc vector-chunk (prose).
+  → #6 `generate.py:218` là path SECONDARY (action-state price-lock), không phải main → answer vẫn đúng.
+- **Verdict: luồng QUERY HEALTHY** (khớp load-test 96%), đồng bộ chất lượng với upload.
+- **Minor còn lại (không vỡ answer)**:
+  1. Q1 intent-classify lệch vài phrasing (superlative "đắt nhất" → `factoid` đáng ra `aggregation`;
+     rewrite rỗng) — fallback dùng query gốc, answer đúng nhờ stats-path. Cải thiện = tune intent prompt.
+  2. #5/#6 `generate.py` (domain literal + CSV-extract) ở path secondary — gỡ khi rảnh (TDD, coupled
+     với `conversation_state.py`), KHÔNG ảnh hưởng main answer.
+  3. xe tire-size cross-match (BM25 AND notation) — class riêng.
+
+→ **Fix P1 (#5/#6) HẠ ƯU TIÊN**: vì là secondary path, main answer đã đúng. Ưu tiên thật = tune Q1 intent + xe tire-size nếu cần.
