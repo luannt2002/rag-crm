@@ -360,6 +360,31 @@ def _extract_entity_from_row(
     )
 
 
+# A real catalog row ends on a price / code / short field, never on a sentence
+# terminator; a prose sentence does. Grammar/punctuation only — domain-neutral.
+_STATS_SENTENCE_END: tuple[str, ...] = (".", "!", "?", "…", "。")
+
+
+def _is_prose_row(cols: list[str]) -> bool:
+    """True when a comma-split "row" is really a prose sentence, not a catalog row.
+
+    A legal/policy sentence with an incidental comma ("… hạ tầng kỹ thuật (nhà
+    trạm, hệ thống cáp) và …") passes the chunk-level delimiter gate and splits
+    into prose cells, whose first clause then becomes a false entity (M7). Two
+    structural signals separate it from a real catalog row, with NO catalog-row
+    false-drop: the row ENDS on a sentence terminator AND NO cell parses as a
+    price (a real priced catalog row always carries one; a description cell that
+    ends in "." is kept because its row still has a price). Pure grammar/structure.
+    """
+    non_empty = [c.strip() for c in cols if c.strip()]
+    # A 1-cell "row" is the category-heading branch; a real catalog row is tabular.
+    if len(non_empty) < 2:  # noqa: PLR2004 — minimum tabular width, not a tunable
+        return False
+    if any(parse_money_vn(c) is not None for c in non_empty):
+        return False
+    return non_empty[-1].endswith(_STATS_SENTENCE_END)
+
+
 def parse_table_chunks(chunks: list[dict]) -> list[ParsedEntity]:
     """Extract structured entities from a list of CSV/table chunks.
 
@@ -417,11 +442,26 @@ def parse_table_chunks(chunks: list[dict]) -> list[ParsedEntity]:
                 header = cols
                 continue
 
-            # Single non-delimiter col → category heading
+            # Single non-delimiter col → category heading. Reject noise candidates
+            # (leaked "<chunk_context>…" tag, discourse/temporal opener, section
+            # enumeration lead) so the noise does not become the category for every
+            # row of the group (M5: the category field, unlike the name, was never
+            # shape-filtered). Same domain-neutral shapes used for entity names.
             if len(cols) == 1:
                 candidate = cols[0].strip()
-                if candidate and parse_money_vn(candidate) is None:
+                if (
+                    candidate
+                    and parse_money_vn(candidate) is None
+                    and not candidate.startswith(_STATS_TAG_LEAD)
+                    and not _is_discourse_opener(candidate)
+                    and not _STATS_SECTION_LEAD_RE.match(candidate)
+                ):
                     current_category = candidate
+                continue
+
+            # Skip a prose sentence mis-split into a "row" by an incidental comma
+            # (legal/policy text) — it is not a catalog row (M7).
+            if _is_prose_row(cols):
                 continue
 
             entity = _extract_entity_from_row(cols, header, chunk_idx, current_category)
