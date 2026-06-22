@@ -80,13 +80,16 @@ async def test_excel_openpyxl_parses_3row_sheet() -> None:
     parser = ExcelOpenpyxlParser()
     chunks = await parser.parse(raw, file_name="sample.xlsx")
 
-    assert len(chunks) == 3
-    first = chunks[0]
-    assert "item: alpha" in first["content"]
-    assert "price: 10" in first["content"]
-    assert first["metadata"]["sheet_name"] == "Prices"
-    assert first["metadata"]["row_index"] == 1
-    assert first["metadata"]["parser"] == "excel_openpyxl"
+    # One structured-markdown document (AdapChunk L1), not one chunk per row.
+    assert len(chunks) == 1
+    md = chunks[0]["content"]
+    assert chunks[0]["metadata"]["format"] == "markdown"
+    assert chunks[0]["metadata"]["parser"] == "excel_openpyxl"
+    # Markdown table preserving header + every row's values (B1/B2).
+    assert "| item | price | unit |" in md
+    assert "| alpha | 10 | vnd |" in md
+    assert "| beta | 20 | vnd |" in md
+    assert "| gamma | 30 | vnd |" in md
 
 
 def test_registry_default_is_null() -> None:

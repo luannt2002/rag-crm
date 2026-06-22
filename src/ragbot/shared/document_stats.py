@@ -364,6 +364,13 @@ def _extract_entity_from_row(
 # terminator; a prose sentence does. Grammar/punctuation only — domain-neutral.
 _STATS_SENTENCE_END: tuple[str, ...] = (".", "!", "?", "…", "。")
 
+# A markdown section heading ("## Dịch vụ triệt lông") — the authoritative B3
+# section title emitted by the structure-aware parser.
+_MD_HEADING_RE: re.Pattern[str] = re.compile(r"^#{1,6}\s+(.+?)\s*$")
+# A single-col line carrying a thousands-grouped number ("Giá 1 buổi: 1.600.000 đ")
+# is a price NOTE, not a section title — must not become a category. Shape-only.
+_STATS_PRICE_NOTE_RE: re.Pattern[str] = re.compile(r"\d[.,]\d{3}")
+
 
 def _is_prose_row(cols: list[str]) -> bool:
     """True when a comma-split "row" is really a prose sentence, not a catalog row.
@@ -428,9 +435,20 @@ def parse_table_chunks(chunks: list[dict]) -> list[ParsedEntity]:
         current_category: str | None = None
 
         for line in lines:
-            if not line.strip():
+            stripped_line = line.strip()
+            if not stripped_line:
                 continue
             if _is_separator_line(line):
+                continue
+
+            # Markdown section heading ("## Dịch vụ triệt lông") — AUTHORITATIVE
+            # category for the rows that follow (AdapChunk B3 context-binding). The
+            # structure-aware parser emits one above each sub-table; binding it here
+            # is what lets a "triệt lông" query reach the zone rows ("Mép"). A real
+            # heading always wins over a stray single-col note below it.
+            _hmatch = _MD_HEADING_RE.match(stripped_line)
+            if _hmatch:
+                current_category = _hmatch.group(1).strip()
                 continue
 
             cols = _split_cols(line)
@@ -442,16 +460,17 @@ def parse_table_chunks(chunks: list[dict]) -> list[ParsedEntity]:
                 header = cols
                 continue
 
-            # Single non-delimiter col → category heading. Reject noise candidates
-            # (leaked "<chunk_context>…" tag, discourse/temporal opener, section
-            # enumeration lead) so the noise does not become the category for every
-            # row of the group (M5: the category field, unlike the name, was never
-            # shape-filtered). Same domain-neutral shapes used for entity names.
+            # Single non-delimiter col → category heading. Reject noise candidates so
+            # a DESCRIPTION line never overwrites a real section title (M5 + B3):
+            # tag-lead, discourse opener, section-enum, bullet description, and a
+            # note carrying a price ("Giá 1 buổi: 1.600.000 đ").
             if len(cols) == 1:
                 candidate = cols[0].strip()
                 if (
                     candidate
                     and parse_money_vn(candidate) is None
+                    and candidate[:1] not in _STATS_BULLET_LEADS
+                    and not _STATS_PRICE_NOTE_RE.search(candidate)
                     and not candidate.startswith(_STATS_TAG_LEAD)
                     and not _is_discourse_opener(candidate)
                     and not _STATS_SECTION_LEAD_RE.match(candidate)

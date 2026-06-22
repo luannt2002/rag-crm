@@ -70,9 +70,10 @@ async def test_excel_mime_routes_to_excel_parser() -> None:
 
 @pytest.mark.asyncio
 async def test_csv_parser_consumes_real_csv_bytes() -> None:
-    """End-to-end: GoogleSheetsParser given CSV bytes yields row chunks.
+    """End-to-end: GoogleSheetsParser given CSV bytes → structured markdown.
 
-    Validates the path the worker now uses: fetch URL → parser.parse(bytes).
+    Validates the worker path: fetch URL → parser.parse(bytes) → ONE
+    structured-markdown document (AdapChunk L1), values preserved.
     """
     from ragbot.infrastructure.parser.registry import build_parser
 
@@ -84,13 +85,11 @@ async def test_csv_parser_consumes_real_csv_bytes() -> None:
         b"3,baz,300\n"
     )
     chunks = await parser.parse(csv_bytes, file_name="test.csv")
-    assert isinstance(chunks, list)
-    assert len(chunks) >= 3
-    # Each chunk should carry the data row plus header labels.
-    joined = "\n".join(c.get("content", "") for c in chunks)
-    assert "foo" in joined
-    assert "bar" in joined
-    assert "baz" in joined
+    assert isinstance(chunks, list) and len(chunks) == 1
+    md = chunks[0]["content"]
+    assert chunks[0]["metadata"]["format"] == "markdown"
+    assert "foo" in md and "bar" in md and "baz" in md
+    assert "| foo |" in md  # markdown table row, values bound to columns
 
 
 @pytest.mark.asyncio

@@ -30,28 +30,32 @@ def test_provider_name_stable() -> None:
 
 
 @pytest.mark.asyncio
-async def test_parse_csv_bytes_emits_one_chunk_per_data_row() -> None:
-    """Phase 1: feed Sheets-CSV bytes → expect ≥ N data rows back.
+async def test_parse_csv_bytes_emits_structured_markdown() -> None:
+    """The sheet is converted to ONE structured-markdown document (AdapChunk L1).
 
-    Today this raises NotImplementedError → test fails (RED). Once Phase 1
-    ships, the parser must yield one chunk per data row with the column
-    semantics preserved.
+    A multi-table sheet keeps each sub-table under its own SECTION TITLE so the
+    downstream chunker/extractor can bind rows to their service. Here a single
+    table (header + 3 data rows) → one markdown table preserving every value.
     """
     csv_bytes = (
+        b"Bang gia triet long\n"
         b"Topic,Dich vu,Vung,Gia\n"
-        b"Bang gia triet long,Triet long Diode Laser,Mep,899000\n"
-        b"Bang gia triet long,Triet long Diode Laser,Mat,1499000\n"
-        b"Bang gia triet long,Triet long Diode Laser,Nach,1199000\n"
+        b"1,Triet long Diode Laser,Mep,899000\n"
+        b"2,Triet long Diode Laser,Mat,1499000\n"
+        b"3,Triet long Diode Laser,Nach,1199000\n"
     )
     parser = GoogleSheetsParser()
     chunks = await parser.parse(csv_bytes, file_name="bang_gia.csv")
 
-    assert isinstance(chunks, list), "parse() must return a list of chunk dicts"
-    assert len(chunks) >= 3, f"expected ≥ 3 data rows, got {len(chunks)}"
-    contents = [c.get("content", "") for c in chunks]
-    assert any("Mep" in c for c in contents), "Mep row missing from output"
-    assert any("Mat" in c for c in contents), "Mat row missing from output"
-    assert any("Nach" in c for c in contents), "Nach row missing from output"
+    assert isinstance(chunks, list) and len(chunks) == 1, "one structured-markdown doc"
+    md = chunks[0]["content"]
+    assert chunks[0]["metadata"]["format"] == "markdown"
+    # Section title bound as a heading ABOVE the table (B3).
+    assert "## Bang gia triet long" in md
+    # Markdown table preserving the values + column semantics (B1/B2).
+    assert "| Mep |" in md and "899000" in md
+    assert "| Mat |" in md and "1499000" in md
+    assert "| Nach |" in md and "1199000" in md
 
 
 @pytest.mark.asyncio
