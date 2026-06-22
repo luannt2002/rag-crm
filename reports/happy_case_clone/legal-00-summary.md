@@ -1,0 +1,85 @@
+# Tóm tắt & danh sách đầy đủ — bot legal
+
+
+## Mục lục / các phần trong tài liệu
+
+- Chương I
+- QUY ĐỊNH CHUNG
+- Điều 1. Phạm vi điều chỉnh và đối tượng áp dụng
+- Điều 2. Giải thích từ ngữ
+- Điều 3. Nguyên tắc chung
+- Điều 4. Phân loại thông tin
+- Điều 5. Phân loại hệ thống thông tin
+- Điều 6. Quy chế an toàn thông tin
+- Chương II
+- CÁC QUY ĐỊNH VỀ BẢO ĐẢM AN TOÀN THÔNG TIN
+- Mục 1
+- QUẢN LÝ TÀI SẢN CÔNG NGHỆ THÔNG TIN
+- Điều 7. Quản lý tài sản công nghệ thông tin
+- Điều 8. Quản lý tài sản thông tin
+- Điều 9. Quản lý tài sản vật lý
+- Điều 10. Quản lý tài sản phần mềm
+- Điều 11. Quản lý sử dụng thiết bị di động
+- Điều 12. Quản lý sử dụng vật mang tin
+- Mục 2
+- QUẢN LÝ NGUỒN NHÂN LỰC
+- Điều 13. Tổ chức nguồn nhân lực
+- Điều 14. Tuyển dụng và phân công nhiệm vụ
+- Điều 15. Quản lý sử dụng nguồn nhân lực
+- Điều 16. Chấm dứt hoặc thay đổi công việc
+- Mục 3
+- BẢO ĐẢM AN TOÀN VỀ MẶT VẬT LÝ VÀ MÔI TRƯỜNG NƠI LẮP ĐẶT TRANG THIẾT BỊ CÔNG NGHỆ THÔNG TIN
+- Điều 17. Yêu cầu chung đối với nơi lắp đặt trang thiết bị công nghệ thông tin
+- Điều 18. Yêu cầu đối với trung tâm dữ liệu
+- Điều 19. An toàn tài sản vật lý
+- Mục 4
+- QUẢN LÝ VẬN HÀNH VÀ TRAO ĐỔI THÔNG TIN
+- Điều 20. Trách nhiệm quản lý và quy trình vận hành của tổ chức
+- Điều 21. Lập kế hoạch và chấp nhận hệ thống thông tin
+- Điều 22. Sao lưu dự phòng
+- Điều 23. Quản lý an toàn, bảo mật hệ thống mạng
+- Điều 24. Trao đổi thông tin
+- Điều 25. Quản lý hệ thống thông tin cung cấp dịch vụ giao dịch trực tuyến
+- Điều 26. Giám sát và ghi nhật ký hoạt động của hệ thống thông tin
+- Điều 27. Phòng chống mã độc
+- Mục 5
+- QUẢN LÝ TRUY CẬP
+- Điều 28. Yêu cầu đối với kiểm soát truy cập
+- Điều 29. Quản lý truy cập mạng nội bộ
+- Điều 30. Quản lý truy cập hệ thống thông tin và ứng dụng
+- Điều 31. Quản lý kết nối Internet
+- Mục 6
+- QUẢN LÝ SỬ DỤNG DỊCH VỤ CÔNG NGHỆ THÔNG TIN
+- CỦA BÊN THỨ BA
+- Điều 32. Các nguyên tắc chung về sử dụng dịch vụ của bên thứ ba
+- Điều 33. Các yêu cầu khi sử dụng dịch vụ của bên thứ ba
+- Điều 34. Tiêu chí lựa chọn bên thứ ba cung cấp dịch vụ điện toán đám mây
+- Điều 35. Hợp đồng sử dụng dịch vụ với bên thứ ba
+- Điều 36. Trách nhiệm của tổ chức trong quá trình sử dụng dịch vụ của bên thứ ba
+- Mục 7
+- QUẢN LÝ TIẾP NHẬN, PHÁT TRIỂN, DUY TRÌ
+- HỆ THỐNG THÔNG TIN
+- Điều 37. Yêu cầu về an toàn, bảo mật các hệ thống thông tin
+- Điều 38. Bảo đảm an toàn, bảo mật ứng dụng
+- Điều 39. Quản lý mã hóa
+- Điều 40. An toàn, bảo mật trong quá trình phát triển phần mềm
+- Điều 41. Quản lý sự thay đổi hệ thống thông tin
+- Điều 42. Kiểm tra, đánh giá an toàn thông tin
+- Điều 43. Quản lý các điểm yếu về mặt kỹ thuật
+- Điều 44. Quản lý bảo trì hệ thống thông tin
+- Mục 8
+- QUẢN LÝ SỰ CỐ AN TOÀN THÔNG TIN
+- Điều 45. Quy trình xử lý sự cố
+- Điều 46. Kiểm soát và khắc phục sự cố
+- Điều 47. Trung tâm Điều hành an ninh mạng
+- Điều 48. Hoạt động ứng cứu sự cố an toàn thông tin
+- Mục 9
+- BẢO ĐẢM HOẠT ĐỘNG LIÊN TỤC CỦA HỆ THỐNG THÔNG TIN
+- Điều 49. Nguyên tắc bảo đảm hoạt động liên tục
+- Điều 50. Xây dựng hệ thống dự phòng thảm họa
+- Điều 51. Xây dựng quy trình, kịch bản bảo đảm hoạt động liên tục
+- Điều 52. Tổ chức triển khai bảo đảm hoạt động liên tục
+- Mục 10
+- KIỂM TRA NỘI BỘ VÀ CHẾ ĐỘ BÁO CÁO
+- Điều 53. Kiểm tra nội bộ
+- Điều 54. Chế độ báo cáo
