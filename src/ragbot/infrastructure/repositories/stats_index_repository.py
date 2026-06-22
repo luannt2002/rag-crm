@@ -39,6 +39,7 @@ from ragbot.shared.constants import (
     DEFAULT_STATS_INDEX_QUERY_LIMIT,
     DEFAULT_STATS_REVERSE_MATCH_LIMIT,
     DEFAULT_STATS_REVERSE_MATCH_MIN_LEN,
+    DEFAULT_STATS_REVERSE_MATCH_SHORT_FLOOR,
 )
 from ragbot.shared.document_stats import ParsedEntity
 
@@ -519,19 +520,31 @@ class StatsIndexRepository:
             # result → cannot regress a working forward lookup. ORDER BY length
             # DESC prefers the most specific (longest) entity name.
             if not rows and kw:
+                # A short zone name ("Mặt"/"Tay"/"Râu", 3 chars) is the TARGET of a
+                # category-qualified query ("triệt lông mặt") but the plain length
+                # guard dropped it AND a CONTAINS match over-picks a category word in
+                # the MIDDLE ("lông"). Accept a short name when the keyword ENDS with
+                # it (trailing = the qualifying zone), and ORDER trailing matches
+                # first, then priced rows — so "triệt lông mặt" → "Mặt" (priced), not
+                # the null-price "lông". Reverse only fires on an empty forward result.
                 rev_sql = (
                     "SELECT id, record_document_id, record_chunk_id, entity_name, "
                     "entity_category, price_primary, price_secondary, attributes_json "
                     "FROM document_service_index "
                     "WHERE record_bot_id = :bot_id "
-                    "AND char_length(entity_name) >= :min_len "
                     "AND unaccent(:kwfull) ILIKE '%' || unaccent(entity_name) || '%' "
-                    "ORDER BY char_length(entity_name) DESC "
+                    "AND (char_length(entity_name) >= :min_len "
+                    "     OR (char_length(entity_name) >= :short_floor "
+                    "         AND unaccent(:kwfull) ILIKE '%' || unaccent(entity_name))) "
+                    "ORDER BY (unaccent(:kwfull) ILIKE '%' || unaccent(entity_name)) DESC, "
+                    "(price_primary IS NOT NULL OR price_secondary IS NOT NULL) DESC, "
+                    "char_length(entity_name) DESC "
                     "LIMIT :rev_limit"
                 )
                 result = await session.execute(text(rev_sql), {
                     "bot_id": record_bot_id,
                     "min_len": DEFAULT_STATS_REVERSE_MATCH_MIN_LEN,
+                    "short_floor": DEFAULT_STATS_REVERSE_MATCH_SHORT_FLOOR,
                     "kwfull": kw,
                     "rev_limit": min(effective_limit, DEFAULT_STATS_REVERSE_MATCH_LIMIT),
                 })

@@ -35,6 +35,12 @@ DEFAULT_STATS_INDEX_QUERY_LIMIT: Final[int] = 1000
 # Min entity-name length so 1-3 char zone words ("Mép", "sâu") can't over-match;
 # small result cap so a granular price-of-entity lookup stays focused, not a flood.
 DEFAULT_STATS_REVERSE_MATCH_MIN_LEN: Final[int] = 4
+# A SHORTER name is still accepted in the reverse fallback when the keyword ENDS
+# with it — a category-qualified zone like "triệt lông mặt" → zone "Mặt" (3 chars).
+# The trailing position disambiguates the real target (the zone, at the end) from
+# a category word in the MIDDLE ("lông"), which a plain CONTAINS match over-picks.
+# Floor of 3 keeps 1-2 char tokens out; trailing-anchored so noise stays bounded.
+DEFAULT_STATS_REVERSE_MATCH_SHORT_FLOOR: Final[int] = 3
 DEFAULT_STATS_REVERSE_MATCH_LIMIT: Final[int] = 10
 # Threshold below which a numeric token is ignored by the price extractor
 # (avoids treating article numbers like "Điều 12" → 12 as prices).
