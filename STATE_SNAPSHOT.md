@@ -19,6 +19,7 @@
 - **Fetch-path unify**: `fetch_content` dùng `to_export_url` (1 nguồn, Doc→docx structured, bỏ hardcode txt-flat trùng); worker tái dùng raw_content CHỈ cho local:// — URL Google luôn re-fetch+parse structured.
 
 ### 📊 Verify (rule #0, data thật 9 file/3 bot)
+- **✅ INPUT-FLOW test CẢ 9 FILE (link→validate→fetch→convert, no ingest): 9/9 → `format=markdown`.** Mọi format hội tụ 1 canonical: 7 Sheets → google_sheets → markdown table; **2 DOCS → fetch `docx` STRUCTURED** (xe-4: 7 heading · **legal: 87 heading + 12 bảng** — KHÔNG còn txt-flat). Fetch-fix verified end-to-end trên doc thật. → **luồng đầu vào đã control thành markdown-có-cấu-trúc cho mọi loại**.
 - spa-2 end-to-end: Mép/Mặt/Nách `category='Dịch vụ triệt lông'` (was empty), 12 zone findable. **xe-3 (catalog tire): 0→172 priced** (684k...). spa 1/2/3/4 all priced. xe-1 (tồn kho, no price col)=correct, xe-2 (shipping manifest)=correct.
 - **Conversational eval baseline đo LIVE: 21/38=55.3%** (spa 36/xe 69/legal 64) — exposes real gaps factoid giấu. Runner: `scripts/run_conversational_eval.py`.
 - **6070 unit no-reg pass · ruff sạch** trên file mới.
