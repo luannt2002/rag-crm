@@ -334,6 +334,20 @@ def analyze_document_blocks(blocks: list[Any]) -> dict:
         len(b.content.lstrip("#").strip().split()) for b in heading_blocks
     )
 
+    # Plain-text signals select_strategy + apply_cross_check also read. Mirror
+    # analyze_document() exactly (same helpers) so the block profile carries the
+    # FULL key contract — otherwise the strategy selector KeyErrors / mis-routes
+    # on the block path. Lines are reconstructed from every block's content.
+    _block_lines = [ln for b in blocks for ln in b.content.split("\n")]
+    has_toc = any(
+        "mục lục" in ln.lower() or "table of contents" in ln.lower()
+        for ln in _block_lines[:30]
+    )
+    vn_hierarchical_markers = sum(
+        1 for ln in _block_lines if _VN_HEADING_DETECT_RE.match(ln.strip())
+    )
+    is_csv_format = _is_csv_format("\n".join(_block_lines))
+
     return {
         "heading_counts": {
             "h1": sum(1 for b in heading_blocks if b.content.startswith("# ")),
@@ -347,6 +361,14 @@ def analyze_document_blocks(blocks: list[Any]) -> dict:
         "image_count": len(image_blocks),
         "code_block_count": len(code_blocks),
         "avg_text_block_length": round(avg_text_block_length, 1),
+        # ``select_strategy`` + ``apply_cross_check`` read ``avg_text_length``
+        # and normalise it against WORD-count constants — so it must be WORDS
+        # per text block (mirrors ``analyze_document``'s ``total_text_words /
+        # text_blocks``), NOT the character count in ``avg_text_block_length``.
+        "avg_text_length": round(text_word_count / max(len(text_blocks), 1), 1),
+        "has_toc": has_toc,
+        "is_csv_format": is_csv_format,
+        "vn_hierarchical_markers": vn_hierarchical_markers,
         "heading_ratio": round(len(heading_blocks) / max(total_blocks, 1), 3),
         "mixed_content_score": mixed_content_score,
         "total_blocks": total_blocks,
