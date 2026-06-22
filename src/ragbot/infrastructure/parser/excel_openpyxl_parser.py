@@ -1,9 +1,11 @@
 """ExcelOpenpyxlParser — REAL strategy for ``.xlsx`` ingestion.
 
-Uses ``openpyxl`` (Apache 2.0, pure-Python) to walk every sheet and emit one
-chunk per non-empty row. Header detection: row 1 of each sheet is treated as
-the header row; subsequent rows are rendered as ``"col1: val1 | col2: val2"``
-to preserve column semantics for the embedding model.
+Uses ``openpyxl`` (Apache 2.0, pure-Python) to walk every sheet and convert it
+to ONE structured-markdown document (AdapChunk L1, via
+``rows_to_structured_markdown``) — multi-table + section-title aware, so each
+sub-table stays under its heading. A workbook with >1 tab nests each sheet under
+a top-level ``# <sheet>`` heading. Same canonical form as the Sheets / Kreuzberg
+parsers, so the downstream chunker/extractor is format-agnostic.
 
 Domain-neutral: NO hardcoded sheet / column names — every label flows from
 the workbook. ``openpyxl`` is an optional dep; init raises ``ImportError``
@@ -38,7 +40,7 @@ def _openpyxl_available() -> bool:
 
 
 class ExcelOpenpyxlParser:
-    """Excel ``.xlsx`` parser — header-aware row-as-chunk."""
+    """Excel ``.xlsx`` parser — workbook → ONE structured-markdown document."""
 
     def __init__(self, **_: object) -> None:
         if not _openpyxl_available():

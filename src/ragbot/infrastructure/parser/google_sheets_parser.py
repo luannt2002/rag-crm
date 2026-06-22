@@ -4,8 +4,9 @@ Public-shared Google Sheets export to CSV via the
 ``/spreadsheets/d/{id}/export?format=csv&gid={N}`` endpoint. Upstream
 (``DocumentService.ingest`` or the sync route) is responsible for
 fetching the URL → ``raw_bytes``; this parser handles whatever CSV
-bytes it receives. Same row-as-chunk shape as ``ExcelOpenpyxlParser``
-so the downstream chunker keeps the 1-row → 1-chunk semantics.
+bytes it receives. Emits ONE structured-markdown document (AdapChunk L1,
+via ``rows_to_structured_markdown``) — multi-table + section-title aware —
+the same canonical form as ``ExcelOpenpyxlParser`` and the Kreuzberg parser.
 
 Private (OAuth-only) sheets are out of scope here — they need an
 authenticated fetch handled at the boundary, then the bytes flow
@@ -41,7 +42,7 @@ def _decode_csv(content: bytes) -> str:
 
 
 class GoogleSheetsParser:
-    """Google Sheets parser — CSV-export bytes → row-as-chunk dicts."""
+    """Google Sheets parser — CSV-export bytes → ONE structured-markdown doc."""
 
     def __init__(self, **_: object) -> None:
         return

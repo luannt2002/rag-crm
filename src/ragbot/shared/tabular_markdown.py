@@ -92,7 +92,6 @@ def _md_escape(cell: str) -> str:
 def rows_to_structured_markdown(rows: list[list[str]]) -> str:
     """Convert raw spreadsheet rows into section-bound structured markdown."""
     out: list[str] = []
-    section: str | None = None
     header: list[str] | None = None
     table_open = False
 
@@ -125,7 +124,6 @@ def rows_to_structured_markdown(rows: list[list[str]]) -> str:
             if is_title:
                 close_table()
                 header = None
-                section = only
                 out.append(f"\n## {only}\n")
             else:
                 # NOTE (prose / bullet / "Giá 1 buổi: …") — keep as text.
