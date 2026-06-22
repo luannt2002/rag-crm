@@ -2,7 +2,7 @@
 
 Locks the fix for control-register items B (domain-neutral generic keys) + C
 (CSV-only extraction failed on happy-case `| name | price |` markdown tables). The
-helper must read prices from BOTH markdown pipe tables and legacy CSV rows. Fixtures
+helper must read prices from BOTH markdown pipe tables and prior CSV rows. Fixtures
 are domain-neutral (generic "Item A") — shape-based, no service/brand literal.
 """
 from __future__ import annotations
@@ -16,8 +16,8 @@ def test_happy_case_markdown_pipe_table():
     assert _extract_locked_prices(preview, "item a") == ("700000", "800000")
 
 
-def test_legacy_csv_row_still_works():
-    """Legacy CSV rows must keep working (back-compat)."""
+def test_prior_csv_row_still_works():
+    """Prior CSV-row format must keep working (back-compat)."""
     preview = "4,Item A,199000,800000"
     assert _extract_locked_prices(preview, "item a") == ("199000", "800000")
 

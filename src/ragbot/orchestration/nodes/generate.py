@@ -96,7 +96,7 @@ def _extract_locked_prices(
     """Extract (primary, secondary) price strings for a service from its source
     chunk, for the cross-turn price-lock. Delimiter-aware: splits each line on BOTH
     pipe and comma, so it works for happy-case markdown tables (``| name | price |``)
-    AND legacy CSV rows (``name,price``). Returns the first two price-shaped cells on
+    AND prior CSV rows (``name,price``). Returns the first two price-shaped cells on
     the line that names the service; ``(None, None)`` when absent. Domain-neutral:
     SHAPE only — no service/brand literal."""
     for line in preview.splitlines():
@@ -234,7 +234,7 @@ async def generate(
                         }
                         # Capture the service's price from its source chunk for the
                         # cross-turn price-lock. Delimiter-aware (happy-case markdown
-                        # "| name | price | price |" OR legacy CSV row) — generic
+                        # "| name | price | price |" OR prior CSV row) — generic
                         # primary/secondary keys, no domain literal.
                         _pp, _ps = _extract_locked_prices(preview, _service_lower)
                         if _pp:
