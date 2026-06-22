@@ -176,6 +176,28 @@ def generate_parent_child_chunks(
                 "parent_global_index": parent_global_index,
             })
             global_index += 1
+        elif any(bt == "table" for bt, _ in _split_into_blocks(parent_content)):
+            # Atomic-block protection: a TABLE-type parent must NOT be cut by
+            # the plain RecursiveCharacterTextSplitter — that strands the
+            # header on the first child and leaves the rest as header-less
+            # orphan rows. Route through the table-aware splitter which
+            # re-prepends the header per row-group (shape-based table detect,
+            # domain-neutral).
+            child_texts = _chunk_recursive_with_tables(
+                parent_content, child_size, child_overlap,
+            )
+            for child_text in child_texts:
+                child_text = child_text.strip()
+                if not child_text:
+                    continue
+                result.append({
+                    "content": child_text,
+                    "is_parent": False,
+                    "parent_index": parent_idx,
+                    "chunk_index": global_index,
+                    "parent_global_index": parent_global_index,
+                })
+                global_index += 1
         else:
             from langchain_text_splitters import RecursiveCharacterTextSplitter
 
