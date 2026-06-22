@@ -316,7 +316,7 @@ async def generate_test_questions(bot_id: str, channel_type: str, request: Reque
         "- casual: câu chat xã giao (\"trời nóng quá\", \"bạn khỏe không\") — bot nên redirect về dịch vụ\n"
         "- nonsense: topic hoàn toàn khác (bitcoin, bóng đá, thời tiết) — bot nên nói không liên quan\n"
         "- followup: chuỗi 2-3 câu hỏi liên quan (question chứa ngữ cảnh câu trước)\n"
-        "- typo: câu hỏi có lỗi chính tả, viết tắt (\"goi dau gia sao\", \"cs da\", \"triet long nach\")\n"
+        "- typo: câu hỏi có lỗi chính tả, viết tắt (\"gia bao nhiu\", \"dv nao re nhat\", \"co km ko\")\n"
         "- multi: kết hợp giá + thời gian + khuyến mãi trong 1 câu hỏi\n"
         "- edge: emoji only, câu hỏi lặp lại, câu hỏi rất dài\n"
         "\n"

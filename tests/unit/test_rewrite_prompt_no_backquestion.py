@@ -106,11 +106,16 @@ class TestRewritePromptFewShotExamples:
         self.vi_pack = get_pack("vi")
 
     def test_vi_examples_map_filler_removal(self):
-        """Example 'giá gội đầu thường nhé ạ' → 'giá gội đầu thường' must be present."""
+        """Domain-neutral filler-removal example must be present (M24: no salon literal).
+
+        The few-shot demonstrates stripping filler ('Anh ơi cho em hỏi … nhé ạ?')
+        down to a clean query. Pinned on the DOMAIN-NEUTRAL example 'giá gói cơ bản'
+        — not a tenant service name — so the platform stays industry-agnostic.
+        """
         prompt = self.vi_pack.prompt_rewriter
-        assert "giá gội đầu thường" in prompt, (
-            "VI prompt_rewriter should contain filler-removal example 'giá gội đầu thường'. "
-            f"Got: {prompt[:300]}"
+        assert "giá gói cơ bản" in prompt, (
+            "VI prompt_rewriter should contain a domain-neutral filler-removal example "
+            f"(e.g. 'giá gói cơ bản'). Got: {prompt[:300]}"
         )
 
     def test_vi_examples_map_superlative(self):

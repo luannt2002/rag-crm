@@ -193,7 +193,7 @@ def segment_vi_compounds(
 def remove_diacritics(text: str) -> str:
     """Remove Vietnamese diacritics for fuzzy matching.
 
-    'gội đầu' → 'goi dau', 'triệt lông' → 'triet long'
+    'tài liệu' → 'tai lieu', 'chính sách' → 'chinh sach'
 
     Used as an ADDITIONAL BM25 search variant alongside the original
     query to improve recall for diacritic-insensitive searches.
