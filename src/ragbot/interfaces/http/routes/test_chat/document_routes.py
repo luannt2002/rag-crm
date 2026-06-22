@@ -255,15 +255,14 @@ async def add_document(bot_id: str, channel_type: str, req: AddDocumentRequest, 
                     max_chars=_max_chars)
 
         # ─── Action 2: INSERT documents row + emit event 202 ngay ───
-        # User mandate 2026-05-12: doc phải LƯU NGAY sau fetch valid,
-        # KHÔNG được mất khi worker fail/restart. F5 list documents phải
-        # thấy doc với status="preparing".
+        # Doc phải LƯU NGAY sau fetch valid, KHÔNG mất khi worker fail/restart —
+        # F5 list documents phải thấy doc với status="preparing".
         #
-        # KHÔNG dùng IngestDocumentUseCase vì idempotency cache (job_id
-        # match URL + tenant) khiến retry KHÔNG INSERT row mới khi job cũ
-        # đã failed → doc bị mất visibility.
-        # Strategy: INSERT documents trực tiếp (state="DRAFT") + raw_content
-        # → worker fetch_content lại SKIP nếu raw_content đã có.
+        # KHÔNG dùng IngestDocumentUseCase vì idempotency cache (job_id match URL +
+        # tenant) khiến retry KHÔNG INSERT row mới khi job cũ đã failed → mất
+        # visibility. Strategy: INSERT documents trực tiếp (state="DRAFT").
+        # raw_content được lưu cho visibility/size, NHƯNG worker chỉ tái dùng nó cho
+        # nguồn local://; URL Google luôn được worker re-fetch + parse STRUCTURED.
         import uuid as _uuid  # noqa: PLC0415
         from ragbot.shared.types import TraceId  # noqa: PLC0415
 

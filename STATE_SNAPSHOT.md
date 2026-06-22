@@ -3,7 +3,32 @@
 > Always-updated current state. Git history was reset on 2026-06-14 (fresh start);
 > commit-SHA anchors no longer apply — this file is the source of truth.
 
-## Session 2026-06-22 — Multimodal track (Phase 0→A1) + multi-agent RAG scorecard + deep improvement analysis  ⟵ LATEST
+## Session 2026-06-22 (b) — B3 structure-binding ROOT FIX: mọi format → STRUCTURED MARKDOWN (input-flow unified)  ⟵ LATEST
+
+**[user: deep-debug "có data mà bot không trả lời" (spa "triệt lông") → audit toàn luồng → fix systemic B3 → "đưa mọi data về markdown có cấu trúc" → unify fetch-path]**
+
+### 🎯 Root cause (multi-agent audit, 0/5 luồng sạch): "trắng trơn" = parser LÀM PHẲNG cấu trúc
+- Sheet/CSV nhiều bảng con → `google_sheets_parser:88` lấy dòng-1 làm header CHUNG → row triệt-lông "Mép" dán nhãn bảng SAI ("chăm sóc da"), mất chữ "triệt lông" → query "triệt lông" ra 0 dù data CÓ (Mép=129k).
+- Lỗi B3 (section-title↔row binding) **systemic 4 tầng**: ① parser flat · ② chunking cắt heading khỏi bảng · ③ extraction không bind category · ④ dual-path (vector vs stats suy độc lập).
+
+### ✅ Fix — single canonical IR (AdapChunk L1 thành CONTRACT cho MỌI parser, không chỉ PDF)
+- **`tabular_markdown.py` MỚI**: state-machine domain-neutral rows→structured markdown (`## section` + `| table |`), multi-table + section-title aware. `_is_pure_money` phân biệt **GIÁ thuần vs TÊN chứa số** ("Gói 6 triệu"=tên≠giá, "date1"=label).
+- **Parser**: `google_sheets` + `excel_openpyxl` + **`docx`** (walk body in-order, table in-place) → đều emit **1 structured-markdown doc** (`format=markdown`) như kreuzberg. N file → 1 .md.
+- **Chunking** (`smart_chunk`): post-pass re-attach `## heading` vào chunk bị cắt rời (Anthropic Contextual Retrieval).
+- **Extraction** (`parse_table_chunks`): markdown-heading-aware → `## triệt lông` = entity_category authoritative; skip synonym-blob name (xe "question" 1102c) → dùng code/productname.
+- **Fetch-path unify**: `fetch_content` dùng `to_export_url` (1 nguồn, Doc→docx structured, bỏ hardcode txt-flat trùng); worker tái dùng raw_content CHỈ cho local:// — URL Google luôn re-fetch+parse structured.
+
+### 📊 Verify (rule #0, data thật 9 file/3 bot)
+- spa-2 end-to-end: Mép/Mặt/Nách `category='Dịch vụ triệt lông'` (was empty), 12 zone findable. **xe-3 (catalog tire): 0→172 priced** (684k...). spa 1/2/3/4 all priced. xe-1 (tồn kho, no price col)=correct, xe-2 (shipping manifest)=correct.
+- **Conversational eval baseline đo LIVE: 21/38=55.3%** (spa 36/xe 69/legal 64) — exposes real gaps factoid giấu. Runner: `scripts/run_conversational_eval.py`.
+- **6070 unit no-reg pass · ruff sạch** trên file mới.
+- KHÁC class (chưa fix): legal "cấp độ 4" = RETRIEVAL (BM25 AND + no substring-fallback), legacy pdf flat (chỉ fallback). Re-ingest live = ops, anh dặn để sau (wipe+re-upload).
+
+### Commits session (b): 23 commit — Phase0(M0-1/5/6/7+backfill) · NhómA(M16-25) · M3 reverse-trailing · Batch2(M31/M26/M5+M7) · **B3 root**(tabular_markdown+parsers+chunking+extraction+fetch-unify). Chưa push.
+
+---
+
+## Session 2026-06-22 — Multimodal track (Phase 0→A1) + multi-agent RAG scorecard + deep improvement analysis
 
 **[user: build multimodal (gap thật vs RAG-Anything) → "chỉ gpt-4.1-mini/nano" → "chưa cần ảnh, text first" → chấm điểm + multi-agent debug + so AdapChunk + "sao thua" + "làm sao cải thiện"]**
 
