@@ -34,12 +34,29 @@ _MAX_LABEL_CHARS = 40
 _BULLET_LEAD = ("-", "•", "*", "–", "—", "●", "·", "▪", "+", "✓", "→")
 
 
+# A cell that is PURELY a money value — digits + thousands separators + an optional
+# VN/EN currency unit, with NO descriptive words. This distinguishes a real PRICE
+# ("899000", "1.499.000", "6 triệu") from a package NAME that merely contains a
+# number ("Gói 6 triệu") or a column label with a trailing digit ("date1",
+# "date2"). The latter are LABELS/NAMES, not prices — they must NOT block header
+# detection or be treated as a value. Shape-only, domain-neutral.
+_PURE_MONEY_RE = re.compile(
+    r"^\s*\d[\d.,\s]*\s*(đ|vnd|k|tr|triệu|trieu|m|nghìn|nghin|ngàn|ngan)?\s*$",
+    re.IGNORECASE,
+)
+
+
 def _nonempty(cells: list[str]) -> list[str]:
     return [c.strip() for c in cells if c and c.strip()]
 
 
+def _is_pure_money(cell: str) -> bool:
+    c = cell.strip()
+    return bool(c) and _PURE_MONEY_RE.match(c) is not None and parse_money_vn(c) is not None
+
+
 def _has_money(cells: list[str]) -> bool:
-    return any(parse_money_vn(c) is not None for c in cells)
+    return any(_is_pure_money(c) for c in cells)
 
 
 def _is_label_like(cell: str) -> bool:
@@ -51,15 +68,21 @@ def _is_label_like(cell: str) -> bool:
     # A label is not a full sentence — reject if it ends a sentence or has many words.
     if c.endswith((".", "!", "?", "…", ":")):
         return False
+    if _is_pure_money(c):  # a price VALUE is not a column label
+        return False
     return len(c.split()) <= 6  # noqa: PLR2004 — header cells are short phrases
 
 
 def _looks_header(cells: list[str]) -> bool:
-    """A header row: ≥2 non-empty label-like cells and NO money value."""
+    """A header row: text column-labels, no PRICE value (a priced row is DATA)."""
     ne = _nonempty(cells)
-    if len(ne) < 2 or _has_money(cells):  # noqa: PLR2004
+    if len(ne) < 2:  # noqa: PLR2004
         return False
-    return sum(1 for c in ne if _is_label_like(c)) >= 2  # noqa: PLR2004
+    if any(_is_pure_money(c) for c in ne):
+        return False
+    # Most non-empty cells are short text labels (column names) — a "name | code |
+    # price" header still qualifies even when one label carries a number ("date1").
+    return sum(1 for c in ne if _is_label_like(c)) >= max(2, (len(ne) + 1) // 2)
 
 
 def _md_escape(cell: str) -> str:

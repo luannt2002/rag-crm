@@ -313,6 +313,13 @@ def _extract_entity_from_row(
             # Skip pure ordinal row numbers (1, 2, 3 … or 1. 2. etc.)
             if re.match(r"^\d{1,3}\.?$", stripped):
                 continue
+            # Skip an over-long first cell: a description / search-synonym blob
+            # (the xe warehouse "question" column is a 1000+ char notation list),
+            # NOT a catalog name. Keep it as an attribute (it stays searchable) and
+            # let the next field-like column (code / product name) be the name.
+            if len(stripped) > DEFAULT_STATS_ATTR_MAX_CHARS:
+                attributes[header[idx] if idx < len(header) else f"col_{idx}"] = stripped
+                continue
             name = stripped
         else:
             label = header[idx] if idx < len(header) else f"col_{idx}"
