@@ -140,11 +140,35 @@ def _verdict(cards: list[Card]) -> str:
     return "✅ HAPPY-CASE"
 
 
-def check_one(name: str, raw: str) -> str:
+def _rows_from_markdown(md: str) -> list[list[str]]:
+    """Recover row cells from already-structured markdown (DB raw_content) so the
+    sheet checks keep row counts/leads without re-running the CSV converter. Skips
+    section headings and the ``| --- |`` separator; the header row is kept (the CSV
+    path keeps it too)."""
+    out: list[list[str]] = []
+    for ln in md.splitlines():
+        s = ln.strip()
+        if not s.startswith("|"):
+            continue
+        if set(s) <= set("|-: "):
+            continue  # header separator row
+        out.append([c.strip() for c in s.strip("|").split("|")])
+    return out
+
+
+def check_one(name: str, raw: str, *, from_db: bool = False) -> str:
     is_doc = _is_doc(raw)
     if is_doc:
         verdict, cards = check_doc(raw)
         kind = "DOC"
+    elif from_db:
+        # DB raw_content is ALREADY the parser's structured-markdown — feed it
+        # straight to the extractor. Re-running the CSV converter would
+        # double-transform pipe-markdown into garbage (zero entities → a clean
+        # catalog mis-reported as NON-HAPPY).
+        rows = _rows_from_markdown(raw)
+        verdict, cards = check_sheet(rows, raw)
+        kind = "SHEET"
     else:
         rows = list(csv.reader(io.StringIO(raw)))
         md = rows_to_structured_markdown(rows)
@@ -185,6 +209,9 @@ def main() -> None:
         sys.exit(2)
 
     docs: list[tuple[str, str]]
+    # DB documents store the parser's structured-markdown in raw_content; file
+    # arguments are raw CSV. The checker must not re-convert already-markdown.
+    from_db = args[0] in ("--db", "--db-all")
     if args[0] == "--db-all":
         docs = _read_db(None)
     elif args[0] == "--db":
@@ -196,7 +223,7 @@ def main() -> None:
     print(f"HAPPY-CASE CHECK — {len(docs)} document(s)")
     tally: dict[str, int] = {}
     for nm, raw in docs:
-        v = check_one(nm, raw)
+        v = check_one(nm, raw, from_db=from_db)
         tally[v] = tally.get(v, 0) + 1
     print(f"\n{'█' * 90}\nSUMMARY: " + "   ".join(f"{k} ×{v}" for k, v in tally.items()))
 

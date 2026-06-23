@@ -73,3 +73,21 @@ def test_every_template_lints_as_happy_case() -> None:
     for tpl in ("catalog_single.csv", "catalog_multisection.csv", "document.md"):
         verdict = check_one(str(_TPL / tpl), (_TPL / tpl).read_text(encoding="utf-8"))
         assert "HAPPY-CASE" in verdict, f"{tpl} → {verdict}"
+
+
+def test_checker_db_mode_does_not_double_transform() -> None:
+    """#5 (audit 2026-06-23) — in --db mode the content is ALREADY the parser's
+    structured-markdown; check_one(from_db=True) must feed it straight to the
+    extractor. Re-running the CSV converter would double-transform pipe-markdown
+    into zero entities and report a clean catalog as a false NON-HAPPY."""
+    import sys
+
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
+    from check_happy_case import check_one  # type: ignore
+
+    md = rows_to_structured_markdown([
+        ["Tên", "Giá"],
+        ["Dịch vụ A", "500000"],
+        ["Dịch vụ B", "800000"],
+    ])
+    assert "HAPPY-CASE" in check_one("catalog-from-db", md, from_db=True)

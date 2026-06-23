@@ -499,46 +499,6 @@ def test_stats_index_list_all_fallback_when_keyword_misses() -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_summary_query_routes_to_doc_summary() -> None:
-    """A query containing 'tóm tắt' routes to doc_repo.fetch_summaries_by_bot
-    and returns synthetic chunks — no vector retrieve call."""
-    fake_docs = [
-        {"id": str(uuid4()), "document_name": "Doc A",
-         "summary_json": {"summary": "Tóm tắt nội dung Doc A"}},
-    ]
-    doc_repo = MagicMock()
-    doc_repo.fetch_summaries_by_bot = AsyncMock(return_value=fake_docs)
-
-    tracker = _RecordingStepTracker()
-    state = _base_state(tracker, intent="factoid")
-    state["query"] = "tóm tắt nội dung tài liệu"
-
-    compiled = _build_compiled(doc_repo=doc_repo)
-    result = _invoke_retrieve(compiled, state)
-
-    doc_repo.fetch_summaries_by_bot.assert_called_once()
-    assert result.get("retrieve_mode") == "doc_summary"
-    chunks = result.get("retrieved_chunks") or []
-    assert len(chunks) == 1
-    assert chunks[0]["content"] == "Tóm tắt nội dung Doc A"
-    assert chunks[0]["source"] == "doc_summary"
-
-
-def test_non_summary_query_does_not_call_fetch_summaries() -> None:
-    """A regular factoid query must not trigger doc-summary route."""
-    doc_repo = MagicMock()
-    doc_repo.fetch_summaries_by_bot = AsyncMock(return_value=[])
-
-    tracker = _RecordingStepTracker()
-    state = _base_state(tracker, intent="factoid")
-    state["query"] = "giá dịch vụ X là bao nhiêu"
-
-    compiled = _build_compiled(doc_repo=doc_repo)
-    _invoke_retrieve(compiled, state)
-
-    doc_repo.fetch_summaries_by_bot.assert_not_called()
-
-
 # ---------------------------------------------------------------------------
 # 9. comparison intent also routes to stats_index
 # ---------------------------------------------------------------------------

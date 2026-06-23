@@ -70,7 +70,6 @@ from ragbot.shared.chunking import (
 from ragbot.shared.embedding_cache import set_cached_embedding
 from ragbot.shared.errors import InvariantViolation
 from ragbot.shared.query_range_parser import (
-    matches_summary_pattern as _matches_summary_pattern,
     parse_code_query as _parse_code_query,
     parse_list_query as _parse_list_query,
     parse_price_of_entity_query as _parse_price_of_entity_query,
@@ -583,54 +582,6 @@ async def retrieve(
                             entity_count=len(_seq_payload.get("entities", [])),
                             intent=_intent,
                         )
-
-        # ── Doc-summary routing ───────────────────────────────────────
-        # When the query asks for a high-level overview/summary, fetch
-        # the document-level summary_json blobs and build synthetic
-        # chunks. These pass to generate as normal context so the LLM
-        # authors the answer — no app-inject.
-        if doc_repo is not None and hasattr(doc_repo, "fetch_summaries_by_bot"):
-            _raw_q_for_summary = state.get("query") or ""
-            if _matches_summary_pattern(_raw_q_for_summary):
-                try:
-                    _summaries = await doc_repo.fetch_summaries_by_bot(
-                        record_bot_id=state["record_bot_id"],
-                    )
-                    if _summaries:
-                        _synthetic: list[dict] = []
-                        for _s in _summaries:
-                            _blob = _s.get("summary_json") or {}
-                            _text = (
-                                _blob.get("summary")
-                                or _blob.get("overview")
-                                or _s.get("document_name", "")
-                            )
-                            if _text:
-                                _synthetic.append({
-                                    "content": str(_text),
-                                    "chunk_id": str(_s.get("id") or ""),
-                                    "document_name": _s.get("document_name", ""),
-                                    "score": 1.0,
-                                    "source": "doc_summary",
-                                })
-                        if _synthetic:
-                            step_ctx.set_metadata(
-                                source="doc_summary",
-                                doc_count=len(_summaries),
-                            )
-                            logger.info(
-                                "doc_summary_route",
-                                doc_count=len(_summaries),
-                                synthetic_chunks=len(_synthetic),
-                            )
-                            return {
-                                "retrieved_chunks": _synthetic,
-                                "retrieve_mode": "doc_summary",
-                            }
-                except (OSError, RuntimeError, ValueError, KeyError,
-                        AttributeError, TypeError):
-                    # Summary fetch failure degrades to vector retrieve.
-                    logger.warning("doc_summary_route_failed", exc_info=True)
 
         if vector_store is None:
             step_ctx.set_metadata(candidates=len(existing), top_k=_pcfg(state, "top_k", DEFAULT_TOP_K), source="pre_seeded")

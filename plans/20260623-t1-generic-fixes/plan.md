@@ -41,4 +41,8 @@
 
 ### Files: 4 src + 3 constants + 1 test mod + 1 test mới. Tests: +9 (RED→GREEN). New-flow + touched-module: 93 pass.
 
-### Remaining (defer, chờ user duyệt): #4 dead doc_summary route (implement vs delete + sửa false-green test), overflow-truncation:201, CSV 1-comma mis-tag, 2 checker bug, các test-gap (round-trip/boundary/empty/TSV), remaining magic trong scripts (check_happy_case, verify_answer_quality — QA harness, lower blast).
+### Phase 4 — Remaining HIGH (user A→B, 2026-06-23) ✅
+- **#4 dead doc_summary route** ✅ — XÓA route ([retrieve.py]) + import `_matches_summary_pattern` + 2 false-green test (fabricate method `fetch_summaries_by_bot` + shape `summary_json:{"summary"}` không tồn tại — aggregate_summary chỉ sinh stats `{entity_count,price_min/max,buckets,categories}`). Summary feature thật của bot = summary-doc ingest (retrieve thường), KHÔNG phụ thuộc route này. Root-cause: dead-since-build (method chưa bao giờ có trên repo). 13 retrieve test pass (xóa 2).
+- **#5 checker --db double-transform** ✅ — `check_one(from_db=)`: DB raw_content đã là structured-markdown → feed thẳng `parse_table_chunks`, KHÔNG re-convert; thêm `_rows_from_markdown` recover rows cho sheet-checks. main wire `from_db = args[0] in (--db,--db-all)`. TDD test (1). 18 test pass.
+
+### Still deferred (chưa làm): overflow-truncation tabular:201, CSV 1-comma mis-tag, checker doc-vs-sheet heading-count misroute (#flow MED), test-gap (round-trip/boundary/empty/TSV), magic trong verify_answer_quality (QA harness), query_graph dead import `_matches_summary_pattern`.
