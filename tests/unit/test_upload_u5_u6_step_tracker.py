@@ -85,6 +85,10 @@ class _FakeResult:
     def fetchall(self) -> list:
         return []
 
+    def scalar(self) -> None:
+        # documents upsert RETURNING id — None keeps the caller's generated id.
+        return None
+
 
 class _FakeAsyncSession:
     async def execute(self, *_a: Any, **_kw: Any) -> Any:

@@ -115,6 +115,74 @@ logger = structlog.get_logger(__name__)
 
 
 from ragbot.application.services.document_service.ingest_stages import _IngestCtx
+from ragbot.shared.document_stats import ParsedEntity, _normalise
+
+
+def _entity_richness(entity: ParsedEntity) -> tuple[int, int, int]:
+    """Richness rank of an entity, larger = richer (more information).
+
+    Used to pick which member of a duplicate group to KEEP. A duplicate group
+    shares the same ``(normalised name, price_primary)`` key, so the members
+    differ only in the OPTIONAL fields a group/summary chunk may have lost:
+    a secondary price, extra attribute columns, a forward-filled category.
+    Returns a sortable tuple — purely structural (None-checks + ``len``),
+    domain-neutral, no corpus literal.
+    """
+    return (
+        1 if entity.price_secondary is not None else 0,
+        len(entity.attributes) if entity.attributes else 0,
+        1 if entity.category else 0,
+    )
+
+
+def _dedup_stats_entities(
+    entities: list[ParsedEntity],
+) -> list[ParsedEntity]:
+    """Collapse the duplicate entity rows the dual-index chunker creates.
+
+    ``table_dual_index`` (and the header/footer synthetic chunks) emit each data
+    row BOTH as its own single-row chunk AND inside a multi-row group/summary
+    chunk, so ``parse_table_chunks`` extracts the same logical row several times
+    — bloating ``document_service_index`` (a single product seen 5-16×) and
+    over-counting every count/aggregate query. Collapse them here, BEFORE insert.
+
+    Two-stage, deterministic (input order preserved; no dict-order / RNG reliance):
+
+    1. **Exact-row collapse** — group by ``(normalised name, price_primary)`` so
+       two genuinely-distinct services that share a name but carry DIFFERENT
+       prices both survive (price is in the key); identical rows collapse to the
+       RICHEST member (``_entity_richness``) — a per-row chunk that kept a
+       secondary price / extra attributes beats the stripped group-chunk copy.
+    2. **Priced-beats-unpriced** — when the SAME name has at least one priced
+       survivor, drop its NULL-price survivor: a row whose price cell was empty
+       in a summary chunk is the same logical entity as the priced row, not a
+       second product. A name with ONLY null-price survivors keeps its single
+       row (a genuinely price-less catalog entry stays searchable).
+
+    Domain-neutral · zero-hardcode (no threshold) · pure function.
+    """
+    if not entities:
+        return entities
+
+    # Stage 1 — collapse exact (name, price_primary) duplicates, keep richest.
+    # ``best`` preserves FIRST-seen insertion order (Python dict) so the output
+    # order is a stable function of the input order, never dict hashing.
+    best: dict[tuple[str, int | None], ParsedEntity] = {}
+    for entity in entities:
+        key = (_normalise(entity.name), entity.price_primary)
+        incumbent = best.get(key)
+        if incumbent is None or _entity_richness(entity) > _entity_richness(incumbent):
+            best[key] = entity
+
+    # Stage 2 — for each name that has a priced survivor, drop its null-price dup.
+    names_with_price: set[str] = {
+        name for (name, price) in best if price is not None
+    }
+    return [
+        entity
+        for (name, price), entity in best.items()
+        if price is not None or name not in names_with_price
+    ]
 
 
 def _decide_ingest_state(
@@ -379,7 +447,20 @@ class _StageFinalizeMixin:
                     except (ValueError, TypeError, AttributeError):
                         pass
                 return _r
-            _stats_entities = parse_table_chunks([_raw_row(_r) for _r in rows])
+            _raw_entities = parse_table_chunks([_raw_row(_r) for _r in rows])
+            # Dual-index emits each row in BOTH its own chunk AND a group/summary
+            # chunk, so the same logical entity is extracted many times. Collapse
+            # the duplicates BEFORE insert so the index holds one row per real
+            # service/product (and count/aggregate queries stop over-counting).
+            _stats_entities = _dedup_stats_entities(_raw_entities)
+            if _raw_entities:
+                logger.info(
+                    "stats_index_dedup",
+                    record_document_id=str(doc_id),
+                    entities_raw=len(_raw_entities),
+                    entities_deduped=len(_stats_entities),
+                    collapsed=len(_raw_entities) - len(_stats_entities),
+                )
             if _stats_entities:
                 if is_reindex:
                     # Delete stale stats rows before inserting updated ones.

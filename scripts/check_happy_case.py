@@ -26,6 +26,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 # Import the INPUT-SCOPE vocabulary from the parser — the single source of truth.
 # The checker enforces EXACTLY what the parser parses (no spec/checker/code drift).
+from ragbot.shared.chunking import smart_chunk  # noqa: E402
+from ragbot.shared.constants import DEFAULT_TABLE_STRATEGY  # noqa: E402
 from ragbot.shared.document_stats import (  # noqa: E402
     _NAME_COL_TOKENS,
     _PRICE_COL_TOKENS,
@@ -33,6 +35,25 @@ from ragbot.shared.document_stats import (  # noqa: E402
     parse_table_chunks,
 )
 from ragbot.shared.tabular_markdown import rows_to_structured_markdown  # noqa: E402
+
+
+def _ingest_table_chunks(content: str) -> list[dict]:
+    """Reproduce the chunk content the INGEST pipeline persists + extracts from.
+
+    The stats extractor (``document_stats.parse_table_chunks``) does NOT run on the
+    structured-markdown; it runs on the row-as-chunk content the chunking stage emits
+    for the resolved table strategy (``table_csv`` raw-CSV ``<header>\\n<row>`` chunks,
+    ``table_dual_index`` group + row chunks). The checker must feed the SAME content so
+    its price/entity verdict matches what the live ingest indexed — not a markdown path
+    the ingest never takes (where ``_md_escape`` neutralises in-cell pipes that the
+    raw-CSV path must survive instead).
+
+    Mirrors the ingest chunking stage's auto-detect call
+    (``smart_chunk(content, table_strategy=DEFAULT_TABLE_STRATEGY)``) and adapts each
+    chunk to the ``{"content": ...}`` dict shape the ingest's ``_raw_row`` adapter hands
+    to ``parse_table_chunks``.
+    """
+    return [{"content": c} for c in smart_chunk(content, table_strategy=DEFAULT_TABLE_STRATEGY)]
 
 _HEADING_RE = re.compile(r"^#{1,6}\s+\S")
 _METADATA_LEAD_RE = re.compile(r"^\w+:\s")
@@ -68,11 +89,18 @@ def _is_doc(text: str) -> bool:
     return sum(1 for ln in lines if _HEADING_RE.match(ln)) >= 3  # noqa: PLR2004
 
 
-def check_sheet(rows: list[list[str]], md: str) -> tuple[str, list[Card]]:
+def check_sheet(
+    rows: list[list[str]], md: str, ingest_chunks: list[dict],
+) -> tuple[str, list[Card]]:
     cards: list[Card] = []
     data_rows = [r for r in rows if any(c.strip() for c in r)]
     n_rows = len(data_rows)
-    ents = parse_table_chunks([{"content": md}])
+    # Entity/price extraction runs on the SAME chunk content the ingest persists +
+    # extracts from (``ingest_chunks``), NOT on the structured-markdown — so the
+    # checker's verdict mirrors the live ingest instead of a path it never takes.
+    # Header-role cards below still read ``md`` (a reliable pipe-table view of the
+    # column labels; header detection is not where the path divergence bites).
+    ents = parse_table_chunks(ingest_chunks)
     n_ents = len(ents)
     priced = [e for e in ents if e.price_primary]
     cov = (len(priced) / n_ents) if n_ents else 0.0
@@ -162,17 +190,20 @@ def check_one(name: str, raw: str, *, from_db: bool = False) -> str:
         verdict, cards = check_doc(raw)
         kind = "DOC"
     elif from_db:
-        # DB raw_content is ALREADY the parser's structured-markdown — feed it
-        # straight to the extractor. Re-running the CSV converter would
-        # double-transform pipe-markdown into garbage (zero entities → a clean
-        # catalog mis-reported as NON-HAPPY).
+        # DB raw_content is the parser's structured output (already markdown) — use it
+        # as the header-role view. For entity/price extraction, re-chunk that same
+        # content through the ingest chunking path so the verdict tracks what the live
+        # ingest indexed (``smart_chunk`` auto-detects the strategy the same way).
         rows = _rows_from_markdown(raw)
-        verdict, cards = check_sheet(rows, raw)
+        verdict, cards = check_sheet(rows, raw, _ingest_table_chunks(raw))
         kind = "SHEET"
     else:
         rows = list(csv.reader(io.StringIO(raw)))
         md = rows_to_structured_markdown(rows)
-        verdict, cards = check_sheet(rows, md)
+        # Extraction runs on the raw-CSV chunks the ingest actually persists (resolved
+        # via the same chunking path) — NOT the markdown — closing the false-green where
+        # ``_md_escape`` hid an in-cell pipe that hijacks the raw-CSV column split.
+        verdict, cards = check_sheet(rows, md, _ingest_table_chunks(raw))
         kind = "SHEET"
     print(f"\n{'─' * 90}\n📄 {name}  [{kind}]  ({len(raw)} chars)   →   {verdict}\n{'─' * 90}")
     for c in cards:
