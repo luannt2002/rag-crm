@@ -6,7 +6,7 @@ These ports decouple "what model to use" from "how to call the LLM".
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Protocol, runtime_checkable
+from typing import Any, Protocol, runtime_checkable
 
 from ragbot.application.dto.ai_specs import (
     EmbeddingSpec,
@@ -81,6 +81,7 @@ class ChunkingStrategyResolverPort(Protocol):
         *,
         record_tenant_id: TenantId,
         document_profile: DocumentProfile,
+        blocks: list[Any] | None = None,
     ) -> ChunkingDecision: ...
 
 

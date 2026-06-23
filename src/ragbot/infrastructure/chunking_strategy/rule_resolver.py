@@ -53,6 +53,7 @@ class RuleChunkingStrategyResolver:
         *,
         record_tenant_id: TenantId,
         document_profile: DocumentProfile,
+        blocks: list | None = None,  # noqa: ARG002 — rule path scores on profile only
     ) -> ChunkingDecision:
         strategy, confidence = select_strategy(profile_to_dict(document_profile))
         return ChunkingDecision(

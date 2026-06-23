@@ -84,6 +84,46 @@ def _profile_block(dp: DocumentProfile) -> str:
     )
 
 
+def _block_list_summary(blocks: list | None, *, max_blocks: int = 60) -> str:
+    """Render the document's block list for the LLM (AdapChunk spec 4.1).
+
+    The LLM judges chunking by SHAPE, so it needs to SEE the structure, not just
+    the profile counts: heading text, a TEXT block's size + opening, a TABLE's
+    header + dimensions, a FORMULA's LaTeX, an IMAGE's description. Defensive
+    getattr/get so any Block-like shape (entity or dict) renders; truncated to
+    ``max_blocks`` so a huge doc never blows the selector's token budget.
+    """
+    if not blocks:
+        return ""
+    def _attr(b: object, name: str, default: object = "") -> object:
+        if isinstance(b, dict):
+            return b.get(name, default)
+        return getattr(b, name, default)
+    lines: list[str] = []
+    for b in blocks[:max_blocks]:
+        btype = str(_attr(b, "type", _attr(b, "block_type", "TEXT"))).upper()
+        content = str(_attr(b, "content", "") or "")
+        if btype == "HEADING":
+            lvl = _attr(b, "level", "")
+            lines.append(f"HEADING(H{lvl}): {content[:120].strip()}")
+        elif btype == "TABLE":
+            first = content.splitlines()[0] if content else ""
+            nrows = content.count("\n") + 1 if content else 0
+            lines.append(f"TABLE[{nrows} rows] header: {first[:120].strip()}")
+        elif btype == "FORMULA":
+            lines.append(f"FORMULA: {content[:120].strip()}")
+        elif btype == "IMAGE":
+            desc = _attr(b, "description", "") or _attr(b, "ocr_description", "") or content
+            lines.append(f"IMAGE: {str(desc)[:120].strip()}")
+        else:  # TEXT / CODE / other
+            wc = _attr(b, "word_count", len(content.split()))
+            opening = " ".join(content.split()[:18])
+            lines.append(f"TEXT[{wc}w]: {opening[:120].strip()}")
+    if len(blocks) > max_blocks:
+        lines.append(f"... (+{len(blocks) - max_blocks} more blocks)")
+    return "BLOCK LIST (in order):\n" + "\n".join(lines)
+
+
 def _extract_json(text: str) -> dict:
     """Pull the first balanced JSON object out of an LLM completion."""
     start = text.find("{")
@@ -131,12 +171,20 @@ class LLMChunkingStrategyResolver:
         *,
         record_tenant_id: TenantId,
         document_profile: DocumentProfile,
+        blocks: list | None = None,
     ) -> ChunkingDecision:
         try:
+            # AdapChunk spec 4.1: the selector sees BOTH the quantitative profile
+            # AND the full block list (shape detail) — profile alone hides whether
+            # headings are real sections or whether a "table" is a one-row caption.
+            _user = _profile_block(document_profile)
+            _bl = _block_list_summary(blocks)
+            if _bl:
+                _user = f"{_user}\n\n{_bl}"
             response = await self._llm.complete(
                 messages=[
                     LLMMessage(role="system", content=_SYSTEM_INSTRUCTION),
-                    LLMMessage(role="user", content=_profile_block(document_profile)),
+                    LLMMessage(role="user", content=_user),
                 ],
                 spec=self._spec,
                 record_tenant_id=record_tenant_id,
@@ -172,6 +220,7 @@ class LLMChunkingStrategyResolver:
                 record_bot_id,
                 record_tenant_id=record_tenant_id,
                 document_profile=document_profile,
+                blocks=blocks,
             )
 
         logger.info(
