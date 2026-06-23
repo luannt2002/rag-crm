@@ -90,6 +90,9 @@ DEFAULT_WHOLE_DOC_MAX_TOPIC_SIGNALS: Final[int] = 2
 # Min paragraph block size to count as a topical signal.
 DEFAULT_TOPIC_PARAGRAPH_MIN_CHARS: Final[int] = 200
 DEFAULT_TOPIC_NUMBERED_MARKER_RE: Final[str] = r"^\s*\d+[\.\)]\s+\S"
+# An ALL-CAPS line within this char window counts as a section heading (topic signal).
+DEFAULT_TOPIC_UPPER_SECTION_MIN_CHARS: Final[int] = 5
+DEFAULT_TOPIC_UPPER_SECTION_MAX_CHARS: Final[int] = 80
 DEFAULT_CONTENT_PREVIEW_CHARS: Final[int] = 2000
 DEFAULT_SOURCE_PREVIEW_CHARS: Final[int] = 200
 DEFAULT_LOG_PREVIEW_CHARS: Final[int] = 100

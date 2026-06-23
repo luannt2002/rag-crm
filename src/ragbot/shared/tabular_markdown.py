@@ -24,12 +24,13 @@ from __future__ import annotations
 
 import re
 
+from ragbot.shared.constants import DEFAULT_TABLE_LABEL_MAX_CHARS
 from ragbot.shared.number_format import parse_money_vn
 
 # A cell that is "label-like": short, not a long sentence. Tunable via length
 # only (shape, not vocabulary). Headers + section titles are short; prose notes
 # and description bullets are long or punctuated.
-_MAX_LABEL_CHARS = 40
+_MAX_LABEL_CHARS = DEFAULT_TABLE_LABEL_MAX_CHARS
 _BULLET_LEAD = ("-", "•", "*", "–", "—", "●", "·", "▪", "+", "✓", "→")  # noqa: RUF001 — real corpus bullet chars
 
 
@@ -190,8 +191,13 @@ def rows_to_structured_markdown(rows: list[list[str]]) -> str:  # noqa: PLR0915 
             open_header(["", *cells[1:]])
             continue
 
-        # HEADER — opens a new markdown table under the current section.
-        if _looks_header(cells) and not _has_money(cells):
+        # HEADER — opens a new markdown table under the current section. Only when
+        # NO table is currently open: once a table is open, a label-like all-text row
+        # is a DATA row, not a new header (a SEPARATOR or SECTION_TITLE — both above —
+        # already close the table at a real sub-table boundary). Without this guard an
+        # all-text table whose data cells are short labels ("Miền Bắc | Hoạt động") had
+        # every row re-promoted to its own one-row header, shredding row↔header binding.
+        if _looks_header(cells) and not _has_money(cells) and not table_open:
             close_table()
             open_header(cells)
             continue

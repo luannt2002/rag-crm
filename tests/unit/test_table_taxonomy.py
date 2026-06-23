@@ -131,3 +131,76 @@ def test_price_note_single_cell_not_a_section_title():
     """Guard — a one-cell price NOTE ('Giá 1 buổi: 1.600.000 đ') is not a heading."""
     md, _ = _extract([["Tên", "Giá"], ["Item A", "100000"], ["Giá 1 buổi: 1.600.000 đ"]])
     assert "## Giá 1 buổi" not in md
+
+
+def test_all_text_table_not_shredded_into_headers():
+    """#1 (audit 2026-06-23) — an ALL-TEXT table (no money column) must stay ONE
+    table: row 1 is the header, the rest are DATA rows. Before the fix each all-text
+    data row was re-promoted to its own one-row header (the HEADER branch ran before
+    the DATA branch with no 'table already open' guard), shredding row↔header binding
+    on every all-text XLSX/CSV/Sheets ingest."""
+    md = rows_to_structured_markdown([
+        ["Khu vực", "Trạng thái"],
+        ["Miền Bắc", "Hoạt động"],
+        ["Miền Nam", "Tạm dừng"],
+    ])
+    # exactly ONE header-separator line — not one per data row
+    assert sum(1 for ln in md.splitlines() if ln.strip().startswith("| ---")) == 1
+    # the data values survive as table rows, not promoted to header labels
+    assert "| Miền Bắc | Hoạt động |" in md
+    assert "| Miền Nam | Tạm dừng |" in md
+
+
+def test_all_text_table_with_textual_value_column_kept():
+    """#1 — a money-shaped table whose value cell is TEXTUAL ('Liên hệ') must not
+    re-open a header on the textual row; it stays a DATA row under the one header."""
+    md = rows_to_structured_markdown([
+        ["Dịch vụ", "Giá"],
+        ["Item A", "Liên hệ"],
+        ["Item B", "Miễn phí"],
+    ])
+    assert sum(1 for ln in md.splitlines() if ln.strip().startswith("| ---")) == 1
+    assert "| Item A | Liên hệ |" in md
+    assert "| Item B | Miễn phí |" in md
+
+
+def test_multiword_total_row_not_an_entity():
+    """#3 (audit 2026-06-23) — multi-word total labels ('Tổng tiền', 'Tạm tính',
+    'Tổng giá', 'Grand total') must be rejected as aggregate rows, never surfaced as
+    catalog entities (anti-HALLU conflate: a 'most expensive' query must not return the
+    grand total). The prior exact-match set only had 'tong'/'tong cong'."""
+    for total_label in ("Tổng tiền", "Tạm tính", "Tổng giá", "Grand total"):
+        _, ents = _extract([
+            ["Tên", "Giá"],
+            ["Item A", "100000"],
+            ["Item B", "200000"],
+            [total_label, "300000"],
+        ])
+        names = {e.name for e in ents}
+        assert total_label not in names, f"{total_label} leaked as a catalog entity"
+        assert _priced(ents) == {"Item A": 100000, "Item B": 200000}
+
+
+def test_total_lookalike_service_name_not_dropped():
+    """#3 guard — a real service whose name merely STARTS with a total word
+    ('Tổng hợp dịch vụ') must survive (exact-match rejection, NOT prefix-match —
+    else we'd drop valid Coverage)."""
+    _, ents = _extract([
+        ["Tên", "Giá"],
+        ["Tổng hợp dịch vụ chăm sóc", "500000"],
+        ["Item B", "200000"],
+    ])
+    assert "Tổng hợp dịch vụ chăm sóc" in {e.name for e in ents}
+
+
+def test_second_price_column_out_of_vocab_header_is_price_secondary():
+    """#7 (audit) — a 2nd price column with an OUT-OF-VOCAB header must land in the
+    NUMERIC price_secondary field, not a string attribute, so price-range / secondary
+    SQL queries see it. A pure-money cell is a price regardless of header vocabulary."""
+    _, ents = _extract([
+        ["Tên", "Giá", "Phụ thu cuối tuần"],
+        ["Item A", "100000", "150000"],
+    ])
+    a = next(e for e in ents if e.name == "Item A")
+    assert a.price_primary == 100000
+    assert a.price_secondary == 150000

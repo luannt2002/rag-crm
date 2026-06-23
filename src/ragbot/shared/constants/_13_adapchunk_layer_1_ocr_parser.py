@@ -25,6 +25,11 @@ CUSTOMER_CONTEXT_COLUMN_NAMES: Final[tuple[str, ...]] = (
     "Topic", "Context", "Section", "Mô tả", "Mo ta", "Description",
 )
 
+# Max chars for a tabular cell to read as a "label" (column header / section title)
+# rather than a prose NOTE — shape-only length gate for the L1 structured-markdown
+# converter. A section title may run up to 2× this (long heading lookahead).
+DEFAULT_TABLE_LABEL_MAX_CHARS: Final[int] = 40
+
 # --- Sysprompt validator (Stream G) -----------------------------------------
 # 10-item pre-deploy check thresholds + heuristic vocabularies. Single SSoT
 # so owner-facing tooling cannot drift from runtime constraints.

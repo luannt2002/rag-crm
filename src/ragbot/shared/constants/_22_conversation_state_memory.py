@@ -30,3 +30,16 @@ DEFAULT_MAX_ACTION_SLOTS: Final[int] = 5
 ACTION_STATE_ALLOWED_TOP_KEYS: Final[frozenset[str]] = frozenset(
     {"intent", "slots_filled", "service_locked"}
 )
+
+# Char window for a service-name token harvested from a CSV-shaped answer line
+# (drift candidate). Below the floor = an ordinal/code fragment; above the cap =
+# a prose blob, not a name. Shape-only, domain-neutral.
+DEFAULT_SERVICE_NAME_MIN_CHARS: Final[int] = 3
+DEFAULT_SERVICE_NAME_MAX_CHARS: Final[int] = 80
+
+# The "k" unit = one thousand. A bare number below it carrying a "k" suffix
+# ("199k") is thousands-shorthand → ×1000; at or above it the number is already
+# absolute so the suffix is ignored. Same value plays BOTH roles (threshold +
+# multiplier) because it is literally the kilo unit. Price floor/ceiling come from
+# the canonical DEFAULT_PRICE_MIN_VND / DEFAULT_PRICE_MAX_VND (no tenant-tuned window).
+DEFAULT_K_SUFFIX_MULTIPLIER: Final[int] = 1000

@@ -44,7 +44,12 @@ from ragbot.application.ports.guardrail_port import GuardrailHit
 from ragbot.shared.constants import (
     ACTION_STATE_ALLOWED_TOP_KEYS,
     DEFAULT_CONVERSATION_STATE_TTL_HOURS,
+    DEFAULT_K_SUFFIX_MULTIPLIER,
     DEFAULT_MAX_ACTION_SLOTS,
+    DEFAULT_PRICE_MAX_VND,
+    DEFAULT_PRICE_MIN_VND,
+    DEFAULT_SERVICE_NAME_MAX_CHARS,
+    DEFAULT_SERVICE_NAME_MIN_CHARS,
 )
 
 logger = structlog.get_logger(__name__)
@@ -258,7 +263,7 @@ class JsonbConversationState(ConversationStatePort):
             parts = [p.strip() for p in line.split(",")]
             if len(parts) >= 2 and parts[0].isdigit():
                 name = parts[1].strip().lower()
-                if 3 < len(name) < 80:
+                if DEFAULT_SERVICE_NAME_MIN_CHARS < len(name) < DEFAULT_SERVICE_NAME_MAX_CHARS:
                     tokens.add(name)
         return list(tokens)
 
@@ -275,15 +280,14 @@ class JsonbConversationState(ConversationStatePort):
                 n = int(digits)
             except ValueError:
                 continue
-            # Heuristic: prices in spa range 10K - 50M VND
-            # Handle "199K" → 199000 case
-            if 10 <= n < 1000:
-                # If "K" or "k" follows in original (within 3 chars), treat as thousand
-                end = m.end()
-                tail = (text or "")[end:end + 3].lower()
-                if "k" in tail:
-                    n *= 1000
-            if 10_000 <= n <= 50_000_000:
+            # "199k" shorthand: a bare sub-thousand number whose matched span carries
+            # a "k" suffix means thousands (×1000). Reads the suffix off the match
+            # itself (the regex already consumes an optional k), so it works for a
+            # standalone "199k" too.
+            if n < DEFAULT_K_SUFFIX_MULTIPLIER and "k" in m.group(0).lower():
+                n *= DEFAULT_K_SUFFIX_MULTIPLIER
+            # Canonical, domain-neutral price band — no tenant-tuned window.
+            if DEFAULT_PRICE_MIN_VND <= n <= DEFAULT_PRICE_MAX_VND:
                 out.add(n)
         return sorted(out)
 

@@ -154,10 +154,13 @@ _HEADER_EXACT_TOKENS: frozenset[str] = (
 )
 # Aggregate / structural-label words that are NEVER a catalog entity name — a
 # transposed / key-value / total row promotes one of these to a "name" ("Giá"=100k,
-# "Tổng cộng"=300k). Reject on EXACT normalised match so a real name carrying a
-# label word ("Giá vàng" → "gia vang" ≠ "gia") is NOT dropped. Domain-neutral.
+# "Tổng tiền"=300k). Reject on EXACT normalised match (NOT prefix) so a real name
+# carrying a label word ("Giá vàng" → "gia vang" ≠ "gia"; "Tổng hợp dịch vụ" →
+# "tong hop dich vu" ≠ "tong") is NOT dropped. Generic accounting terms (VN+EN),
+# domain-neutral — covers the common multi-word total labels, not just "tong cong".
 _AGGREGATE_TOKENS: frozenset[str] = frozenset({
-    "tong", "tong cong", "total", "subtotal", "cong", "thuoc tinh", "chi so",
+    "tong", "tong cong", "tong tien", "tong gia", "tam tinh",
+    "total", "grand total", "subtotal", "cong", "thuoc tinh", "chi so",
 })
 _REJECT_NAME_TOKENS: frozenset[str] = _HEADER_EXACT_TOKENS | _AGGREGATE_TOKENS
 
@@ -366,10 +369,17 @@ def _extract_entity_from_row(
         #     asserts it is a price, so the pure-money guard would only lose data.
         #   * UNKNOWN column (no header role) → require PURE money so a NAME that
         #     merely contains a money phrase ("Gói 6 triệu") is not read as a value.
-        if price_cols is not None:
-            money = parse_money_vn(col) if idx in price_cols else None
+        if price_cols is not None and idx in price_cols:
+            # KNOWN price column → parse even with extra words ("500k/buổi").
+            money = parse_money_vn(col)
+        elif _is_pure_money(col):
+            # UNKNOWN column but a PURE-money cell → still a price (a 2nd price column
+            # whose header is out-of-vocab would otherwise drop to a string attribute
+            # and never reach price_secondary). The pure-money gate keeps a NAME that
+            # merely contains a money phrase ("Gói 6 triệu") from being read as a value.
+            money = parse_money_vn(col)
         else:
-            money = parse_money_vn(col) if _is_pure_money(col) else None
+            money = None
         if money is not None:
             if price_primary is None:
                 price_primary = money

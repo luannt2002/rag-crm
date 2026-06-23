@@ -130,7 +130,7 @@ def _count_topic_signals(text: str) -> int:
 
     upper_section = sum(
         1 for ln in lines
-        if (s := ln.strip()) and s.isupper() and 5 < len(s) < 80
+        if (s := ln.strip()) and s.isupper() and DEFAULT_TOPIC_UPPER_SECTION_MIN_CHARS < len(s) < DEFAULT_TOPIC_UPPER_SECTION_MAX_CHARS
     )
     signals += upper_section
 
@@ -440,8 +440,8 @@ def select_strategy(
     # Ekimetrics 5-metric selector (LREC 2026, arXiv 2603.25333) — runs ONLY for
     # AMBIGUOUS PROSE docs, AFTER the structural certainties above (CSV → table,
     # legal/admin → HDT) so it can NEVER override a doc whose shape is already
-    # known (a naive placement before the fast-paths would break the spa CSV
-    # stats path + thong-tu HDT). For ambiguous prose it replaces the weighted
+    # known (a naive placement before the fast-paths would break a CSV's table/
+    # stats path + a legal/admin doc's HDT routing). For ambiguous prose it replaces the weighted
     # scorer with the paper's intrinsic-metric rules. Flag-gated
     # (``ekimetrics_5metric_selector_enabled``, default OFF); caller resolves the
     # flag + supplies raw ``text``.
