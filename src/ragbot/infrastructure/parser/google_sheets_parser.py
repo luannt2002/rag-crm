@@ -17,10 +17,15 @@ from __future__ import annotations
 
 import csv
 import io
+from typing import TYPE_CHECKING
 
 import structlog
 
+from ragbot.shared.structured_blocks import markdown_to_blocks
 from ragbot.shared.tabular_markdown import rows_to_structured_markdown
+
+if TYPE_CHECKING:
+    from ragbot.domain.entities.document import Block
 
 logger = structlog.get_logger(__name__)
 
@@ -56,13 +61,8 @@ class GoogleSheetsParser:
         ext = (file_ext or "").strip().lower()
         return mt == _SHEETS_MIME or mt == _CSV_MIME or ext == _CSV_EXT
 
-    async def parse(
-        self,
-        content: bytes,
-        *,
-        file_name: str,
-    ) -> list[dict]:
-        """Return ONE structured-markdown document (AdapChunk L1).
+    def _build_markdown(self, content: bytes) -> str:
+        """CSV-export bytes → ONE structured-markdown document (AdapChunk L1).
 
         A sheet routinely stacks MANY sub-tables, each with its own section title
         and local header. The old row-1-as-global-header flat output mislabelled
@@ -75,10 +75,17 @@ class GoogleSheetsParser:
         """
         text = _decode_csv(content)
         if not text.strip():
-            return []
-
+            return ""
         rows = list(csv.reader(io.StringIO(text)))
-        markdown = rows_to_structured_markdown(rows)
+        return rows_to_structured_markdown(rows)
+
+    async def parse(
+        self,
+        content: bytes,
+        *,
+        file_name: str,
+    ) -> list[dict]:
+        markdown = self._build_markdown(content)
         if not markdown.strip():
             return []
 
@@ -104,6 +111,12 @@ class GoogleSheetsParser:
                 },
             }
         ]
+
+    async def parse_blocks(
+        self, content: bytes, *, file_name: str,  # noqa: ARG002 — Port parity
+    ) -> list[Block]:
+        """Emit a typed ``Block`` stream from the structured markdown."""
+        return markdown_to_blocks(self._build_markdown(content))
 
 
 __all__ = ["GoogleSheetsParser"]

@@ -36,11 +36,13 @@ from ragbot.shared.chunking import (
     promote_vn_hierarchical_headings,
     select_strategy,
     smart_chunk,
+    smart_chunk_atomic,
 )
 from ragbot.shared.constants import (
     DEFAULT_TABLE_STRATEGY,
     DEFAULT_ADAPCHUNK_BLOCK_PIPELINE_ENABLED,
     DEFAULT_ADAPCHUNK_LAYER3_DOC_PROFILE_ENABLED,
+    DEFAULT_ATOMIC_BLOCK_CHUNKING_ENABLED,
     DEFAULT_CHILD_CHUNK_OVERLAP,
     DEFAULT_CHILD_CHUNK_SIZE,
     DEFAULT_CHUNK_MAX_SIZE,
@@ -452,28 +454,18 @@ class _StageChunkMixin:
                 chunk_size = self._settings.rag.default_chunk_size
                 chunk_overlap = self._settings.rag.default_chunk_overlap
 
-            # ─── AdapChunk reorg 2026-05-14 Wave B2 — Block pipeline gate ───
-            # Goal: route ingestion through the Block-aware pipeline
-            # (Layer 2 → 3 → 4 → 5 → 6) so atomic-block invariants
-            # (FORMULA / IMAGE / CODE / TABLE) survive end-to-end instead of
-            # being flattened into prose and re-segmented by the text-only
-            # ``smart_chunk`` path.
+            # ─── AdapChunk Block-pipeline gate ───
+            # Route ingestion through the Block-aware pipeline (Layer 2 → 3 →
+            # 4 → 5 → 6) so atomic-block invariants (FORMULA / IMAGE / CODE /
+            # TABLE) survive end-to-end instead of being flattened into prose
+            # and re-segmented by the text-only ``smart_chunk`` path.
             #
-            # Dependencies (must merge before flipping the flag default ON):
-            #   * Wave B1 (atomic-chunking signature) — adds Block-aware
-            #     ``smart_chunk`` overloads. Until merged we still call the
-            #     existing text-API; ``smart_chunk`` already runs internal
-            #     atomic protection via ``_smart_chunk_with_atomic_protect``
-            #     when ``formula_image_atomic_protect_enabled`` is ON, so
-            #     no regression while we wait.
-            #   * Wave D1 (Layer-3 refinement) — adds
-            #     ``analyze_document_blocks`` returning the 10-feature
-            #     ``DocumentProfile`` entity. Until merged we ``getattr``
-            #     onto the legacy ``analyze_document(content)`` dict so the
-            #     selector keeps its existing contract.
-            #
-            # Honors Phần 6.9 gap #1 (atomic-block propagation) and gap #2
-            # (Layer-2 context buffer wiring) from the AdapChunk reorg plan.
+            # When the upstream parser surfaces a typed Block list,
+            # ``analyze_document_blocks`` computes the block-aware profile;
+            # otherwise the path degrades to the text-flatten
+            # ``analyze_document(content)`` dict so the selector keeps its
+            # existing contract. Atomic protection in ``smart_chunk`` is
+            # additionally gated by ``formula_image_atomic_protect_enabled``.
             # Default OFF — flipping requires both upstream waves to land.
             block_pipeline_enabled = (
                 await self._cfg.get_bool(
@@ -498,11 +490,11 @@ class _StageChunkMixin:
             )
 
             if block_pipeline_enabled:
-                # ── NEW AdapChunk-compliant Block pipeline ──
+                # ── AdapChunk-compliant Block pipeline ──
                 # Layer 2: attach 1-2 sentence context buffer to atomic
                 # blocks. When the upstream parser surfaces a ``blocks``
-                # list (Wave B1+), we feed it directly; the flag-gated
-                # implementation no-ops on empty input today.
+                # list, we feed it directly; the flag-gated implementation
+                # no-ops on empty input.
                 from ragbot.shared.chunking import apply_cross_check
                 from ragbot.shared.context_buffer import attach_context_buffer
 
@@ -564,12 +556,11 @@ class _StageChunkMixin:
                         confidence=_chunking_confidence,
                     )
             else:
-                # ── DEPRECATED 2026-05-14 AdapChunk-reorg Wave B2 ──
-                # Legacy text-flatten path. Kept verbatim as the
-                # default branch while ``adapchunk_block_pipeline_enabled``
-                # is OFF so operators can roll back instantly by flipping
-                # the flag. DO NOT delete — Block pipeline is opt-in
-                # until Wave B1 / D1 ship and have soaked in load tests.
+                # ── Text-flatten path (block pipeline OFF) ──
+                # Kept as the default branch while
+                # ``adapchunk_block_pipeline_enabled`` is OFF so operators
+                # can roll back instantly by flipping the flag. The block
+                # pipeline is opt-in until it has soaked in load tests.
                 #
                 # Promote VN admin/legal hierarchy ("Chương/Mục/Điều")
                 # into markdown headings so HDT detector can score this
@@ -666,18 +657,18 @@ class _StageChunkMixin:
                     reason="flag_off",
                 )
 
-            # G2 fix (Stream A Phase 2): when the upstream parser already emitted
+            # Row-preserve: when the upstream parser already emitted
             # row-shaped chunks (Excel, Google Sheets CSV via the registry),
             # bypass smart_chunk re-chunking — re-chunking would flatten the
-            # rows into prose and lose 1-row-per-chunk semantics, which is the
-            # root cause of the V13 over-refuse cluster on factoid queries.
+            # rows into prose and lose 1-row-per-chunk semantics, the root
+            # cause of an over-refuse cluster on factoid queries.
             #
-            # Scope gate (2026-05-26): the preserve path is ONLY safe when
-            # the parser intent is row-per-chunk (excel, google_sheets). For
-            # markdown / plain-text parsers, "1 chunk = whole document"
-            # bypassed smart_chunk and produced a single 74KB chunk for a
-            # 98KB legal corpus, which broke retrieval recall. Detect the
-            # parser via metadata stamp and re-route to smart_chunk when
+            # Scope gate: the preserve path is ONLY safe when the parser
+            # intent is row-per-chunk — i.e. the excel + google-sheets
+            # providers. For markdown / plain-text parsers, one whole-doc
+            # chunk bypassed smart_chunk and produced a single oversized
+            # chunk for a legal corpus, which broke retrieval recall. Detect
+            # the parser via metadata stamp and re-route to smart_chunk when
             # the chunk is markdown/text.
             _row_preserve_providers = {"excel_openpyxl", "google_sheets"}
             _parser_is_row_shaped = False
@@ -685,18 +676,58 @@ class _StageChunkMixin:
                 _first_meta = parser_row_chunks[0].get("metadata") or {}
                 _parser_tag = str(_first_meta.get("parser") or "").strip()
                 _parser_is_row_shaped = _parser_tag in _row_preserve_providers
+
+            # AdapChunk Layer 6 — block-native executor. Per-bot opt-in via
+            # ``atomic_block_chunking_enabled`` (default OFF). When ON AND the
+            # parser surfaced a typed Block stream, route through
+            # ``smart_chunk_atomic(blocks)`` so atomicity comes from the
+            # parser's ``is_atomic`` flag instead of being re-detected from
+            # flattened markdown. OFF (or no blocks / row-shaped) keeps the
+            # byte-identical ``smart_chunk`` text path.
+            atomic_block_chunking_enabled = (
+                await self._cfg.get_bool(
+                    "atomic_block_chunking_enabled",
+                    DEFAULT_ATOMIC_BLOCK_CHUNKING_ENABLED,
+                )
+                if self._cfg is not None
+                else DEFAULT_ATOMIC_BLOCK_CHUNKING_ENABLED
+            )
+            _blocks_for_executor = list(ctx.blocks or [])
             if parser_row_chunks and _parser_is_row_shaped:
                 raw_chunks = [
                     c["content"] for c in parser_row_chunks if c.get("content")
                 ]
                 _chunking_strategy = "parser_preserve"
                 _chunking_confidence = 1.0
+            elif atomic_block_chunking_enabled and _blocks_for_executor:
+                _atomic_chunks = smart_chunk_atomic(
+                    _blocks_for_executor,
+                    chunk_size=chunk_size,
+                    chunk_overlap=chunk_overlap,
+                    strategy=_chunking_strategy,
+                )
+                # Layer-6 emits Chunk entities; downstream U4 consumes raw
+                # strings (enrichment / embedding rebuild the entities later).
+                raw_chunks = [
+                    c.original_content or c.narrated_text
+                    for c in _atomic_chunks
+                    if (c.original_content or c.narrated_text)
+                ]
+                if not raw_chunks:
+                    # Defensive: a degenerate block stream must never zero the
+                    # corpus — fall back to the text splitter.
+                    raw_chunks = smart_chunk(
+                        content,
+                        chunk_size=chunk_size,
+                        chunk_overlap=chunk_overlap,
+                        strategy=_chunking_strategy,
+                    )
             else:
                 raw_chunks = smart_chunk(
                     content,
                     chunk_size=chunk_size,
                     chunk_overlap=chunk_overlap,
-                    strategy=_chunking_strategy,  # U3-1: pass explicit to avoid re-analysis
+                    strategy=_chunking_strategy,  # pass explicit to avoid re-analysis
                 )
             if not raw_chunks:
                 chunks = [content]

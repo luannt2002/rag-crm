@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import structlog
 
+from ragbot.shared.constants import DEFAULT_LANGUAGE
 from ragbot.shared.types import BlockType
 
 logger = structlog.get_logger(__name__)
@@ -23,7 +24,13 @@ class NullNarrateGenerator:
     def get_provider_name() -> str:
         return "null"
 
-    async def narrate(self, content: str, block_type: BlockType) -> str:
+    async def narrate(
+        self,
+        content: str,
+        block_type: BlockType,
+        *,
+        language: str = DEFAULT_LANGUAGE,  # noqa: ARG002 — Port parity; Null ignores language
+    ) -> str:
         """Return ``content`` verbatim.
 
         The ingest pipeline then embeds the raw block content — i.e.

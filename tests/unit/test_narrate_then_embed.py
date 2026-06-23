@@ -178,7 +178,7 @@ async def test_llm_narrate_table_uses_table_prompt_and_returns_stripped_reply() 
         trace_id=trace,
     )
 
-    result = await strategy.narrate(_TABLE_MARKDOWN, "TABLE")
+    result = await strategy.narrate(_TABLE_MARKDOWN, "TABLE", language="vi")
 
     assert len(llm.calls) == 1
     call = llm.calls[0]
@@ -198,12 +198,14 @@ async def test_llm_narrate_table_uses_table_prompt_and_returns_stripped_reply() 
     for forbidden in ("legal", "medical", "ecom", "ecommerce", "law", "doctor", "fintech"):
         assert forbidden not in sys_lower
 
-    # User prompt is the TABLE-specific template + verbatim source.
+    # User prompt is the TABLE-specific template (language-neutral) + verbatim
+    # source. The instruction names the doc language instead of hardcoding one.
     user = messages[1].content
-    assert "Diễn giải bảng" in user  # template localised VI (llm_narrate.py TABLE scaffold)
+    assert "Linearize the table" in user
+    assert "vi language" in user
     assert _TABLE_MARKDOWN in user
 
-    # Reply stripped of surrounding whitespace.
+    # Reply stripped of surrounding whitespace — source language preserved.
     assert result == "Bảng liệt kê đơn giá ba gói dịch vụ."
 
 
@@ -218,10 +220,11 @@ async def test_llm_narrate_formula_uses_formula_prompt() -> None:
         trace_id=TraceId("trace-narrate-formula"),
     )
 
-    result = await strategy.narrate(_FORMULA_LATEX, "FORMULA")
+    result = await strategy.narrate(_FORMULA_LATEX, "FORMULA", language="vi")
 
     user = llm.calls[0]["messages"][1].content
-    assert "Diễn giải công thức" in user  # template localised VI (llm_narrate.py FORMULA scaffold)
+    assert "Describe the LaTeX formula" in user  # language-neutral scaffold
+    assert "vi language" in user
     assert _FORMULA_LATEX in user
     assert result == "Công thức tính trung bình cộng của n giá trị."
 

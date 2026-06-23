@@ -251,6 +251,7 @@ class _StageStoreMixin:
                             await _narrate_chunks_for_embed(
                                 texts_to_embed,
                                 narrate_service=self._narrate_service,
+                                language=ctx.language,
                             )
                         )
                     # Map back to absolute chunk index for the persist loops.

@@ -403,8 +403,21 @@ PACKS: dict[str, LanguagePack] = {"vi": _VI_PACK, "en": _EN_PACK}
 
 
 def get_pack(language: str = DEFAULT_LANGUAGE) -> LanguagePack:
-    """Get language pack. Falls back to Vietnamese if not found."""
-    return PACKS.get(language, PACKS[DEFAULT_LANGUAGE])
+    """Get the in-memory language pack for ``language``.
+
+    For an UNSEEDED locale (any code not in ``PACKS`` and not the requested
+    default) the last-resort fallback is the ENGLISH pack, not Vietnamese:
+    English is the neutral lingua franca for the internal LLM prompts
+    (grader / condense / understand / rewriter) on a multi-tenant platform,
+    so a Khmer / French / Chinese bot without seeded ``language_packs`` DB
+    rows is not driven by Vietnamese prompts. A locale CAN still be fully
+    supported by seeding its DB rows (the DB path wins upstream in
+    ``_lang``). ``DEFAULT_LANGUAGE`` remains the new-bot default elsewhere.
+    """
+    pack = PACKS.get(language)
+    if pack is not None:
+        return pack
+    return PACKS.get("en", PACKS[DEFAULT_LANGUAGE])
 
 
 def language_pack_from_dict(

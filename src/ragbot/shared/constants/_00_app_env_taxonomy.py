@@ -93,6 +93,14 @@ DEBUG_VIEW_FORMATS_ALLOWED: Final[frozenset[str]] = frozenset({"md"})
 # never cuts across the boundary. Inspired by RAG-Anything HKUDS 06/2025
 # "tables as atomic semantic units" and AdapChunk Layer 2 "vùng cấm cắt".
 DEFAULT_FORMULA_IMAGE_ATOMIC_PROTECT_ENABLED: Final[bool] = False
+# Block-native executor (AdapChunk Layer 6). Default OFF — per-bot opt-in
+# via ``plan_limits.atomic_block_chunking_enabled``. When ON AND the parser
+# surfaced a typed Block stream, U4 routes chunking through
+# ``smart_chunk_atomic(blocks)`` so atomicity comes from the parser's
+# ``is_atomic`` flag instead of being re-detected from flattened markdown.
+# OFF keeps the byte-identical text-flatten ``smart_chunk`` path. Flipping
+# the default requires a load-test soak (chunk-shape change on the hot path).
+DEFAULT_ATOMIC_BLOCK_CHUNKING_ENABLED: Final[bool] = False
 # Oversize threshold multiplier: atomic block larger than this ×
 # ``chunk_size`` triggers a structured warning (FORMULA / IMAGE are
 # still kept whole — splitting would destroy semantic atomicity).

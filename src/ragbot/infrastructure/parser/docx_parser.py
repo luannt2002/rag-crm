@@ -9,11 +9,16 @@ are rendered as pipe-separated markdown rows so the downstream
 from __future__ import annotations
 
 from io import BytesIO
+from typing import TYPE_CHECKING
 from zipfile import BadZipFile
 
 import structlog
 
 from ragbot.shared.constants import DEFAULT_DOCX_MAX_BYTES
+from ragbot.shared.structured_blocks import markdown_to_blocks
+
+if TYPE_CHECKING:
+    from ragbot.domain.entities.document import Block
 
 logger = structlog.get_logger(__name__)
 
@@ -66,12 +71,14 @@ class DocxParser:
             or (file_ext or "").strip().lower() == _DOCX_EXT
         )
 
-    async def parse(
-        self,
-        content: bytes,
-        *,
-        file_name: str,
-    ) -> list[dict]:
+    def _build_markdown(self, content: bytes) -> str:
+        """Walk the DOCX body in document order → ONE structured-markdown doc.
+
+        Paragraphs AND tables are interleaved in body order so each table stays
+        UNDER its preceding heading instead of being appended at the end bound to
+        the wrong section. Same canonical markdown form as the Kreuzberg /
+        tabular parsers.
+        """
         if len(content) > DEFAULT_DOCX_MAX_BYTES:
             raise ValueError(
                 f"DOCX too large: {len(content)} bytes (max {DEFAULT_DOCX_MAX_BYTES})",
@@ -87,11 +94,6 @@ class DocxParser:
                 f"Invalid or corrupt DOCX: {type(exc).__name__}: {str(exc)[:120]}",
             ) from exc
 
-        # Walk the document body in DOCUMENT ORDER (paragraphs AND tables
-        # interleaved) and emit ONE structured-markdown document — so each table
-        # stays UNDER its preceding heading instead of being appended at the end
-        # bound to the wrong section (AdapChunk L1 + B3). Same canonical markdown
-        # form as the Kreuzberg / tabular parsers.
         from docx.oxml.ns import qn
         from docx.table import Table
         from docx.text.paragraph import Paragraph
@@ -118,7 +120,15 @@ class DocxParser:
                 tail = ("\n" + "\n".join(rows[1:])) if len(rows) > 1 else ""
                 parts.append(rows[0] + "\n" + sep + tail)
 
-        markdown = "\n\n".join(parts).strip()
+        return "\n\n".join(parts).strip()
+
+    async def parse(
+        self,
+        content: bytes,
+        *,
+        file_name: str,
+    ) -> list[dict]:
+        markdown = self._build_markdown(content)
         if not markdown:
             return []
         heading_lines = sum(
@@ -142,6 +152,12 @@ class DocxParser:
                 },
             }
         ]
+
+    async def parse_blocks(
+        self, content: bytes, *, file_name: str,  # noqa: ARG002 — Port parity
+    ) -> list[Block]:
+        """Emit a typed ``Block`` stream from the structured markdown."""
+        return markdown_to_blocks(self._build_markdown(content))
 
 
 __all__ = ["DocxParser"]

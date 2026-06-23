@@ -41,6 +41,8 @@ import structlog
 
 from ragbot.shared.constants import (
     DEFAULT_CHUNK_FINGERPRINT_CHARS,
+    DEFAULT_EMBED_DOC_BATCH_SIZE,
+    DEFAULT_LATE_CHUNKING_MAX_CHUNKS,
     DEFAULT_LATE_CHUNKING_OVERLAP_CHARS,
     DEFAULT_LATE_CHUNKING_WINDOW_CHARS,
 )
@@ -58,17 +60,27 @@ async def late_chunk_embed(
     *,
     context_prefix_chars: int = 200,
     embed_kwargs: dict[str, Any] | None = None,
+    max_chunks_single_await: int = DEFAULT_LATE_CHUNKING_MAX_CHUNKS,
+    doc_batch_size: int = DEFAULT_EMBED_DOC_BATCH_SIZE,
 ) -> list[list[float]]:
     """Embed chunks with document context prefix (practical late chunking).
 
     Prepends document summary to each chunk before embedding,
     so the embedding captures cross-chunk document context.
 
+    When the chunk list exceeds ``max_chunks_single_await`` the contextualized
+    list is embedded in ``doc_batch_size`` slices instead of one whole-doc
+    ``embed_batch`` call, bounding the orchestrator-side memory peak for very
+    large documents (e.g. a multi-table sheet → thousands of chunks). Order is
+    preserved. ``max_chunks_single_await <= 0`` disables slicing.
+
     @param chunks: list of chunk texts to embed
     @param document_summary: full document text (first N chars used as prefix)
     @param embedder: EmbeddingPort-compatible embedder with embed_batch()
     @param context_prefix_chars: how many chars of document_summary to prepend
     @param embed_kwargs: additional kwargs passed to embedder.embed_batch()
+    @param max_chunks_single_await: ceiling above which the batched path runs
+    @param doc_batch_size: chunks per orchestrator-side ``embed_batch`` slice
     @return: list of embedding vectors, one per chunk
     """
     if not chunks:
@@ -88,6 +100,27 @@ async def late_chunk_embed(
         for chunk in chunks
     ]
 
+    kwargs = embed_kwargs or {}
+
+    # Oversize doc → embed in doc_batch_size slices so the orchestrator never
+    # holds the full contextualized list + all vectors in one await.
+    if (
+        max_chunks_single_await > 0
+        and doc_batch_size > 0
+        and len(contextualized_chunks) > max_chunks_single_await
+    ):
+        logger.info(
+            "late_chunk_embed_batched",
+            num_chunks=len(chunks),
+            prefix_len=len(prefix),
+            doc_batch_size=doc_batch_size,
+        )
+        vectors: list[list[float]] = []
+        for start in range(0, len(contextualized_chunks), doc_batch_size):
+            slice_ = contextualized_chunks[start:start + doc_batch_size]
+            vectors.extend(await embedder.embed_batch(slice_, **kwargs))
+        return vectors
+
     logger.debug(
         "late_chunk_embed",
         num_chunks=len(chunks),
@@ -95,7 +128,6 @@ async def late_chunk_embed(
         context_prefix_chars=context_prefix_chars,
     )
 
-    kwargs = embed_kwargs or {}
     return await embedder.embed_batch(contextualized_chunks, **kwargs)
 
 

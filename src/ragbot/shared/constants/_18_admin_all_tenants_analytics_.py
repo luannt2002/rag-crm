@@ -166,6 +166,14 @@ DEFAULT_LATE_CHUNKING_OVERLAP_CHARS: Final[int] = 2048
 # strictly safer for long docs and a no-op for short ones. Config via system_config.
 DEFAULT_LATE_CHUNKING_SLIDING_ENABLED: Final[bool] = True
 DEFAULT_LATE_CHUNKING_WINDOW_CHARS: Final[int] = 16000
+# Chunk-count ceiling for the single-await ``late_chunk_embed`` path. A doc
+# whose chunk list exceeds this is embedded in ``DEFAULT_EMBED_DOC_BATCH_SIZE``
+# slices instead of one whole-doc ``embed_batch`` call, so the orchestrator-side
+# memory peak is bounded (a 224KB multi-table sheet → thousands of chunks would
+# otherwise hold the full contextualized list + all vectors in one await). The
+# embedder still slices to ``DEFAULT_EMBEDDING_MAX_BATCH`` per HTTP request; this
+# governs the orchestrator-side await granularity. ``0`` disables slicing.
+DEFAULT_LATE_CHUNKING_MAX_CHUNKS: Final[int] = 500
 
 # Embedders reject empty / whitespace-only inputs (Jina v3 → HTTP 422
 # "could not be tokenized"). Some chunking strategies (e.g. table_dual_index

@@ -101,7 +101,9 @@ class _FakeNarrateStrategy:
     can assert (a) narration ran, (b) block_type routed correctly.
     """
 
-    async def narrate(self, content: str, block_type: str) -> str:
+    async def narrate(
+        self, content: str, block_type: str, *, language: str = "vi",
+    ) -> str:
         return f"NARRATED({block_type}): {content[:20]}..."
 
 
@@ -228,7 +230,9 @@ async def test_dispatch_graceful_on_strategy_failure() -> None:
     """Strategy raise → caller sees raw text (HALLU=0, no fabrication)."""
 
     class _RaisingStrategy:
-        async def narrate(self, content: str, block_type: str) -> str:
+        async def narrate(
+            self, content: str, block_type: str, *, language: str = "vi",
+        ) -> str:
             raise RuntimeError("simulated LLM provider blip")
 
     service: NarrateService = NarrateService(

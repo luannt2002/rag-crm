@@ -1,4 +1,4 @@
-"""Narrate-then-Embed dispatch helpers (AdapChunk Layer 7, Wave E3).
+"""Narrate-then-Embed dispatch helpers (AdapChunk Layer 7).
 
 Goal:
     Between chunking and embedding, route each chunk to the
@@ -46,6 +46,7 @@ from typing import Any, Final
 from ragbot.application.services.narrate_service import NarrateService
 from ragbot.shared.chunking import _split_into_blocks_with_atomic
 from ragbot.shared.constants import (
+    DEFAULT_LANGUAGE,
     DEFAULT_NARRATE_MAX_CONCURRENCY,
     NARRATE_METADATA_KEY_BLOCK_TYPE,
     NARRATE_METADATA_KEY_NARRATED_TEXT,
@@ -108,6 +109,7 @@ async def narrate_chunks_for_embed(
     texts: list[str],
     *,
     narrate_service: NarrateService | None,
+    language: str = DEFAULT_LANGUAGE,
 ) -> tuple[list[str], list[dict[str, Any] | None]]:
     """Pre-embed dispatch — route each chunk through ``NarrateService``.
 
@@ -154,7 +156,9 @@ async def narrate_chunks_for_embed(
     async def _one(chunk_text: str) -> tuple[str, dict[str, Any] | None]:
         block_type = classify_chunk_block_type(chunk_text)
         async with _sem:
-            result = await narrate_service.narrate_chunk(chunk_text, block_type)
+            result = await narrate_service.narrate_chunk(
+                chunk_text, block_type, language=language,
+            )
         return result.text_for_embedding, {
             NARRATE_METADATA_KEY_RAW_CHUNK: result.raw_chunk,
             NARRATE_METADATA_KEY_NARRATED_TEXT: result.narrated_text,
