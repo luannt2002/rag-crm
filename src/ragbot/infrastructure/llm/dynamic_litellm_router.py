@@ -41,6 +41,7 @@ from ragbot.config.logging import (
     channel_type_ctx,
     mode_ctx,
     record_bot_id_ctx,
+    request_id_ctx,
     tenant_id_ctx,
     trace_id_ctx,
     workspace_id_ctx,
@@ -332,9 +333,9 @@ class DynamicLiteLLMRouter(LLMPort):
         self._last_refresh: float = 0.0
         self._lock = asyncio.Lock()
         self._model_list: list[dict[str, Any]] = []
-        # P33 / C.5 — per-tenant token meter for cap enforcement +
-        # post-call accounting. ``None`` is tolerated so existing tests +
-        # legacy code paths that build the router directly keep working.
+        # Per-tenant token meter for cap enforcement + post-call accounting.
+        # ``None`` is tolerated so code paths that build the router directly
+        # (e.g. unit tests) keep working.
         self._token_meter = token_meter
         self._enforce_preflight_cap = bool(enforce_preflight_cap)
         # P25-L4: one Semaphore per provider code, lazily created on first
@@ -620,6 +621,66 @@ class DynamicLiteLLMRouter(LLMPort):
             fallback_provider=None,
         )
 
+    def _emit_llm_ledger(
+        self,
+        *,
+        purpose: str | None,
+        provider: str | None,
+        model: str | None,
+        prompt_tokens: int,
+        completion_tokens: int,
+        cached_tokens: int,
+        started_at: datetime,
+        finished_at: datetime,
+        cost_usd: float | None,
+        input_unit_price: float | None = None,
+        output_unit_price: float | None = None,
+        cached_unit_price: float | None = None,
+        finish_reason: str | None = None,
+        mode_default: str = "query",
+    ) -> None:
+        """Single LLM-row emit boundary for every router completion path.
+
+        All three completion paths (non-stream runtime, streaming runtime,
+        LLMPort legacy) route through here so each row is schema-identical:
+        ``purpose`` set, real wall-clock ``started_at``/``finished_at`` →
+        ``duration_ms``, the 4-key + ``request_id`` identity snapshot from the
+        contextvars, and ``status='success'`` (the emit fires only on a
+        completed call). Fire-and-forget — an aux ledger failure must NEVER
+        break the LLM path (graceful-degradation).
+        """
+        duration_ms = int((finished_at - started_at).total_seconds() * 1000)
+        try:
+            self._ledger.emit(TokenLedgerEntry(
+                mode=(mode_ctx.get() or mode_default),
+                action="llm",
+                purpose=purpose,
+                provider=(provider or None),
+                model=model,
+                record_tenant_id=_safe_uuid(tenant_id_ctx.get()),
+                record_bot_id=_safe_uuid(record_bot_id_ctx.get()),
+                bot_id=(bot_id_ctx.get() or None),
+                workspace_id=(workspace_id_ctx.get() or None),
+                channel_type=(channel_type_ctx.get() or None),
+                request_id=_safe_uuid(request_id_ctx.get()),
+                trace_id=(trace_id_ctx.get() or None),
+                input_tokens=prompt_tokens,
+                output_tokens=completion_tokens,
+                total_tokens=prompt_tokens + completion_tokens,
+                cached_tokens=cached_tokens,
+                started_at=started_at,
+                finished_at=finished_at,
+                duration_ms=duration_ms,
+                input_unit_price=input_unit_price,
+                output_unit_price=output_unit_price,
+                cached_unit_price=cached_unit_price,
+                cost_usd=cost_usd,
+                status="success",
+                finish_reason=finish_reason,
+            ))
+        except Exception:  # noqa: BLE001 — ledger must never break the LLM path
+            pass
+
     async def _complete_runtime_one(
         self,
         cfg: Any,
@@ -685,6 +746,9 @@ class DynamicLiteLLMRouter(LLMPort):
             raise LLMError(
                 f"LLM provider {cfg.provider.code} circuit breaker OPEN — fast-fail",
             )
+        # Wall-clock start — captured before the call so the ledger row's
+        # started_at/duration_ms reflect real latency (not started==finished).
+        _started = datetime.now(timezone.utc)
         try:
             async with sem:
                 resp = await retry_with_backoff(
@@ -732,8 +796,8 @@ class DynamicLiteLLMRouter(LLMPort):
         cost = compute_cost_usd(
             cfg.pricing, prompt_tokens, completion_tokens, cached_tokens,
         )
-        # P33 / C.5 — emit per-tenant token usage AFTER successful call.
-        # Uses contextvar to avoid coupling LLM call site to tenant id.
+        # Emit per-tenant token usage AFTER a successful call. Uses the
+        # contextvar to avoid coupling the LLM call site to the tenant id.
         await self._meter_tokens(prompt_tokens, completion_tokens)
 
         # Include model_name in payload so generate() can record which
@@ -750,33 +814,22 @@ class DynamicLiteLLMRouter(LLMPort):
         # the per-model unit prices → SNAPSHOT them so historical cost is frozen
         # when ai_models prices later change. mode defaults to 'query' (this is
         # the answer path) unless the route set the contextvar.
-        _finished = datetime.now(timezone.utc)
-        try:
-            _pr = getattr(cfg, "pricing", None)
-            self._ledger.emit(TokenLedgerEntry(
-                mode=(mode_ctx.get() or "query"),
-                action="llm",
-                provider=(provider_code or None),
-                model=_model_name,
-                record_tenant_id=_safe_uuid(tenant_id_ctx.get()),
-                record_bot_id=_safe_uuid(record_bot_id_ctx.get()),
-                bot_id=(bot_id_ctx.get() or None),
-                workspace_id=(workspace_id_ctx.get() or None),
-                channel_type=(channel_type_ctx.get() or None),
-                trace_id=(trace_id_ctx.get() or None),
-                input_tokens=prompt_tokens,
-                output_tokens=completion_tokens,
-                total_tokens=prompt_tokens + completion_tokens,
-                cached_tokens=cached_tokens,
-                started_at=_finished,
-                finished_at=_finished,
-                input_unit_price=getattr(_pr, "input_per_1k_usd", None),
-                output_unit_price=getattr(_pr, "output_per_1k_usd", None),
-                cached_unit_price=getattr(_pr, "cached_input_per_1k_usd", None),
-                cost_usd=(float(cost) or None),
-            ))
-        except Exception:  # noqa: BLE001 — ledger must never break the LLM path
-            pass
+        _pr = getattr(cfg, "pricing", None)
+        self._emit_llm_ledger(
+            purpose=purpose,
+            provider=provider_code,
+            model=_model_name,
+            prompt_tokens=prompt_tokens,
+            completion_tokens=completion_tokens,
+            cached_tokens=cached_tokens,
+            started_at=_started,
+            finished_at=datetime.now(timezone.utc),
+            cost_usd=(float(cost) or None),
+            input_unit_price=getattr(_pr, "input_per_1k_usd", None),
+            output_unit_price=getattr(_pr, "output_per_1k_usd", None),
+            cached_unit_price=getattr(_pr, "cached_input_per_1k_usd", None),
+            finish_reason=resp.choices[0].finish_reason,
+        )
         return {
             "text": text,
             "prompt_tokens": prompt_tokens,
@@ -848,6 +901,9 @@ class DynamicLiteLLMRouter(LLMPort):
             and "stream_options" not in kwargs
         ):
             kwargs["stream_options"] = {"include_usage": True}
+        # Wall-clock start — captured before stream-open so the post-stream
+        # ledger row carries real latency (duration_ms), not a zero window.
+        _started = datetime.now(timezone.utc)
         try:
             stream = await litellm.acompletion(
                 model=cfg.litellm_name,
@@ -879,8 +935,8 @@ class DynamicLiteLLMRouter(LLMPort):
             ) from exc
 
         tokens_yielded = 0
-        # P33 / C.5 — accumulate token totals across the stream so we
-        # emit ONE meter increment after the iterator drains (not per
+        # Accumulate token totals across the stream so we emit ONE meter
+        # increment after the iterator drains (not per
         # chunk — Redis hash hammering on long completions).
         prompt_total = 0
         completion_total = 0
@@ -948,8 +1004,8 @@ class DynamicLiteLLMRouter(LLMPort):
             except Exception:  # noqa: BLE001
                 pass
 
-        # P33 — single meter increment after stream completes. Tolerated
-        # zero-totals (provider didn't expose usage) keeps month bucket
+        # Single meter increment after the stream completes. Tolerated
+        # zero-totals (provider didn't expose usage) keeps the month bucket
         # ticking rather than silently dropping the call.
         await self._meter_tokens(prompt_total, completion_total)
 
@@ -962,6 +1018,31 @@ class DynamicLiteLLMRouter(LLMPort):
             prompt_total,
             completion_total,
             cached_total,
+        )
+        # Token-log-center (G-1): the streaming answer path is the largest
+        # output-token spend on a normal SSE chat turn. Emit ONE durable
+        # ledger row through the shared helper so token_ledger stops
+        # under-counting the answer model. Pricing snapshot frozen per-call.
+        _model_name = (
+            getattr(cfg, "litellm_name", None)
+            or getattr(cfg, "model", None)
+            or "unknown"
+        )
+        _pr = getattr(cfg, "pricing", None)
+        self._emit_llm_ledger(
+            purpose=purpose,
+            provider=provider_code,
+            model=_model_name,
+            prompt_tokens=prompt_total,
+            completion_tokens=completion_total,
+            cached_tokens=cached_total,
+            started_at=_started,
+            finished_at=datetime.now(timezone.utc),
+            cost_usd=(float(cost_decimal) or None),
+            input_unit_price=getattr(_pr, "input_per_1k_usd", None),
+            output_unit_price=getattr(_pr, "output_per_1k_usd", None),
+            cached_unit_price=getattr(_pr, "cached_input_per_1k_usd", None),
+            finish_reason=finish_reason or "stop",
         )
         if usage_sink is not None:
             try:
@@ -1088,37 +1169,29 @@ class DynamicLiteLLMRouter(LLMPort):
         tokens_out = int(getattr(usage, "completion_tokens", 0) or 0)
         cost = float(getattr(resp, "_hidden_params", {}).get("response_cost", 0.0) or 0.0)
 
-        # Token ledger — EVERY money-action (LLM call) emits the 5 tracking
+        # Token ledger — EVERY money-action (LLM call) emits the tracking
         # numbers so BOTH the upload/ingest flow and the query flow are
         # auditable. This is the choke point for non-streaming calls (ingest
         # CR enrichment + narrate + grade/grounding); the streaming query path
         # additionally records to monitoring_log via UsageSink. ``mode`` comes
         # from the contextvar set by the worker/route entrypoint — NO guessing
-        # flow from the model name. Identity is snapshot from contextvars so the
-        # ledger row survives bot/document delete (no FK, no JOIN).
+        # flow from the model name. The LLMPort contract carries no per-call
+        # ``purpose`` (legacy ingest interface), so the row's purpose is left
+        # NULL here; the runtime-cfg paths set it. Routes through the shared
+        # helper for schema parity with the other two emit sites.
         _finished = datetime.now(timezone.utc)
-        try:
-            self._ledger.emit(TokenLedgerEntry(
-                mode=mode_ctx.get() or "unknown",
-                action="llm",
-                provider=spec.provider,
-                model=spec.model_name,
-                record_tenant_id=_safe_uuid(tenant_id_ctx.get()),
-                record_bot_id=_safe_uuid(record_bot_id_ctx.get()),
-                bot_id=(bot_id_ctx.get() or None),
-                workspace_id=(workspace_id_ctx.get() or None),
-                channel_type=(channel_type_ctx.get() or None),
-                trace_id=(trace_id_ctx.get() or None),
-                input_tokens=tokens_in,
-                output_tokens=tokens_out,
-                total_tokens=tokens_in + tokens_out,
-                started_at=_finished - timedelta(milliseconds=int(latency_ms)),
-                finished_at=_finished,
-                duration_ms=int(latency_ms),
-                cost_usd=(cost or None),
-            ))
-        except Exception:  # noqa: BLE001 — ledger must never break the LLM path
-            pass
+        self._emit_llm_ledger(
+            purpose=None,
+            provider=spec.provider,
+            model=spec.model_name,
+            prompt_tokens=tokens_in,
+            completion_tokens=tokens_out,
+            cached_tokens=0,
+            started_at=_finished - timedelta(milliseconds=int(latency_ms)),
+            finished_at=_finished,
+            cost_usd=(cost or None),
+            mode_default="unknown",
+        )
 
         structured = None
         if response_schema is not None and content:

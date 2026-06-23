@@ -1,4 +1,10 @@
-"""Admin metrics routes (v0.2.0 — Phần 5)."""
+"""Admin metrics + usage-rollup routes over the token ledger.
+
+Read-only cost/usage dashboard: time-bucketed usage timeseries, per-bot /
+per-workspace / per-tenant token + cost roll-ups (tenant-scoped, RBAC >= admin)
+and a cross-tenant leaderboard (RBAC level 100). All numbers come from
+``token_ledger`` — the single per-call cost source of truth.
+"""
 
 from __future__ import annotations
 
@@ -10,7 +16,11 @@ from fastapi import APIRouter, Depends, Query, Request
 from ragbot.interfaces.http.middlewares.rbac import require_permission_dep
 from ragbot.shared.constants import (
     DEFAULT_ADMIN_LEVEL,
+    DEFAULT_ANALYTICS_ALL_TENANTS_LIMIT,
+    DEFAULT_CRM_WINDOW_DAYS,
     DEFAULT_PAGE_SIZE,
+    DEFAULT_SUPER_ADMIN_LEVEL,
+    MAX_ANALYTICS_ALL_TENANTS_LIMIT,
     MAX_PAGE_SIZE,
 )
 from ragbot.shared.rbac import require_min_level
@@ -128,12 +138,15 @@ async def metrics_usage_timeseries(
     ``workspace_id`` narrow to a single bot / workspace.
     """
     all_tenants = scope == "all"
-    require_min_level(request, 100 if all_tenants else DEFAULT_ADMIN_LEVEL)
+    require_min_level(
+        request,
+        DEFAULT_SUPER_ADMIN_LEVEL if all_tenants else DEFAULT_ADMIN_LEVEL,
+    )
     now = datetime.now(UTC)
     repo = request.app.state.container.token_ledger_analytics_repo()
     rows = await repo.usage_timeseries(
         record_tenant_id=request.state.record_tenant_id,
-        date_from=date_from or (now - timedelta(days=30)),
+        date_from=date_from or (now - timedelta(days=DEFAULT_CRM_WINDOW_DAYS)),
         date_to=date_to or now,
         group_by=group_by,
         breakdown=breakdown,
@@ -146,6 +159,66 @@ async def metrics_usage_timeseries(
         "data": rows,
         "meta": {"group_by": group_by, "breakdown": breakdown, "scope": scope},
     }
+
+
+@router.get("/metrics/usage/rollup")
+async def metrics_usage_rollup(
+    request: Request,
+    dim: str = Query(default="bot"),         # bot | workspace | tenant
+    breakdown: str = Query(default="none"),  # none | purpose | action | model | provider
+    date_from: datetime | None = Query(default=None),
+    date_to: datetime | None = Query(default=None),
+) -> dict[str, object]:
+    """Tenant-scoped Σ tokens/cost roll-up over ``token_ledger``.
+
+    Groups by ``dim`` (bot|workspace|tenant); each row carries CRM cardinality
+    (``bot_count`` / ``workspace_count``) and ``turns`` (distinct request_id).
+    Optional ``breakdown`` adds a second key (``purpose`` = per-purpose cost
+    attribution). RBAC >= admin; always bounded to the caller's JWT tenant.
+    """
+    require_min_level(request, DEFAULT_ADMIN_LEVEL)
+    now = datetime.now(UTC)
+    repo = request.app.state.container.token_ledger_analytics_repo()
+    rows = await repo.usage_rollup(
+        record_tenant_id=request.state.record_tenant_id,
+        date_from=date_from or (now - timedelta(days=DEFAULT_CRM_WINDOW_DAYS)),
+        date_to=date_to or now,
+        dim=dim,
+        breakdown=breakdown,
+    )
+    return {
+        "ok": True,
+        "data": rows,
+        "meta": {"dim": dim, "breakdown": breakdown},
+    }
+
+
+@router.get("/metrics/usage/cross-tenant")
+async def metrics_usage_cross_tenant(
+    request: Request,
+    date_from: datetime | None = Query(default=None),
+    date_to: datetime | None = Query(default=None),
+    limit: int = Query(
+        default=DEFAULT_ANALYTICS_ALL_TENANTS_LIMIT,
+        ge=1,
+        le=MAX_ANALYTICS_ALL_TENANTS_LIMIT,
+    ),
+) -> dict[str, object]:
+    """Platform-wide per-tenant cost leaderboard (NO tenant filter).
+
+    RBAC level 100 (super-admin) only — there is no tenant scoping. Returns one
+    row per tenant with ``workspace_count`` / ``bot_count`` / ``turns`` + Σ
+    tokens/cost, ordered by cost.
+    """
+    require_min_level(request, DEFAULT_SUPER_ADMIN_LEVEL)
+    now = datetime.now(UTC)
+    repo = request.app.state.container.token_ledger_analytics_repo()
+    rows = await repo.cross_tenant_rollup(
+        date_from=date_from or (now - timedelta(days=DEFAULT_CRM_WINDOW_DAYS)),
+        date_to=date_to or now,
+        limit=limit,
+    )
+    return {"ok": True, "data": rows, "meta": {"limit": limit}}
 
 
 __all__ = ["router"]

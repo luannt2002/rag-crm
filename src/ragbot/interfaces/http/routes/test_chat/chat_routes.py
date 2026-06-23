@@ -60,6 +60,7 @@ from ragbot.config.logging import (
     channel_type_ctx,
     mode_ctx,
     record_bot_id_ctx,
+    request_id_ctx,
     workspace_id_ctx,
 )
 
@@ -310,6 +311,9 @@ async def test_chat(req: TestChatRequest, request: Request) -> dict:
         }
 
     request_id = uuid.uuid4()
+    # Token-ledger join key: tag every LLM/embed/rerank call this turn makes
+    # with the request_logs PK so per-turn cost can be reconciled (CRM).
+    request_id_ctx.set(str(request_id))
     message_id = int(time.time() * 1000)
     tenant_id = _caller_tenant_uuid(request) or _PLATFORM_TENANT_FALLBACK_UUID
     # Per-bot max_history — _chat_max_history_cfg fetched in Step B gather above.
@@ -807,6 +811,9 @@ async def test_chat_stream(req: TestChatRequest, request: Request) -> StreamingR
         raise HTTPException(status_code=404, detail=f"Bot {req.bot_id}:{req.channel_type} not found")
 
     request_id = uuid.uuid4()
+    # Token-ledger join key: tag every LLM/embed/rerank call this turn makes
+    # with the request_logs PK so per-turn cost can be reconciled (CRM).
+    request_id_ctx.set(str(request_id))
     message_id = int(time.time() * 1000)
     tenant_id = _caller_tenant_uuid(request) or _PLATFORM_TENANT_FALLBACK_UUID
     # Per-bot max_history via single source of truth (bot_limits.py)
