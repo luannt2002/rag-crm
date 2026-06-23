@@ -19,7 +19,7 @@ from __future__ import annotations
 from alembic import op
 
 revision = "token_ledger_rollup_idx_20260624"
-down_revision = "enable_vision_gpt41_20260621"
+down_revision = "dsi_force_rls_parity_20260624"
 branch_labels = None
 depends_on = None
 
