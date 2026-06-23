@@ -119,7 +119,16 @@ def build_embedder(
                 DEFAULT_JINA_EMBEDDING_TPM_SAFETY_FRACTION))
         except (ValueError, TypeError):
             kwargs["tpm_safety_fraction"] = DEFAULT_JINA_EMBEDDING_TPM_SAFETY_FRACTION
-    return cls(**{k: v for k, v in kwargs.items() if k in sig})  # type: ignore[arg-type]
+    adapter = cls(**{k: v for k, v in kwargs.items() if k in sig})  # type: ignore[arg-type]
+    if ledger is not None:
+        # Port-boundary ledger emit (Decorator + DI): guarantees EVERY provider
+        # produces a token_ledger row, not just the ones whose ctor accepts
+        # ``ledger``. Self-emitting adapters (jina) are passed through untouched.
+        from ragbot.infrastructure.token_ledger.ledger_emitting_decorators import (
+            LedgerEmittingEmbedderDecorator,
+        )
+        return LedgerEmittingEmbedderDecorator(adapter, ledger=ledger, provider=key)  # type: ignore[return-value]
+    return adapter
 
 
 __all__ = ["DEFAULT_EMBEDDING_PROVIDER", "build_embedder"]

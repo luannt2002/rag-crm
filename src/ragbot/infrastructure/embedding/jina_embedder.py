@@ -114,6 +114,10 @@ class JinaEmbedder(EmbeddingPort):
 
     _PROVIDER_CODE: str = "jina"
     _PURPOSE: str = "embed"
+    # This adapter emits its own token-rich ledger row (it reads the Jina
+    # ``usage`` payload). The Port-boundary ledger decorator passes it through
+    # untouched so the row is not double-counted.
+    emits_own_ledger: bool = True
 
     def __init__(
         self,

@@ -76,6 +76,11 @@ def build_reranker(provider: str | None = None, **kwargs) -> "RerankerPort":
             registered=sorted(_REGISTRY.keys()),
         )
         cls = NullReranker
+    # Port-boundary ledger emit (Decorator + DI): a ``ledger`` is consumed here
+    # rather than threaded into every adapter ctor, so EVERY provider produces a
+    # token_ledger row (not just jina). NullReranker is never wrapped — a bypass
+    # costs nothing, so a ledger row there would be noise.
+    ledger = kwargs.get("ledger")
     try:
         # Strategies vary in accepted kwargs (Jina needs api_key, Null
         # ignores everything). Filter to what the constructor signature
@@ -84,7 +89,7 @@ def build_reranker(provider: str | None = None, **kwargs) -> "RerankerPort":
         import inspect
         sig_params = set(inspect.signature(cls.__init__).parameters)
         filtered = {k: v for k, v in kwargs.items() if k in sig_params}
-        return cls(**filtered)  # type: ignore[return-value]
+        adapter = cls(**filtered)
     except (NotImplementedError, TypeError, ValueError) as exc:
         logger.error(
             "reranker_strategy_init_failed",
@@ -92,6 +97,14 @@ def build_reranker(provider: str | None = None, **kwargs) -> "RerankerPort":
             error=str(exc),
         )
         return NullReranker()
+    if ledger is not None and cls is not NullReranker:
+        from ragbot.infrastructure.token_ledger.ledger_emitting_decorators import (
+            LedgerEmittingRerankerDecorator,
+        )
+        return LedgerEmittingRerankerDecorator(  # type: ignore[return-value]
+            adapter, ledger=ledger, provider=key,
+        )
+    return adapter  # type: ignore[return-value]
 
 
 def list_providers() -> list[str]:

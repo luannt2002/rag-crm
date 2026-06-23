@@ -66,6 +66,10 @@ class JinaReranker:
     # business logic upstream never reads this — it goes through the
     # ``RerankerPort`` interface.
     _PROVIDER_CODE: str = "jina"
+    # This adapter emits its own token-rich ledger row (it reads the Jina
+    # ``usage`` payload). The Port-boundary ledger decorator passes it through
+    # untouched so the row is not double-counted.
+    emits_own_ledger: bool = True
     _PURPOSE: str = "rerank"
 
     def __init__(

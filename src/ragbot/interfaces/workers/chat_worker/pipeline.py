@@ -26,6 +26,7 @@ from ragbot.config.logging import (
     clear_request_context,
     mode_ctx,
     record_bot_id_ctx,
+    request_id_ctx,
     setup_logging,
 )
 from ragbot.config.settings import get_settings
@@ -252,6 +253,10 @@ async def _handle_chat_received_body(
     tenant_policy_repo = container.tenant_policy_repo()
     clock = container.clock()
     request_id = job_id  # 1 chat = 1 request
+    # Token-ledger join key: tag every token-spending call this turn makes with
+    # the request_logs PK so per-turn cost reconciles (CRM). Cleared per-turn in
+    # clear_request_context so a reused worker coroutine cannot leak it forward.
+    request_id_ctx.set(str(request_id))
 
     # `payload["message_id"]` la ID INT cua upstream service (khach).
     # Luu thang vao request_logs.message_id de group metric theo cau hoi khach.

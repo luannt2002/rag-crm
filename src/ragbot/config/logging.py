@@ -23,9 +23,9 @@ trace_id_ctx: ContextVar[str] = ContextVar("trace_id", default="")
 # ``bind_request_context()`` cannot quietly bypass row-level-security
 # (worker writes used to drop the SET LOCAL silently when ``""``).
 tenant_id_ctx: ContextVar[str] = ContextVar("tenant_id", default="UNSET")
-# P33 — INT tenant id (upstream NestJS claim). Distinct from tenant_id_ctx
-# which carries the internal UUID PK. The token meter + rate limiter both
-# key on the int id (matches the JWT sub-claim and bots.tenant_id column).
+# INT tenant id (upstream claim). Distinct from tenant_id_ctx which carries the
+# internal UUID PK. The token meter + rate limiter both key on the int id
+# (matches the JWT sub-claim and bots.tenant_id column).
 tenant_id_int_ctx: ContextVar[int | None] = ContextVar("tenant_id_int", default=None)
 # Workspace slug for the RLS workspace GUC (``SET LOCAL app.workspace_id``).
 # Empty default = unbound: the 0141 policy clause COALESCE('')='' then keeps
@@ -45,6 +45,13 @@ channel_type_ctx: ContextVar[str] = ContextVar("channel_type", default="")
 # Set by the worker/route entrypoint so the LLM router tags each token-spending
 # call WITHOUT guessing flow from the model name.
 mode_ctx: ContextVar[str] = ContextVar("mode", default="")
+# Per-turn request id (request_logs PK) — set at the chat route / worker
+# entrypoint so every token_ledger row this turn emits can be joined back to
+# the turn-level request_logs row (CRM per-turn cost reconciliation). Distinct
+# from trace_id_ctx (a free-text distributed-trace string): this carries the
+# request_logs UUID. Empty default keeps the ledger row's request_id NULL for
+# any code path that spends tokens outside a bound request (e.g. boot probes).
+request_id_ctx: ContextVar[str] = ContextVar("request_id", default="")
 conversation_id_ctx: ContextVar[str] = ContextVar("conversation_id", default="")
 user_id_ctx: ContextVar[str] = ContextVar("user_id", default="")
 
@@ -135,6 +142,7 @@ def bind_request_context(
     tenant_id_int: int | None = None,
     workspace_id: str | None = None,
     bot_id: "UUID | str | None" = None,
+    request_id: "UUID | str | None" = None,
     conversation_id: "UUID | str | None" = None,
     user_id: str | None = None,
 ) -> None:
@@ -164,6 +172,10 @@ def bind_request_context(
         bot_id_s = str(bot_id)
         bot_id_ctx.set(bot_id_s)
         fields["bot_id"] = bot_id_s
+    if request_id:
+        request_id_s = str(request_id)
+        request_id_ctx.set(request_id_s)
+        fields["request_id"] = request_id_s
     if conversation_id:
         conv_s = str(conversation_id)
         conversation_id_ctx.set(conv_s)
@@ -182,6 +194,9 @@ def clear_request_context() -> None:
     # workspace slug so one message's workspace cannot leak into the next
     # transaction's RLS GUC binding.
     workspace_id_ctx.set("")
+    # Same reuse hazard: clear the per-turn request id so the next turn's
+    # ledger rows cannot inherit the previous turn's request_id.
+    request_id_ctx.set("")
     structlog.contextvars.clear_contextvars()
 
 
@@ -213,6 +228,7 @@ __all__ = [
     "get_logger",
     "get_tenant_id",
     "get_tenant_id_int",
+    "request_id_ctx",
     "setup_logging",
     "tenant_id_ctx",
     "tenant_id_int_ctx",
