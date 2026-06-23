@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any
 
+import structlog
 from sqlalchemy import select, update
 
 from ragbot.application.ports.repository_ports import JobRepositoryPort
@@ -13,9 +14,11 @@ from ragbot.infrastructure.repositories._base import TenantScopedRepository
 from ragbot.shared.constants import WORKSPACE_SYSTEM_SLUG
 from ragbot.shared.types import JobId, JobStatus, TenantId
 
+logger = structlog.get_logger(__name__)
+
 
 class SqlAlchemyJobRepository(TenantScopedRepository, JobRepositoryPort):
-    """Repository cho bảng jobs — theo dõi trạng thái các tác vụ bất đồng bộ."""
+    """Repository for the jobs table — tracks async task status."""
 
     async def create(
         self,
@@ -25,10 +28,11 @@ class SqlAlchemyJobRepository(TenantScopedRepository, JobRepositoryPort):
         kind: str,
         payload: dict[str, object],
     ) -> None:
-        """Tạo job mới với trạng thái queued.
-        @param job_id: UUID job
-        @param kind: loại tác vụ (chat, document, ...)
-        @param payload: dữ liệu đầu vào
+        """Create a new job in the queued state.
+
+        @param job_id: job UUID
+        @param kind: task kind (chat, document, ...)
+        @param payload: input data
         """
         tid = self._ensure_tenant(record_tenant_id)
         async with self._new_session() as session:
@@ -53,14 +57,24 @@ class SqlAlchemyJobRepository(TenantScopedRepository, JobRepositoryPort):
         result: dict[str, object] | None = None,
         error: str | None = None,
     ) -> None:
-        """Cập nhật trạng thái job (running, success, failed, ...).
-        @param job_id: UUID job
-        @param status: trạng thái mới
-        @param error: thông báo lỗi (nếu failed)
+        """Update a job's status (running, success, failed, ...).
+
+        @param job_id: job UUID
+        @param status: new status
+        @param error: error message (when failed)
         """
-        # H4 — record_tenant_id=None allowed for fail-before-lookup / system error paths
-        # where we haven't resolved the internal tenant UUID yet. Skip tenant
-        # scoping filter in that case (job_id UUID itself is unique).
+        # record_tenant_id=None is allowed only for fail-before-lookup / system
+        # error paths where the internal tenant UUID has not yet been resolved;
+        # the tenant scoping filter is skipped in that case (the job_id UUID is
+        # itself globally unique). This bypasses the tenant fence, so emit a
+        # structured warning to keep the unscoped write observable.
+        if record_tenant_id is None:
+            logger.warning(
+                "job_update_unscoped",
+                job_id=str(job_id),
+                status=status,
+                reason="record_tenant_id unresolved — pre-lookup/system error path",
+            )
         async with self._new_session() as session:
             values: dict[str, Any] = {"status": status}
             if status in {"success", "failed", "cancelled", "dlq"}:
@@ -83,9 +97,10 @@ class SqlAlchemyJobRepository(TenantScopedRepository, JobRepositoryPort):
         *,
         record_tenant_id: TenantId,
     ) -> dict[str, object] | None:
-        """Lấy thông tin job theo ID.
-        @param job_id: UUID job
-        @return: dict thông tin job hoặc None
+        """Fetch a job by ID.
+
+        @param job_id: job UUID
+        @return: job info dict, or None
         """
         tid = self._ensure_tenant(record_tenant_id)
         async with self._new_session() as session:

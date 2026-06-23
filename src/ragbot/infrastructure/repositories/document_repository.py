@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime as _dt
 
-from sqlalchemy import select, text
+from sqlalchemy import select, text, update
 
 from ragbot.application.ports.repository_ports import DocumentRepositoryPort
 from ragbot.domain.entities.document import Document
@@ -22,8 +22,9 @@ from ragbot.shared.types import (
 
 
 def _row_to_document(row: DocumentModel) -> Document:
-    """Chuyển đổi ORM DocumentModel sang domain Document.
-    @param row: bản ghi ORM
+    """Convert an ORM DocumentModel into a domain Document.
+
+    @param row: ORM record
     @return: domain entity Document
     """
     # Migration 0010: authority_score / validity_window / superseded_by
@@ -51,9 +52,10 @@ def _row_to_document(row: DocumentModel) -> Document:
 
 
 def _document_to_row(doc: Document, *, workspace_id: WorkspaceId) -> DocumentModel:
-    """Chuyển đổi domain Document sang ORM DocumentModel để persist.
+    """Convert a domain Document into an ORM DocumentModel for persistence.
+
     @param doc: domain entity Document
-    @param workspace_id: slug nhánh — caller bơm từ bot config
+    @param workspace_id: branch slug — supplied by the caller from bot config
     @return: ORM model DocumentModel
     """
     # Migration 0010: authority_score / validity_window / superseded_by not
@@ -77,7 +79,7 @@ def _document_to_row(doc: Document, *, workspace_id: WorkspaceId) -> DocumentMod
 
 
 class SqlAlchemyDocumentRepository(TenantScopedRepository, DocumentRepositoryPort):
-    """Repository cho bảng documents — CRUD tài liệu theo tenant."""
+    """Repository for the documents table — tenant-scoped document CRUD."""
 
     async def save(
         self,
@@ -86,31 +88,55 @@ class SqlAlchemyDocumentRepository(TenantScopedRepository, DocumentRepositoryPor
         record_tenant_id: TenantId,
         workspace_id: WorkspaceId,
     ) -> None:
-        """Lưu hoặc cập nhật document vào DB.
+        """Insert a new document or update the existing one, tenant-fenced.
+
         @param document: domain entity Document
-        @param record_tenant_id: ID tenant (kiểm tra isolation)
-        @param workspace_id: slug nhánh — bắt buộc khi tạo mới; khi UPDATE
-            existing row ``workspace_id`` không thay đổi để tôn trọng
-            hệ FK chain (slug = bots.workspace_id).
+        @param record_tenant_id: request tenant UUID (isolation check)
+        @param workspace_id: branch slug — required on insert; on UPDATE the
+            existing row's ``workspace_id`` is left untouched to respect the FK
+            chain (slug = bots.workspace_id).
+
+        IDOR-write fence: the UPDATE branch is a single statement filtered on
+        BOTH the primary key AND ``record_tenant_id`` (``RETURNING id``). A
+        foreign-tenant document id therefore matches zero rows and falls through
+        to the INSERT path under the request tenant — it can never overwrite
+        another tenant's row by primary key alone. Mirrors the atomic
+        ownership-fence used in ``ai_config_repository.update_binding``.
         """
         tid = self._ensure_tenant(record_tenant_id)
         if document.record_tenant_id != tid:
             raise TenantIsolationViolation("document tenant != request tenant")
         async with self._new_session() as session:
-            existing = await session.get(DocumentModel, document.id)
-            if existing is None:
+            # Tenant-fenced UPDATE first: only a row owned by THIS tenant is
+            # mutated. ``RETURNING id`` lets us distinguish "updated" (1 row)
+            # from "absent / foreign-tenant" (0 rows) without a prior SELECT.
+            stmt = (
+                update(DocumentModel)
+                .where(
+                    DocumentModel.id == document.id,
+                    DocumentModel.record_tenant_id == tid,
+                )
+                .values(
+                    source_url=document.source_url,
+                    document_name=document.document_name,
+                    tool_name=document.tool_name,
+                    mime_type=document.mime_type,
+                    language=document.language,
+                    state=document.state,
+                    version=document.version,
+                    content_hash=document.content_hash,
+                    acl=list(document.acl),
+                    metadata_json=dict(document.metadata),
+                )
+                .returning(DocumentModel.id)
+                .execution_options(synchronize_session=False)
+            )
+            updated_id = (await session.execute(stmt)).scalar_one_or_none()
+            if updated_id is None:
+                # No row for this (id, tenant) — create it under the request
+                # tenant. A foreign-tenant id lands here and inserts a fresh,
+                # correctly-scoped row rather than clobbering the foreign row.
                 session.add(_document_to_row(document, workspace_id=workspace_id))
-            else:
-                existing.source_url = document.source_url
-                existing.document_name = document.document_name
-                existing.tool_name = document.tool_name
-                existing.mime_type = document.mime_type
-                existing.language = document.language
-                existing.state = document.state
-                existing.version = document.version
-                existing.content_hash = document.content_hash
-                existing.acl = list(document.acl)
-                existing.metadata_json = dict(document.metadata)
             await session.commit()
 
     async def get_by_id(
@@ -119,9 +145,10 @@ class SqlAlchemyDocumentRepository(TenantScopedRepository, DocumentRepositoryPor
         *,
         record_tenant_id: TenantId,
     ) -> Document | None:
-        """Lấy document theo UUID.
-        @param document_id: UUID document
-        @return: Document hoặc None
+        """Fetch a document by UUID.
+
+        @param document_id: document UUID
+        @return: Document, or None
         """
         tid = self._ensure_tenant(record_tenant_id)
         async with self._new_session() as session:
@@ -140,18 +167,18 @@ class SqlAlchemyDocumentRepository(TenantScopedRepository, DocumentRepositoryPor
         *,
         record_tenant_id: TenantId,
     ) -> Document | None:
-        """Tìm document theo source URL trong phạm vi bot.
+        """Find a document by source URL within a bot's scope.
 
-        @param record_bot_id: ID bot
-        @param source_url: URL nguồn tài liệu
-        @return: Document hoặc None
+        @param record_bot_id: bot UUID
+        @param source_url: document source URL
+        @return: Document, or None
 
-        260525 Bug #1 guard — raise ``MultipleResultsFound`` when >1 row
-        matches. Previously ``session.scalar()`` silently returned the
-        first row, leading to rechunk-wrong-doc on bots with multiple
-        documents sharing a single ``source_url`` (e.g. Google Sheets
-        workbook tabs with the same edit URL prefix). Callers that need
-        to address a specific doc should use ``get_by_id`` instead.
+        Ambiguity guard — raise ``InvariantViolation`` when more than one row
+        matches. ``session.scalar()`` would otherwise silently return the first
+        row, leading to rechunking the wrong doc on bots with multiple documents
+        sharing one ``source_url`` (e.g. Google Sheets workbook tabs with the
+        same edit-URL prefix). Callers that need a specific doc should use
+        ``get_by_id`` instead.
         """
         tid = self._ensure_tenant(record_tenant_id)
         async with self._new_session() as session:
@@ -187,10 +214,11 @@ class SqlAlchemyDocumentRepository(TenantScopedRepository, DocumentRepositoryPor
         *,
         record_tenant_id: TenantId,
     ) -> Document | None:
-        """Tìm document theo tool_name trong phạm vi bot.
-        @param record_bot_id: ID bot
-        @param tool_name: slug name tài liệu
-        @return: Document hoặc None
+        """Find a document by tool_name within a bot's scope.
+
+        @param record_bot_id: bot UUID
+        @param tool_name: document slug name
+        @return: Document, or None
         """
         tid = self._ensure_tenant(record_tenant_id)
         async with self._new_session() as session:

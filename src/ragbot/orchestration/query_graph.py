@@ -2262,6 +2262,7 @@ def build_graph(
                 # LLM can list/count them ALL (vector/BM25 only surface top-k).
                 _stats_kw = getattr(range_filter, "keyword", "") or ""
                 entities = await stats_index_repo.query_by_name_keyword(
+                    record_tenant_id=state["record_tenant_id"],
                     record_bot_id=state["record_bot_id"],
                     keyword=_stats_kw,
                     synonyms=_resolve_stats_keyword_synonyms(state, _stats_kw),
@@ -2275,12 +2276,14 @@ def build_graph(
                     # (top-k vector retrieve gives an incomplete list), so fall
                     # back to the full table instead of collapsing to vector.
                     entities = await stats_index_repo.list_all_entities(
+                        record_tenant_id=state["record_tenant_id"],
                         record_bot_id=state["record_bot_id"],
                         limit=stats_limit,
                     )
             elif _operation in ("max", "min"):
                 # Superlative ("đắt nhất"/"rẻ nhất"): no bound → ORDER BY price.
                 entities = await stats_index_repo.top_by_price(
+                    record_tenant_id=state["record_tenant_id"],
                     record_bot_id=state["record_bot_id"],
                     direction=_operation,
                     limit=min(stats_limit, DEFAULT_STATS_SUPERLATIVE_LIMIT),
@@ -2288,6 +2291,7 @@ def build_graph(
                 )
             else:
                 entities = await stats_index_repo.query_by_price_range(
+                    record_tenant_id=state["record_tenant_id"],
                     record_bot_id=state["record_bot_id"],
                     price_min=range_filter.price_min,
                     price_max=range_filter.price_max,

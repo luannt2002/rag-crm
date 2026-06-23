@@ -10,7 +10,6 @@ params). The query_graph helper resolves that list from
 from __future__ import annotations
 
 import uuid
-from contextlib import asynccontextmanager
 
 import pytest
 
@@ -52,23 +51,34 @@ class _FakeSession:
     def __init__(self, sink):
         self._sink = sink
 
-    async def execute(self, stmt, params):
-        # Capture the FORWARD query (first call). When it returns no rows the
-        # repo runs a reverse/token fallback (2026-06-20 q12 fix) as a 2nd
-        # execute — these tests assert on the forward synonym expansion, so we
-        # keep the first call and ignore the fallback's overwrite.
+    async def execute(self, stmt, params=None):
+        # ``session_with_tenant`` first issues SET LOCAL statements (no bound
+        # params) to bind the RLS GUC — skip those. Capture the FORWARD query
+        # (first real call). When it returns no rows the repo runs a
+        # reverse/token fallback (2026-06-20 q12 fix) as a 2nd execute — these
+        # tests assert on the forward synonym expansion, so we keep the first
+        # captured call and ignore the fallback's overwrite.
+        if str(stmt).strip().upper().startswith("SET LOCAL"):
+            return _FakeResult()
         if "sql" not in self._sink:
             self._sink["sql"] = str(stmt)
             self._sink["params"] = params
         return _FakeResult()
 
+    async def close(self):
+        return None
+
 
 def _fake_sf(sink):
-    @asynccontextmanager
-    async def _cm():
-        yield _FakeSession(sink)
+    # ``session_with_tenant`` calls ``factory()`` (no ``async with``) then uses
+    # the returned object as a context-managed session; emulate that shape with
+    # a session that is also its own async context manager.
+    session = _FakeSession(sink)
 
-    return _cm
+    def _make():
+        return session
+
+    return _make
 
 
 @pytest.mark.asyncio
@@ -76,6 +86,7 @@ async def test_repo_or_expands_synonyms_as_bound_params():
     sink: dict = {}
     repo = StatsIndexRepository(session_factory=_fake_sf(sink))
     await repo.query_by_name_keyword(
+        record_tenant_id=uuid.uuid4(),
         record_bot_id=uuid.uuid4(),
         keyword="da",
         synonyms=["da chết", "chăm sóc da"],
@@ -97,13 +108,18 @@ async def test_repo_dedups_and_falls_back_to_raw_keyword():
     repo = StatsIndexRepository(session_factory=_fake_sf(sink))
     # duplicate synonym (case-variant) collapses; None synonyms → raw only
     await repo.query_by_name_keyword(
-        record_bot_id=uuid.uuid4(), keyword="da", synonyms=["DA", "da"],
+        record_tenant_id=uuid.uuid4(),
+        record_bot_id=uuid.uuid4(),
+        keyword="da",
+        synonyms=["DA", "da"],
     )
     assert sink["params"]["kw0"] == "%da%"
     assert "kw1" not in sink["params"], "case/exact dupes must collapse"
 
     sink2: dict = {}
     repo2 = StatsIndexRepository(session_factory=_fake_sf(sink2))
-    await repo2.query_by_name_keyword(record_bot_id=uuid.uuid4(), keyword="xe")
+    await repo2.query_by_name_keyword(
+        record_tenant_id=uuid.uuid4(), record_bot_id=uuid.uuid4(), keyword="xe",
+    )
     assert sink2["params"]["kw0"] == "%xe%"
     assert "kw1" not in sink2["params"], "no synonyms → behaviour unchanged"
