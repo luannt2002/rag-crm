@@ -3,7 +3,24 @@
 > Always-updated current state. Git history was reset on 2026-06-14 (fresh start);
 > commit-SHA anchors no longer apply — this file is the source of truth.
 
-## Session 2026-06-22 (d) — Happy-case INPUT CONTROL + verify end-to-end (answer 11/11×3 stable)  ⟵ LATEST
+## Session 2026-06-23 (e) — Multi-agent audit (44-agent) + fix batch A/B + residual plan  ⟵ LATEST
+
+> **Audit**: 44-agent workflow (6 dim → adversarial verify) trên luồng happy-case → **37 raised, 27 confirmed** (9 refuted, 6 downgraded). Verdict `has-real-bugs`. **Sacred rules SẠCH** (no app-override/inject AST-verified · DI · broad-except · version-ref). Bug ở shape-heuristic L1+L3, KHÔNG sysprompt.
+>
+> **Fixed (TDD, +10 test thật)** — toàn bộ CRIT+HIGH:
+> - **A** (`f7b4f34`): #1 all-text→header (`not table_open` guard) · #2 spa-hardcode→constants canonical 500M + xóa comment "spa range" + K-shorthand fix · #3 aggregate-leak (exact-match generic) · 2nd-price column → price_secondary · zero-hardcode lift (`_MAX_LABEL_CHARS`/topic→constants).
+> - **B** (`e1a6085`): #4 XÓA dead doc_summary route + import + 2 false-green test (method `fetch_summaries_by_bot` chưa từng tồn tại trong src) · #5 checker `--db` double-transform (`check_one(from_db=)` feed thẳng structured-markdown).
+> - Data: `b43016e` track happy-case tenant corpus + sysprompt (owner-authorized, private repo, scan 0 credential).
+>
+> **Test**: full unit **6103 pass**, 0 regression. ⚠️ **UNIT-verified, CHƯA runtime-verified** (integration suite bị chặn — hardcode `/var/www/html/ragbot/.env`, 6 collection-error).
+>
+> **Residual self-found (evidence, rule #0)**: R1 checker heading-misroute (#5 chưa trọn cho catalog ≥3 section = multi-section THẬT) · R2 #4 orphan (`summary_json` write-only + `query_graph` dead import) · R3 aggregate exact-match incomplete · R4 K-shorthand chỉ "199k" (miss "1.5tr") · R5 chưa runtime-verify.
+>
+> **Plan fix toàn bộ residual+deferred**: `plans/20260623-residual-flow-hardening/` (5 phase A–E, ~18 fix + runtime gate) — chờ approve. Plan batch A/B: `plans/20260623-t1-generic-fixes/` (done).
+
+---
+
+## Session 2026-06-22 (d) — Happy-case INPUT CONTROL + verify end-to-end (answer 11/11×3 stable)
 
 > **✅ FINAL VERIFIED (deep, 3 lượt)**: upload 7-step L1→L7 GREEN · query 8-step Q1→Q8 healthy · **answer-quality 11/11 × 3 lượt = 100% đúng ground-truth, ỔN ĐỊNH, 0 HALLU** (factoid/aggregate/list/refuse-trap/legal). Full-suite 6095 pass. Bug-fixes B/C/E (generate domain-literal + markdown-extract, blocks prose-pipe) có TDD. Tools: `verify_query_flow.py` · `verify_answer_quality.py` (trace + chấm ground-truth). Plan: `plans/20260622-flow-fixes-control/` (B/C/E done; A/D/F/G/H = polish/i18n/defer).
 
