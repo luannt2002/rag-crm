@@ -63,14 +63,18 @@ def test_trailing_zone_returns_priced_zone(keyword: str, zone: str) -> None:
         try:
             sf = async_sessionmaker(eng, expire_on_commit=False)
             async with eng.connect() as conn:
-                bid = (
+                bot_row = (
                     await conn.execute(
-                        text("SELECT id FROM bots WHERE bot_id = :b LIMIT 1"),
+                        text(
+                            "SELECT id, record_tenant_id FROM bots "
+                            "WHERE bot_id = :b LIMIT 1"
+                        ),
                         {"b": "test-spa-id"},
                     )
-                ).scalar()
-                if bid is None:
+                ).first()
+                if bot_row is None:
                     return (False, [])
+                bid, tenant_id = bot_row[0], bot_row[1]
                 # Require the seeded zone row to exist, else skip (bare CI DB).
                 seeded = (
                     await conn.execute(
@@ -87,7 +91,10 @@ def test_trailing_zone_returns_priced_zone(keyword: str, zone: str) -> None:
                     return (False, [])
             repo = StatsIndexRepository(session_factory=sf)
             rows = await repo.query_by_name_keyword(
-                record_bot_id=bid, keyword=keyword, limit=5,
+                record_tenant_id=tenant_id,
+                record_bot_id=bid,
+                keyword=keyword,
+                limit=5,
             )
             return (True, rows)
         finally:

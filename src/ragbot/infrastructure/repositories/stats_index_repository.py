@@ -179,6 +179,7 @@ class StatsIndexRepository:
     async def query_by_price_range(
         self,
         *,
+        record_tenant_id: uuid.UUID,
         record_bot_id: uuid.UUID,
         price_min: int | None,
         price_max: int | None,
@@ -188,6 +189,9 @@ class StatsIndexRepository:
         """SELECT entities within a price range.
 
         Args:
+            record_tenant_id: tenant UUID — opens the session via
+                ``session_with_tenant`` (RLS GUC) and is also asserted in the
+                WHERE clause as application-level defence-in-depth.
             record_bot_id: bot UUID — scopes the query to this bot.
             price_min: minimum price (inclusive); None = no lower bound.
             price_max: maximum price (inclusive); None = no upper bound.
@@ -204,6 +208,7 @@ class StatsIndexRepository:
         """
         effective_limit = min(limit, DEFAULT_STATS_INDEX_QUERY_LIMIT)
         params: dict[str, Any] = {
+            "tenant_id": record_tenant_id,
             "bot_id": record_bot_id,
             "limit": effective_limit,
         }
@@ -235,7 +240,10 @@ class StatsIndexRepository:
                 )
                 params["price_max"] = price_max
 
-        where_parts = ["record_bot_id = :bot_id"]
+        where_parts = [
+            "record_tenant_id = :tenant_id",
+            "record_bot_id = :bot_id",
+        ]
         where_parts.extend(price_clauses)
         where_sql = " AND ".join(where_parts)
 
@@ -247,7 +255,9 @@ class StatsIndexRepository:
             f"ORDER BY price_primary ASC NULLS LAST "
             f"LIMIT :limit"
         )
-        async with self._sf() as session:
+        async with session_with_tenant(
+            self._sf, record_tenant_id=record_tenant_id,
+        ) as session:
             result = await session.execute(text(sql), params)
             rows = result.fetchall()
 
@@ -268,6 +278,7 @@ class StatsIndexRepository:
     async def top_by_price(
         self,
         *,
+        record_tenant_id: uuid.UUID,
         record_bot_id: uuid.UUID,
         direction: Literal["max", "min"],
         limit: int = DEFAULT_STATS_INDEX_QUERY_LIMIT,
@@ -308,14 +319,21 @@ class StatsIndexRepository:
             "SELECT id, record_document_id, record_chunk_id, entity_name, "
             "entity_category, price_primary, price_secondary, attributes_json "
             "FROM document_service_index "
-            f"WHERE record_bot_id = :bot_id AND {not_null} "
+            f"WHERE record_tenant_id = :tenant_id AND record_bot_id = :bot_id "
+            f"AND {not_null} "
             f"ORDER BY {price_expr} {order} "
             "LIMIT :limit"
         )
-        async with self._sf() as session:
+        async with session_with_tenant(
+            self._sf, record_tenant_id=record_tenant_id,
+        ) as session:
             result = await session.execute(
                 text(sql),
-                {"bot_id": record_bot_id, "limit": effective_limit},
+                {
+                    "tenant_id": record_tenant_id,
+                    "bot_id": record_bot_id,
+                    "limit": effective_limit,
+                },
             )
             rows = result.fetchall()
 
@@ -336,6 +354,7 @@ class StatsIndexRepository:
     async def count_by_price_range(
         self,
         *,
+        record_tenant_id: uuid.UUID,
         record_bot_id: uuid.UUID,
         price_min: int | None,
         price_max: int | None,
@@ -346,7 +365,10 @@ class StatsIndexRepository:
         Same semantics as ``query_by_price_range`` but returns only the count.
         Used by query routing for planning (avoids fetching rows unnecessarily).
         """
-        params: dict[str, Any] = {"bot_id": record_bot_id}
+        params: dict[str, Any] = {
+            "tenant_id": record_tenant_id,
+            "bot_id": record_bot_id,
+        }
 
         price_clauses: list[str] = []
         if price_column == "primary":
@@ -375,7 +397,10 @@ class StatsIndexRepository:
                 )
                 params["price_max"] = price_max
 
-        where_parts = ["record_bot_id = :bot_id"]
+        where_parts = [
+            "record_tenant_id = :tenant_id",
+            "record_bot_id = :bot_id",
+        ]
         where_parts.extend(price_clauses)
         where_sql = " AND ".join(where_parts)
 
@@ -383,7 +408,9 @@ class StatsIndexRepository:
             "SELECT COUNT(*) FROM document_service_index "
             f"WHERE {where_sql}"
         )
-        async with self._sf() as session:
+        async with session_with_tenant(
+            self._sf, record_tenant_id=record_tenant_id,
+        ) as session:
             result = await session.execute(text(sql), params)
             row = result.fetchone()
             return int(row[0]) if row else 0
@@ -391,12 +418,14 @@ class StatsIndexRepository:
     async def list_all_entities(
         self,
         *,
+        record_tenant_id: uuid.UUID,
         record_bot_id: uuid.UUID,
         limit: int = DEFAULT_STATS_INDEX_QUERY_LIMIT,
     ) -> list[dict]:
         """Return all entities for a bot.
 
         Args:
+            record_tenant_id: tenant UUID — RLS session + WHERE-clause fence.
             record_bot_id: bot UUID.
             limit: maximum rows (capped at ``DEFAULT_STATS_INDEX_QUERY_LIMIT``).
 
@@ -408,14 +437,20 @@ class StatsIndexRepository:
             "SELECT id, record_document_id, entity_name, "
             "entity_category, price_primary, price_secondary, record_chunk_id "
             "FROM document_service_index "
-            "WHERE record_bot_id = :bot_id "
+            "WHERE record_tenant_id = :tenant_id AND record_bot_id = :bot_id "
             "ORDER BY created_at ASC "
             "LIMIT :limit"
         )
-        async with self._sf() as session:
+        async with session_with_tenant(
+            self._sf, record_tenant_id=record_tenant_id,
+        ) as session:
             result = await session.execute(
                 text(sql),
-                {"bot_id": record_bot_id, "limit": effective_limit},
+                {
+                    "tenant_id": record_tenant_id,
+                    "bot_id": record_bot_id,
+                    "limit": effective_limit,
+                },
             )
             rows = result.fetchall()
 
@@ -435,6 +470,7 @@ class StatsIndexRepository:
     async def query_by_name_keyword(
         self,
         *,
+        record_tenant_id: uuid.UUID,
         record_bot_id: uuid.UUID,
         keyword: str,
         synonyms: list[str] | None = None,
@@ -460,7 +496,8 @@ class StatsIndexRepository:
         map; no hard-coded service list here. Each variant is a BOUND param
         (``:kw{i}``); only the controlled index is interpolated, never values.
 
-        Scoped by record_bot_id (RLS + explicit). ``unaccent`` by alembic 0240.
+        Scoped by record_tenant_id (RLS session + WHERE fence) AND record_bot_id.
+        ``unaccent`` by alembic 0240.
         """
         kw = (keyword or "").strip()
         if not kw:
@@ -474,7 +511,11 @@ class StatsIndexRepository:
                 _seen.add(t.lower())
                 variants.append(t)
         effective_limit = min(limit, DEFAULT_STATS_INDEX_QUERY_LIMIT)
-        params: dict = {"bot_id": record_bot_id, "limit": effective_limit}
+        params: dict = {
+            "tenant_id": record_tenant_id,
+            "bot_id": record_bot_id,
+            "limit": effective_limit,
+        }
         # Notation-variant folding: collapse a single separator BETWEEN two digits
         # so a size/code asked in one notation matches the row stored in another
         # ("205/55R16" ≡ "205/55/16" ≡ "205 55 16"). Domain-neutral — folds ANY
@@ -500,7 +541,7 @@ class StatsIndexRepository:
             "SELECT id, record_document_id, record_chunk_id, entity_name, "
             "entity_category, price_primary, price_secondary, attributes_json "
             "FROM document_service_index "
-            "WHERE record_bot_id = :bot_id "
+            "WHERE record_tenant_id = :tenant_id AND record_bot_id = :bot_id "
             f"AND ({where_match}) "
             # Prefer a priced row: a price query must never surface a NULL-price
             # notation-variant when a priced sibling also matches the fold.
@@ -508,7 +549,9 @@ class StatsIndexRepository:
             "entity_name ASC "
             "LIMIT :limit"
         )
-        async with self._sf() as session:
+        async with session_with_tenant(
+            self._sf, record_tenant_id=record_tenant_id,
+        ) as session:
             result = await session.execute(text(sql), params)
             rows = result.fetchall()
             # Reverse/token fallback: the forward match (entity name CONTAINS the
@@ -531,7 +574,7 @@ class StatsIndexRepository:
                     "SELECT id, record_document_id, record_chunk_id, entity_name, "
                     "entity_category, price_primary, price_secondary, attributes_json "
                     "FROM document_service_index "
-                    "WHERE record_bot_id = :bot_id "
+                    "WHERE record_tenant_id = :tenant_id AND record_bot_id = :bot_id "
                     "AND unaccent(:kwfull) ILIKE '%' || unaccent(entity_name) || '%' "
                     "AND (char_length(entity_name) >= :min_len "
                     "     OR (char_length(entity_name) >= :short_floor "
@@ -542,6 +585,7 @@ class StatsIndexRepository:
                     "LIMIT :rev_limit"
                 )
                 result = await session.execute(text(rev_sql), {
+                    "tenant_id": record_tenant_id,
                     "bot_id": record_bot_id,
                     "min_len": DEFAULT_STATS_REVERSE_MATCH_MIN_LEN,
                     "short_floor": DEFAULT_STATS_REVERSE_MATCH_SHORT_FLOOR,

@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from uuid import uuid4
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from ragbot.application.ports.repository_ports import ConversationRepositoryPort
@@ -27,8 +27,9 @@ from ragbot.shared.types import (
 
 
 def _to_message(row: MessageModel) -> Message:
-    """Chuyển đổi ORM MessageModel sang domain Message.
-    @param row: bản ghi ORM
+    """Convert an ORM MessageModel into a domain Message.
+
+    @param row: ORM record
     @return: domain entity Message
     """
     return Message(
@@ -46,9 +47,10 @@ def _to_message(row: MessageModel) -> Message:
 
 
 def _to_conversation(row: ConversationModel, msgs: list[MessageModel]) -> Conversation:
-    """Chuyển đổi ORM ConversationModel + messages sang domain Conversation.
-    @param row: bản ghi conversation ORM
-    @param msgs: danh sách message ORM
+    """Convert an ORM ConversationModel + messages into a domain Conversation.
+
+    @param row: ORM conversation record
+    @param msgs: list of ORM message records
     @return: domain entity Conversation
     """
     return Conversation(
@@ -67,7 +69,8 @@ def _to_conversation(row: ConversationModel, msgs: list[MessageModel]) -> Conver
 
 
 class SqlAlchemyConversationRepository(TenantScopedRepository, ConversationRepositoryPort):
-    """Repository cho bảng conversations — tạo mới hoặc lấy conversation kèm messages."""
+    """Repository for the conversations table — create or fetch a conversation
+    together with its messages."""
 
     async def get_or_create(
         self,
@@ -77,17 +80,17 @@ class SqlAlchemyConversationRepository(TenantScopedRepository, ConversationRepos
         record_tenant_id: TenantId,
         workspace_id: WorkspaceId,
     ) -> Conversation:
-        """Lấy conversation hiện có hoặc tạo mới nếu chưa tồn tại.
+        """Fetch the existing conversation or create one if absent.
 
         Hot-path: single LEFT OUTER JOIN ``conversations`` ↔ ``messages``
         capped at :data:`MAX_HISTORY_LIMIT_REQUEST` rows so that the
         ``(conversations.lookup, messages.most-recent-N)`` pair round-trips
-        once instead of twice (was N+1 read for every turn).
+        once instead of twice (was an N+1 read on every turn).
 
-        @param record_bot_id: ID bot
-        @param connect_id: ID người dùng
-        @param record_tenant_id: ID tenant
-        @param workspace_id: slug nhánh trong tenant (lấy từ bot config)
+        @param record_bot_id: bot UUID
+        @param connect_id: external user id
+        @param record_tenant_id: tenant UUID
+        @param workspace_id: branch slug within the tenant (from bot config)
         @return: Conversation entity
         """
         tid = self._ensure_tenant(record_tenant_id)
@@ -123,10 +126,11 @@ class SqlAlchemyConversationRepository(TenantScopedRepository, ConversationRepos
         *,
         record_tenant_id: TenantId,
     ) -> Conversation | None:
-        """Lấy conversation theo ID kèm toàn bộ messages.
-        @param conversation_id: UUID conversation
-        @param record_tenant_id: ID tenant
-        @return: Conversation hoặc None
+        """Fetch a conversation by ID together with all its messages.
+
+        @param conversation_id: conversation UUID
+        @param record_tenant_id: tenant UUID
+        @return: Conversation, or None
         """
         tid = self._ensure_tenant(record_tenant_id)
         async with self._new_session() as session:
@@ -148,20 +152,51 @@ class SqlAlchemyConversationRepository(TenantScopedRepository, ConversationRepos
         record_tenant_id: TenantId,
         workspace_id: WorkspaceId,
     ) -> None:
-        """Lưu conversation và các messages mới vào DB.
-        @param conversation: aggregate Conversation cần lưu
-        @param record_tenant_id: ID tenant (kiểm tra isolation)
-        @param workspace_id: slug nhánh — bắt buộc khi tạo conversation mới;
-            khi update message cho conversation có sẵn sẽ thừa kế từ row cha.
+        """Insert a new conversation or update the existing one, tenant-fenced.
+
+        @param conversation: Conversation aggregate to persist
+        @param record_tenant_id: request tenant UUID (isolation check)
+        @param workspace_id: branch slug — required when creating a new
+            conversation; when appending messages to an existing conversation
+            the slug is inherited from the parent row.
+
+        IDOR-write fence: the UPDATE branch filters on BOTH the primary key AND
+        ``record_tenant_id`` (``RETURNING workspace_id``), so a foreign-tenant
+        conversation id matches zero rows and falls through to INSERT under the
+        request tenant — it can never overwrite another tenant's conversation.
+        Every message INSERT is forced to the REQUEST tenant (``tid``), not the
+        message entity's own ``record_tenant_id``, so a caller cannot smuggle a
+        cross-tenant message row past the parent's tenant scope.
         """
         tid = self._ensure_tenant(record_tenant_id)
         if conversation.record_tenant_id != tid:
-            from ragbot.shared.errors import TenantIsolationViolation
+            from ragbot.shared.errors import TenantIsolationViolation  # noqa: PLC0415
             raise TenantIsolationViolation("conversation.tenant != request tenant")
 
         async with self._new_session() as session:
-            existing = await session.get(ConversationModel, conversation.id)
-            if existing is None:
+            # Tenant-fenced UPDATE first: only a row owned by THIS tenant is
+            # mutated. ``RETURNING workspace_id`` hands back the parent slug so
+            # message rows inherit it without a second SELECT.
+            stmt = (
+                update(ConversationModel)
+                .where(
+                    ConversationModel.id == conversation.id,
+                    ConversationModel.record_tenant_id == tid,
+                )
+                .values(
+                    rolling_summary=conversation.rolling_summary,
+                    turn_count=conversation.turn_count,
+                    last_message_at=conversation.last_message_at,
+                    metadata_json=dict(conversation.metadata),
+                )
+                .returning(ConversationModel.workspace_id)
+                .execution_options(synchronize_session=False)
+            )
+            parent_slug = (await session.execute(stmt)).scalar_one_or_none()
+            if parent_slug is None:
+                # No row for this (id, tenant) — create it under the request
+                # tenant. A foreign-tenant id lands here and inserts a fresh,
+                # correctly-scoped row rather than clobbering the foreign row.
                 session.add(
                     ConversationModel(
                         id=conversation.id,
@@ -180,14 +215,10 @@ class SqlAlchemyConversationRepository(TenantScopedRepository, ConversationRepos
                 # for the message rows below without an extra round-trip.
                 msg_workspace_id = workspace_id
             else:
-                existing.rolling_summary = conversation.rolling_summary
-                existing.turn_count = conversation.turn_count
-                existing.last_message_at = conversation.last_message_at
-                existing.metadata_json = dict(conversation.metadata)
                 # Messages inherit the parent conversation's slug; the
                 # caller-supplied value is ignored here so the FK chain stays
                 # the single source of truth.
-                msg_workspace_id = WorkspaceId(existing.workspace_id)
+                msg_workspace_id = WorkspaceId(parent_slug)
 
             # Persist new messages (those not yet in DB — keyed by id).
             existing_ids = {
@@ -207,7 +238,10 @@ class SqlAlchemyConversationRepository(TenantScopedRepository, ConversationRepos
                     MessageModel(
                         id=msg.id,
                         record_conversation_id=msg.conversation_id,
-                        record_tenant_id=msg.record_tenant_id,
+                        # Force the REQUEST tenant — never trust the message
+                        # entity's own tenant field (defence vs a cross-tenant
+                        # message smuggled onto a tenant-scoped conversation).
+                        record_tenant_id=tid,
                         workspace_id=msg_workspace_id,
                         record_bot_id=msg.record_bot_id,
                         role=msg.role,
@@ -278,15 +312,15 @@ class SqlAlchemyConversationRepository(TenantScopedRepository, ConversationRepos
         *,
         max_messages: int = MAX_HISTORY_LIMIT_REQUEST,
     ) -> list[MessageModel]:
-        """Lấy N messages gần nhất của conversation, trả về oldest-first.
+        """Fetch the N most-recent messages of a conversation, oldest-first.
 
         Used by ``get_by_id`` when the caller already has the conversation
-        UUID and does not need the JOIN. Sử dụng SQL LIMIT để tránh load
-        toàn bộ history vào RAM.
+        UUID and does not need the JOIN. Uses a SQL LIMIT to avoid loading the
+        whole history into RAM.
 
-        @param conv_id: UUID conversation
-        @param max_messages: số messages tối đa load
-        @return: danh sách MessageModel (oldest-first)
+        @param conv_id: conversation UUID
+        @param max_messages: maximum number of messages to load
+        @return: list of MessageModel (oldest-first)
         """
         result = await session.execute(
             select(MessageModel)

@@ -213,7 +213,9 @@ async def test_list_all_entities_pagination() -> None:
     sf = _make_mock_session_factory(fake_rows=fake_rows)
     repo = StatsIndexRepository(session_factory=sf)
 
-    rows = await repo.list_all_entities(record_bot_id=bot_id, limit=3)
+    rows = await repo.list_all_entities(
+        record_tenant_id=uuid.uuid4(), record_bot_id=bot_id, limit=3,
+    )
     assert len(rows) == 3
     for row in rows:
         assert "record_document_id" in row
@@ -251,22 +253,36 @@ async def test_stats_repo_cross_tenant_isolation() -> None:
     sf.return_value.__aenter__ = AsyncMock(return_value=session)
     sf.return_value.__aexit__ = AsyncMock(return_value=False)
 
+    tenant_id = uuid.uuid4()
     repo = StatsIndexRepository(session_factory=sf)
     await repo.query_by_price_range(
+        record_tenant_id=tenant_id,
         record_bot_id=bot_id,
         price_min=None,
         price_max=None,
         price_column="any",
     )
 
-    assert len(captured_sql) == 1, "Exactly one SQL query expected"
-    sql = captured_sql[0]
+    # ``session_with_tenant`` issues SET LOCAL statements first; the real query
+    # is the one selecting FROM document_service_index.
+    query_sql = [s for s in captured_sql if "document_service_index" in s]
+    assert len(query_sql) == 1, "Exactly one stats query expected"
+    sql = query_sql[0]
     assert "record_bot_id" in sql, (
         "Query MUST filter on record_bot_id to prevent cross-bot data leakage"
     )
-    # The bot UUID must be passed as a bind param, not inlined as a literal.
-    assert "bot_id" in str(captured_params[0]), (
+    assert "record_tenant_id" in sql, (
+        "Query MUST also filter on record_tenant_id (defence-in-depth fence)"
+    )
+    # The bot + tenant UUIDs must be passed as bind params, not inlined.
+    query_params = next(
+        p for s, p in zip(captured_sql, captured_params) if "document_service_index" in s
+    )
+    assert "bot_id" in str(query_params), (
         "Bot UUID must be a bind parameter, not an inline literal"
+    )
+    assert "tenant_id" in str(query_params), (
+        "Tenant UUID must be a bind parameter, not an inline literal"
     )
 
 
@@ -434,6 +450,7 @@ def test_count_by_price_range_uses_bot_id_scope() -> None:
     repo = StatsIndexRepository(session_factory=sf)
     result = asyncio.run(
         repo.count_by_price_range(
+            record_tenant_id=uuid.uuid4(),
             record_bot_id=bot_id,
             price_min=100_000,
             price_max=500_000,
@@ -441,6 +458,103 @@ def test_count_by_price_range_uses_bot_id_scope() -> None:
         )
     )
     assert result == 5
-    assert len(captured) == 1
-    assert "record_bot_id" in captured[0]
-    assert "price_primary" in captured[0]
+    # ``session_with_tenant`` issues SET LOCAL first; the real query is the COUNT.
+    query_sql = [s for s in captured if "document_service_index" in s]
+    assert len(query_sql) == 1
+    assert "record_bot_id" in query_sql[0]
+    assert "record_tenant_id" in query_sql[0]
+    assert "price_primary" in query_sql[0]
+
+
+# ---------------------------------------------------------------------------
+# F-4 — every stats read method binds the tenant (RLS session) AND fences the
+# WHERE clause on record_tenant_id, AND emits a SET LOCAL app.tenant_id (RLS).
+# ---------------------------------------------------------------------------
+
+
+def _capturing_factory() -> tuple[MagicMock, list[str], list[Any]]:
+    """A session factory whose session records every executed statement."""
+    captured_sql: list[str] = []
+    captured_params: list[Any] = []
+    mock_result = MagicMock()
+    mock_result.fetchall.return_value = []
+    mock_result.fetchone.return_value = (0,)
+
+    session = AsyncMock()
+
+    async def _cap(query: Any, params: Any = None) -> Any:
+        captured_sql.append(str(query))
+        captured_params.append(params or {})
+        return mock_result
+
+    session.execute = _cap
+    session.close = AsyncMock()
+    sf = MagicMock()
+    sf.return_value = session
+    return sf, captured_sql, captured_params
+
+
+@pytest.mark.asyncio
+async def test_all_read_methods_set_local_tenant_and_fence_where() -> None:
+    """Each stats read method (a) issues SET LOCAL app.tenant_id for RLS and
+    (b) carries ``record_tenant_id`` in its SELECT/COUNT WHERE clause."""
+    from ragbot.infrastructure.repositories.stats_index_repository import (
+        StatsIndexRepository,
+    )
+
+    tenant_id = uuid.uuid4()
+    bot_id = uuid.uuid4()
+
+    async def _call(method_name: str) -> tuple[list[str], list[Any]]:
+        sf, sql, params = _capturing_factory()
+        repo = StatsIndexRepository(session_factory=sf)
+        if method_name == "query_by_price_range":
+            await repo.query_by_price_range(
+                record_tenant_id=tenant_id, record_bot_id=bot_id,
+                price_min=1, price_max=9, price_column="any",
+            )
+        elif method_name == "top_by_price":
+            await repo.top_by_price(
+                record_tenant_id=tenant_id, record_bot_id=bot_id, direction="max",
+            )
+        elif method_name == "count_by_price_range":
+            await repo.count_by_price_range(
+                record_tenant_id=tenant_id, record_bot_id=bot_id,
+                price_min=1, price_max=9,
+            )
+        elif method_name == "list_all_entities":
+            await repo.list_all_entities(
+                record_tenant_id=tenant_id, record_bot_id=bot_id,
+            )
+        elif method_name == "query_by_name_keyword":
+            await repo.query_by_name_keyword(
+                record_tenant_id=tenant_id, record_bot_id=bot_id, keyword="x",
+            )
+        return sql, params
+
+    for method in (
+        "query_by_price_range",
+        "top_by_price",
+        "count_by_price_range",
+        "list_all_entities",
+        "query_by_name_keyword",
+    ):
+        sql, params = await _call(method)
+        joined = " ".join(sql).lower()
+        # RLS GUC is bound for this session.
+        assert "set local app.tenant_id" in joined, (
+            f"{method}: missing SET LOCAL app.tenant_id (RLS not bound)"
+        )
+        # The real query fences on record_tenant_id (defence-in-depth).
+        query_sql = [s for s in sql if "document_service_index" in s]
+        assert query_sql, f"{method}: no document_service_index query emitted"
+        assert all("record_tenant_id" in s for s in query_sql), (
+            f"{method}: query missing record_tenant_id WHERE fence"
+        )
+        # tenant id flows as a bound parameter, never inlined.
+        query_params = [
+            p for s, p in zip(sql, params) if "document_service_index" in s
+        ]
+        assert all("tenant_id" in str(p) for p in query_params), (
+            f"{method}: tenant id must be a bind parameter"
+        )
