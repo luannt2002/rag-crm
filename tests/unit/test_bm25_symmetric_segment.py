@@ -23,12 +23,26 @@ _HS_SOURCE = inspect.getsource(PgVectorStore.hybrid_search)
 
 
 def test_query_text_segmented_before_tsquery() -> None:
-    """Query side calls segment_vi_compounds on both query_text and normalized."""
-    assert "segment_vi_compounds(query_text)" in _HS_SOURCE, (
+    """Query side segments both query_text and normalized, gated by language.
+
+    The segmentation is routed through the local ``_segment`` helper so it
+    can be gated on ``VI_DOMAIN_LANGUAGES`` (symmetric with ingest, which
+    only segments VN content). For a VN-language bot the helper still calls
+    ``segment_vi_compounds`` — so the index lexeme stream (built from
+    ``content_segmented``) and the query lexeme stream agree.
+    """
+    assert "_segment(query_text)" in _HS_SOURCE, (
         "Query side must pre-segment query_text — index uses content_segmented."
     )
-    assert "segment_vi_compounds(normalized_query)" in _HS_SOURCE, (
+    assert "_segment(normalized_query)" in _HS_SOURCE, (
         "Diacritic-stripped variant must also be segmented for symmetry."
+    )
+    # The helper must actually call the VN segmenter (gated on language).
+    assert "segment_vi_compounds(_txt)" in _HS_SOURCE, (
+        "_segment must call segment_vi_compounds for VN-language bots."
+    )
+    assert "VI_DOMAIN_LANGUAGES" in _HS_SOURCE, (
+        "Segmentation must be gated on VI_DOMAIN_LANGUAGES (symmetric with ingest)."
     )
 
 

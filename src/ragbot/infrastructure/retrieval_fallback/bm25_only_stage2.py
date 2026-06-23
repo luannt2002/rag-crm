@@ -77,6 +77,7 @@ class BM25OnlyStage2Retriever:
             FROM document_chunks dc
             JOIN documents d ON d.id = dc.record_document_id
             WHERE d.record_bot_id = :rbid
+              AND d.deleted_at IS NULL
               AND dc.search_vector @@ websearch_to_tsquery('simple', :query)
             ORDER BY score DESC
             LIMIT :top_k

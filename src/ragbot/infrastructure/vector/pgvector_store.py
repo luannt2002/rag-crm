@@ -22,6 +22,7 @@ from ragbot.infrastructure.db.models_monitoring import (
 from ragbot.shared.constants import (
     ALLOWED_EMBEDDING_COLUMNS,
     CHUNK_LEVEL_METADATA_FILTER_KEYS,
+    DEFAULT_BM25_NORMALIZATION_FLAGS,
     DEFAULT_BM25_SUBSTRING_FALLBACK_ENABLED,
     DEFAULT_BM25_SYMBOL_PHRASE_ENABLED,
     DEFAULT_BM25_SYMBOL_PHRASE_RANK_BOOST,
@@ -29,11 +30,13 @@ from ragbot.shared.constants import (
     DEFAULT_EMBEDDING_COLUMN,
     DEFAULT_HYBRID_RRF_BM25_WEIGHT,
     DEFAULT_HYBRID_RRF_VECTOR_WEIGHT,
+    DEFAULT_LANGUAGE,
     DEFAULT_RERANKER_EMBEDDING_DIM,
     DEFAULT_RRF_K,
     DEFAULT_RRF_RANK_MISS_PENALTY,
     DEFAULT_TOP_K,
     MAX_EF_SEARCH,
+    VI_DOMAIN_LANGUAGES,
 )
 
 
@@ -360,7 +363,7 @@ class PgVectorStore:
         rrf_miss: int = DEFAULT_RRF_RANK_MISS_PENALTY,
         ef_search: int = DEFAULT_EF_SEARCH,
         bm25_use_cover_density: bool = True,
-        bm25_normalization_flags: int = 5,
+        bm25_normalization_flags: int = DEFAULT_BM25_NORMALIZATION_FLAGS,
         bm25_substring_fallback_enabled: bool = DEFAULT_BM25_SUBSTRING_FALLBACK_ENABLED,
         bm25_symbol_phrase_enabled: bool = DEFAULT_BM25_SYMBOL_PHRASE_ENABLED,
         bm25_weight: float = DEFAULT_HYBRID_RRF_BM25_WEIGHT,
@@ -369,6 +372,7 @@ class PgVectorStore:
         embedding_column: str = DEFAULT_EMBEDDING_COLUMN,
         record_tenant_id: UUID | None = None,
         structural_filter_patterns: list[str] | None = None,
+        language: str = DEFAULT_LANGUAGE,
     ) -> list[dict[str, Any]]:
         """Hybrid search: dense (cosine) + sparse (tsvector BM25-approx) fused via RRF.
 
@@ -400,8 +404,18 @@ class PgVectorStore:
 
             # Symmetric tokenization: ingest indexes `content_segmented`
             # (compound joined via `_`); query side must mirror that or
-            # the `simple` parser produces non-overlapping lexemes.
-            tokenized_query = segment_vi_compounds(query_text)
+            # the `simple` parser produces non-overlapping lexemes. Gate the
+            # VN compound segmenter on language exactly as ingest does
+            # (VI_DOMAIN_LANGUAGES) — ingest does NOT segment non-VN content,
+            # so segmenting a non-VN query here would be asymmetric AND burn
+            # underthesea CPU for no benefit.
+            _seg_lang = language if language != "auto" else DEFAULT_LANGUAGE
+            _vi_seg_eligible = _seg_lang in VI_DOMAIN_LANGUAGES
+
+            def _segment(_txt: str) -> str:
+                return segment_vi_compounds(_txt) if _vi_seg_eligible else _txt
+
+            tokenized_query = _segment(query_text)
             # Sparse branch only: strip VN filler tokens (e.g. "nói gì",
             # "ra sao") so websearch_to_tsquery AND-of-N doesn't over-
             # restrict recall on natural-language queries. Dense branch
@@ -409,7 +423,7 @@ class PgVectorStore:
             # back to the diacritic-stripped query when strip yields ''.
             _stripped_for_sparse = strip_vn_filler_tokens(query_text) or query_text
             normalized_query = remove_diacritics(_stripped_for_sparse)
-            tokenized_normalized = segment_vi_compounds(normalized_query)
+            tokenized_normalized = _segment(normalized_query)
             safe_raw = query_text.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
             safe_raw_normalized = normalized_query.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
             # Clamp RRF weights to a sane range — negative weights would flip
