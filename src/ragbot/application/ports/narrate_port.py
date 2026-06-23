@@ -36,6 +36,7 @@ from __future__ import annotations
 
 from typing import Protocol, runtime_checkable
 
+from ragbot.shared.constants import DEFAULT_LANGUAGE
 from ragbot.shared.types import BlockType
 
 
@@ -51,13 +52,22 @@ class NarrateServicePort(Protocol):
     than an empty / fabricated string.
     """
 
-    async def narrate(self, content: str, block_type: BlockType) -> str:
+    async def narrate(
+        self,
+        content: str,
+        block_type: BlockType,
+        *,
+        language: str = DEFAULT_LANGUAGE,
+    ) -> str:
         """Return text to embed for ``content`` of ``block_type``.
 
         @param content: raw block content (markdown table / LaTeX formula /
             OCR description).
         @param block_type: classifier label from the parser
             (``"TABLE"`` / ``"FORMULA"`` / ``"IMAGE"`` / etc.).
+        @param language: the document's language code (per-bot ``bots.language``
+            threaded from ingest) so narration is produced in the source
+            language instead of a hardcoded one.
         @return: narrated text, or the original ``content`` verbatim
             when the strategy is OFF / failed / block_type unsupported.
         """

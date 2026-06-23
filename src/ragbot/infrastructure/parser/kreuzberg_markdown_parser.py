@@ -35,9 +35,11 @@ from typing import TYPE_CHECKING, Any, Final
 import structlog
 
 from ragbot.shared.constants import DEFAULT_PDF_MAX_BYTES
+from ragbot.shared.structured_blocks import markdown_to_blocks
 
 if TYPE_CHECKING:
     from ragbot.application.ports.document_parser_port import DocumentParserPort
+    from ragbot.domain.entities.document import Block
 
 logger = structlog.get_logger(__name__)
 
@@ -110,12 +112,8 @@ class KreuzbergMarkdownParser:
             or (file_ext or "").strip().lower() in _KREUZBERG_EXTS
         )
 
-    async def parse(
-        self,
-        content: bytes,
-        *,
-        file_name: str,
-    ) -> list[dict]:
+    async def _extract_markdown(self, content: bytes, *, file_name: str) -> str:
+        """Run Kreuzberg off the event loop → structured markdown string."""
         if len(content) > DEFAULT_PDF_MAX_BYTES:
             raise ValueError(
                 f"File too large for Kreuzberg: {len(content)} bytes "
@@ -143,7 +141,15 @@ class KreuzbergMarkdownParser:
         markdown = getattr(result, "content", "") or ""
         if not markdown.strip():
             raise ValueError(f"Kreuzberg produced empty markdown for {file_name}")
+        return markdown
 
+    async def parse(
+        self,
+        content: bytes,
+        *,
+        file_name: str,
+    ) -> list[dict]:
+        markdown = await self._extract_markdown(content, file_name=file_name)
         heading_lines = sum(
             1 for ln in markdown.splitlines() if ln.lstrip().startswith("#")
         )
@@ -151,7 +157,6 @@ class KreuzbergMarkdownParser:
             "kreuzberg_markdown_parsed",
             file_name=file_name,
             bytes=len(content),
-            mime=mime,
             markdown_chars=len(markdown),
             heading_lines=heading_lines,
         )
@@ -169,6 +174,11 @@ class KreuzbergMarkdownParser:
                 },
             }
         ]
+
+    async def parse_blocks(self, content: bytes, *, file_name: str) -> list[Block]:
+        """Emit a typed ``Block`` stream from the structured markdown."""
+        markdown = await self._extract_markdown(content, file_name=file_name)
+        return markdown_to_blocks(markdown)
 
 
 __all__ = ["KreuzbergMarkdownParser"]

@@ -24,6 +24,7 @@ import httpx
 import structlog
 from sqlalchemy import text as _sql_text
 
+from ragbot.application.ports.document_parser_port import StructuredParserPort
 from ragbot.application.services import google_link_service
 from ragbot.application.services.chunk_context_enricher import ChunkContextEnricher
 from ragbot.application.services.document_service import DocumentService
@@ -396,6 +397,29 @@ async def _handle_document_uploaded_inner(payload: dict[str, Any], container: Co
                             c["content"] for c in _chunks if c.get("content")
                         )
                         registry_routed = True
+                        # Structure-aware Block stream (ADR-W3-D1 S1). A
+                        # structured parser also emits a typed Block list so the
+                        # Block pipeline (Layer-2 buffer -> Layer-3 profile ->
+                        # Layer-6 atomic-aware chunking) runs on real atomic
+                        # blocks instead of re-detecting structure from the
+                        # flattened markdown. Parsers without parse_blocks keep
+                        # the dict-only path (parsed_blocks stays None).
+                        if isinstance(parser, StructuredParserPort):
+                            try:
+                                _blocks = await parser.parse_blocks(
+                                    _raw, file_name=_doc_name or "doc",
+                                )
+                                parsed_blocks = list(_blocks) if _blocks else None
+                            except (ValueError, TypeError, OSError) as exc:
+                                # Block emission is an enhancement, never a hard
+                                # dependency — the flat-markdown path already
+                                # succeeded. Degrade to None on a parse fault.
+                                logger.warning(
+                                    "worker_parse_blocks_failed_flat_fallback",
+                                    error_type=type(exc).__name__,
+                                    error=str(exc)[:160],
+                                    doc_id=str(document_id),
+                                )
                         logger.info(
                             "worker_parser_registry_routed",
                             provider=(
@@ -406,6 +430,7 @@ async def _handle_document_uploaded_inner(payload: dict[str, Any], container: Co
                             mime_type=mime_type,
                             file_ext=_ext,
                             chunks=len(_chunks),
+                            blocks=len(parsed_blocks or []),
                             bytes=len(_raw),
                             doc_id=str(document_id),
                         )

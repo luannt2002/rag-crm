@@ -33,6 +33,7 @@ import structlog
 
 from ragbot.application.dto.ai_specs import LLMSpec
 from ragbot.application.ports.llm_port import LLMMessage, LLMPort
+from ragbot.shared.constants import DEFAULT_LANGUAGE
 from ragbot.shared.errors import CircuitBreakerOpen, LLMError, RetrievalError
 from ragbot.shared.types import BlockType, TenantId, TraceId
 
@@ -40,9 +41,12 @@ logger = structlog.get_logger(__name__)
 
 
 # Block-type-specific user prompt scaffolds. The system instruction is
-# constant across block types — domain-neutral and declarative. Each
-# block prompt is short by design: we want the LLM to focus on the
-# CONTENT, not the wrapper text.
+# constant across block types — domain-neutral and declarative. Each block
+# prompt is short by design (focus on CONTENT, not wrapper text) and
+# LANGUAGE-NEUTRAL: the output language is named at runtime from the
+# document's language code so an English / Khmer / Spanish corpus is never
+# narrated with a hardcoded one. The system instruction also pins
+# "preserve the source language exactly" as a second guard.
 _NARRATE_SYSTEM_INSTRUCTION = (
     "You are a domain-agnostic content linearizer for a retrieval index. "
     "Given a non-prose block (table, formula, or image caption), produce "
@@ -57,18 +61,20 @@ _NARRATE_SYSTEM_INSTRUCTION = (
 
 _BLOCK_PROMPTS: dict[str, str] = {
     "TABLE": (
-        "Diễn giải bảng/dòng dữ liệu dưới đây thành 1-2 câu tiếng Việt tự nhiên, "
-        "nêu rõ các cột chính và nội dung dòng truyền tải. CHỈ trả về câu mô tả, "
-        "không markdown, không tiền tố:\n\n{content}"
+        "Linearize the table / data row below into 1-2 natural sentences in "
+        "the {language} language, naming the key columns and what the row "
+        "conveys. Return ONLY the description, no markdown, no preamble:\n\n"
+        "{content}"
     ),
     "FORMULA": (
-        "Diễn giải công thức/biểu thức LaTeX dưới đây thành 1-2 câu tiếng Việt "
-        "tự nhiên, gọi tên phép toán và các biến có ý nghĩa. CHỈ trả về câu "
-        "mô tả, không markdown, không tiền tố:\n\n{content}"
+        "Describe the LaTeX formula / expression below in 1-2 natural sentences "
+        "in the {language} language, naming the operation and the meaningful "
+        "variables. Return ONLY the description, no markdown, no preamble:\n\n"
+        "{content}"
     ),
     "IMAGE": (
-        "Diễn giải nội dung hình ảnh / chú thích OCR dưới đây thành 1-2 câu "
-        "tiếng Việt tự nhiên. CHỈ trả về câu mô tả:\n\n{content}"
+        "Describe the image / OCR caption below in 1-2 natural sentences in the "
+        "{language} language. Return ONLY the description:\n\n{content}"
     ),
 }
 
@@ -102,8 +108,17 @@ class LLMNarrateGenerator:
     def get_provider_name() -> str:
         return "llm"
 
-    async def narrate(self, content: str, block_type: BlockType) -> str:
+    async def narrate(
+        self,
+        content: str,
+        block_type: BlockType,
+        *,
+        language: str = DEFAULT_LANGUAGE,
+    ) -> str:
         """Linearise ``content`` of ``block_type`` for embedding.
+
+        @param language: the document's language code — named in the per-block
+            prompt so the narration is produced in the source language.
 
         Returns:
             The LLM-drafted narration text on success; the **original**
@@ -125,7 +140,9 @@ class LLMNarrateGenerator:
             )
             return content
 
-        user_message = prompt_template.format(content=content)
+        user_message = prompt_template.format(
+            content=content, language=language or DEFAULT_LANGUAGE,
+        )
 
         try:
             response = await self._llm.complete(

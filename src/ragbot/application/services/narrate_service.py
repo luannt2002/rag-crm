@@ -42,6 +42,7 @@ import structlog
 
 from ragbot.application.ports.narrate_port import NarrateServicePort
 from ragbot.shared.constants import (
+    DEFAULT_LANGUAGE,
     NARRATE_BLOCK_TYPES_DEFAULT,
     NARRATE_METADATA_KEY_BLOCK_TYPE,
     NARRATE_METADATA_KEY_NARRATED_TEXT,
@@ -119,8 +120,13 @@ class NarrateService:
         self,
         content: str,
         block_type: BlockType,
+        *,
+        language: str = DEFAULT_LANGUAGE,
     ) -> NarrateResult:
         """Linearise ``content`` of ``block_type`` for embedding.
+
+        @param language: the document's language code, forwarded to the
+            strategy so narration is produced in the source language.
 
         Always returns a ``NarrateResult`` with both ``text_for_embedding``
         and ``raw_chunk`` populated — the ingest pipeline can persist
@@ -163,7 +169,9 @@ class NarrateService:
                 narrated=False,
             )
 
-        narrated_text = await self._strategy.narrate(raw, block_type)
+        narrated_text = await self._strategy.narrate(
+            raw, block_type, language=language or DEFAULT_LANGUAGE,
+        )
         # Strategy contract guarantees a string — but be defensive: if it
         # ever returns None or empty for a non-empty input we treat that
         # as "no enhancement" and fall back to raw (HALLU=0 — never embed

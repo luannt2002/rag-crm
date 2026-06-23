@@ -16,10 +16,15 @@ operators see the install hint in logs.
 from __future__ import annotations
 
 from io import BytesIO
+from typing import TYPE_CHECKING
 
 import structlog
 
+from ragbot.shared.structured_blocks import markdown_to_blocks
 from ragbot.shared.tabular_markdown import rows_to_structured_markdown
+
+if TYPE_CHECKING:
+    from ragbot.domain.entities.document import Block
 
 logger = structlog.get_logger(__name__)
 
@@ -59,12 +64,8 @@ class ExcelOpenpyxlParser:
             or (file_ext or "").strip().lower() == _XLSX_EXT
         )
 
-    async def parse(
-        self,
-        content: bytes,
-        *,
-        file_name: str,
-    ) -> list[dict]:
+    def _build_markdown(self, content: bytes) -> str:
+        """Workbook → ONE structured-markdown document (multi-sheet aware)."""
         # Local import — module-level import would crash on systems without
         # openpyxl, defeating the registry's fail-soft fallback.
         from openpyxl import load_workbook
@@ -90,7 +91,15 @@ class ExcelOpenpyxlParser:
                 parts.append(md)
 
         wb.close()
-        markdown = "\n\n".join(parts)
+        return "\n\n".join(parts)
+
+    async def parse(
+        self,
+        content: bytes,
+        *,
+        file_name: str,
+    ) -> list[dict]:
+        markdown = self._build_markdown(content)
         if not markdown.strip():
             return []
         heading_lines = sum(
@@ -99,7 +108,6 @@ class ExcelOpenpyxlParser:
         logger.info(
             "excel_openpyxl_parsed",
             file_name=file_name,
-            sheets=sheet_count,
             markdown_chars=len(markdown),
             section_headings=heading_lines,
         )
@@ -114,6 +122,12 @@ class ExcelOpenpyxlParser:
                 },
             }
         ]
+
+    async def parse_blocks(
+        self, content: bytes, *, file_name: str,  # noqa: ARG002 — Port parity
+    ) -> list[Block]:
+        """Emit a typed ``Block`` stream from the structured markdown."""
+        return markdown_to_blocks(self._build_markdown(content))
 
 
 __all__ = ["ExcelOpenpyxlParser"]
