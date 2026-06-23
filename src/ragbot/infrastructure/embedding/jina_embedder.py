@@ -392,9 +392,26 @@ class JinaEmbedder(EmbeddingPort):
         if late:
             # Each window = consecutive chunks embedded together (context-aware).
             for window in self._window_passages(texts):
-                all_results.extend(
-                    await self._post_embed(window, model=model, task=task, key=key, late=True),
-                )
+                try:
+                    all_results.extend(
+                        await self._post_embed(window, model=model, task=task, key=key, late=True),
+                    )
+                except ExternalServiceError as exc:
+                    # Some inputs cannot be late-chunk-tokenized (e.g. pipe-table
+                    # rows that tokenize to mostly delimiters) → Jina HTTP 422
+                    # "could not be tokenized for late_chunking". Late chunking is
+                    # a quality optimisation, NOT a correctness requirement:
+                    # degrade THIS window to normal (non-late) embedding rather
+                    # than aborting the whole document. Other errors propagate.
+                    if "late_chunking" not in str(exc):
+                        raise
+                    logger.warning(
+                        "jina_late_chunking_window_fallback_non_late",
+                        model=model, window_size=len(window), error=str(exc)[:200],
+                    )
+                    all_results.extend(
+                        await self._post_embed(window, model=model, task=task, key=key, late=False),
+                    )
         else:
             for start in range(0, len(texts), DEFAULT_EMBEDDING_MAX_BATCH):
                 batch = texts[start : start + DEFAULT_EMBEDDING_MAX_BATCH]

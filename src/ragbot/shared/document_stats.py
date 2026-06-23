@@ -268,11 +268,16 @@ def _is_separator_line(line: str) -> bool:
 
 def _split_cols(line: str) -> list[str]:
     """Split a CSV / TSV / pipe-delimited line into stripped columns."""
-    # Try pipe first (common for Markdown tables). Split on UNESCAPED pipes only —
-    # a cell whose content contains a literal pipe is markdown-escaped as ``\|`` (by
-    # the converter's _md_escape); splitting on every "|" would shatter that cell and
-    # drop the row. Restore the literal pipe in each field after the split.
-    if "|" in line:
+    # Pipe branch — ONLY for a genuine Markdown pipe-table row. Such a row starts
+    # with ``|`` (the converter's _md_escape + table format always emits a leading
+    # pipe and escapes any literal in-cell pipe as ``\|``). A raw-CSV chunk row
+    # (what the table_csv / table_dual_index chunkers persist) starts with a value
+    # or a quote, NEVER ``|`` — but its cells may contain a LITERAL pipe (e.g. a
+    # synonym/Aliases column "a; b | code: X | price: 684000"). Gating on a leading
+    # pipe stops that literal from hijacking the split (which glued name+price into
+    # one over-long cell → name-guard reject → 0 entities, the xe-3 price-loss bug).
+    # Non-pipe lines fall through to the RFC-4180 CSV branch below.
+    if line.lstrip().startswith("|"):
         parts = [c.replace("\\|", "|").strip() for c in re.split(r"(?<!\\)\|", line)]
         # Strip leading/trailing empty parts from Markdown pipe tables
         if parts and not parts[0]:

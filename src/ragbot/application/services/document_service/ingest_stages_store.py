@@ -46,6 +46,7 @@ from ragbot.shared.constants import (
     DEFAULT_CR_PROMPT_CACHE_ENABLED,
     DEFAULT_DIFF_REINGEST_ENABLED,
     DEFAULT_EMBED_COST_USD_PER_1M_TOKENS,
+    DEFAULT_EMPTY_EMBED_FALLBACK_TEXT,
     DEFAULT_NARRATE_TIMEOUT_S,
     DEFAULT_EMBEDDING_COLUMN,
     DEFAULT_EMBEDDING_PASSAGE_PREFIX,
@@ -284,6 +285,25 @@ class _StageStoreMixin:
             )
             if passage_prefix:
                 texts_to_embed = [f"{passage_prefix}{t}" for t in texts_to_embed]
+
+            # Empty-input guard (embedder 422 protection). A few chunking
+            # strategies (table_dual_index group/divider rows) linearise to
+            # whitespace; Jina v3 rejects empty/whitespace-only inputs and
+            # aborts the WHOLE document. Substitute a neutral placeholder so the
+            # batch is accepted — the vector carries no signal and never matches
+            # a real query. Logged for observability (which docs emit empties).
+            _n_empty_embed = sum(1 for _t in texts_to_embed if not _t.strip())
+            if _n_empty_embed:
+                texts_to_embed = [
+                    _t if _t.strip() else DEFAULT_EMPTY_EMBED_FALLBACK_TEXT
+                    for _t in texts_to_embed
+                ]
+                logger.warning(
+                    "embed_empty_input_substituted",
+                    n_substituted=_n_empty_embed,
+                    n_total=len(texts_to_embed),
+                    document_id=str(doc_id),
+                )
 
             # Late chunking: context-aware embedding (Jina-style approximation)
             late_chunking_enabled = False

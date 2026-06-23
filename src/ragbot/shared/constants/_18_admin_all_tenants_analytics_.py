@@ -147,22 +147,34 @@ KREUZBERG_SUPPORTED_MIMES: Final[tuple[str, ...]] = (
 )
 
 # --- sprint2-late-chunking-sliding (4 constants) ---
-DEFAULT_LATE_CHUNKING_LONG_DOC_THRESHOLD_CHARS: Final[int] = 32768
+DEFAULT_LATE_CHUNKING_LONG_DOC_THRESHOLD_CHARS: Final[int] = 16000
 DEFAULT_LATE_CHUNKING_OVERLAP_CHARS: Final[int] = 2048
 # --- Late Chunking Sliding Window (long-doc late chunking) ------------------
-# Sliding-window late chunking for long documents (>~8K embedder tokens).
-# When the document exceeds the embedder's context window we cannot embed it
-# in a single pass; instead we slide a fixed-size window with overlap so each
-# chunk inherits a *local* context prefix from the surrounding text rather
-# than the (often distant) document opening.
-# Sizing: Jina v3 / OpenAI text-embedding-3 advertise ~8192 token windows.
-# At the conservative ~4 chars/token ratio common for mixed VN/EN corpora,
-# 32768 chars ≈ 8192 tokens fits comfortably. Overlap of 2048 chars ≈ 512
-# tokens preserves cross-window continuity for chunks straddling boundaries.
-# Threshold default mirrors the window so docs below it use the single-pass
-# fast path. All keys configurable via ``system_config``.
-DEFAULT_LATE_CHUNKING_SLIDING_ENABLED: Final[bool] = False
-DEFAULT_LATE_CHUNKING_WINDOW_CHARS: Final[int] = 32768
+# Sliding-window late chunking for long documents that exceed the embedder's
+# single-pass context window. Without it, a single late_chunking call sends the
+# WHOLE document to the embedder; once the doc passes the window, the tail
+# chunks fall "beyond the truncation window" and the provider rejects the batch
+# (Jina v3 → HTTP 422 "could not be tokenized for late_chunking"). Sliding
+# instead processes the doc in overlapping windows so every window fits.
+# Sizing: Jina v3 late-chunk window is DEFAULT_JINA_LATE_CHUNK_WINDOW_TOKENS
+# (7800 tokens). Mixed VN + URL-heavy corpora tokenize at ~2.5–3 chars/token
+# (URLs/diacritics inflate token count), so a SAFE window is ~16000 chars
+# (≈ 5300–6400 tokens) with margin under 7800 — NOT 32768 chars, which assumed
+# an optimistic 4 chars/token and overflowed on real catalog data. Overlap 2048
+# chars preserves cross-window continuity. Threshold mirrors the window so docs
+# below it use the single-pass fast path. Enabled by default: sliding is
+# strictly safer for long docs and a no-op for short ones. Config via system_config.
+DEFAULT_LATE_CHUNKING_SLIDING_ENABLED: Final[bool] = True
+DEFAULT_LATE_CHUNKING_WINDOW_CHARS: Final[int] = 16000
+
+# Embedders reject empty / whitespace-only inputs (Jina v3 → HTTP 422
+# "could not be tokenized"). Some chunking strategies (e.g. table_dual_index
+# group/divider rows) can linearise a chunk to whitespace; embedding it is
+# pointless but it must not abort the whole document. Such inputs are
+# substituted with this neutral, tokenizable placeholder so the batch is
+# accepted — the resulting vector carries no real signal and never matches a
+# genuine query. Domain-neutral; value is irrelevant beyond being non-empty.
+DEFAULT_EMPTY_EMBED_FALLBACK_TEXT: Final[str] = "blank"
 
 # --- sprint2-narrate-then-embed (7 constants) ---
 # Anthropic Batch API discount factor (50% off at time of writing).

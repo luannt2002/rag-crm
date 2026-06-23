@@ -491,7 +491,13 @@ class _IngestMixin(
                 # coordination needed), idempotent, and preserves
                 # `content_hash` based skip-embed semantics downstream.
                 # `xmax=0` in RETURNING signals fresh INSERT vs UPDATE.
-                await session.execute(
+                # RETURNING id is load-bearing: on ON CONFLICT DO UPDATE the
+                # EXISTING row keeps its OWN id (not the freshly-generated
+                # ``doc_id``). Without reading it back, the downstream chunk
+                # INSERTs reference a id that was never persisted →
+                # fk_chunks_document "doc not present" 500 on re-ingest of any
+                # doc sharing a (tenant, bot, tool_name) tuple. Reconcile below.
+                _doc_upsert = await session.execute(
                     text("""
                         INSERT INTO documents (id, record_bot_id, record_tenant_id, workspace_id, source_url, document_name, tool_name,
                             mime_type, language, state, version, content_hash, acl, metadata_json, content_chars, raw_content)
@@ -507,6 +513,7 @@ class _IngestMixin(
                             raw_content = EXCLUDED.raw_content,
                             version = documents.version + 1,
                             updated_at = now()
+                        RETURNING id
                     """),
                     {
                         "id": doc_id,
@@ -533,6 +540,14 @@ class _IngestMixin(
                         }),
                     },
                 )
+                # Reconcile doc_id with the row actually persisted. On ON
+                # CONFLICT DO UPDATE the surviving row keeps its OWN id; the
+                # generated uuid was never inserted. Chunk INSERTs below FK to
+                # this id, so adopt the returned one (fresh insert returns the
+                # same uuid → no-op).
+                _persisted_id = _doc_upsert.scalar()
+                if _persisted_id is not None:
+                    doc_id = _persisted_id
             await session.commit()
 
         # ── Build the cross-phase context. Stages mutate ``ctx`` in place;
