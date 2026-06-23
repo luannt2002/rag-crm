@@ -22,6 +22,7 @@ from typing import TYPE_CHECKING
 
 import structlog
 
+from ragbot.shared.mime_sniff import sniff_real_mime
 from ragbot.infrastructure.parser.docx_parser import DocxParser
 from ragbot.infrastructure.parser.kreuzberg_markdown_parser import (
     KreuzbergMarkdownParser,
@@ -124,11 +125,20 @@ def _sniff_mime(content: bytes) -> str:
     unreliable. A PDF fetched from a URL commonly arrives as
     ``application/octet-stream`` with no extension; without sniffing it would
     miss the registry and fall to the flat OCR path. Magic-number first
-    (cheap, no dep), then Kreuzberg's detector for the long tail."""
+    (cheap, no dep), then the OOXML zip manifest, then Kreuzberg's detector
+    for the long tail. Shares the OOXML peek with ``shared.mime_sniff`` so the
+    registry and the OCR adapter resolve xlsx/docx/pptx identically."""
     if not content:
         return ""
     if content[:5] == b"%PDF-":
         return "application/pdf"
+    # OOXML zip (xlsx / docx / pptx): read ``[Content_Types].xml`` so an
+    # Office file arriving as octet-stream routes to its structured parser
+    # instead of falling through to flat OCR.
+    if content[:4] == b"PK\x03\x04":
+        ooxml = sniff_real_mime(content, "", "")
+        if "officedocument" in ooxml:
+            return ooxml
     try:
         import kreuzberg
 

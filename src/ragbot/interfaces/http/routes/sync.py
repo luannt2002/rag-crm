@@ -1,10 +1,10 @@
-"""Route đồng bộ — NestJS upstream gọi để sync bot + tài liệu.
+"""Sync routes — upstream BE clients call these to sync bots + documents.
 
-Bao gồm: upsert bot, sync/list/delete tài liệu.
+Covers: bot upsert, document sync/list/delete.
 
 Identity: ``record_tenant_id`` UUID is lifted from the JWT bearer
 (``request.state``); body legacy ``tenant_id`` INT is accepted from
-upstream NestJS clients but resolved to UUID via
+upstream BE clients but resolved to UUID via
 ``tenants.config->>'upstream_tenant_id'`` before any DB write touches
 the ``bots.record_tenant_id`` UUID FK column.
 """
@@ -53,7 +53,8 @@ router = APIRouter(prefix="/sync", tags=["sync"])
 
 
 def _sys_config(request: Request) -> SystemConfigService:
-    """Lấy SystemConfigService từ container.
+    """Build a SystemConfigService from the DI container.
+
     @param request: FastAPI Request
     @return: SystemConfigService instance
     """
@@ -134,8 +135,8 @@ def _build_audit_entry(
 ) -> AuditEntry:
     """Build a forensic ``AuditEntry`` from the FastAPI request context.
 
-    P0 — every ``/sync/*`` mutation must emit an audit row.
-    Upstream NestJS bulk ingest is a privileged operation; auditors
+    Every ``/sync/*`` mutation must emit an audit row.
+    Upstream bulk ingest is a privileged operation; auditors
     require a per-call trail keyed by ``record_bot_id`` + actor token.
     Pass ``record_tenant_id`` explicitly when the route already
     resolved the body INT → UUID; falls back to caller JWT otherwise.
@@ -238,7 +239,7 @@ class DeleteDocumentsRequest(BaseModel):
 # ---------------------------------------------------------------------------
 # POST /ragbot/sync/bot — upsert bot
 # ---------------------------------------------------------------------------
-# RBAC note: NestJS upstream calls with a service JWT (role="service",
+# RBAC note: upstream BE calls with a service JWT (role="service",
 # level=60) — passes the admin-level gate naturally. Human callers need at
 # least admin level. The fallback is the same Depends — no separate branch.
 @router.post(
@@ -246,8 +247,9 @@ class DeleteDocumentsRequest(BaseModel):
     dependencies=[Depends(require_permission_dep("sync", "bot_upsert"))],
 )
 async def sync_bot(req: SyncBotRequest, request: Request) -> dict:
-    """Upsert bot: tạo mới nếu chưa có, cập nhật nếu đã tồn tại.
-    @param req: thông tin bot (bot_id, channel_type, bot_name, ...)
+    """Upsert a bot: create when absent, update when it already exists.
+
+    @param req: bot details (bot_id, channel_type, bot_name, ...)
     @return: {ok, action, bot_uuid, bot_id, channel_type}
     """
     container = request.app.state.container
@@ -379,7 +381,7 @@ async def sync_bot(req: SyncBotRequest, request: Request) -> dict:
         record_tenant_uuid, workspace_slug, req.bot_id, req.channel_type,
     )
 
-    # P0 — emit forensic audit row for every upsert.
+    # Emit forensic audit row for every upsert.
     audit_repo = container.ai_config_repo()
     await audit_repo.write_audit(
         _build_audit_entry(
@@ -419,7 +421,8 @@ async def sync_bot(req: SyncBotRequest, request: Request) -> dict:
     dependencies=[Depends(require_permission_dep("sync", "documents_upsert"))],
 )
 async def sync_documents(req: SyncDocumentsRequest, request: Request) -> dict:
-    """Đồng bộ tài liệu cho bot: chunk, embed, lưu vào document_chunks.
+    """Sync documents for a bot: chunk, embed, store into document_chunks.
+
     @param req: {bot_id, channel_type, documents[]}
     @return: {ok, total_documents, total_chunks, documents}
     """
@@ -445,7 +448,7 @@ async def sync_documents(req: SyncDocumentsRequest, request: Request) -> dict:
     # Default: UPSERT — soft-delete only docs whose ``source_url`` is in
     # the incoming payload. ``wipe_existing=True`` restores the hard-wipe
     # behaviour and is super-admin gated.
-    # AdapChunk Tầng 6 — Narrate-then-Embed (TABLE/FORMULA/IMAGE).
+    # AdapChunk Narrate-then-Embed stage (TABLE/FORMULA/IMAGE).
     # Build the LLM strategy inline (resolved via ``enrichment`` binding,
     # same pattern as document_worker). Falls back to NullNarrateGenerator
     # if config says provider="null" or any init step fails.
@@ -556,7 +559,7 @@ async def sync_documents(req: SyncDocumentsRequest, request: Request) -> dict:
         })
         logger.info("sync_document", title=result.title, chunks=result.chunks, bot_id=req.bot_id)
 
-    # P0 — emit forensic audit row covering the bulk ingest.
+    # Emit forensic audit row covering the bulk ingest.
     audit_repo = container.ai_config_repo()
     await audit_repo.write_audit(
         _build_audit_entry(
@@ -605,17 +608,16 @@ async def list_documents(
     tenant_id: int = Query(..., ge=1, description="Tenant ID — REQUIRED 3-key identity"),
     limit: int | None = None,
 ) -> dict:
-    """Liệt kê tài liệu (kèm số chunk) của bot.
-    @param bot_id, channel_type: định danh bot
+    """List a bot's documents, each with its chunk count.
+
+    @param bot_id, channel_type: bot identity
     @param tenant_id: tenant scope — REQUIRED query param (3-key identity)
     @return: {ok, total, documents}
 
-    ``tenant_id`` is now a
-    REQUIRED query parameter (FastAPI ``Query(..., ge=1)``). Pre-fix
-    the route accepted ``int | None = None`` and silently fell back
-    to ``request.state.tenant_id_int`` when the caller omitted it.
-    CLAUDE.md "tenant_id REQUIRED" rule — external 3-key identity is
-    mandatory at the wire; missing → 422 from FastAPI validation.
+    ``tenant_id`` is a REQUIRED query parameter (FastAPI
+    ``Query(..., ge=1)``) so external 3-key identity is mandatory at
+    the wire; a missing value yields a 422 from FastAPI validation
+    rather than a silent fallback to request state.
     """
     container = request.app.state.container
     sf = container.session_factory()
@@ -674,7 +676,8 @@ async def list_documents(
     dependencies=[Depends(require_permission_dep("sync", "documents_delete"))],
 )
 async def delete_documents(req: DeleteDocumentsRequest, request: Request) -> dict:
-    """Xóa toàn bộ tài liệu và chunk của bot.
+    """Delete all documents and chunks for a bot.
+
     @param req: {bot_id, channel_type}
     @return: {ok, deleted_chunks, deleted_documents}
     """
@@ -706,7 +709,7 @@ async def delete_documents(req: DeleteDocumentsRequest, request: Request) -> dic
         record_tenant_id=record_tenant_uuid,
     )
 
-    # P0 — emit forensic audit row for bulk delete.
+    # Emit forensic audit row for bulk delete.
     audit_repo = container.ai_config_repo()
     await audit_repo.write_audit(
         _build_audit_entry(

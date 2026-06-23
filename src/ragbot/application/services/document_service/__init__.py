@@ -1,7 +1,7 @@
-"""Dịch vụ nhập tài liệu — chia chunk, tạo embedding, lưu trữ.
+"""Document ingestion service — chunk, embed, and store.
 
-Gộp logic chunk+embed+store trùng lặp từ sync.py và test_chat.py
-thành một service tái sử dụng duy nhất.
+Consolidates the duplicated chunk+embed+store logic into a single
+reusable service so every ingest source shares one canonical code path.
 """
 
 from __future__ import annotations
@@ -142,16 +142,16 @@ from ragbot.shared.errors import (
 from ragbot.shared.ingestion_validator import validate_ingestion
 
 logger = structlog.get_logger(__name__)
-# Phase-D observability extracted to ingest_phases (strangler split).
+# Observability helpers live in ingest_phases to keep this module focused.
 from ragbot.application.services.document_service.ingest_phases import *  # noqa: E402,F401,F403
-# Text cleaning + chunk-typing extracted to text_processing (strangler split).
+# Text cleaning + chunk-typing live in text_processing for the same reason.
 from ragbot.application.services.document_service.text_processing import *  # noqa: E402,F401,F403
-# Ingest persistence + safety helpers extracted to ingest_helpers (strangler split).
+# Ingest persistence + safety helpers live in ingest_helpers for the same reason.
 from ragbot.application.services.document_service.ingest_helpers import *  # noqa: E402,F401,F403
 from ragbot.application.services.document_service.ingest_core import _IngestMixin  # noqa: E402
 
 class DocumentService(_IngestMixin):
-    """Chia chunk, tạo embedding và lưu trữ tài liệu cho bot."""
+    """Chunk, embed, and store a bot's documents."""
 
     def __init__(
         self,
@@ -170,10 +170,10 @@ class DocumentService(_IngestMixin):
         narrate_service: Any | None = None,
         corpus_version_service: Any | None = None,
     ) -> None:
-        """Khởi tạo service với session factory, embedder và settings.
-        @param session_factory: factory tạo async session kết nối DB
-        @param embedder: service tạo embedding vector
-        @param settings: cấu hình ứng dụng (FALLBACK ONLY — system_config overrides)
+        """Initialize the service with its session factory, embedder, and settings.
+        @param session_factory: factory that creates async DB sessions
+        @param embedder: service that produces embedding vectors
+        @param settings: application config (FALLBACK ONLY — system_config overrides)
         @param config_service: SystemConfigService for runtime config (primary source)
         @param audit_logger: optional PipelineAuditLogger for JSONL leader-trace
         @param parser_detector: callable ``(mime, ext) -> DocumentParserPort | None``
@@ -185,9 +185,9 @@ class DocumentService(_IngestMixin):
             binding metadata.
         @param pii_redactor: optional PiiRedactorPort. When provided AND the
             bot has ``plan_limits.pii_redaction_enabled=True``, raw document
-            content is masked at the ingest boundary (Master Finding #4)
-            before chunking + persist. ``None`` (or a NullPiiRedactor) =
-            passthrough so existing tenants see no behaviour change.
+            content is masked at the ingest boundary before chunking +
+            persist. ``None`` (or a NullPiiRedactor) = passthrough so
+            existing tenants see no behaviour change.
         @param bot_repo: optional BotRepository used to look up the per-bot
             ``plan_limits`` toggle. ``None`` = skip redaction entirely so
             test wiring without a repo still works.
@@ -204,13 +204,13 @@ class DocumentService(_IngestMixin):
         self._model_resolver = model_resolver
         self._pii_redactor = pii_redactor
         self._bot_repo = bot_repo
-        # T1-Safety — source-URL allow-list validator (Strategy
-        # registry from ragbot.infrastructure.safety). ``None`` (default)
-        # means feature is wired off → ``_maybe_validate_source_allowlist``
+        # Source-URL allow-list validator (Strategy registry from
+        # ragbot.infrastructure.safety). ``None`` (default) means the
+        # feature is wired off → ``_maybe_validate_source_allowlist``
         # degrades to passthrough. Worker / bootstrap inject the real
         # validator best-effort via the DI container hook.
         self._source_validator = source_validator
-        # WA-3 — Enhanced Contextual Retrieval enricher (Port + DI). When
+        # Enhanced Contextual Retrieval enricher (Port + DI). When
         # ``None`` the ingest path builds a default ``ChunkContextEnricher``
         # wrapping ``NullChunkContextProvider`` so the column stays empty
         # until DI wires a real Haiku-batch provider. Per-bot opt-in is
@@ -224,14 +224,14 @@ class DocumentService(_IngestMixin):
         # chunks. ``None`` means the feature is wired off; existing callers
         # that do not pass the repo see passthrough with zero behaviour change.
         self._stats_index_repo = stats_index_repo
-        # AdapChunk Tầng 6 (Narrate-then-Embed): when wired, LaTeX/TABLE
-        # chunks pass through narrator → natural-language text before embed.
-        # ``None`` keeps the pre-narrate behaviour (embed raw chunk bytes).
+        # Narrate-then-Embed: when wired, LaTeX/TABLE chunks pass through
+        # the narrator → natural-language text before embed. ``None`` keeps
+        # the non-narrated behaviour (embed raw chunk bytes).
         self._narrate_service = narrate_service
         # Corpus-version bust on every corpus mutation (ingest terminal
         # flip + doc-delete family) so the semantic-cache key rotates
         # sub-TTL instead of waiting out the 300s Redis memo. ``None`` =
-        # not wired → TTL backstop only (no behaviour change for legacy
+        # not wired → TTL backstop only (no behaviour change for existing
         # construction sites).
         self._corpus_version_service = corpus_version_service
 
@@ -331,7 +331,7 @@ class DocumentService(_IngestMixin):
         on resolver failure (no binding, repo error) so bots without a
         binding row keep working.
 
-        @return: EmbeddingSpec chứa thông tin model embedding
+        @return: EmbeddingSpec carrying the embedding model details
         """
         if (
             self._model_resolver is not None
@@ -470,7 +470,7 @@ class DocumentService(_IngestMixin):
             )
             # Skip the inter-batch sleep on the final batch: we want
             # backpressure between provider calls, not extra latency at
-            # the tail of the document. TODO(admin): once ``documents``
+            # the tail of the document. TODO(admin): when ``documents``
             # gains ``chunks_embedded`` / ``embedded_at`` columns, write
             # progress to the DB here so external observers can poll.
             if batch_start + doc_batch_size < total_texts:
@@ -535,7 +535,7 @@ class DocumentService(_IngestMixin):
         *,
         record_tenant_id: uuid.UUID | None,
     ) -> dict[str, Any]:
-        """Resolve the effective chunking policy for a bot (Phase A chain).
+        """Resolve the effective chunking policy for a bot.
 
         per-bot ``plan_limits.chunking_config`` > platform
         ``system_config.chunking_policy`` > constants. Behaviour-neutral by
@@ -582,10 +582,9 @@ class DocumentService(_IngestMixin):
 
         1. ``bots.plan_limits.embedding_text_strategy`` (per-bot override —
            e.g. legal/regulatory bots set ``"raw_only"`` to fix short-keyword
-           dilution; other bots stay on legacy ``"prefix_plus_raw"``).
+           dilution; other bots stay on ``"prefix_plus_raw"``).
         2. ``system_config.embedding_text_strategy`` (platform default).
-        3. ``DEFAULT_EMBEDDING_TEXT_STRATEGY`` constant (``"prefix_plus_raw"``,
-           backward compat).
+        3. ``DEFAULT_EMBEDDING_TEXT_STRATEGY`` constant.
 
         Re-embedding REQUIRED for changes to take effect — existing rows
         keep whatever strategy they were ingested under.
@@ -632,20 +631,20 @@ class DocumentService(_IngestMixin):
         record_bot_id: uuid.UUID,
         record_tenant_id: uuid.UUID | None = None,
     ) -> bool:
-        """M21 — resolve per-bot ``chunk_hash_id_enabled`` opt-in flag.
+        """Resolve the per-bot ``chunk_hash_id_enabled`` opt-in flag.
 
         Resolution chain (first non-empty wins, mirrors the resolvers
         above):
 
         1. ``bots.plan_limits.chunk_hash_id_enabled`` (per-bot column).
         2. ``system_config.chunk_hash_id_enabled`` (platform default).
-        3. ``DEFAULT_CHUNK_HASH_ID_ENABLED`` constant (False — legacy
-           ``uuid.uuid4()`` path preserved).
+        3. ``DEFAULT_CHUNK_HASH_ID_ENABLED`` constant (False — the
+           ``uuid.uuid4()`` path is preserved).
 
         When True the ingest path stamps each chunk with a deterministic
         UUID5 derived from ``(record_bot_id, document_id, content)``;
         re-ingest of the same content yields the same UUIDs (idempotent
-        UPSERT). Defaults to False so legacy bots keep their existing
+        UPSERT). Defaults to False so existing bots keep their current
         IDs until opting in explicitly.
         """
         try:
@@ -719,11 +718,11 @@ class DocumentService(_IngestMixin):
 
         Returns ``(joined_text, parser_chunks)``:
           - ``joined_text`` — concatenated content (preserves section markers
-            for the legacy chunking path).
+            for the text-based chunking path).
           - ``parser_chunks`` — original list of dicts emitted by the parser,
             so callers that prefer row-as-chunk semantics (Excel, Sheets CSV)
-            can bypass ``smart_chunk`` and avoid the flatten + re-chunk
-            regression that used to destroy row boundaries.
+            can bypass ``smart_chunk`` and avoid the flatten + re-chunk that
+            would destroy row boundaries.
 
         Returns ``(None, None)`` when no provider supports the mime/ext.
         Returns ``("", [])`` when a provider matched but yielded no chunks.
@@ -731,9 +730,9 @@ class DocumentService(_IngestMixin):
         ext = self._file_ext_from(file_name)
         parser = self._parser_detector(mime_type, ext)
         if parser is None and raw_bytes:
-            # Headless-BE one-flow rule (CLAUDE.md): a URL pdf/docx fetched with
-            # an empty/generic mime and no extension must still route to the
-            # structured parser via byte-sniff, not silently fall to flat OCR.
+            # One-flow rule: a URL pdf/docx fetched with an empty/generic
+            # mime and no extension must still route to the structured
+            # parser via byte-sniff, not silently fall back to flat OCR.
             parser = detect_parser_robust(
                 mime_type, ext, raw_bytes, detector=self._parser_detector
             )
@@ -764,8 +763,8 @@ class DocumentService(_IngestMixin):
         )
         joined = "\n\n".join(c["content"] for c in chunks if c.get("content"))
 
-        # Phase C — format→markdown normalizer (config-gated, default OFF).
-        # When enabled, raw CSV regions become markdown pipe tables + VN legal
+        # Format→markdown normalizer (config-gated, default OFF). When
+        # enabled, raw CSV regions become markdown pipe tables + VN legal
         # markers become ATX headings BEFORE chunking. Only the joined text is
         # normalised; parser row-chunks (excel/sheets) keep their own shape.
         if self._cfg is not None and joined:
@@ -826,13 +825,10 @@ class DocumentService(_IngestMixin):
     ) -> tuple[int, int]:
         """UPSERT-safe replace — soft-delete only docs matching incoming URLs.
 
-        ``sync_documents`` historically called :meth:`delete_all_for_bot`,
-        which HARD-DELETEd every document for the bot before re-ingesting.
-        A partial sync (1 doc) therefore wiped the entire knowledge base.
-
-        New default: replace only documents whose ``source_url`` is in
-        the incoming payload. Existing docs not referenced in this batch
-        are preserved.
+        Deleting every document for the bot before re-ingesting would let a
+        partial sync (1 doc) wipe the entire knowledge base, so this method
+        replaces only documents whose ``source_url`` is in the incoming
+        payload. Existing docs not referenced in this batch are preserved.
 
         Implementation: SOFT-delete (``deleted_at = now()``) so chunks
         and embeddings remain in the table for forensic / rollback. The
@@ -872,7 +868,7 @@ class DocumentService(_IngestMixin):
                           AND deleted_at IS NULL"""),
                 {"bid": record_bot_id, "urls": clean_urls},
             )
-            # P24-L1: invalidate semantic_cache for this bot (stale answers).
+            # Invalidate semantic_cache for this bot so stale answers don't survive.
             rc = await session.execute(
                 text("DELETE FROM semantic_cache WHERE record_bot_id = :bid"),
                 {"bid": record_bot_id},
@@ -896,7 +892,7 @@ class DocumentService(_IngestMixin):
         *,
         record_tenant_id: uuid.UUID | None = None,
     ) -> tuple[int, int]:
-        """Xóa toàn bộ tài liệu và chunk của một bot.
+        """Delete every document and chunk belonging to a bot.
 
         Also invalidates semantic_cache so stale answers don't survive a
         corpus mutation. ``record_bot_id`` alone is enough (1:1 with the
@@ -918,7 +914,7 @@ class DocumentService(_IngestMixin):
                 text("DELETE FROM documents WHERE record_bot_id = :bid"),
                 {"bid": record_bot_id},
             )
-            # P24-L1: purge semantic_cache for this bot so stale answers don't linger.
+            # Purge semantic_cache for this bot so stale answers don't linger.
             rc = await session.execute(
                 text("DELETE FROM semantic_cache WHERE record_bot_id = :bid"),
                 {"bid": record_bot_id},
@@ -941,16 +937,16 @@ class DocumentService(_IngestMixin):
         *,
         record_tenant_id: uuid.UUID | None = None,
     ) -> bool:
-        """Xóa một tài liệu và toàn bộ chunk của nó.
+        """Delete a single document and all of its chunks.
 
-        P24-L1: đồng thời purge semantic_cache của bot sở hữu document để
-        tránh trả lại câu trả lời dựa trên chunk đã xóa.
+        Also purges the owning bot's semantic_cache so the system never
+        returns an answer grounded in a chunk that has been deleted.
 
-        @param doc_uuid: UUID của tài liệu cần xóa
-        @param record_tenant_id: UUID tenant — explicit binding for RLS.
-            Optional only because legacy callers (route layer) bind via
+        @param doc_uuid: UUID of the document to delete
+        @param record_tenant_id: tenant UUID — explicit binding for RLS.
+            Optional only because route-layer callers bind via
             ``tenant_id_ctx`` upstream.
-        @return: True nếu xóa thành công
+        @return: True when the deletion succeeds
         """
         async with session_with_tenant(
             self._sf, record_tenant_id=record_tenant_id,
@@ -974,7 +970,7 @@ class DocumentService(_IngestMixin):
             await session.execute(
                 text("UPDATE documents SET deleted_at = now() WHERE id = :id"), {"id": doc_uuid},
             )
-            # P24-L1: invalidate semantic_cache for the bot that owned this doc.
+            # Invalidate semantic_cache for the bot that owned this doc.
             rows_cache = 0
             if record_bot_id is not None:
                 rc = await session.execute(

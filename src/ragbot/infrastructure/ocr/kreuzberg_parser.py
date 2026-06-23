@@ -34,6 +34,7 @@ import structlog
 
 from ragbot.application.ports.ocr_port import OCRPort, ParsedDocument
 from ragbot.domain.entities.document import Block
+from ragbot.shared.mime_sniff import sniff_real_mime
 from ragbot.shared.constants import (
     DEFAULT_HTTP_TIMEOUT_S,
     DEFAULT_KREUZBERG_MAX_BYTES,
@@ -97,11 +98,17 @@ def _suffix_for_mime(mime_hint: str, data: bytes) -> str:
     """Pick a file-suffix Kreuzberg can route by extension.
 
     Mirrors the docling adapter heuristic so the two parsers agree on
-    detection rules (PDF magic / DOCX zip / HTML / Markdown / image).
+    detection rules (PDF magic / OOXML subtype / HTML / Markdown / image).
+    The OOXML subtypes are distinguished by their resolved MIME (read from
+    the zip manifest upstream), never by guessing a single suffix for any zip.
     """
     mime = (mime_hint or "").lower()
     if "pdf" in mime or data[:4] == b"%PDF":
         return ".pdf"
+    if "spreadsheetml" in mime:
+        return ".xlsx"
+    if "presentationml" in mime:
+        return ".pptx"
     if "wordprocessing" in mime or (mime == "" and data[:4] == b"PK\x03\x04"):
         return ".docx"
     if "html" in mime:
@@ -235,19 +242,24 @@ class KreuzbergParser(OCRPort):
                 "kreuzberg>=4.0 required.",
             )
 
-        # kreuzberg 4.x signature: extract_bytes(data, mime_type, config=None, *, easyocr_kwargs=None)
-        # Note: positional ``mime_type`` is REQUIRED in kreuzberg>=4.0
-        # (Wave I finding — production ingest broke on 2026-05-19 with
-        # ``TypeError: missing 1 required positional argument: 'mime_type'``).
-        # ``filename`` / ``ocr_language`` / ``prepend_heading_context``
-        # are no longer kwargs in kreuzberg 4.x — config object handles them.
-        mime_type_arg = mime_hint or "application/octet-stream"
+        # kreuzberg>=4.0 takes a POSITIONAL ``mime_type``; older versions
+        # accepted a ``filename=`` kwarg instead. Try the modern positional
+        # call first and fall back to the keyword form on TypeError so the
+        # adapter works against both signatures.
+        #
+        # Resolve the real MIME from the bytes when the caller's hint is
+        # ambiguous (octet-stream / empty). An XLSX/PPTX uploaded as
+        # octet-stream must be routed by its OOXML subtype (read from the zip
+        # manifest), not handed to the engine as a generic blob that gets
+        # mis-detected as a Word document.
+        resolved_mime = sniff_real_mime(data, "", mime_hint) or mime_hint
+        mime_type_arg = resolved_mime or "application/octet-stream"
         try:
             result = extract_bytes(data, mime_type_arg)
         except TypeError:
             # Defensive fallback for older kreuzberg versions still on PyPI
             # mirrors that accepted ``filename=`` kwarg.
-            suffix = _suffix_for_mime(mime_hint, data)
+            suffix = _suffix_for_mime(resolved_mime, data)
             result = extract_bytes(
                 data,
                 filename=f"upload{suffix}",

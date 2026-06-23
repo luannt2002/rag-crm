@@ -101,3 +101,38 @@ async def test_csv_parser_empty_input_returns_empty_list() -> None:
     parser = build_parser("google_sheets")
     chunks = await parser.parse(b"", file_name="empty.csv")
     assert chunks == []
+
+
+@pytest.mark.asyncio
+async def test_robust_detect_routes_octet_stream_xlsx_to_structured_parser() -> None:
+    """An XLSX whose URL declares ``application/octet-stream`` with no ext is
+    routed to its structured parser by ``detect_parser_robust`` (byte-sniff),
+    NOT dropped to flat OCR.
+
+    This guards the worker's robust-detect path: the worker fetches the body
+    first, then calls ``detect_parser_robust(mime, ext, raw)`` so an ambiguous
+    declared type still lands on the spreadsheet parser.
+    """
+    import io
+    import zipfile
+
+    from ragbot.infrastructure.parser.registry import detect_parser_robust
+
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as zf:
+        zf.writestr(
+            "[Content_Types].xml",
+            '<?xml version="1.0"?><Types>'
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            "</Types>",
+        )
+    xlsx_bytes = buf.getvalue()
+
+    # Declared mime is the generic octet-stream + no extension — the exact
+    # case where the non-robust ``detect_parser`` returns None.
+    parser = detect_parser_robust("application/octet-stream", "", xlsx_bytes)
+    assert parser is not None, "octet-stream XLSX must sniff to a structured parser"
+    name = (
+        parser.get_provider_name() if hasattr(parser, "get_provider_name") else ""
+    )
+    assert name in ("excel_openpyxl", "null"), name

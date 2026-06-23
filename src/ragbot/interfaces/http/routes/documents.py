@@ -277,8 +277,11 @@ async def rechunk_document(
 async def rechunk_document_by_id(
     req: RechunkByDocumentIdRequest, request: Request,
 ) -> IngestDocumentResponse:
-    """260525 Bug #2 endpoint — sibling of /documents/rechunk that
-    addresses the document by primary key (no source_url disambiguation)."""
+    """Re-ingest a single document addressed by its UUID primary key.
+
+    Sibling of /documents/rechunk; use this when several documents share
+    the same source_url and the URL cannot disambiguate which to rechunk.
+    """
     container = request.app.state.container
     uc = container.rechunk_document_uc()
     record_tenant = _record_tenant(request)

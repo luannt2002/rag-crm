@@ -48,7 +48,10 @@ from ragbot.infrastructure.observability.metrics import (
     document_ingest_duration_seconds,
     document_ingest_total,
 )
-from ragbot.infrastructure.parser.registry import build_parser, detect_parser
+from ragbot.infrastructure.parser.registry import (
+    build_parser,
+    detect_parser_robust,
+)
 from ragbot.shared.constants import (
     DEFAULT_HTTP_TIMEOUT_S,
     DEFAULT_NARRATE_PROVIDER,
@@ -340,6 +343,7 @@ async def _handle_document_uploaded_inner(payload: dict[str, Any], container: Co
             # actionable error instead of a cryptic protocol crash.
             _fetchable = _is_refetchable_url(source_url)
             registry_routed = False
+            _raw: bytes = b""
             try:
                 if not _fetchable:
                     raise _LocalSourceNotRefetchable(source_url)
@@ -367,27 +371,35 @@ async def _handle_document_uploaded_inner(payload: dict[str, Any], container: Co
                 if _doc_name and "." in _doc_name:
                     _ext = _doc_name[_doc_name.rfind("."):].lower()
 
-                # VLM image branch (multimodal Phase 2): an image upload is captioned
-                # by a vision model when ``vlm_provider`` is enabled, else falls through
-                # to the legacy OCR path. The VLM parser needs injected llm+spec, so it
-                # is built here explicitly (detect_parser's no-arg probe cannot).
+                # Fetch the body ONCE, up front, so detection can byte-sniff an
+                # ambiguous mime (octet-stream / empty) and the same bytes feed
+                # BOTH the registry parser and the OCR fallback — no double GET.
+                # follow_redirects: a Google ``export?format=docx`` returns a 307
+                # to a googleusercontent.com host; without following it
+                # raise_for_status() turns the redirect into an HTTPStatusError
+                # and the ingest dies (doc stuck DRAFT, 0 chunks).
+                async with httpx.AsyncClient(
+                    timeout=DEFAULT_HTTP_TIMEOUT_S, follow_redirects=True,
+                ) as cli:
+                    _resp = await cli.get(source_url)
+                    _resp.raise_for_status()
+                    _raw = _resp.content
+
+                # VLM image branch (multimodal): an image upload is captioned by
+                # a vision model when ``vlm_provider`` is enabled, else falls
+                # through to the OCR path. The VLM parser needs injected llm+spec,
+                # so it is built here explicitly (a no-arg probe cannot).
                 parser = await _try_build_vlm_image_parser(
                     container, bot_id=bot_id, tenant_id=tenant_id,
                     trace_id=trace_id, mime_type=mime_type or "",
                 )
                 if parser is None:
-                    parser = detect_parser(mime_type or "", _ext)
+                    # Robust detection: trust the declared (mime, ext) first,
+                    # then byte-sniff the fetched body so an XLSX/DOCX/CSV that
+                    # arrives as octet-stream still routes to its structured
+                    # parser instead of falling through to flat OCR.
+                    parser = detect_parser_robust(mime_type or "", _ext, _raw)
                 if parser is not None:
-                    # follow_redirects: Google Docs ``export?format=docx`` returns
-                    # a 307 to a googleusercontent.com host; without following it
-                    # raise_for_status() turns the redirect into an HTTPStatusError
-                    # and the ingest dies (doc stuck DRAFT, 0 chunks).
-                    async with httpx.AsyncClient(
-                        timeout=DEFAULT_HTTP_TIMEOUT_S, follow_redirects=True,
-                    ) as cli:
-                        _resp = await cli.get(source_url)
-                        _resp.raise_for_status()
-                        _raw = _resp.content
                     _chunks = await parser.parse(
                         _raw, file_name=_doc_name or "doc",
                     )
@@ -423,7 +435,12 @@ async def _handle_document_uploaded_inner(payload: dict[str, Any], container: Co
                 # the registry can't structurally parse. Only for refetchable
                 # http(s) sources (a local:// upload has no fetchable URL).
                 ocr = container.ocr()
-                parsed = await ocr.parse(source_url, mime_type_hint=mime_type)
+                # Reuse the already-fetched bytes (avoids a second GET and lets
+                # the OCR adapter byte-sniff the real type); fall back to the URL
+                # only when the upfront fetch did not run.
+                parsed = await ocr.parse(
+                    _raw if _raw else source_url, mime_type_hint=mime_type,
+                )
                 # Keep the structure-aware Block stream alongside the flat
                 # text (ADR-W3-D1 S1): ``content`` stays the fallback, but
                 # ``blocks`` lets ingest carry the parser's type/atomicity

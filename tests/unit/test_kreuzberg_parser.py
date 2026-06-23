@@ -347,3 +347,75 @@ def test_kreuzberg_parser_source_is_domain_neutral() -> None:
         assert forbidden not in src, (
             f"domain-neutral violation: {forbidden!r} present in adapter source"
         )
+
+
+# ── 11. Byte-sniff: an ambiguous OOXML zip is routed by its real subtype ─────
+
+
+def _ooxml_zip_bytes(content_types_marker: str) -> bytes:
+    """Build a minimal OOXML zip whose ``[Content_Types].xml`` carries the
+    given subtype marker (``spreadsheetml`` / ``presentationml`` / ...)."""
+    import io
+    import zipfile
+
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as zf:
+        zf.writestr(
+            "[Content_Types].xml",
+            f'<?xml version="1.0"?><Types>{content_types_marker}</Types>',
+        )
+    return buf.getvalue()
+
+
+def test_kreuzberg_parser_sniffs_octet_stream_xlsx_to_xlsx_suffix(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """An XLSX uploaded as ``application/octet-stream`` must resolve to a
+    spreadsheet suffix (``.xlsx``), NOT be mis-routed to ``.docx`` / ``.bin``."""
+    captured = _install_fake_kreuzberg(
+        monkeypatch,
+        _FakeResult([], page_count=0),
+    )
+
+    from ragbot.infrastructure.ocr.kreuzberg_parser import KreuzbergParser
+
+    xlsx_bytes = _ooxml_zip_bytes(
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+    parser = KreuzbergParser()
+    asyncio.run(
+        parser.parse(xlsx_bytes, mime_type_hint="application/octet-stream"),
+    )
+    asyncio.run(parser.close())
+
+    filename = captured["kwargs"].get("filename", "")
+    assert filename.endswith(".xlsx"), (
+        f"octet-stream XLSX mis-routed: filename={filename!r} "
+        "(expected .xlsx — real subtype read from [Content_Types].xml)"
+    )
+
+
+def test_kreuzberg_parser_sniffs_octet_stream_pptx_to_pptx_suffix(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A PPTX uploaded as ``application/octet-stream`` resolves to ``.pptx``."""
+    captured = _install_fake_kreuzberg(
+        monkeypatch,
+        _FakeResult([], page_count=0),
+    )
+
+    from ragbot.infrastructure.ocr.kreuzberg_parser import KreuzbergParser
+
+    pptx_bytes = _ooxml_zip_bytes(
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    )
+    parser = KreuzbergParser()
+    asyncio.run(
+        parser.parse(pptx_bytes, mime_type_hint="application/octet-stream"),
+    )
+    asyncio.run(parser.close())
+
+    filename = captured["kwargs"].get("filename", "")
+    assert filename.endswith(".pptx"), (
+        f"octet-stream PPTX mis-routed: filename={filename!r} (expected .pptx)"
+    )

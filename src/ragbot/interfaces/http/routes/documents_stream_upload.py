@@ -1,4 +1,10 @@
-"""Streaming upload route for large document bodies (WB-2 P1-5).
+"""Streaming upload route for large document bodies.
+
+DISABLED — this router is not mounted in ``router.py`` because the Redis
+stream it XADDs to has no consumer, so the endpoint would accept a body
+and then silently drop it (data-loss). The code is retained per the
+CLAUDE.md "keep test/dev code" rule for a future, properly-consumed
+streaming ingest path.
 
 Partner BE pushes a ``multipart/form-data`` body whose ``file`` part can
 reach :data:`DEFAULT_UPLOAD_STREAM_MAX_BYTES` (500 MiB).  The handler

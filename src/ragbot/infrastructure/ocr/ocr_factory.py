@@ -1,30 +1,29 @@
-"""OCR parser factory — fail-loud on dependency drift.
+"""OCR parser factory — resolve the configured engine, degrade observably.
 
 Selection precedence:
   1. env var ``RAGBOT_PARSER_ENGINE`` (set by ops/startup script)
   2. default: :data:`ragbot.shared.constants.DEFAULT_PARSER_ENGINE`
-     (currently ``"kreuzberg"`` post AdapChunk Wave C2)
+     (currently ``"kreuzberg"``)
 
-system_config key ``parser_engine`` is the source of truth; operators sync
-it to the env var before (re)starting the service. This keeps DI wiring
-sync and avoids async DB reads during container construction.
+``system_config.parser_engine`` is the source of truth; operators sync it to
+the env var before (re)starting the service. Reading the env keeps DI wiring
+synchronous and avoids async DB reads during container construction.
 
-**Fail-loud contract** (CLAUDE.md rule "deploy-time failure = fail loud"):
-  When the requested engine's dependency is missing the factory raises
-  ``ImportError`` so systemd surfaces the broken state instead of silently
-  serving traffic on a downgraded parser. Operator MUST install the dep
-  declared in ``pyproject.toml`` for the chosen engine. Silent fallback
-  used to hide drift between code/config/runtime — a 2026-05-14 audit
-  found ``parser_engine='kreuzberg'`` in DB while the venv was running
-  ``SimpleTextParser`` because Kreuzberg wasn't pip-installed.
+Degradation contract:
+  - ``kreuzberg`` (the platform default): if the Kreuzberg dependency is not
+    installed, the factory degrades to ``SimpleTextParser`` and emits an
+    ``ocr_parser_fallback`` WARNING carrying ``requested_engine`` /
+    ``resolved_engine`` so ops can detect code/config/runtime drift — a
+    missing optional dep must not take ingest fully offline. Operators
+    restore the configured engine with ``pip install 'ragbot[parsers]'``.
+  - ``docling`` / ``simple``: explicit opt-in engines; each requires its own
+    dependency and is constructed directly (no silent cross-engine swap).
+  - Unknown engine token: raised as ``ValueError`` — a config typo must
+    surface loudly instead of landing on a silent downgrade.
 
-Why no fallback chain anymore:
-  - ``parser_engine='kreuzberg'`` is the platform default and is the only
-    parser exercised by current load tests + AdapChunk waves.
-  - ``docling`` / ``simple`` remain available as opt-in engines for legacy
-    bots; setting the env or DB to those values still resolves correctly
-    but each must also have its own dependency installed (no silent
-    cross-engine swap).
+The kreuzberg→simple fallback is a deliberate, test-pinned behaviour
+(``tests/unit/test_kreuzberg_parser.py::test_ocr_factory_falls_back_to_simple_when_kreuzberg_missing``);
+switching it to fail-loud would be an ADR-level decision, not a doc edit.
 """
 
 from __future__ import annotations

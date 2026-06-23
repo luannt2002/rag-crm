@@ -30,6 +30,9 @@ _MIME_XLSX = (
 _MIME_DOCX = (
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 )
+_MIME_PPTX = (
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+)
 _MIME_HTML = "text/html"
 _MIME_MARKDOWN = "text/markdown"
 _MIME_CSV = "text/csv"
@@ -88,6 +91,8 @@ def _peek_zip_office_subtype(raw_bytes: bytes) -> str | None:
         return _MIME_XLSX
     if "wordprocessingml" in manifest:
         return _MIME_DOCX
+    if "presentationml" in manifest:
+        return _MIME_PPTX
     return None
 
 
