@@ -19,6 +19,7 @@ from ragbot.infrastructure.db.models_monitoring import (
     _document_chunks_table_ref as _doc_chunks_table,
 )
 from ragbot.infrastructure.repositories.audit_chain_writer import insert_audit_row
+from ragbot.interfaces.http.middlewares.rbac import require_permission
 from ragbot.shared.bot_bindings import ensure_bot_bindings
 from ragbot.shared.rbac import check_min_level
 from ragbot.shared.constants import (
@@ -301,6 +302,8 @@ async def update_bot(bot_uuid: str, req: UpdateBotRequest, request: Request) -> 
     @param bot_uuid: UUID của bot cần cập nhật
     @return: {ok: true}
     """
+    # Mutates system_prompt (sacred answer-path config) — gate before any work.
+    await require_permission(request, "bot", "update")
     container = _container(request)
     repo = container.bot_repo()
     try:
@@ -447,6 +450,8 @@ async def delete_bot(bot_uuid: str, request: Request) -> dict:
     @param bot_uuid: UUID của bot cần xóa
     @return: {ok: true}
     """
+    # Hard-deletes bot row + chunks + documents + histories — gate first.
+    await require_permission(request, "bot", "delete")
     container = _container(request)
     repo = container.bot_repo()
     try:

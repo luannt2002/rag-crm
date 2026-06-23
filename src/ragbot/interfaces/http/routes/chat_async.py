@@ -1,8 +1,6 @@
 """Async chat endpoints — POST returns ``job_id`` + GET polls status.
 
-Architecture (mega-sprint G25/G26):
-
-::
+Architecture::
 
     Client ──POST /test/chat-async──► HTTP route (this module)
                                         │
@@ -12,7 +10,7 @@ Architecture (mega-sprint G25/G26):
                                         │
                                         │ XREADGROUP
                                         ▼
-                              chat_async_worker.py (G25, sibling D1)
+                              chat_async_worker.py
                                         │
                                         │ HSET chat:result:{job_id}
                                         ▼
@@ -26,8 +24,8 @@ accept ~50–100 RPS instead of holding the connection open for the full
 LangGraph pipeline (~3–8 s per turn). The POST returns immediately with a
 ``job_id`` the caller can poll until the worker writes the final result.
 
-Identity + RBAC follows the same 4-key contract as ``test_chat.py``:
-``record_tenant_id`` lifted from JWT bearer (middleware), body carries
+Identity + RBAC follows the same 4-key contract as the sync ``/test/chat``
+path: ``record_tenant_id`` lifted from JWT bearer (middleware), body carries
 ``(bot_id, channel_type)`` REQUIRED + ``workspace_id`` OPTIONAL.
 
 Token-quota gate mirrors the synchronous ``/test/chat`` path — exhausted
@@ -36,14 +34,13 @@ that would be rejected anyway. Refusal text comes from
 ``bots.oos_answer_template`` (DB-driven, no app-injected literal per
 CLAUDE.md MINDSET rule #2).
 
-Scope intentionally narrow per Coder-D2 mandate:
+Scope intentionally narrow:
   * NEVER touches model / API key / provider config.
-  * NEVER modifies the existing synchronous ``/test/chat`` endpoint
-    (preserved for backwards-compat — see Coder-D3 G27).
-  * NEVER manages worker lifecycle (G25 owns ``chat_async_worker.py``).
+  * NEVER modifies the existing synchronous ``/test/chat`` endpoint.
+  * NEVER manages worker lifecycle (owned by ``chat_async_worker.py``).
 
 The Stream name + result-hash prefix + TTL come from
-``shared/constants.py`` (single source of truth shared with G25 worker).
+``shared/constants.py`` (single source of truth shared with the worker).
 """
 
 from __future__ import annotations
@@ -56,6 +53,8 @@ from typing import Any
 import structlog
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
+from redis.exceptions import RedisError
+from sqlalchemy.exc import SQLAlchemyError
 
 from ragbot.shared.callback_validator import _is_url_safe
 from ragbot.shared.constants import (
@@ -227,9 +226,15 @@ async def submit_chat_async(
             }
     except HTTPException:
         raise
-    except Exception as quota_exc:  # noqa: BLE001 — quota gate fail-soft (parity with sync /test/chat); never block on probe failure
+    except (SQLAlchemyError, RedisError, ValueError, TypeError) as quota_exc:
+        # Fail-soft quota gate: a transient DB/Redis probe failure must not
+        # block chat (parity with the sync ``/test/chat`` path). But fail-open
+        # leaks paid quota, so emit a distinct, deliberately-named event the
+        # observability layer can alert on separately from generic warnings —
+        # a sustained rate of these means quota enforcement is silently off.
         logger.warning(
-            "chat_async_quota_gate_failed",
+            "quota_gate_bypassed",
+            path="chat_async",
             error=str(quota_exc)[:200],
             error_type=type(quota_exc).__name__,
         )

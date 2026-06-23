@@ -13,8 +13,9 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import StreamingResponse
+from redis.exceptions import RedisError
 from sqlalchemy import text
-from sqlalchemy.exc import SQLAlchemyError  # noqa: F401 — used by carved handlers
+from sqlalchemy.exc import SQLAlchemyError
 
 from ragbot.shared.bot_limits import resolve_bot_limit
 from ragbot.shared.hashing import content_hash_required
@@ -38,6 +39,7 @@ from ragbot.interfaces.http._sse_helper import (
     stream_real_llm as _shared_stream_real_llm,
 )
 
+from ragbot.interfaces.http.middlewares.rbac import require_permission
 from .schemas import TestChatRequest, TestChatClearRequest
 from ._shared import (
     _PLATFORM_TENANT_FALLBACK_UUID,
@@ -282,8 +284,17 @@ async def test_chat(req: TestChatRequest, request: Request) -> dict:
             }
     except HTTPException:
         raise
-    except Exception as _qe:  # noqa: BLE001 — quota gate fail-soft (don't block chat if check errors)
-        logger.warning("test_chat_quota_gate_failed", error=str(_qe)[:200])
+    except (SQLAlchemyError, RedisError, ValueError, TypeError) as _qe:
+        # Fail-soft quota gate: a transient DB/Redis probe failure must not
+        # block chat. But fail-open leaks paid quota, so emit a distinct,
+        # deliberately-named event the observability layer can alert on
+        # separately — a sustained rate means quota enforcement is silently off.
+        logger.warning(
+            "quota_gate_bypassed",
+            path="test_chat",
+            error=str(_qe)[:200],
+            error_type=type(_qe).__name__,
+        )
 
     # GUARD (admin mandate 2026-05-13): nếu bot chỉ có 1 doc và doc đó
     # chưa state="active" (vẫn DRAFT/chunking/embedding/failed) → cấm chat,
@@ -1185,6 +1196,8 @@ async def test_chat_clear(req: TestChatClearRequest, request: Request) -> dict:
     @param req: {bot_id, channel_type}
     @return: {ok, deleted_messages, deleted_logs}
     """
+    # Destructive bulk-delete of a bot's chat/log history — gate first.
+    await require_permission(request, "bot", "delete")
     bot_uuid = await _find_bot_uuid(request, req.bot_id, req.channel_type)
     sf = _sf(request)
     async with sf() as session:

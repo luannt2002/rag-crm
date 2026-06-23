@@ -10,6 +10,8 @@ Usage: ``require_min_level(request, 60)`` instead of
 
 from __future__ import annotations
 
+from collections.abc import Awaitable, Callable
+
 from starlette.requests import Request
 
 from ragbot.shared.errors import ForbiddenError
@@ -48,9 +50,35 @@ def require_min_level(request: Request, min_level: int) -> None:
         raise ForbiddenError(f"Insufficient permission (requires level {min_level})")
 
 
+def require_min_level_dep(
+    min_level: int,
+) -> Callable[[Request], Awaitable[None]]:
+    """Return a FastAPI dependency enforcing a minimum numeric role level.
+
+    Mirrors :func:`require_min_level` but as a declarable dependency, so a
+    router mount can be gated fail-closed as a unit::
+
+        router.include_router(
+            test_chat.router,
+            dependencies=[Depends(require_min_level_dep(100))],
+        )
+
+    Used to enforce the internal test-harness boundary at the route/auth layer
+    rather than relying solely on a network gateway. The closure name surfaces
+    the required level in OpenAPI / debug traces.
+    """
+
+    async def _dep(request: Request) -> None:
+        require_min_level(request, min_level)
+
+    _dep.__name__ = f"require_min_level_{min_level}"
+    return _dep
+
+
 __all__ = [
     "ROLE_LEVELS",
     "check_min_level",
     "get_role_level",
     "require_min_level",
+    "require_min_level_dep",
 ]
