@@ -261,6 +261,8 @@ DEFAULT_ANSWER_AUTONOMY_PERCENT: Final[int] = 0
 # CSV row detection: ≥N commas + low sentence-end ratio = table row.
 DEFAULT_CSV_MIN_COMMAS: Final[int] = 1
 DEFAULT_STRATEGY_MIN_CONFIDENCE: Final[float] = 0.45
+# Max chars kept from an LLM strategy-selector's free-text reasoning field.
+DEFAULT_STRATEGY_REASONING_MAX_CHARS: Final[int] = 500
 DEFAULT_CHUNK_MIN_CLAUSE_LEN: Final[int] = 20
 # Parent-child chunking sizes (small-to-big retrieval).
 DEFAULT_PARENT_CHUNK_SIZE: Final[int] = 1024
