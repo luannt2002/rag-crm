@@ -12,6 +12,7 @@ from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
 from sqlalchemy import text
 
 from ragbot.application.services import google_link_service
+from ragbot.interfaces.http.middlewares.rbac import require_permission
 from ragbot.shared.workspace_id_validator import resolve_workspace_id
 
 from .schemas import AddDocumentRequest
@@ -534,23 +535,43 @@ async def delete_document(doc_uuid: str, request: Request) -> dict:
     @param doc_uuid: UUID của tài liệu
     @return: {ok: true}
     """
+    # Destructive document delete — gate first.
+    await require_permission(request, "document", "delete")
     try:
         did = uuid.UUID(doc_uuid)
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid document UUID")
 
+    # Tenant-scope the existence probe so a caller can't confirm a document UUID
+    # belonging to another tenant. A platform-admin token with no tenant claim
+    # (``record_tenant_id`` absent) stays unscoped, matching the existing
+    # ``_tenant_scope`` bypass for level-100 callers.
+    record_tenant_id = getattr(request.state, "record_tenant_id", None)
+    if not isinstance(record_tenant_id, uuid.UUID):
+        record_tenant_id = None
+
     sf = _sf(request)
     async with sf() as session:
-        result = await session.execute(
-            text("SELECT id FROM documents WHERE id = :id AND deleted_at IS NULL"), {"id": did},
-        )
+        if record_tenant_id is not None:
+            result = await session.execute(
+                text(
+                    "SELECT id FROM documents "
+                    "WHERE id = :id AND record_tenant_id = :tid AND deleted_at IS NULL"
+                ),
+                {"id": did, "tid": record_tenant_id},
+            )
+        else:
+            result = await session.execute(
+                text("SELECT id FROM documents WHERE id = :id AND deleted_at IS NULL"),
+                {"id": did},
+            )
         if not result.fetchone():
             raise HTTPException(status_code=404, detail="Document not found")
 
     doc_svc = _doc_service(request)
     await doc_svc.delete_document(
         did,
-        record_tenant_id=getattr(request.state, "record_tenant_id", None),
+        record_tenant_id=record_tenant_id,
     )
     return {"ok": True}
 

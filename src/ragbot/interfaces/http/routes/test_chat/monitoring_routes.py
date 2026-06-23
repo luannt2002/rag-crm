@@ -62,6 +62,9 @@ async def reinit_bots(request: Request, bot: str = "all", wipe: bool = True) -> 
     in its own workspace. Returns a per-document status summary; never raises on
     one bad URL (records the error and continues).
     """
+    # Wipes document_chunks + documents for the demo bots — owner-only, matching
+    # the sibling ``monitoring`` route's gate.
+    _require_owner(request)
     from sqlalchemy import text as _sql_text  # noqa: PLC0415
     src = _load_bot_sources()
     sf = _sf(request)

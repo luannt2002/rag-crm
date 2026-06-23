@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
 from ragbot.config.settings import get_settings
 from ragbot.interfaces.http.routes import (
@@ -33,6 +33,7 @@ from ragbot.interfaces.http.routes import (
     sync,
     test_chat,
 )
+from ragbot.shared.rbac import require_min_level_dep
 
 BASE = get_settings().app.api_base_path
 
@@ -97,12 +98,24 @@ router.include_router(admin_documents_debug.router, prefix=BASE)
 # Closing-the-loop reads only: surfaces refused-intent counts +
 # clustered FAQ candidates for operator review — no answer injection.
 router.include_router(admin_refuse_suggestions.router, prefix=BASE)
-# TEST platform — split: API routes at /api/ragbot/test/*, pages at root
-router.include_router(test_chat.router, prefix=f"{BASE}/test")
-# Async LLM-queue chat endpoints (POST job_id + GET polling).
-# Lives under /test/* alongside the existing sync /chat for parity; the
-# production async path is /api/ragbot/chat in chat.router (separate flow).
-router.include_router(chat_async.router, prefix=f"{BASE}/test")
+# TEST platform — split: API routes at /api/ragbot/test/*, pages at root.
+# Router-level fail-closed gate: the internal QA harness is enforced at the
+# auth layer (platform admin, level 100), not only at the network gateway, so
+# a misconfigured gateway can't expose the destructive endpoints to external
+# consumers. Defense-in-depth with the per-handler permission gates.
+router.include_router(
+    test_chat.router,
+    prefix=f"{BASE}/test",
+    dependencies=[Depends(require_min_level_dep(100))],
+)
+# Async LLM-queue chat endpoints (POST job_id + GET polling). Lives under
+# /test/* alongside the existing sync /chat for parity; the production async
+# path is /api/ragbot/chat in chat.router (separate flow). Same harness gate.
+router.include_router(
+    chat_async.router,
+    prefix=f"{BASE}/test",
+    dependencies=[Depends(require_min_level_dep(100))],
+)
 router.include_router(test_chat.pages_router)
 
 __all__ = ["router"]
