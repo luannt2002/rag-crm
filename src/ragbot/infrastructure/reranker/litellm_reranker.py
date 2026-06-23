@@ -52,13 +52,16 @@ class LiteLLMReranker:
         top_n: int = DEFAULT_RERANK_TOP_N,
         model: str | None = None,
     ) -> list[dict[str, Any]]:
-        """Rerank chunks bằng cross-encoder model.
+        """Rerank chunks with a cross-encoder model.
 
-        @param query: câu hỏi user
-        @param chunks: list of chunk dicts (phải có 'content' hoặc 'text')
-        @param top_n: số chunks giữ lại sau rerank
-        @param model: override model per-call (None = dùng constructor default)
-        @return: top_n chunks sorted by relevance score giảm dần
+        Args:
+            query: the user question.
+            chunks: list of chunk dicts (must carry 'content' or 'text').
+            top_n: number of chunks to keep after reranking.
+            model: per-call model override (None = constructor default).
+
+        Returns:
+            top_n chunks sorted by descending relevance score.
         """
         if not chunks:
             return []
@@ -101,6 +104,10 @@ class LiteLLMReranker:
                         "rerank_score": score,
                         "retrieval_score": src.get("score"),
                         "score": score,
+                        # Provenance tag for parity with the Jina / ZeroEntropy
+                        # adapters so downstream telemetry sees which reranker
+                        # produced this chunk's score.
+                        "reranker_used": self.mode,
                     }
                     scored.append(chunk)
 

@@ -58,6 +58,7 @@ from ragbot.application.services.vocabulary_expander import (
     get_default_expander as _get_vocab_expander,
 )
 from ragbot.orchestration.nodes.query_complexity import has_aggregation_keyword
+from ragbot.orchestration.nodes.rrf_round_robin import rrf_round_robin
 from ragbot.orchestration.nodes.speculative_retrieve import (
     decide_keep_speculative as _decide_keep_speculative,
 )
@@ -80,6 +81,9 @@ from ragbot.shared.constants import (
     DEFAULT_BM25_NORMALIZATION_FLAGS,
     DEFAULT_CR_ENHANCED_ENABLED,
     DEFAULT_DECOMPOSE_TOP_K_PER_SUBQUERY,
+    DEFAULT_ENTITY_FAIRNESS_ENABLED,
+    DEFAULT_ENTITY_FAIRNESS_INTENTS,
+    DEFAULT_ENTITY_FAIRNESS_PER_ENTITY_QUOTA,
     DEFAULT_METADATA_LAYER3_LLM_ENABLED,
     DEFAULT_EMBEDDING_COLUMN,
     DEFAULT_EMBEDDING_DIM,
@@ -111,6 +115,7 @@ from ragbot.shared.constants import (
     DEFAULT_RETRIEVAL_STAGES,
     DEFAULT_RETRIEVE_FALLBACK_ENABLED,
     DEFAULT_RETRIEVE_FALLBACK_TOP_K,
+    DEFAULT_RETRIEVE_FANOUT_CONCURRENCY,
     DEFAULT_RETRIEVE_TOP_K_BY_INTENT,
     DEFAULT_RRF_K,
     DEFAULT_SPECULATIVE_SIMILARITY_THRESHOLD,
@@ -131,7 +136,7 @@ from ragbot.shared.errors import EmbeddingError, RetrievalError
 
 logger = structlog.get_logger(__name__)
 
-# Layer 3 LLM metadata extractor (Plan 260604-metadata-aware-v4).
+# Layer 3 LLM metadata extractor.
 # Soft import — Layer 3 disabled if litellm missing at startup. Mirrors the
 # query_graph soft-import so the byte-identical body's ``_L3Extractor`` /
 # ``_litellm_module`` references resolve identically under both branches.
@@ -143,6 +148,42 @@ try:
 except ImportError:
     _litellm_module = None  # type: ignore[assignment]
     _L3Extractor = None  # type: ignore[assignment,misc]
+
+
+def _merge_multi_query_chunks(
+    per_query_chunks: list[list[dict]],
+    *,
+    rrf_k: int,
+    intent: str | None,
+    pipeline_config: dict | None,
+) -> list[dict]:
+    """Fuse per-branch chunk lists, optionally with entity-fairness.
+
+    Default path is plain RRF (``rrf_merge_chunks``) — byte-identical to the
+    pre-existing behaviour. When a bot opts into ``entity_fairness_enabled`` AND
+    the intent compares/joins across entities (``DEFAULT_ENTITY_FAIRNESS_INTENTS``)
+    the entity-fairness round-robin layer guarantees each document (entity =
+    doc-id) a minimum slot quota so a minority entity is not starved out of the
+    top_k. Keeping the strategy choice here keeps the orchestrator free of any
+    inline algorithm branching.
+    """
+    cfg = pipeline_config or {}
+    enabled = bool(cfg.get("entity_fairness_enabled", DEFAULT_ENTITY_FAIRNESS_ENABLED))
+    if not (enabled and (intent or "") in DEFAULT_ENTITY_FAIRNESS_INTENTS):
+        return mq_rrf_merge_chunks(per_query_chunks, rrf_k=rrf_k)
+
+    quota = int(
+        cfg.get(
+            "entity_fairness_per_entity_quota",
+            DEFAULT_ENTITY_FAIRNESS_PER_ENTITY_QUOTA,
+        )
+    )
+    return rrf_round_robin(
+        per_query_chunks,
+        k=rrf_k,
+        per_entity_quota=quota,
+        entity_of=lambda c: c.get("document_id") or None,
+    )
 
 
 async def retrieve(
@@ -539,7 +580,7 @@ async def retrieve(
                         range_filter=_range_filter,
                         stats_limit=_stats_limit,
                     )
-                    # 2026-05-28 — fall-through when stats_index returns 0
+                    # Fall-through when stats_index returns 0
                     # linked_chunks. Production trace 7fed03f9 showed
                     # comparison query "So sánh Điều 40 vs 39" routed
                     # to stats_index with entity_count=1 linked_chunks=0
@@ -804,7 +845,7 @@ async def retrieve(
                     "article_aware_filter_failed", exc_info=True,
                 )
 
-        # Layer 3 LLM entity extraction (Plan 260604-metadata-aware-v4).
+        # Layer 3 LLM entity extraction.
         # OFF by default (DEFAULT_METADATA_LAYER3_LLM_ENABLED): query-time
         # LLM metadata extraction is the wrong tier (LLM call + latency per
         # query, can over-restrict). Ingest-side Contextual Retrieval is the
@@ -829,7 +870,7 @@ async def retrieve(
                         DEFAULT_METADATA_EXTRACTION_FALLBACK_MODEL,
                     )
                     _model_id = str(_model_raw).strip().strip('"')
-                    # Resolve prompt từ language_packs theo locale của bot
+                    # Resolve prompt from language_packs by the bot's locale
                     _prompt = await language_pack_service.get(
                         _l3_locale, "metadata_extract_default",
                     )
@@ -857,6 +898,21 @@ async def retrieve(
                     error_type=type(exc).__name__,
                     err=str(exc)[:120],
                 )
+
+        # Bound the multi-query fan-out: every branch opens its own DB session
+        # from the pool, so an unbounded gather over N variants / sub-queries
+        # spikes N concurrent sessions and exhausts the pool under concurrent
+        # turns (Async Performance Rule 6). Cap concurrency at the configured
+        # fan-out limit, mirroring the bounded CRAG grader fan-out.
+        _fanout_concurrency = int(
+            _pcfg(state, "retrieve_fanout_concurrency", DEFAULT_RETRIEVE_FANOUT_CONCURRENCY)
+        )
+        _fanout_sem = asyncio.Semaphore(max(1, _fanout_concurrency))
+
+        async def _bounded_fanout(coro: Any) -> Any:
+            """Run a single fan-out branch coroutine under the shared semaphore."""
+            async with _fanout_sem:
+                return await coro
 
         async def _embed_batch_queries(
             batch_queries: list[str],
@@ -931,9 +987,11 @@ async def retrieve(
                     logger.warning("embed_batch_queries_failed", exc_info=True)
             # Fallback: parallel individual embed calls (backward compat for
             # embedders without embed_batch, or when batch call failed).
-            # Each _embed_query seeds the Redis cache independently.
+            # Each _embed_query seeds the Redis cache independently. Bounded by
+            # the shared fan-out semaphore so the embed fallback cannot exhaust
+            # the pool any more than the hybrid-search fan-out can.
             results = await asyncio.gather(
-                *[_embed_query(q, st) for q in batch_queries],
+                *[_bounded_fanout(_embed_query(q, st)) for q in batch_queries],
                 return_exceptions=False,
             )
             return list(results)
@@ -965,7 +1023,7 @@ async def retrieve(
                     "embedding_model_version": DEFAULT_EMBEDDING_FALLBACK_VERSION,
                     "limit": _branch_top_k,
                 }
-                # mega-sprint-G1: thread tenant for RLS-enforced runtime DSN.
+                # Thread tenant for RLS-enforced runtime DSN.
                 _port_sig = inspect.signature(vector_store.hybrid_search)
                 if (
                     "record_tenant_id" in _port_sig.parameters
@@ -1012,7 +1070,7 @@ async def retrieve(
                         flags = int(_pcfg(state, "bm25_normalization_flags", DEFAULT_BM25_NORMALIZATION_FLAGS))
                         if not (0 <= flags <= 63):
                             logger.warning("invalid_bm25_flags", value=flags)
-                            flags = 5
+                            flags = DEFAULT_BM25_NORMALIZATION_FLAGS
                         _hs_kwargs["bm25_normalization_flags"] = flags
                     if "bm25_substring_fallback_enabled" in _hs_params:
                         _hs_kwargs["bm25_substring_fallback_enabled"] = bool(
@@ -1042,13 +1100,20 @@ async def retrieve(
                         and state.get("embedding_column")
                     ):
                         _hs_kwargs["embedding_column"] = state["embedding_column"]
-                    # mega-sprint-G1: thread tenant for RLS-enforced runtime DSN.
+                    # Thread tenant for RLS-enforced runtime DSN.
                     if (
                         "record_tenant_id" in _hs_params
                         and state.get("record_tenant_id") is not None
                     ):
                         _hs_kwargs["record_tenant_id"] = state["record_tenant_id"]
-                    # 2026-05-27 Fix 3 — VN structural pre-filter. When the
+                    # Thread per-bot language so the adapter gates the VN
+                    # compound segmenter symmetrically with ingest — a non-VN
+                    # query must not be run through the VN segmenter.
+                    if "language" in _hs_params:
+                        _hs_kwargs["language"] = str(
+                            state.get("language", DEFAULT_LANGUAGE) or DEFAULT_LANGUAGE
+                        )
+                    # VN structural pre-filter. When the
                     # query targets a single (Chương|Mục|Phần|Điều) N
                     # anchor, narrow the dense branch to chunks under that
                     # path. Bypasses zembed-1's weak grasp of structural
@@ -1076,7 +1141,7 @@ async def retrieve(
                         and state.get("embedding_column")
                     ):
                         search_kwargs["embedding_column"] = state["embedding_column"]
-                    # mega-sprint-G1: thread tenant for RLS-enforced runtime DSN.
+                    # Thread tenant for RLS-enforced runtime DSN.
                     if (
                         "record_tenant_id" in params
                         and state.get("record_tenant_id") is not None
@@ -1114,7 +1179,7 @@ async def retrieve(
         # Parallel-path hand-off: rewrite_and_mq_parallel may have pre-computed
         # paraphrases upstream so retrieve skips the inline LLM call. Only
         # honoured when decompose did NOT fire (sub_queries take precedence).
-        # Honour speculative variants too (audit 2026-06-13): the parallel
+        # Honour speculative variants too: the parallel
         # rewrite path stores paraphrases under ``_mq_speculative_variants``;
         # reading only ``_mq_queries`` discarded that already-paid-for LLM
         # work and re-ran the inline expansion. Prefer the committed preset,
@@ -1168,9 +1233,9 @@ async def retrieve(
                 state, "multi_query_min_tokens", DEFAULT_MULTI_QUERY_MIN_TOKENS,
             ))
         ):
-            # Wave M3.7-P2 — accumulator for this call site (mirror
+            # Accumulator for this call site (mirror
             # of the rewrite_and_mq_parallel path above). WHY:
-            # multi_query expand fans out N variants; pre-fix the
+            # multi_query expand fans out N variants; without this the
             # tokens/cost discarded; now summed into mq_ctx row.
             _mq_agg2: dict[str, Any] = {
                 "model": "", "prompt_tokens": 0, "completion_tokens": 0, "cost_usd": 0.0,
@@ -1194,7 +1259,7 @@ async def retrieve(
                     # Outer except-block catches and falls back to [query_text].
                     raise
                 result = await llm.complete(cfg, messages=messages, purpose="multi_query")
-                # Wave M3.7-P2 accumulate per-variant cost.
+                # Accumulate per-variant cost.
                 _mq_agg2["model"] = result.get("model_name") or _mq_agg2["model"]
                 _mq_agg2["prompt_tokens"] += int(result.get("prompt_tokens", 0) or 0)
                 _mq_agg2["completion_tokens"] += int(result.get("completion_tokens", 0) or 0)
@@ -1265,7 +1330,7 @@ async def retrieve(
                     ),
                     language=_bot_language,
                 )
-                # Wave M3.7-P2 — record aggregated MQ fanout cost (call
+                # Record aggregated MQ fanout cost (call
                 # site #2 in the retrieve node). Same short-circuit
                 # guard as the rewrite_and_mq_parallel path: only
                 # record when the LLM actually ran (prompt_tokens>0).
@@ -1284,7 +1349,7 @@ async def retrieve(
                 _pcfg(state, "decompose_top_k_per_subquery", DEFAULT_DECOMPOSE_TOP_K_PER_SUBQUERY),
             )
 
-        # J1 — pre-batch embeddings: with N>1 queries, one embed_batch HTTP
+        # Pre-batch embeddings: with N>1 queries, one embed_batch HTTP
         # round-trip returns all embeddings directly; fan-out branches
         # receive a precomputed_embedding and skip their own _embed_query
         # call entirely.  Fallback (_embed_batch_queries path):
@@ -1306,11 +1371,13 @@ async def retrieve(
             if len(queries) > 1 and hasattr(vector_store, "hybrid_search"):
                 results = await asyncio.gather(
                     *[
-                        _run_hybrid_for_query(
-                            q,
-                            meta_filter=metadata_filter,
-                            top_k_override=decompose_branch_top_k,
-                            precomputed_embedding=_precomputed_embeddings[i] if _precomputed_embeddings and i < len(_precomputed_embeddings) else None,
+                        _bounded_fanout(
+                            _run_hybrid_for_query(
+                                q,
+                                meta_filter=metadata_filter,
+                                top_k_override=decompose_branch_top_k,
+                                precomputed_embedding=_precomputed_embeddings[i] if _precomputed_embeddings and i < len(_precomputed_embeddings) else None,
+                            )
                         )
                         for i, q in enumerate(queries)
                     ],
@@ -1332,7 +1399,12 @@ async def retrieve(
                 if per_query_chunks:
                     rrf_k = int(_pcfg(state, "rag_rrf_k", DEFAULT_RRF_K))
                     async with state["step_tracker"].step("rrf_fuse") as rrf_ctx:
-                        chunks = mq_rrf_merge_chunks(per_query_chunks, rrf_k=rrf_k)
+                        chunks = _merge_multi_query_chunks(
+                            per_query_chunks,
+                            rrf_k=rrf_k,
+                            intent=_intent,
+                            pipeline_config=state.get("pipeline_config"),
+                        )
                         chunks = chunks[:_retrieve_top_k]
                         rrf_ctx.set_metadata(
                             branches=len(per_query_chunks),
@@ -1380,10 +1452,12 @@ async def retrieve(
                 if len(queries) > 1 and hasattr(vector_store, "hybrid_search"):
                     relax_results = await asyncio.gather(
                         *[
-                            _run_hybrid_for_query(
-                                q,
-                                meta_filter=None,
-                                top_k_override=decompose_branch_top_k,
+                            _bounded_fanout(
+                                _run_hybrid_for_query(
+                                    q,
+                                    meta_filter=None,
+                                    top_k_override=decompose_branch_top_k,
+                                )
                             )
                             for q in queries
                         ],
@@ -1396,7 +1470,12 @@ async def retrieve(
                         relax_per_query.append(list(r))
                     if relax_per_query:
                         rrf_k_relax = int(_pcfg(state, "rag_rrf_k", DEFAULT_RRF_K))
-                        chunks = mq_rrf_merge_chunks(relax_per_query, rrf_k=rrf_k_relax)
+                        chunks = _merge_multi_query_chunks(
+                            relax_per_query,
+                            rrf_k=rrf_k_relax,
+                            intent=_intent,
+                            pipeline_config=state.get("pipeline_config"),
+                        )
                         chunks = chunks[:_retrieve_top_k]
                 else:
                     relax_res = await _run_hybrid_for_query(query_text, meta_filter=None)
@@ -1525,7 +1604,7 @@ async def retrieve(
                                 channel_type=_required_channel_type(state),
                                 embedding_column=state.get("embedding_column"),
                                 metadata_filter=metadata_filter or None,
-                                # mega-sprint-G1: thread tenant for RLS-enforced runtime DSN.
+                                # Thread tenant for RLS-enforced runtime DSN.
                                 record_tenant_id=state.get("record_tenant_id"),
                             )
                         except (RetrievalError, asyncio.TimeoutError,
@@ -1606,7 +1685,7 @@ async def retrieve(
                                 and state.get("embedding_column")
                             ):
                                 _dr_kwargs["embedding_column"] = state["embedding_column"]
-                            # mega-sprint-G1: thread tenant for RLS-enforced runtime DSN.
+                            # Thread tenant for RLS-enforced runtime DSN.
                             if (
                                 "record_tenant_id" in _dr_sig_params
                                 and state.get("record_tenant_id") is not None
@@ -1652,10 +1731,9 @@ async def retrieve(
             # ``content + chunk_context`` so the Anthropic CR
             # situated-context string is rank-visible. Default OFF —
             # opted-out bots take the indexed legacy path.
-            # LEGAL-RETRIEVAL-FIX 2026-05-21: fallback uses
-            # ``DEFAULT_CR_ENHANCED_ENABLED`` (constants SSoT) so corpora
-            # ingested with CR enrichment still get the BM25 tsvector
-            # widening when ``pipeline_config`` is missing the key (e.g.
+            # Fallback uses ``DEFAULT_CR_ENHANCED_ENABLED`` (constants SSoT)
+            # so corpora ingested with CR enrichment still get the BM25
+            # tsvector widening when ``pipeline_config`` is missing the key (e.g.
             # legacy chat path that pre-dates the chat_worker 3-tier
             # resolve). chat_worker injects the resolved value first;
             # this default is the last-resort fallback only.

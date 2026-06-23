@@ -484,8 +484,16 @@ async def grade(
                 # switch to a scale-invariant relative gate: keep candidates
                 # within RELATIVE_RATIO of the top score.
                 if state.get("rerank_score_mode") == "rerank":
+                    # Safety-net chunks (rerank node, _safety_injected) ARE
+                    # top-of-retrieval re-added under the reranker; when the
+                    # min-score/cliff stage emptied the surviving pool they keep
+                    # their raw RRF score (~0.01), which the provenance-blind
+                    # absolute floor would wrongly drop. Exempt them so the
+                    # safety-net is not undone here.
                     fallback_candidates = [
-                        c for c in _fb_pool if float(c.get("score", 0)) >= min_score
+                        c for c in _fb_pool
+                        if c.get("_safety_injected")
+                        or float(c.get("score", 0)) >= min_score
                     ]
                 else:
                     _fb_top = max(

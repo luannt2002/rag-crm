@@ -56,6 +56,18 @@ MAX_HISTORY_MESSAGE_CHARS: Final[int] = 800
 DEFAULT_GENERATE_HISTORY_MAX_MSGS: Final[int] = 10
 # Per-chunk CRAG grading concurrency cap — guards provider 429.
 DEFAULT_CRAG_GRADE_CONCURRENCY: Final[int] = 5
+# Retrieve multi-query fan-out concurrency cap — each branch opens its own DB
+# session from the pool, so a deep variant/sub-query fan-out can otherwise
+# exhaust the connection pool under concurrent turns. Bound at roughly a
+# quarter of the pool (DEFAULT_DB_POOL_SIZE // 4) so several turns can fan out
+# at once without starving the pool. Per-bot override via pipeline_config.
+DEFAULT_RETRIEVE_FANOUT_CONCURRENCY: Final[int] = 5
+# Entity-fairness round-robin on the multi-query RRF merge (comparison /
+# multi_hop). Default OFF so the merge is byte-identical to plain RRF until a
+# bot owner opts in via pipeline_config. The quota is the minimum slots each
+# distinct entity (doc-id) is guaranteed before the global RRF fill phase.
+DEFAULT_ENTITY_FAIRNESS_ENABLED: Final[bool] = False
+DEFAULT_ENTITY_FAIRNESS_PER_ENTITY_QUOTA: Final[int] = 2
 
 # --- CRAG grader strategy (Port + Strategy + Registry) ----------------------
 # Default provider for the CragGraderPort registry. ``"per_chunk"`` matches

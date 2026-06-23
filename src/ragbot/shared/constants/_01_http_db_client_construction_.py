@@ -218,6 +218,13 @@ INTENT_OUT_OF_SCOPE: Final[str] = "out_of_scope"
 DEFAULT_RERANK_CLIFF_SKIP_INTENTS: Final[frozenset[str]] = frozenset(
     {INTENT_AGGREGATION, INTENT_COMPARISON, INTENT_MULTI_HOP}
 )
+# Intents whose answers compare/join across distinct entities, where plain RRF
+# can starve a minority entity out of the top_k. For these the multi-query RRF
+# merge can use the entity-fairness round-robin layer (gated per-bot by
+# ``entity_fairness_enabled``; default OFF → plain RRF, byte-identical).
+DEFAULT_ENTITY_FAIRNESS_INTENTS: Final[frozenset[str]] = frozenset(
+    {INTENT_COMPARISON, INTENT_MULTI_HOP}
+)
 # Hard cap on chunk COUNT fed to the LLM after score-filtering. The cliff/
 # threshold filters cut by score but can still pass many near-duplicate chunks
 # (e.g. fragmented price rows) — this bounds the prompt size. Multi-fact intents

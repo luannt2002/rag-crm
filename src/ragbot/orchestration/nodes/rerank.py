@@ -66,8 +66,8 @@ async def rerank(
         inp = state.get("retrieved_chunks", [])
         # 260521-CHUNK-AGGREGATION-UNIVERSAL Phase 3 — per-intent top_n.
         # Aggregation queries need a wider rerank cap to retain every
-        # matching row; default top_n=7 starved "có mấy X" queries
-        # (verified 2026-05-21 UI test on a representative test tenant).
+        # matching row; the default top_n starved enumeration-style
+        # ("how many X") queries.
         _intent_for_topn = state.get("intent") or ""
         _topn_by_intent = _pcfg(state, "rerank_top_n_by_intent", DEFAULT_RERANK_TOP_N_BY_INTENT)
         _intent_override_topn = False
@@ -261,8 +261,9 @@ async def rerank(
                 _gap = float(_pcfg(state, "rerank_cliff_gap_ratio", DEFAULT_RERANK_CLIFF_GAP_RATIO))
                 _mink = int(_pcfg(state, "rerank_cliff_min_keep", DEFAULT_RERANK_CLIFF_MIN_KEEP))
                 # Multi-fact intents need every entity/clause chunk — the gap-cut
-                # drops answer chunks (e.g. thong-tu multi_hop → 1 survived). Keep
-                # the full reranked set for these intents instead of cliff-cutting.
+                # drops answer chunks (a multi_hop query can collapse to a single
+                # surviving chunk). Keep the full reranked set for these intents
+                # instead of cliff-cutting.
                 _cliff_skip = _pcfg(state, "rerank_cliff_skip_intents", None)
                 _cliff_skip = (
                     set(_cliff_skip) if _cliff_skip is not None
@@ -339,7 +340,7 @@ async def rerank(
         # cross-encoder 0..1 floor (Quality Gate #10: refuse text comes
         # from DB, never from this gate).
         #
-        # Wave J2 fix (2026-05-20): honour the strategy contract documented
+        # Honour the strategy contract documented
         # in ``PLAN_LIMIT_SCHEMA`` ("when strategy='cliff',
         # reranker_min_score_active is ignored"). The cliff filter already
         # cut weak chunks via ``absolute_floor`` + ``gap_ratio`` and its
@@ -448,8 +449,8 @@ async def rerank(
 
         # Retrieval safety-net: a strongly-retrieved chunk (top of the
         # pre-rerank RRF/BM25/vector order) must not be silently dropped just
-        # because the semantic reranker under-ranks it. Forensic 2026-06-05:
-        # zerank-2 buried an exact-answer legal clause (BM25 rank #1) to
+        # because the semantic reranker under-ranks it. Observed failure: the
+        # cross-encoder buried an exact-answer chunk (BM25 rank #1) to
         # rerank rank-8, beyond top_n + cliff → hard miss. Union the top-N
         # retrieval-ordered candidates back in (bounded, only when the
         # reranker disagrees with retrieval). Default-ON robustness for every
@@ -468,7 +469,7 @@ async def rerank(
                 # already emptied the surviving pool there is no floor to lift
                 # to — keep the chunk's own real retrieval score instead, so a
                 # genuinely-retrieved chunk reports its true score rather than a
-                # collapsed 0.0 (M18: stamping 0.0 made the absolute-floor drop
+                # collapsed 0.0 (stamping 0.0 made the absolute-floor drop
                 # the very chunk the safety-net re-injected).
                 _kept_scores = [float(c.get("score", 0) or 0) for c in out]
                 _stamp = min(_kept_scores) if _kept_scores else None
