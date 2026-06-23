@@ -1352,3 +1352,183 @@ Shared: `shared/mime_sniff.py · shared/tabular_markdown.py · application/servi
 - **Tech-debt (T3, deferred, behavior-preserving)**: two god-files — `ingest_stages_store.py` (1022 LOC) and `document_service/__init__.py` (999 LOC) — should be split per-stage; `document_worker.py` (692 LOC) does parse-routing that belongs in the service (folds into A-I1). These are debt, **not bugs** — tracked in the master plan.
 - **Performance debt (one real item)**: A-I4 — default `late_chunking` embeds the whole-doc chunk list in memory (RSS spike on a 224KB sheet). Bounded-batch fix is queued. No other hot-path perf red flag in ingest (HTTP-layer embed batching + embedder circuit-breaker present).
 - **Bottom line**: NOT "still lots of tech debt" — the framework is expert and clean; the remaining work is **5 scoped FIX items + 2 deferred god-file splits**, all tracked, none blocking. The score gap (8.2 architecture vs ~7.0 effective) closes when A-I1 + A-I5 land.
+
+---
+---
+
+# PER-AGENT FILE-CHANGE LEDGER
+
+> Explicit record of WHICH files each flow-agent changed + WHAT changed (and the verification).
+> Agent 1 (Ingest) is the reference run — already committed. Agents 2–10 run via the
+> `deep-debug-to-expert` workflow (fix phase, git-worktree isolated); each row is filled in here
+> when that agent's fix lands, before merge. Branch: `fix-260623-ingest-expert` (commit `a0ce897`).
+
+## Agent 1 — Ingest / Upload  ✅ COMMITTED (a0ce897)
+
+| File | Change | Type | Verify |
+|---|---|---|---|
+| `shared/mime_sniff.py` | + `_MIME_PPTX` + presentationml→pptx branch in `_peek_zip_office_subtype` | CODE (A-I2) | 28 pass, 0 new ruff |
+| `infrastructure/ocr/kreuzberg_parser.py` | `_extract_blocks` sniffs real MIME (`sniff_real_mime`) for engine arg + suffix; `_suffix_for_mime` + xlsx/pptx branches; comment de-versioned | CODE (A-I2) | 28 pass |
+| `infrastructure/ocr/ocr_factory.py` | docstring honest about test-pinned graceful fallback (was claiming fail-loud) | DOC (A-I6) | AST-identical, 11 pass |
+| `infrastructure/workers/document_worker.py`† | fetch body first → `detect_parser_robust(mime,ext,_raw)` → bytes to OCR (single GET); import trimmed | CODE (A-I1) | 57 worker/parser pass, 0 new ruff |
+| `infrastructure/parser/registry.py` | `_sniff_mime` reads OOXML manifest (unify sniffer registry+OCR); top-level import | CODE (A-I1) | 0 new ruff |
+| `application/services/document_service/__init__.py` | VN→EN comments + strip version/temporal refs | COMMENT | AST-identical |
+| `interfaces/http/router.py` | VN→EN + strip B.6/D12/G26/dates | COMMENT | AST-identical |
+| `interfaces/http/routes/documents.py` | "260525 Bug #2" docstring → behaviour-described; +3 fn docstrings | COMMENT | AST-identical |
+| `interfaces/http/routes/documents_stream_upload.py` | DISABLED module docstring + strip tag | COMMENT | AST-identical |
+| `interfaces/http/routes/sync.py` | 10 VN→EN + strip P0/Tầng-6 refs | COMMENT | AST-identical |
+| `tests/unit/test_kreuzberg_parser.py` | +2 octet-stream XLSX/PPTX regression tests | TEST | — |
+| `tests/unit/test_document_worker_parser_first.py` | +1 robust-detect octet-stream XLSX test | TEST | — |
+
+†path shown as in import; actual `interfaces/workers/document_worker.py`.
+**Not yet expert (this agent)**: A-I4 (`ingest_stages_store` late_chunking memory) + A-I5 (4 parsers typed Block) — pending.
+**Reverted by parallel-git race, to redo**: comment-clean of `ingest_core.py` / `google_link_service.py` / `tabular_markdown.py` (VN comments back; logic untouched).
+
+## Agents 2–10 — pending fix phase (worktree-isolated; filled on landing)
+
+| # | Agent / flow | Files changed | Fix IDs | Status |
+|---|---|---|---|---|
+| 2 | Chunking / AdapChunk | _(to record)_ | B-1/B-2/B-3/B-4 | ⏳ diagnose running |
+| 3 | Answer / Generation | _(to record)_ | C-1/C-2 | ⏳ |
+| 4 | Chat-entry + Test-chat | _(to record)_ | D-B1/D-B2/D-A2 | ⏳ |
+| 5 | Retrieval | _(to record)_ | E-1/E-2/E-3 | ⏳ |
+| 6 | Multi-tenant / RLS | _(to record)_ | F-1/F-5/F-2/F-4 | ⏳ |
+| 7 | Cost-Log / CRM | _(to record)_ | G-1/G-2/G-3/G-4/G-6 | ⏳ |
+| 8 | Multi-language | _(to record)_ | I-1/I-2 | ⏳ |
+| 9 | Cost / Perf | _(to record)_ | J-1/J-3/J-4/J-5 | ⏳ |
+
+> Each agent's worktree diff + per-file verification (pytest subset · ruff HEAD==NOW · AST-identical for
+> comment-only) is recorded in its row before merge — so this ledger is the single source of "who changed what".
+
+---
+---
+
+# DIAGNOSE-9-FLOW RESULTS (independent agents, 2026-06-24) — confirmed fix-lists
+
+> Read-only 5-axis diagnose of each flow (deep-debug-to-expert protocol). Each fix self-verified at file:line.
+> NEW = found beyond the original audit. Branch for fixes: `fix-260623-ingest-expert`.
+
+## Flow: INGEST-REMAINDER — HAS_GAPS (A-I1/A-I2/A-I6 confirmed already fixed)
+- **A-I4** HIGH (GIẢ THUYẾT): `late_chunking.py:99` whole-doc `embed_batch` no slice/ceiling; default path. Fix: slice by `DEFAULT_EMBED_DOC_BATCH_SIZE` + new `DEFAULT_LATE_CHUNKING_MAX_CHUNKS` ceiling → route oversize to batched path. Target 9.
+- **A-I5** HIGH (SỰ THẬT): 4 parsers return `list[dict]`, no typed `Block` → AdapChunk L2 no-op. Fix: emit Block list from structured parsers + thread `blocks=` (worker registry path). Unblocks B-2/3/4/5. `Block` dataclass + worker plumbing already exist. Target 9.
+- C-store-1 MED: `ingest_stages_store._stage_u7_embed_store` ~900-LOC god-method, 3 near-identical INSERT loops → extract `_build_chunk_row` (T3 defer). C-store-2/K-doc LOW: 6 verRef + VN legal examples → strip/genericize.
+- Dead-code: NONE (all parser methods are Port impls; late_chunk fns have callers).
+
+## Flow: CHUNKING/AdapChunk — C+ 6.0 (audit confirmed + 2 NEW)
+- **B-1** CRIT: LLM Strategy Selector orphan (0 callers, no bootstrap provider). Fix: wire `build_chunking_resolver` Singleton keyed on `system_config chunking_strategy_provider` (default 'rule'). Target 9.
+- **B-2** CRIT: block-pipeline flag ON but no-op (registry parser `blocks=None`; only OCR sets blocks). = A-I5 root. Interim: WARN when flag ON + blocks empty. Target 9.
+- **B-3** HIGH: atomic-protect default OFF + `smart_chunk_atomic` orphan. **B-4** HIGH: `profile_entity` computed-not-fed AND `DEFAULT_ADAPCHUNK_LAYER3_DOC_PROFILE_ENABLED=False` (double-gated dead).
+- 🆕 **NEW-1** MED: `infrastructure/chunk_quality/*` (4 files) = **DUPLICATE DEAD MODULE** shadowing live `shared/chunk_quality.py`, self-NOTICE + AST-verified 0 callers → DELETE candidate.
+- 🆕 **NEW-2** MED: `llm_narrate.py:58-73` 3 hardcoded VN prompts under EN "preserve-language" system-instr (= I-1). NEW-3 LOW: 17 version-ref sites. NEW-4 LOW: `analyze.py:542` comment says L5 OFF but const True.
+- One fix B-2 (parser→Block) cascades B-3/B-4/B-5; B-1 independent.
+
+## Flow: ANSWER/GENERATION — A− 9.2 (sacred-10 VERIFIED clean)
+- **C-1** HIGH (domain-neutral): `jsonb_conversation_state.py:200` + docstring:23 + 4 test rows = `price_buoi_le` VN literal. Writer only writes `price_primary` → fallback is dead-defensive. Fix: drop fallback + migrate tests. Target 9.5.
+- **C-2** MED: `chat_routes.py:762-767` docstring describes a math-lockdown override that DOESN'T EXIST (grep `find_ungrounded` in generate=0) → rewrite to truth (sacred-10 risk). H-1 MED: 22 version-ref lines in generate.py. H-2 LOW: VN comments guard_output.
+- Non-issue: `generate.py` 470-LOC god-func = T3 relocation debt, defer. `math_lockdown` keep (test-only public API, NOT dead).
+
+## Flow: MULTI-LANGUAGE — 6.5 (audit confirmed + 1 correction)
+- **I-1** HIGH: narrate carries no `language`; `_BLOCK_PROMPTS` hardcoded VN; doc L13-15 claims EN (doc/code drift). Fix: thread `parsed_language` + locale-key prompts into i18n pack (data, not code). Target 9.
+- **I-2** HIGH: `i18n.py:405-407` `get_pack()` falls back to VI pack for unseeded locales (EN/KM/TH bot gets VN internal prompts). Fix: universal fallback → English; split new-bot-default from unknown-locale-fallback. Target 9.
+- 🆕 **I-3** MED (CORRECTION to audit "EN not corrupted"): BM25 QUERY path `pgvector_store.py:404/412` runs `segment_vi_compounds` UNGATED → EN queries run underthesea (~100-300ms waste + mis-join). Ingest IS gated, query is NOT → asymmetric. Fix: pass `language` + gate. Target 8.5.
+- I-4/I-5 LOW hygiene. Dead-code VERIFIED: `infrastructure/{tokenizer,text_normalizer}/*` = 0 live importers (parked 2026-06-03, leave).
+
+## Flow: COST-LOG / CRM — 5.5 (DB-measured, 3159 rows)
+- **G-1** CRIT: `complete_runtime_stream` (router :790-991) emits 0 ledger row → streamed answer cost lives in `monitoring_log` (365 rows), NOT token_ledger. The 2217 llm rows = non-stream sub-calls only.
+- **G-2** HIGH: only `jina` of 11 embed/rerank adapters emits; `cost_usd` NULL 942/942 (aux_usage never snapshots price). Fix: Port-boundary `LedgerEmittingDecorator`.
+- **G-4** HIGH: `purpose` NULL 3159/3159 · `duration_ms`=0 all llm · 3 divergent emit sites no shared helper. **G-6** MED-HIGH: `request_id` NULL 3159/3159 — **no `request_id_ctx` exists anywhere** → must add contextvar at route boundary (CRM per-turn cost needs it).
+- **G-3** HIGH: analytics has only `usage_timeseries`; **admin_analytics reads `request_logs` NOT token_ledger** → cost split-brain across 3 tables (token_ledger/monitoring_log/bot_token_usage_log[dead]). Fix: rollup repo (bot/ws/tenant + cross-tenant RBAC100) + repoint admin cost endpoints at ledger. Full SQL+endpoints in agent report.
+- → Make token_ledger the ONE cost SoT; G-1/G-4/G-6 land together (shared `_emit_ledger` + request_id_ctx).
+
+## Flow: CHAT + TEST-CHAT — 6.0 (escalation chain PROVEN)
+- **D-B1** CRIT (proven): tenant-less token → `_tenant_scope=None` (`_shared.py:144-152`) → `bot_repo.get_by_id(record_tenant_id=None)` drops tenant WHERE (`bot_repository.py:255`) → **cross-tenant hard-delete ANY bot by UUID**. 5 destructive endpoints UNGATED: `delete_bot` (bot_admin:444) · `test_chat_clear` (chat_routes:1182) · `reinit_bots` (monitoring:55) · `delete_document` (document_routes:531) · `update_bot` (298, mutates system_prompt — sacred). Fix: `require_permission` per handler (registry policy exists+tested but not wired to routes).
+- **D-B2** CRIT: `router.py:101` mounts test_chat/chat_async with NO router-level `dependencies` → "never-external" = network-convention only. Fix: `dependencies=[require_min_level_dep(100)]` at mount (defense-in-depth with D-B1).
+- D-A3 MED: quota-gate `except Exception→warning→proceed` FAILS OPEN (paid-quota leak) → narrow + observable metric. D-A2 MED: `UUID(int=1)` harness fallback. D-C verRef.
+- prod entry `chat.py`/`chat_stream.py` near-expert (9/8). Root: package carved from god-module relying on router-network-boundary, never per-route gated.
+
+## Flow: MULTI-TENANT / RLS — 6.5 (architecture expert, enforcement OFF; 1 AUDIT CORRECTION)
+- **F-4** HIGH (NEW detail): `stats_index_repository.py` reads (`:250,315,386,415,511`) use bare `self._sf()` + filter **only record_bot_id, NO record_tenant_id** — docstring CLAIMS session_with_tenant (FALSE). + table is the **only 1/21 missing `FORCE` RLS** + policy lacks `,true` missing-ok flag (throws on unset GUC). Internally safe (bot UUID unique) but weakest boundary. Fix: session_with_tenant + tenant filter + migration FORCE.
+- **F-1** HIGH: `document_repository.save():100-114` + `conversation_repository.save():163` PK-only get, guard incoming obj not row → cross-tenant **content-overwrite** (NOT relabel — tenant cols not mutated). Fix: fenced UPDATE WHERE id AND record_tenant_id + rowcount==1.
+- ⚠️ **F-5 AUDIT PREMISE CORRECTED**: "CREATE POLICY DDL absent from git" is **FALSE** — 21 policies + ENABLE + 20 FORCE ARE tracked in `alembic/squashed_baseline.sql` (git, executed by squash migration). REAL F-5 = **no pg_policies/relforcerowsecurity regression test** (current test only source-greps Python) → would not catch the stats FORCE-miss. Fix: integration test querying pg_policies (21) + FORCE-flag (21).
+- F-2 MED job_repo fence; F-3 prod-cutover (RLS inert: app on superuser DSN). bot_registry_service 9.5 expert. No live cross-tenant READ leak (record_bot_id unique saves it).
+
+## Flow: COST / PERF / LATENCY — 8.4 (BETTER than audit; 3 STALE premises)
+- **J-3** HIGH (only real defect): `retrieve.py:1307,1381` (+`:935`) gather over ≤7 variants/≤5 sub-queries, each own DB session, pool=20 → ×concurrent exhausts pool (Async Rule 6). Branches PROVEN independent (read-only state, own session). Fix: `asyncio.Semaphore(DEFAULT_RETRIEVE_FANOUT_CONCURRENCY≈5)` like grade.py:322. Target 8.5.
+- ⚠️ **J-1/J-4/J-5 STALE/FALSE premises (NOT bugs)**: J-1 async-grounding default-OFF is the CORRECT T1>T2 decision (async ships answer pre-HALLU-judge) — keep, paid opt-in. J-4 `DEFAULT_RERANK_SKIP_INTENTS` is **non-empty + wired** (factoid/chitchat/oos/greeting...) — gate already fires. J-5 cache hit/miss **already emitted** (`semantic_cache_outcome` event) — verify-gap not code defect.
+- 🆕 **D-1** MED: `infrastructure/resilience/*` dead-code (0 callers, real CBs in adapters) but **UNFLAGGED** (proximity_cache flagged, cag commented) → add DEAD-CODE NOTICE. D-2 god-files retrieve 1840 / query_graph 2859 LOC (T3 defer).
+- grade.py = reference bounded-gather (9.0). perf.py 9.5. This flow's fix-list was written against an older tree.
+
+---
+---
+
+# CONSOLIDATED 10-FLOW SCORECARD + AUDIT CORRECTIONS (diagnose-9 run, 2026-06-24)
+
+## Grades (independent agents, self-verified)
+
+| Flow | Grade | Top items | Dead-code found |
+|---|---|---|---|
+| Ingest (A-I1/A-I2/A-I6 fixed) | 19/22 expert | A-I4 late_chunking mem · A-I5 parser→Block | none |
+| Chunking/AdapChunk | C+ 6.0 | B-1 selector orphan · B-2 block no-op · B-3/B-4 | 🆕 `infrastructure/chunk_quality/*` DUPLICATE DEAD MODULE |
+| Answer/Generation | A− 9.2 | sacred-10 CLEAN · C-1 price_buoi_le · C-2 false docstring | none (math_lockdown keep) |
+| Chat + Test-chat | 6.0 | **D-B1 CRIT cross-tenant hard-delete (proven)** · D-B2 mount no-gate | none (route handlers) |
+| Retrieval | _(pending)_ | E-1 rrf dead · E-2 bm25=5 · E-3 safety-net | _(pending)_ |
+| Multi-tenant/RLS | 6.5 | F-4 stats_index tenant-blind · F-1 IDOR-write | none |
+| Cost-Log/CRM | 5.5 | G-1 stream no-emit · G-2 jina-only · G-3 no rollup | `bot_token_usage_log` dead table |
+| Domain-neutral | 8.5 (prior) | 0 per-bot in core | — |
+| Multi-language | 6.5 | I-1 narrate VN-hardcode · I-2 get_pack VN fallback | `tokenizer/*`+`text_normalizer/*` parked-dead |
+| Cost/Perf | 8.4 | **J-3 only real bug** (unbounded fanout) | 🆕 `resilience/*` dead UNFLAGGED |
+
+## ⚠️ AUDIT CORRECTIONS (diagnose found the original audit was wrong/stale here — rule#0)
+1. **F-5 WRONG**: original said "RLS CREATE POLICY DDL absent from git". FALSE — 21 policies + FORCE ARE in `squashed_baseline.sql` (git-tracked). Real gap = no `pg_policies` regression test.
+2. **J-1/J-4/J-5 STALE**: original flagged async-grounding/rerank-skip/cache as fixes. All already correctly handled — async-OFF is the right T1>T2 call, rerank_skip default IS non-empty+wired, cache hit/miss IS emitted. Only J-3 is a real bug. Cost/Perf is 8.4 not B−.
+3. **I-3 NEW**: audit said "EN retrieval not corrupted" — TRUE for ingest, FALSE for query (`pgvector_store.py:404/412` VN segmenter ungated on EN queries).
+4. **Dead-code beyond audit**: `infrastructure/chunk_quality/*` (duplicate of live `shared/chunk_quality.py`), `infrastructure/resilience/*` (unflagged) — both delete/flag candidates, NOT commented yet.
+
+## CONSOLIDATED FIX PRIORITY (T1 smartness > T2 cost/perf > T3 hygiene)
+**T1**: A-I5 parser→Block (cascades B-2/B-3/B-4/B-5 — single highest-leverage) · B-1 wire/delete LLM selector · E-1 entity-RRF · I-1 narrate language · I-2 get_pack EN fallback.
+**T2**: G-1/G-2/G-4/G-6 cost-ledger completeness + G-3 rollup (CRM center) · J-3 bound fanout gather · A-I4 late_chunking memory · I-3 gate query VN-segmenter.
+**T3-SECURITY (urgent despite T3)**: **D-B1 + D-B2 RBAC on destructive endpoints (cross-tenant hard-delete PROVEN)** · F-1 IDOR-write fence · F-4 stats_index tenant filter + FORCE RLS · F-5 pg_policies test.
+**T3-hygiene**: C-1 price_buoi_le · C-2 false docstring · comment VN→EN + strip version-ref (all flows) · delete/flag dead modules (chunk_quality, resilience).
+
+> **Security note**: D-B1 (cross-tenant hard-delete via tenant-less token) is tier-labelled T3 but is the single most **dangerous** finding — data-loss + cross-tenant. Treat as urgent.
+
+## Flow: RETRIEVAL — 7.4 (diagnose complete; 2 E-2 correction)
+- **E-1** HIGH: `rrf_round_robin.py` entity-fairness DEAD (0 prod callers; prod uses `rrf_merge_chunks`) → comparison/multi_hop minority-entity starvation. Fix: wire gated per-bot OR comment-out (don't ship orphan). Target 9.
+- **E-3** HIGH: `rerank.py:474-481` safety-net `_stamp=None`→0.01 ↔ `grade.py:486-489` CRAG floor 0.3 drops it (floor is provenance-blind). Fix at grade: exempt `_safety_injected` from absolute floor. Target 9.
+- **E-2** LOW (correction: ×2 not ×3): `pgvector_store.py:363` + `retrieve.py:1015` hardcode `=5` (constant exists, not imported here; bm25_only_stage2/pg_bm25 already use it). Import constant.
+- 🆕 **FALLBACK-SOFTDELETE** MED: `bm25_only_stage2.py:79` missing `AND deleted_at IS NULL` → soft-deleted docs leak into multistage fallback (default OFF mitigates). Tenant-data correctness.
+- DEAD (note-don't-delete): `infrastructure/hyde/*` (4) + `query_router/*` (5) + `reranker/_modality_boost.py` — 0 callers verified. retrieve.py 1841-LOC god-file (T3). 0 per-bot/provider branch (clean DI).
+
+---
+---
+
+# FIX EXECUTION LEDGER — Wave 1 + Wave 2 (branch origin/integ-260624-wave1, 2026-06-24)
+
+> 5 worktree-isolated fix agents, TDD-first, merged + regression-verified. All per-file rescores ≥8.5
+> unless noted deferred-with-reason. Total: ~1679 unit tests pass on the merged integ (3 flaky-under-load
+> pass in isolation; pre-existing `_EffectiveRouteContext` collection errors unrelated).
+
+## Wave 1 (merged, pushed)
+| Flow | Files | Fixes | Rescore |
+|---|---|---|---|
+| **chat+test-chat** | router, rbac, 4 test_chat routes, chat_async | D-B1 RBAC on 5 destructive endpoints · D-B2 router mount-gate(level 100) · D-A3 quota narrow+observable | 6.0→8.6-8.8 · +14 test |
+| **multitenant/RLS** | document/conversation/job/stats repo, query_graph wiring, +migration | F-1 IDOR fenced UPDATE · F-4 stats session_with_tenant+tenant-filter · F-4b FORCE-RLS parity migration · F-5 pg_policies test · F-2 observable | 6.5→8.5-9.0 · +11 test (F-3 ops-deferred) |
+| **cost-log/CRM** | dynamic_litellm_router, aux_usage, +ledger decorators, analytics repo, admin_metrics, logging, +indexes migration | G-4 shared _emit helper · G-1 stream emit · G-6 request_id_ctx · G-2 Port-boundary decorator(all providers) · G-3 rollup repo+endpoints(bot/ws/tenant/cross-tenant RBAC) | 5.5→8.5-9.0 · +21 test |
+
+## Wave 2 (merged, pushed)
+| Flow | Files | Fixes | Rescore |
+|---|---|---|---|
+| **chunking+ingest+narrate+i18n** | 4 parsers, document_parser_port, worker, +structured_blocks.py, late_chunking, smart_chunk, llm_narrate, i18n, constants | **A-I5/B-2 parser→typed-Block (keystone, cascades L2-L6)** · B-3 atomic-executor(flag) · A-I4 late_chunk slice+ceiling · I-1 narrate language · I-2 get_pack EN fallback | 6.0/6.5→8.5+ · +19 test |
+| **retrieval+perf+I3** | retrieve, grade, rerank, rrf_round_robin, pgvector_store, bm25_only_stage2, litellm_reranker, resilience(flag) | J-3 fanout semaphore · E-3 CRAG-floor exempt safety · E-1 entity-RRF wired(gated) · E-2 bm25 constant · softdelete gate · I-3 query-segmenter language-gate · D-1 resilience dead-flag | 7.4/8.4→8.5-9.0 · +18 test |
+
+## Deferred-with-reason (honest — can't reach 8.5 in code-only without regression)
+- **B-1** (chunking LLM selector): DEAD-CODE NOTICE instead of wiring — wiring regresses CSV→table & legal→HDT fast-paths (`profile_to_dict` lacks is_csv/vn_markers). Needs entity extension + load-test.
+- **B-4** (feed profile_entity to selector): same blocker — `DocumentProfile` entity lacks is_csv/vn_markers fields. Needs entity extension.
+- **F-3** (RLS prod DSN cutover): ops-gated (flipping to NOBYPASSRLS role risks fail-closing live traffic).
+- **G-2 non-jina token cost**: decorator emits coverage rows; per-adapter `usage` payload wiring is a mechanical follow-up (HALLU=0 on cost → no fabricated tokens).
+- **answer C-1/C-2** (price_buoi_le legacy key + false math-lockdown docstring): hygiene; answer already 9.2 (≥8.5). Small follow-up.
+- keyword_stage3 soft-delete (same class as bm25_only_stage2, scope-limited); system_config seeding of new knobs (governance).
+
+## Final per-flow grades (post Wave 1+2)
+Ingest 9.0 · Chunking ~8.5 (B-1/B-4 deferred) · Answer 9.2 · Chat 8.7 · Retrieval 8.7 · Multitenant 8.8 · Cost-Log 8.8 · Domain-neutral 8.5 · Multi-language 8.6 · Cost/Perf 8.7.
+→ **All flows ≥8.5** except chunking's selector-wiring (deferred — would regress without the entity-field extension).
