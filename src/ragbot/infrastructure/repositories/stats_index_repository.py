@@ -111,6 +111,7 @@ class StatsIndexRepository:
                     f":entity_name_{i}, :entity_category_{i}, "
                     f":price_primary_{i}, :price_secondary_{i}, "
                     f"CAST(:attributes_json_{i} AS jsonb), "
+                    f":entity_synonyms_{i}, "
                     f"(SELECT id FROM document_chunks "
                     f"WHERE record_document_id = :doc_id "
                     f"AND chunk_index = :chunk_index_{i} LIMIT 1))"
@@ -120,6 +121,10 @@ class StatsIndexRepository:
                 params[f"price_primary_{i}"] = entity.price_primary
                 params[f"price_secondary_{i}"] = entity.price_secondary
                 params[f"chunk_index_{i}"] = entity.chunk_index
+                # Aliases/synonym search variants → entity_synonyms (NULL when the
+                # catalog has no aliases column). Captured by document_stats; this is
+                # the searchable backing column query_by_name_keyword ORs against.
+                params[f"entity_synonyms_{i}"] = getattr(entity, "aliases", None)
                 # Merge chunk_index into attributes_json for traceability.
                 attrs = dict(entity.attributes) if entity.attributes else {}
                 attrs["chunk_index"] = entity.chunk_index
@@ -130,7 +135,7 @@ class StatsIndexRepository:
                 "(record_tenant_id, workspace_id, record_bot_id, "
                 "record_document_id, entity_name, entity_category, "
                 "price_primary, price_secondary, attributes_json, "
-                "record_chunk_id) "
+                "entity_synonyms, record_chunk_id) "
                 f"VALUES {', '.join(value_clauses)}"
             )
             await session.execute(text(sql), params)
@@ -532,7 +537,13 @@ class StatsIndexRepository:
             or_clauses.append(
                 f"unaccent(entity_name) ILIKE unaccent(:kw{i}) "
                 f"OR unaccent(entity_category) ILIKE unaccent(:kw{i}) "
-                f"OR {_fold('entity_name')} LIKE '%' || {_fold(f':kwn{i}')} || '%'"
+                # ALIASES/synonym column: an entity whose search variants list the
+                # asked notation matches even when entity_name uses another ("265/50ZR20"
+                # name, but the row's Aliases carry "265/50R20" = the query). The fold
+                # collapses single digit-separators so notation-variants still hit.
+                f"OR unaccent(entity_synonyms) ILIKE unaccent(:kw{i}) "
+                f"OR {_fold('entity_name')} LIKE '%' || {_fold(f':kwn{i}')} || '%' "
+                f"OR {_fold('entity_synonyms')} LIKE '%' || {_fold(f':kwn{i}')} || '%'"
             )
             params[f"kw{i}"] = f"%{v}%"
             params[f"kwn{i}"] = v

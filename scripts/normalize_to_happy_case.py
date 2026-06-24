@@ -23,8 +23,50 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 import asyncpg  # noqa: E402
 
+from ragbot.shared.document_stats import _normalise  # noqa: E402
+
 OUT_DIR = Path(__file__).resolve().parent.parent / "reports" / "happy_case_clone"
 _STEP_RE = re.compile(r"^(bước\s*\d+|[IVX]+/|\d+\.)\s*", re.IGNORECASE)
+
+# Generic header-rename map: messy owner column labels → the canonical token the parser
+# recognises as a role. Keyed on the NORMALISED (lower-case, accent-stripped) owner
+# header so "Mặt hàng" / "MẶT HÀNG" / "mat hang" all map. Domain-neutral — these are
+# generic catalog-column synonyms, NOT per-bot service/brand names. Applied to the
+# header row ONLY, before role detection; data values are never touched. A header with
+# no entry here is left as-is (the checker's column-roles card flags it separately).
+_HEADER_RENAME_MAP: dict[str, str] = {
+    # → name
+    "mat hang": "Tên", "ten hang": "Tên", "ten san pham": "Tên", "ten dich vu": "Tên",
+    "san pham": "Tên", "dich vu": "Tên", "ten kho": "Kho",
+    # → category
+    "phan loai": "Nhóm", "vung": "Nhóm", "danh muc": "Nhóm", "loai": "Nhóm",
+    "khu vuc": "Nhóm",
+    # → price
+    "don gia": "Giá", "gia ban": "Giá", "gia le": "Giá", "thanh tien": "Giá",
+    # → aliases
+    "tu khoa": "Aliases", "bien the": "Aliases", "synonym": "Aliases",
+    "synonyms": "Aliases", "keyword": "Aliases", "keywords": "Aliases",
+    "variant": "Aliases", "variants": "Aliases",
+}
+
+
+def rename_headers_to_canonical(raw: str) -> str:
+    """Rename the CSV header row's owner labels → canonical role tokens.
+
+    Data-preserving: only the FIRST line's cells are remapped (via
+    ``_HEADER_RENAME_MAP``, accent/case-insensitive); every data value is rewritten
+    verbatim. An unmapped header cell is kept as-is. Returns the CSV unchanged when it
+    has no rows. RFC-4180 quoting is preserved by round-tripping through ``csv``.
+    """
+    rows = list(csv.reader(io.StringIO(raw)))
+    if not rows:
+        return raw
+    header = [_HEADER_RENAME_MAP.get(_normalise(c.strip()), c) for c in rows[0]]
+    buf = io.StringIO()
+    writer = csv.writer(buf, lineterminator="\n")
+    writer.writerow(header)
+    writer.writerows(rows[1:])
+    return buf.getvalue()
 
 
 def normalize_kv_export(raw: str) -> str:
@@ -149,9 +191,17 @@ async def main() -> None:
             label, fn = PLAN[name]
             new = fn(raw)
             action = f"NORMALIZED ({label}): {len(raw)} → {len(new)} chars"
-        else:
+        elif raw.lstrip().startswith("#"):
+            # Already a markdown DOC (heading-structured) — no column header to rename.
             new = raw
-            action = "cloned as-is (already happy)"
+            action = "cloned as-is (doc)"
+        else:
+            # A sheet: rename owner header labels → canonical role tokens BEFORE role
+            # detection. Data-preserving; an unmapped header is left for the checker.
+            new = rename_headers_to_canonical(raw)
+            renamed = new.splitlines()[:1] != raw.splitlines()[:1]
+            action = ("HEADER-RENAMED → canonical" if renamed
+                      else "cloned as-is (already canonical)")
         ext = ".md" if (name in ("xe-4", "spa-4") or new.lstrip().startswith("#")) else ".csv"
         (OUT_DIR / f"{name}{ext}").write_text(new, encoding="utf-8")
         loss = _loss_report(raw, new) if name in PLAN else ""
