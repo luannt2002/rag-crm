@@ -60,8 +60,11 @@ uv.lock
 Thumbs.db
 Desktop.ini
 
-# Claude Code memory (personal)
-.claude/
+# Claude Code — share team agents (commands/workflows/settings.json); keep personal/runtime local
+.claude/*
+!.claude/commands/
+!.claude/workflows/
+!.claude/settings.json
 
 # Internal design docs / AI agent prompts (not for repo)
 doc.txt
