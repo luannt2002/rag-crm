@@ -462,32 +462,44 @@ class _StageFinalizeMixin:
                     collapsed=len(_raw_entities) - len(_stats_entities),
                 )
             if _stats_entities:
-                if is_reindex:
-                    # Delete stale stats rows before inserting updated ones.
-                    try:
-                        await self._stats_index_repo.delete_by_document(doc_id)
-                    except Exception as exc:  # noqa: BLE001 — delete is best-effort
-                        logger.warning(
-                            "stats_index_delete_before_reingest_failed",
-                            record_document_id=str(doc_id),
-                            error_type=type(exc).__name__,
-                            error=str(exc)[:200],
-                        )
+                # Idempotent write: ALWAYS delete the document's existing stats
+                # rows immediately before re-inserting the freshly-extracted set,
+                # regardless of is_reindex. The ingest task is delivered
+                # at-least-once (Redis Streams) so the same doc_id can be
+                # processed more than once even on a first-time doc
+                # (is_reindex=False); without an unconditional delete each retry
+                # appends a full duplicate copy. On a brand-new doc the delete
+                # removes 0 rows (cheap). If the delete fails we must NOT insert
+                # — inserting on top of un-deleted rows is exactly what produces
+                # the duplicates — so we skip this pass and let the next
+                # successful ingest re-populate.
+                _stats_delete_ok = True
+                try:
+                    await self._stats_index_repo.delete_by_document(doc_id)
+                except Exception as exc:  # noqa: BLE001 — best-effort; skip insert on fail
+                    _stats_delete_ok = False
+                    logger.warning(
+                        "stats_index_delete_before_insert_failed",
+                        record_document_id=str(doc_id),
+                        error_type=type(exc).__name__,
+                        error=str(exc)[:200],
+                    )
                 _ws = workspace_id or (
                     str(record_tenant_id) if record_tenant_id else "system"
                 )
-                await self._insert_stats_index(
-                    record_tenant_id=record_tenant_id or uuid.uuid4(),
-                    workspace_id=_ws,
-                    record_bot_id=record_bot_id,
-                    record_document_id=doc_id,
-                    entities=_stats_entities,
-                )
-                _summary = aggregate_summary(_stats_entities)
-                await self._upsert_doc_summary(
-                    record_document_id=doc_id,
-                    summary_json=_summary,
-                )
+                if _stats_delete_ok:
+                    await self._insert_stats_index(
+                        record_tenant_id=record_tenant_id or uuid.uuid4(),
+                        workspace_id=_ws,
+                        record_bot_id=record_bot_id,
+                        record_document_id=doc_id,
+                        entities=_stats_entities,
+                    )
+                    _summary = aggregate_summary(_stats_entities)
+                    await self._upsert_doc_summary(
+                        record_document_id=doc_id,
+                        summary_json=_summary,
+                    )
 
         if _audit is not None:
             _avg_chunk_len = (
