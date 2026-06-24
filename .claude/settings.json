@@ -1,0 +1,68 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git commit -m ' *)",
+      "Bash(rpm -qa)",
+      "Bash(systemctl status *)",
+      "Bash(dnf install *)",
+      "WebFetch(domain:api.semanticscholar.org)",
+      "WebFetch(domain:www.semanticscholar.org)",
+      "WebFetch(domain:viblo.asia)",
+      "WebFetch(domain:arxiv.org)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:weaviate.io)",
+      "WebFetch(domain:community.databricks.com)",
+      "WebFetch(domain:unstructured.io)",
+      "WebFetch(domain:www.f22labs.com)",
+      "WebFetch(domain:stackoverflow.blog)",
+      "WebFetch(domain:www.datacamp.com)",
+      "WebFetch(domain:developer.ibm.com)",
+      "WebFetch(domain:medium.com)",
+      "WebFetch(domain:latenode.com)",
+      "WebFetch(domain:learn.microsoft.com)",
+      "WebFetch(domain:developer.nvidia.com)",
+      "WebFetch(domain:masteringllm.medium.com)",
+      "WebFetch(domain:www.ibm.com)",
+      "WebFetch(domain:dev.to)",
+      "WebFetch(domain:cloud.google.com)",
+      "WebFetch(domain:langcopilot.com)",
+      "WebFetch(domain:blog.premai.io)",
+      "WebFetch(domain:jina.ai)",
+      "WebFetch(domain:www.devoteam.com)",
+      "WebFetch(domain:www.helicone.ai)",
+      "WebFetch(domain:alhena.ai)",
+      "WebFetch(domain:agenta.ai)",
+      "WebFetch(domain:www.firecrawl.dev)",
+      "WebFetch(domain:aclanthology.org)",
+      "WebFetch(domain:nandigamharikrishna.substack.com)",
+      "WebFetch(domain:substack.com)",
+      "WebFetch(domain:link.springer.com)",
+      "WebFetch(domain:milvus.io)",
+      "WebFetch(domain:pmc.ncbi.nlm.nih.gov)",
+      "WebFetch(domain:www.patsnap.com)",
+      "WebFetch(domain:www.codersarts.com)",
+      "WebFetch(domain:www.youtube.com)",
+      "WebFetch(domain:www.paradedb.com)",
+      "WebFetch(domain:www.digitalapplied.com)",
+      "WebFetch(domain:www.ijournalse.org)",
+      "WebFetch(domain:www.pinecone.io)",
+      "WebFetch(domain:www.leadingtorch.com)",
+      "WebFetch(domain:learnprompting.org)",
+      "WebFetch(domain:appscale.blog)",
+      "WebFetch(domain:docs.ragas.io)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'jq -r \".tool_input.file_path // empty\" | grep -q \"src/ragbot/shared/constants.py\" && bash scripts/validate_constants.sh || exit 0'"
+          }
+        ]
+      }
+    ]
+  }
+}
