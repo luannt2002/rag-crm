@@ -60,3 +60,60 @@ class TestResolveChunkingPolicy:
         pol = resolve_chunking_policy(plan_limits="oops", platform_policy=123)
         assert pol["table_strategy"] == DEFAULT_TABLE_STRATEGY
         assert pol["force_strategy"] is None
+
+
+class TestResolveStyleProfile:
+    """P3 Tenant-Profiling — per-bot ingest style normalizer config."""
+
+    def test_empty_chain_style_profile_is_inert(self):
+        pol = resolve_chunking_policy(plan_limits=None, platform_policy=None)
+        sp = pol["style_profile"]
+        assert sp["heading_uppercase_promote"] is False
+        assert sp["table_separator"] == ""
+
+    def test_per_bot_style_profile_resolved(self):
+        pol = resolve_chunking_policy(
+            plan_limits={"chunking_config": {"style_profile": {
+                "heading_uppercase_promote": True,
+                "table_separator": ";",
+            }}},
+            platform_policy=None,
+        )
+        sp = pol["style_profile"]
+        assert sp["heading_uppercase_promote"] is True
+        assert sp["table_separator"] == ";"
+
+    def test_platform_style_profile_default_then_per_bot_override(self):
+        pol = resolve_chunking_policy(
+            plan_limits={"chunking_config": {"style_profile": {"table_separator": "~"}}},
+            platform_policy={"style_profile": {"table_separator": ";"}},
+        )
+        # per-bot wins
+        assert pol["style_profile"]["table_separator"] == "~"
+
+    def test_invalid_separator_dropped(self):
+        # A reserved/multi-char separator is dropped to "" (no normalization).
+        for bad in ["||", "ab", "#", "*", "|", "x"]:
+            pol = resolve_chunking_policy(
+                plan_limits={"chunking_config": {"style_profile": {"table_separator": bad}}},
+                platform_policy=None,
+            )
+            assert pol["style_profile"]["table_separator"] == "", bad
+
+    def test_non_bool_uppercase_flag_coerced_false(self):
+        pol = resolve_chunking_policy(
+            plan_limits={"chunking_config": {"style_profile": {
+                "heading_uppercase_promote": "yes",
+            }}},
+            platform_policy=None,
+        )
+        assert pol["style_profile"]["heading_uppercase_promote"] is False
+
+    def test_non_dict_style_profile_tolerated(self):
+        pol = resolve_chunking_policy(
+            plan_limits={"chunking_config": {"style_profile": "oops"}},
+            platform_policy=None,
+        )
+        sp = pol["style_profile"]
+        assert sp["heading_uppercase_promote"] is False
+        assert sp["table_separator"] == ""

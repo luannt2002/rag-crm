@@ -27,6 +27,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from ragbot.shared.chunking.tenant_style import is_valid_table_separator
 from ragbot.shared.constants import (
     ALLOWED_TABLE_STRATEGIES,
     DEFAULT_TABLE_STRATEGY,
@@ -45,6 +46,32 @@ _ALLOWED_FORCE_STRATEGIES: frozenset[str] = frozenset(
 def _as_dict(value: Any) -> dict:
     """Return ``value`` if it is a dict, else an empty dict (defensive)."""
     return value if isinstance(value, dict) else {}
+
+
+def _resolve_style_profile(per_bot: dict, platform: dict) -> dict[str, Any]:
+    """Resolve the per-bot ingest STYLE profile (P3 Tenant-Profiling).
+
+    per-bot ``chunking_config.style_profile`` > platform ``style_profile`` > {}.
+    Invalid values are dropped to the inert default (no normalization) so a
+    malformed owner config can never break ingest. Domain-neutral.
+    """
+    raw = _as_dict(per_bot.get("style_profile")) or _as_dict(
+        platform.get("style_profile"),
+    )
+    # heading_uppercase_promote: strict bool (non-bool → False, no surprise).
+    promote = raw.get("heading_uppercase_promote")
+    heading_uppercase_promote = promote is True
+
+    # table_separator: validated by the normalizer's contract (single
+    # non-reserved punctuation char); anything else → "" (inert).
+    sep = raw.get("table_separator")
+    table_separator = (
+        sep if isinstance(sep, str) and is_valid_table_separator(sep) else ""
+    )
+    return {
+        "heading_uppercase_promote": heading_uppercase_promote,
+        "table_separator": table_separator,
+    }
 
 
 def resolve_chunking_policy(
@@ -80,6 +107,7 @@ def resolve_chunking_policy(
     return {
         "table_strategy": table_strategy,
         "force_strategy": force_strategy,
+        "style_profile": _resolve_style_profile(per_bot, platform),
     }
 
 

@@ -37,6 +37,7 @@ from ragbot.shared.chunking import (
     select_strategy,
     smart_chunk,
 )
+from ragbot.shared.chunking.tenant_style import apply_tenant_style
 from ragbot.shared.constants import (
     DEFAULT_TABLE_STRATEGY,
     DEFAULT_ADAPCHUNK_BLOCK_PIPELINE_ENABLED,
@@ -396,6 +397,30 @@ class _StageChunkMixin:
         )
         _table_strategy: str = _policy.get("table_strategy", DEFAULT_TABLE_STRATEGY)
         _force_strategy: str | None = _policy.get("force_strategy")
+
+        # P3 Tenant-Profiling — normalize the owner's non-standard styling
+        # (uppercase-as-heading / owner column separator) into canonical
+        # markdown BEFORE block-detection + chunking, so the global rules in
+        # ``analyze``/``smart_chunk`` work unchanged. Default OFF → identity
+        # no-op (existing bots byte-identical). Reads per-bot config only — no
+        # per-bot branching in core.
+        _style = _policy.get("style_profile") or {}
+        if _style.get("heading_uppercase_promote") or _style.get("table_separator"):
+            _content_before = content
+            content = apply_tenant_style(
+                content,
+                heading_uppercase_promote=bool(_style.get("heading_uppercase_promote")),
+                table_separator=str(_style.get("table_separator") or ""),
+            )
+            if content != _content_before:
+                logger.info(
+                    "tenant_style_applied",
+                    record_bot_id=str(record_bot_id),
+                    uppercase_promote=bool(_style.get("heading_uppercase_promote")),
+                    table_separator=str(_style.get("table_separator") or ""),
+                    chars_before=len(_content_before),
+                    chars_after=len(content),
+                )
 
         if self._cfg is not None:
             parent_child_enabled = bool(await self._cfg.get("parent_child_enabled", False))
