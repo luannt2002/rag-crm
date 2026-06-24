@@ -23,6 +23,8 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import json
+import os
 from dataclasses import dataclass
 
 import structlog
@@ -30,9 +32,44 @@ import structlog
 from ragbot.shared.constants import (
     API_KEY_COOLDOWN_REDIS_PREFIX,
     DEFAULT_API_KEY_COOLDOWN_S,
+    DEFAULT_API_KEY_MAX_CONCURRENT,
+    PROVIDER_KEY_CONCURRENCY_ENV,
 )
 
 logger = structlog.get_logger(__name__)
+
+
+def resolve_per_key_concurrency(provider_code: str, n_keys: int) -> list[int]:
+    """Resolve the per-key max-concurrent list for ``provider_code``.
+
+    Reads ``PROVIDER_KEY_CONCURRENCY_JSON`` (e.g. ``{"jina":[2,50]}``) — a list
+    index-aligned with the provider's key ring, so a free key (2) and a paid key
+    (50) coexist. Missing/short/invalid → every key falls back to
+    ``DEFAULT_API_KEY_MAX_CONCURRENT``. Provider enforces concurrency PER KEY, so
+    a caller's TOTAL in-flight budget = sum of this list. No hardcode: the
+    default is the constant, overrides are config. Shared by the embedder and
+    reranker so both gate identically against the same upstream key ring.
+    """
+    cfg: dict = {}
+    raw = os.environ.get(PROVIDER_KEY_CONCURRENCY_ENV, "").strip()
+    if raw:
+        try:
+            parsed = json.loads(raw)
+            if isinstance(parsed, dict):
+                cfg = parsed
+        except (ValueError, TypeError):
+            logger.warning(
+                "provider_key_concurrency_parse_failed",
+                env=PROVIDER_KEY_CONCURRENCY_ENV,
+            )
+    raw_list = cfg.get(provider_code) or []
+    out: list[int] = []
+    for i in range(max(1, n_keys)):
+        try:
+            out.append(max(1, int(raw_list[i])))
+        except (IndexError, ValueError, TypeError):
+            out.append(DEFAULT_API_KEY_MAX_CONCURRENT)
+    return out
 
 
 # Operator-friendly labels emitted in metrics + logs. Keep narrow so the
@@ -374,4 +411,5 @@ __all__ = [
     "ApiKeyPool",
     "ApiKeyPoolFactory",
     "DBBackedApiKeyPoolFactory",
+    "resolve_per_key_concurrency",
 ]

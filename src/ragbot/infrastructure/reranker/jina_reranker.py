@@ -31,7 +31,12 @@ from ragbot.application.services.retry_policy import (
 )
 from ragbot.infrastructure.observability.metrics import api_key_failover_total
 from ragbot.infrastructure.token_ledger.aux_usage import emit_aux_usage
-from ragbot.shared.api_key_pool import ApiKeyEntry, ApiKeyPool, ApiKeyPoolFactory
+from ragbot.shared.api_key_pool import (
+    ApiKeyEntry,
+    ApiKeyPool,
+    ApiKeyPoolFactory,
+    resolve_per_key_concurrency,
+)
 from ragbot.shared.constants import (
     DEFAULT_JINA_HEALTH_CHECK_TIMEOUT_S,
     DEFAULT_JINA_RERANKER_CB_FAIL_MAX,
@@ -116,6 +121,21 @@ class JinaReranker:
                 fail_max=DEFAULT_JINA_RERANKER_CB_FAIL_MAX,
                 reset_timeout_s=DEFAULT_JINA_RERANKER_CB_RESET_S,
             ),
+        )
+        # Per-key concurrency gate. The provider enforces a small max-concurrent
+        # PER KEY (Jina free tier = 2); without this gate a parallel burst fires
+        # all requests at once and trips 429. total in-flight = sum of per-key
+        # caps (config PROVIDER_KEY_CONCURRENCY_JSON, default constant). When all
+        # slots are busy a new rerank call WAITS on the semaphore instead of
+        # bursting → no 429 → no cooldown → no degraded turn. Mirrors JinaEmbedder.
+        _n_keys = self._key_pool.key_count if self._key_pool is not None else 1
+        _total_concurrent = sum(
+            resolve_per_key_concurrency(self._PROVIDER_CODE, _n_keys),
+        )
+        self._sem = asyncio.Semaphore(_total_concurrent)
+        logger.info(
+            "jina_reranker_concurrency",
+            n_keys=_n_keys, total_concurrent=_total_concurrent,
         )
 
     async def _get_client(self) -> httpx.AsyncClient:
@@ -216,11 +236,15 @@ class JinaReranker:
         headers = {**self._static_headers, "Authorization": f"Bearer {api_key}"}
 
         async def _do_post() -> dict[str, Any]:
-            resp = await client.post(
-                self._base_url,
-                json=payload,
-                headers=headers,
-            )
+            # Hold a per-key concurrency slot only for the actual HTTP attempt;
+            # backoff sleeps between retries happen outside the slot so a waiting
+            # caller is not blocked by another's retry delay.
+            async with self._sem:
+                resp = await client.post(
+                    self._base_url,
+                    json=payload,
+                    headers=headers,
+                )
             resp.raise_for_status()
             return resp.json()  # type: ignore[no-any-return]
 
