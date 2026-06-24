@@ -44,7 +44,21 @@ Item C, 129000
 | **name** | `Tên`, `Tên dịch vụ`, `Tên sản phẩm`, `Name`, `Dịch vụ`, `Sản phẩm`, `Gói`, `Combo` | ✅ |
 | **price** | `Giá`, `Đơn giá`, `Giá lẻ`, `Giá gốc`, `Giá sale`, `Phí`, `Price`, `Amount` | ✅ (nếu là catalog giá) |
 | category | `Nhóm`, `Danh mục`, `Loại`, `Vùng`, `Khu vực`, `Category` | optional (stub) |
+| **aliases** | `Aliases`, `Synonyms`, `Từ khoá`, `Keyword`, `Biến thể`, `Variant` — biến-thể tìm-kiếm phân tách bằng `;` | optional (search-key) |
 | ordinal | `STT`, `No`, `ID` | optional |
+
+**Aliases role** (search-key, optional): 1 cột chứa các **biến-thể spelling / notation**
+của entity, phân tách `;` (vd lốp `265/50R20; 265 50 R20; 265/50/20`). Parser bắt vào
+`ParsedEntity.aliases` → cột `entity_synonyms` (alembic
+`stats_index_entity_synonyms_20260624`, GIN trigram index); `query_by_name_keyword`
+OR-match cột này nên 1 alias vẫn hit dù `entity_name` ghi notation khác. Domain-neutral —
+owner tự cung cấp biến-thể, KHÔNG hard-code danh sách trong code.
+
+**Header PHẢI là canonical token** — nếu KHÔNG, cột bị dồn vào `attributes_json`
+(unsearchable) và checker card **column roles** sẽ cảnh báo. Owner đổi tên cột về
+canonical (hoặc chạy `scripts/normalize_to_happy_case.py` — map đổi tên generic:
+`Mặt hàng/Tên hàng → Tên`, `Phân loại/Vùng → Nhóm`, `Đơn giá → Giá`,
+`Từ khoá/Biến thể → Aliases`, data-preserving).
 
 **Quy ước giá trị giá** (format chấp nhận): `700000` · `1.499.000` · `1,499,000` ·
 `899k` · `1tr499` · `1.5tr` · `6 triệu` · `1M` · `5000 nghìn` · `200.000đ` ·
@@ -57,7 +71,6 @@ Item C, 129000
 
 | Anti-pattern | Ví dụ thật | Vì sao hỏng | Sửa source |
 |---|---|---|---|
-| **Synonym-export** | xe-3 `question: <62 cột biến-thể> \| productname \| giá` | search-index ≠ catalog | re-export `Tên \| Giá` sạch, synonym để file alias riêng |
 | **Pivot / year-cols** | `Sản phẩm \| 2022 \| 2023` | entity↔cell mất ngữ nghĩa | unpivot về `Sản phẩm \| Năm \| Giá` |
 | **Transposed** | dịch vụ = CỘT, thuộc tính = HÀNG | xoay 90° | transpose về row-oriented |
 | **Prose-in-cell** | spa-4 script: ô chứa cả đoạn tư vấn 500 từ | không phải bảng | tách script ra DOC riêng |
@@ -101,7 +114,8 @@ File vào
 ├─ có heading markdown (≥3 ## ) ──────────────→ DOC happy-case
 ├─ comma-dense + có cột Tên+Giá ──────────────→ SHEET catalog happy-case
 ├─ comma-dense KHÔNG cột giá (tồn kho/manifest)→ SHEET non-price (entity-only OK)
-├─ ô chứa prose dài / "question:" / 1 ô khổng lồ→ 🔴 NON-happy (sửa source)
+├─ có cột biến-thể/synonym (`;`-phân tách) ────→ SHEET catalog + role **aliases** (first-class)
+├─ ô chứa prose dài / 1 ô khổng lồ ───────────→ 🔴 NON-happy (sửa source)
 └─ pivot/transposed (số ở mọi ô, header=năm) ──→ 🔴 NON-happy (unpivot)
 ```
 
