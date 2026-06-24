@@ -332,6 +332,13 @@ class _StageFinalizeMixin:
                           current_step = :step,
                           progress_percent = 100,
                           chunks_processed = :cp,
+                          -- A doc that just (re)ingested to ``active`` is LIVE,
+                          -- not deleted: clear any stale soft-delete flag so a
+                          -- re-ingest of a previously-deleted doc_id is visible
+                          -- again (it was being soft-deleted + reactivated and
+                          -- left invisible to the deleted_at IS NULL doc count).
+                          deleted_at = CASE WHEN :s = 'active' THEN NULL
+                                            ELSE deleted_at END,
                           progress_updated_at = now(),
                           updated_at = now()
                         WHERE id = :id
