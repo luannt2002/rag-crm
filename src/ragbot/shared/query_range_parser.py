@@ -493,6 +493,26 @@ def parse_code_query(query: str) -> RangeFilter | None:
     """
     if not query or not query.strip():
         return None
+    # A code carried in QUOTES ('2-R13 155/80 LPD') keeps the space-joined SKU
+    # parts that the bare code-token regex would split at the first space,
+    # leaving a truncated prefix ("2-R13") that over-matches every sibling SKU.
+    # Prefer the full quoted span when it is code-shaped (carries a digit, a
+    # letter AND a / . - separator). Domain-neutral: quoting + token shape are
+    # universal, never a bot/brand/corpus literal.
+    _q_re = r"['\"‘’“”]([^'\"‘’“”]{2,40})['\"‘’“”]"  # noqa: RUF001 — curly-quote variants intentional
+    _quoted = re.search(_q_re, query)
+    if _quoted:
+        _cand = _quoted.group(1).strip()
+        if (
+            re.search(r"\d", _cand)
+            and re.search(r"[A-Za-z]", _cand)
+            and re.search(r"[-/.]", _cand)
+        ):
+            return RangeFilter(
+                price_min=None, price_max=None, price_column="any",
+                operation="keyword", confidence=CODE_QUERY_CONFIDENCE,
+                keyword=_cand,
+            )
     m = _CODE_QUERY_RE.search(query)
     if not m:
         return None

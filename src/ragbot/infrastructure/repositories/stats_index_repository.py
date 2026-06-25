@@ -36,6 +36,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from ragbot.infrastructure.db.engine import session_with_tenant
 from ragbot.shared.constants import (
+    DEFAULT_STATS_ATTRS_MATCH_MIN_LEN,
     DEFAULT_STATS_INDEX_QUERY_LIMIT,
     DEFAULT_STATS_REVERSE_MATCH_LIMIT,
     DEFAULT_STATS_REVERSE_MATCH_MIN_LEN,
@@ -111,6 +112,7 @@ class StatsIndexRepository:
                     f":entity_name_{i}, :entity_category_{i}, "
                     f":price_primary_{i}, :price_secondary_{i}, "
                     f"CAST(:attributes_json_{i} AS jsonb), "
+                    f":entity_synonyms_{i}, "
                     f"(SELECT id FROM document_chunks "
                     f"WHERE record_document_id = :doc_id "
                     f"AND chunk_index = :chunk_index_{i} LIMIT 1))"
@@ -120,6 +122,10 @@ class StatsIndexRepository:
                 params[f"price_primary_{i}"] = entity.price_primary
                 params[f"price_secondary_{i}"] = entity.price_secondary
                 params[f"chunk_index_{i}"] = entity.chunk_index
+                # Aliases/synonym search variants → entity_synonyms (NULL when the
+                # catalog has no aliases column). Captured by document_stats; this is
+                # the searchable backing column query_by_name_keyword ORs against.
+                params[f"entity_synonyms_{i}"] = getattr(entity, "aliases", None)
                 # Merge chunk_index into attributes_json for traceability.
                 attrs = dict(entity.attributes) if entity.attributes else {}
                 attrs["chunk_index"] = entity.chunk_index
@@ -130,7 +136,7 @@ class StatsIndexRepository:
                 "(record_tenant_id, workspace_id, record_bot_id, "
                 "record_document_id, entity_name, entity_category, "
                 "price_primary, price_secondary, attributes_json, "
-                "record_chunk_id) "
+                "entity_synonyms, record_chunk_id) "
                 f"VALUES {', '.join(value_clauses)}"
             )
             await session.execute(text(sql), params)
@@ -491,7 +497,13 @@ class StatsIndexRepository:
             or_clauses.append(
                 f"unaccent(entity_name) ILIKE unaccent(:kw{i}) "
                 f"OR unaccent(entity_category) ILIKE unaccent(:kw{i}) "
-                f"OR {_fold('entity_name')} LIKE '%' || {_fold(f':kwn{i}')} || '%'"
+                # ALIASES/synonym column: an entity whose search variants list the
+                # asked notation matches even when entity_name uses another ("265/50ZR20"
+                # name, but the row's Aliases carry "265/50R20" = the query). The fold
+                # collapses single digit-separators so notation-variants still hit.
+                f"OR unaccent(entity_synonyms) ILIKE unaccent(:kw{i}) "
+                f"OR {_fold('entity_name')} LIKE '%' || {_fold(f':kwn{i}')} || '%' "
+                f"OR {_fold('entity_synonyms')} LIKE '%' || {_fold(f':kwn{i}')} || '%'"
             )
             params[f"kw{i}"] = f"%{v}%"
             params[f"kwn{i}"] = v
@@ -547,6 +559,36 @@ class StatsIndexRepository:
                     "short_floor": DEFAULT_STATS_REVERSE_MATCH_SHORT_FLOOR,
                     "kwfull": kw,
                     "rev_limit": min(effective_limit, DEFAULT_STATS_REVERSE_MATCH_LIMIT),
+                })
+                rows = result.fetchall()
+
+            # Attributes fallback (P9): a code / SKU / stock / date / image link
+            # the corpus keeps in a NON-role column lands in attributes_json,
+            # which neither the forward name/synonym match nor the reverse match
+            # ever sees — so a "mã 2-R13 155/80 LPD" lookup returned nothing even
+            # though the entity exists. As a LAST resort (forward AND reverse both
+            # empty) match the keyword inside the attributes JSON text. Guarded by
+            # a min keyword length so a short token cannot over-match every row
+            # that shares a warehouse / category word. Fires only on an empty
+            # result → never regresses a working name lookup.
+            if not rows and kw and len(kw) >= DEFAULT_STATS_ATTRS_MATCH_MIN_LEN:
+                attr_sql = (
+                    "SELECT id, record_document_id, record_chunk_id, entity_name, "
+                    "entity_category, price_primary, price_secondary, attributes_json "
+                    "FROM document_service_index "
+                    "WHERE record_bot_id = :bot_id "
+                    "AND unaccent(attributes_json::text) ILIKE unaccent(:kwlike) "
+                    "ORDER BY (price_primary IS NOT NULL "
+                    "          OR price_secondary IS NOT NULL) DESC, "
+                    "char_length(entity_name) DESC "
+                    "LIMIT :attr_limit"
+                )
+                result = await session.execute(text(attr_sql), {
+                    "bot_id": record_bot_id,
+                    "kwlike": f"%{kw}%",
+                    "attr_limit": min(
+                        effective_limit, DEFAULT_STATS_REVERSE_MATCH_LIMIT,
+                    ),
                 })
                 rows = result.fetchall()
 

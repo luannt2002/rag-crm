@@ -366,6 +366,35 @@ def test_parse_code_query_price_phrasing() -> None:
     assert result.keyword == "195/65R15"
 
 
+def test_parse_code_query_quoted_sku_keeps_spaces() -> None:
+    """A space-joined SKU in quotes ('2-R13 155/80 LPD') is kept WHOLE — the
+    bare token regex would truncate it to '2-R13' (over-matches every sibling
+    SKU). The full quoted span routes to the keyword lookup so the attributes
+    fallback resolves the exact entity. Domain-neutral (quotes + token shape)."""
+    for q in (
+        "Tên đầy đủ của sản phẩm có mã hàng '2-R13 155/80 LPD' là gì?",
+        "Mã hàng '2-ZR18 225/40 LPD' là của sản phẩm nào?",
+    ):
+        result = parse_code_query(q)
+        assert result is not None, q
+        assert result.operation == "keyword"
+        # full code preserved, NOT truncated at the first space
+        assert " " in result.keyword and "LPD" in result.keyword
+        assert result.keyword == q.split("'")[1]
+
+
+def test_parse_code_query_quoted_non_code_ignored() -> None:
+    """A quoted phrase that is NOT code-shaped (no digit/separator) is ignored
+    so a normal quoted name does not hijack the code route."""
+    assert parse_code_query("dịch vụ 'chăm sóc da' giá bao nhiêu?") is None
+
+
+def test_parse_code_query_unquoted_single_token_still_works() -> None:
+    """No-quote path is unchanged: a bare spec token still extracts."""
+    result = parse_code_query("lốp 195/65R15 còn hàng không?")
+    assert result is not None and result.keyword == "195/65R15"
+
+
 def test_code_query_wins_over_polluted_list_keyword() -> None:
     """When a price factoid splits 'giá … bao nhiêu' around a spec code
     ('giá lốp 275/55R20 bao nhiêu'), the list parser captures a POLLUTED

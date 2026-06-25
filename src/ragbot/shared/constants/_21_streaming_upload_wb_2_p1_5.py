@@ -42,6 +42,12 @@ DEFAULT_STATS_REVERSE_MATCH_MIN_LEN: Final[int] = 4
 # Floor of 3 keeps 1-2 char tokens out; trailing-anchored so noise stays bounded.
 DEFAULT_STATS_REVERSE_MATCH_SHORT_FLOOR: Final[int] = 3
 DEFAULT_STATS_REVERSE_MATCH_LIMIT: Final[int] = 10
+# Min keyword length for the LAST-RESORT attributes_json fallback: a code / SKU /
+# date the corpus keeps in a non-role column (Mã, stock, date, image) lives in
+# attributes_json, which the name/synonym match never sees. The fallback fires
+# only when forward AND reverse matched nothing, and only for a keyword this long
+# so a short token can't over-match every row sharing a warehouse/category word.
+DEFAULT_STATS_ATTRS_MATCH_MIN_LEN: Final[int] = 5
 # Threshold below which a numeric token is ignored by the price extractor
 # (avoids treating article numbers like "Điều 12" → 12 as prices).
 DEFAULT_STATS_PRICE_MIN_DIGITS: Final[int] = 4
