@@ -115,6 +115,13 @@ DEFAULT_GROUNDING_INTENTS: Final[tuple[str, ...]] = (
     "aggregation",
     "multi_hop",
 )
+# Whether the stats/structured-index route SKIPS the grounding judge. Default
+# False = grounding ALSO applies to stats answers (HALLU-safe). Historically the
+# stats route skipped grounding to avoid false-blocking reformatted numbers, but
+# that let an answer cite a value NOT present in the matched entity (e.g. a
+# stock number leaked from history) pass unchecked. Owners who hit false-blocks
+# on legitimately-reformatted structured answers can re-enable the skip per-bot.
+DEFAULT_STATS_ROUTE_SKIP_GROUNDING: Final[bool] = False
 # Generate-node SLA — drift surfaces as ops warning before user-visible p95.
 DEFAULT_GENERATE_P95_SLA_MS: Final[int] = 8000
 DEFAULT_MAX_REFLECT_RETRIES: Final[int] = 1

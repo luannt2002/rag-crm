@@ -34,6 +34,7 @@ from ragbot.shared.constants import (
     DEFAULT_GROUNDING_CHECK_ENABLED,
     DEFAULT_GROUNDING_CHECK_THRESHOLD,
     DEFAULT_GROUNDING_INTENTS,
+    DEFAULT_STATS_ROUTE_SKIP_GROUNDING,
     DEFAULT_GUARDRAIL_LEAK_MIN_MATCH_COUNT,
     DEFAULT_GUARDRAIL_LEAK_SHINGLE_SIZE,
     DEFAULT_SYSPROMPT_LEAK_SKIP_INTENTS,
@@ -93,14 +94,19 @@ async def guard_output(
             _grounding_intents = DEFAULT_GROUNDING_INTENTS
         _current_intent = state.get("intent") or ""
         _grounding_eligible = _current_intent in _grounding_intents
-        # Stats/aggregation route answers come from the authoritative structured
-        # index (exact price/quantity/date SQL), not fuzzy retrieval — the LLM
-        # relays those rows and the answer often REFORMATS them ("còn 338 cái"
-        # vs chunk "quantity: 338"), which the fuzzy grounding judge mislabels
-        # unsupported and FALSE-BLOCKS a correct answer. Skip grounding when the
-        # route is a stats lookup (HALLU traps never reach it — they return 0
-        # rows → vector path → grounding still applies). Per-bot overridable.
-        if str(state.get("retrieve_mode") or "").startswith("stats"):
+        # Stats/structured-index route. Historically grounding was SKIPPED here
+        # because the LLM REFORMATS exact rows ("còn 338 cái" vs chunk
+        # "quantity: 338") and the fuzzy judge could false-block a correct
+        # answer. But skipping let an answer cite a value NOT present in the
+        # matched entity (a stock number leaked from history) pass unchecked —
+        # a HALLU breach. Default now KEEPS grounding on for stats
+        # (DEFAULT_STATS_ROUTE_SKIP_GROUNDING=False); a bot that hits
+        # false-blocks on legitimately-reformatted structured answers can
+        # re-enable the skip per-bot. (grade/rerank stay skipped on stats — CRAG
+        # would wrongly drop the authoritative synthetic chunk.)
+        if str(state.get("retrieve_mode") or "").startswith("stats") and bool(
+            _pcfg(state, "stats_route_skip_grounding", DEFAULT_STATS_ROUTE_SKIP_GROUNDING)
+        ):
             _grounding_eligible = False
         _grounding_check_skipped = bool(
             _grounding_enabled and not _grounding_eligible

@@ -25,7 +25,10 @@ from pathlib import Path
 
 import pytest
 
-from ragbot.shared.constants import DEFAULT_GROUNDING_INTENTS
+from ragbot.shared.constants import (
+    DEFAULT_GROUNDING_INTENTS,
+    DEFAULT_STATS_ROUTE_SKIP_GROUNDING,
+)
 
 
 def _orchestration_src() -> str:
@@ -226,3 +229,40 @@ def test_generate_sla_breach_predicate() -> None:
     # Above SLA → breach.
     assert _breach(8001, 8000) is True
     assert _breach(21200, 8000) is True
+
+
+# ── Stats route grounding (Fix B 2026-06-25) ────────────────────────────────
+def test_stats_route_skip_grounding_default_is_false() -> None:
+    """Default: grounding ALSO applies to the stats/structured route. Skipping
+    let an answer cite a value absent from the matched entity (a stock number
+    leaked from history) pass unchecked = HALLU breach."""
+    assert DEFAULT_STATS_ROUTE_SKIP_GROUNDING is False
+
+
+def test_stats_route_grounding_predicate() -> None:
+    """Mirror the guard_output predicate: grounding is skipped on the stats
+    route ONLY when the per-bot ``stats_route_skip_grounding`` flag is True."""
+
+    def _skips_grounding(retrieve_mode: str, pcfg: dict | None) -> bool:
+        skip_cfg = bool(
+            (pcfg or {}).get(
+                "stats_route_skip_grounding", DEFAULT_STATS_ROUTE_SKIP_GROUNDING,
+            )
+        )
+        return str(retrieve_mode or "").startswith("stats") and skip_cfg
+
+    # Default config → stats route does NOT skip grounding (HALLU-safe).
+    assert _skips_grounding("stats_index", None) is False
+    assert _skips_grounding("stats_index", {}) is False
+    # Per-bot opt-out → stats route skips grounding (legacy behaviour).
+    assert _skips_grounding("stats_index", {"stats_route_skip_grounding": True}) is True
+    # Non-stats route is unaffected by the flag either way.
+    assert _skips_grounding("hybrid", {"stats_route_skip_grounding": True}) is False
+    assert _skips_grounding("hybrid", None) is False
+
+
+def test_guard_output_wires_stats_route_skip_grounding_flag() -> None:
+    """Source guard: the node reads the per-bot flag (not an unconditional skip)."""
+    src = _orchestration_src()
+    assert "stats_route_skip_grounding" in src
+    assert "DEFAULT_STATS_ROUTE_SKIP_GROUNDING" in src

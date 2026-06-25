@@ -42,6 +42,7 @@ from ragbot.shared.constants import (
     DEFAULT_SEMANTIC_CACHE_THRESHOLD,
     DEFAULT_SKIP_UNDERSTAND_FOR_GREETING,
     DEFAULT_SPECULATIVE_STREAMING_ENABLED,
+    DEFAULT_STATS_ROUTE_SKIP_GROUNDING,
     DEFAULT_SYSPROMPT_VERSION,
     DEFAULT_UNDERSTAND_SKIP_BELOW_TOKENS,
 )
@@ -59,6 +60,14 @@ PLAN_LIMIT_SCHEMA: dict[str, dict[str, Any]] = {
     # verifier on production traffic.
     "speculative_hallu_verify_enabled": {"type": "bool", "default": False},
     "grounding_check_enabled": {"type": "bool", "default": DEFAULT_GROUNDING_CHECK_ENABLED},
+    # When True the stats/structured-index route SKIPS the grounding judge.
+    # Default False = grounding applies to stats answers too (HALLU-safe; catches
+    # an answer citing a value absent from the matched entity). Owners who hit
+    # false-blocks on legitimately-reformatted structured numbers opt back in.
+    "stats_route_skip_grounding": {
+        "type": "bool",
+        "default": DEFAULT_STATS_ROUTE_SKIP_GROUNDING,
+    },
     # B5 Phase B: opt-in async grounding. When True the judge runs as a
     # background task for high-confidence requests (factoid intent +
     # top_score >= async_top_score_threshold) and the response ships
