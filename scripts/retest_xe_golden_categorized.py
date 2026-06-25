@@ -77,7 +77,19 @@ def main() -> None:
         d = ask(jwt, c["q"])
         ans = (d.get("answer") or "")
         low = ans.lower()
-        hit = any(f.lower() in low for f in facts) if facts else bool(ans)
+        # alnum-core match: strip non-alphanumeric so "2-R16 195/65 NEO" matches
+        # "2R16 195/65NEO" regardless of dot/space/slash formatting variance.
+        ans_alnum = re.sub(r"[^a-z0-9]", "", low)
+        ans_digits = re.sub(r"\D", "", ans)
+
+        def _hit(f: str) -> bool:
+            fa = re.sub(r"[^a-z0-9]", "", f.lower())
+            if len(fa) >= 4 and fa in ans_alnum:
+                return True
+            fd = re.sub(r"\D", "", f)
+            return len(fd) >= 3 and fd in ans_digits
+
+        hit = any(_hit(f) for f in facts) if facts else bool(ans)
         src = (d.get("sources") or [{}])[0]
         rec = {
             "cat": c["cat"], "q": c["q"], "exp_facts": facts, "pass": hit,
