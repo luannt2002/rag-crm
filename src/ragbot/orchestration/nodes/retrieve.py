@@ -75,6 +75,7 @@ from ragbot.shared.query_range_parser import (
     parse_price_of_entity_query as _parse_price_of_entity_query,
     parse_range_query as _parse_range_query,
 )
+from ragbot.shared.i18n import get_routing_signals as _get_routing_signals
 from ragbot.shared.vi_tokenizer import expand_abbreviations, restore_diacritics
 from ragbot.shared.constants import (
     DEFAULT_BM25_NORMALIZATION_FLAGS,
@@ -203,7 +204,13 @@ async def retrieve(
             # stats route flaky (refuse run-to-run). original_query preserves
             # the raw text; fall back to query when condense did not run.
             _raw_query = state.get("original_query") or state.get("query") or ""
-            _range_filter = _parse_range_query(_raw_query)
+            # Per-locale routing signals (Track B): resolve the bot's language pack
+            # signal lists so a non-vi bot routes on ITS signals instead of the vi
+            # default. A vi bot resolves the vi seed → byte-identical to before.
+            _routing_signals = _get_routing_signals(
+                str(state.get("language") or DEFAULT_LANGUAGE)
+            )
+            _range_filter = _parse_range_query(_raw_query, signals=_routing_signals)
             # Code/spec lookup — tried BEFORE the fuzzy keyword list. A query
             # carrying a product/spec CODE ("lốp 195/65R15 còn hàng?",
             # "giá lốp 275/55R20 bao nhiêu") is a single exact-record lookup. The
@@ -229,14 +236,16 @@ async def retrieve(
                 state, "stats_price_of_entity_enabled",
                 DEFAULT_STATS_PRICE_OF_ENTITY_ENABLED,
             )):
-                _range_filter = _parse_price_of_entity_query(_raw_query)
+                _range_filter = _parse_price_of_entity_query(
+                    _raw_query, signals=_routing_signals
+                )
             # Keyword/category list route: "liệt kê dịch vụ X" / "tư vấn về X" /
             # "có bao nhiêu X" need EVERY matching record (vector/BM25 only
             # surface top-k → incomplete list/count). Only when no price filter
             # AND no spec code applies, fall back to a name/category keyword
             # lookup.
             if _range_filter is None:
-                _range_filter = _parse_list_query(_raw_query)
+                _range_filter = _parse_list_query(_raw_query, signals=_routing_signals)
             # Superlative kill-switch: a "max"/"min" filter carries no numeric
             # bound and routes to ORDER BY price. Per-bot opt-out so the route
             # can be disabled without touching the range path.
