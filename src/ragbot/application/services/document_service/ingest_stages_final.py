@@ -337,7 +337,11 @@ class _StageFinalizeMixin:
                           -- re-ingest of a previously-deleted doc_id is visible
                           -- again (it was being soft-deleted + reactivated and
                           -- left invisible to the deleted_at IS NULL doc count).
-                          deleted_at = CASE WHEN :s = 'active' THEN NULL
+                          -- ``:clear_deleted`` is a Python bool (NOT ``:s =
+                          -- 'active'``): binding the same ``:s`` param in both a
+                          -- varchar assignment and a text comparison makes
+                          -- asyncpg fail to deduce one type (AmbiguousParameter).
+                          deleted_at = CASE WHEN :clear_deleted THEN NULL
                                             ELSE deleted_at END,
                           progress_updated_at = now(),
                           updated_at = now()
@@ -349,6 +353,7 @@ class _StageFinalizeMixin:
                         "step": _final_step,
                         "cp": _total,
                         "id": doc_id,
+                        "clear_deleted": _final_state == "active",
                     },
                 )
                 await session.commit()

@@ -91,3 +91,12 @@ async def test_active_flip_clears_deleted_at() -> None:
         "the active state-flip must clear deleted_at so a re-ingested doc is "
         "no longer hidden as soft-deleted"
     )
+    # Regression guard (2026-06-25): the clear MUST use a dedicated bool param,
+    # NOT ``:s = 'active'``. Binding the same ``:s`` in both a varchar
+    # assignment (state = :s) and a text comparison makes asyncpg raise
+    # AmbiguousParameterError at prepare time → the whole state-flip fails and
+    # the doc never goes active (it broke a real re-ingest before this guard).
+    assert ":clear_deleted" in sql, "deleted_at clear must bind a :clear_deleted bool param"
+    assert ":s = 'active'" not in sql, (
+        "must NOT compare :s = 'active' in the CASE (asyncpg ambiguous-param)"
+    )
