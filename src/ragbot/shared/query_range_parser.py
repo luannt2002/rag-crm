@@ -384,6 +384,19 @@ def parse_list_query(query: str) -> RangeFilter | None:
     has_count = any(
         s in folded for s in ("bao nhieu", "may loai", "may cai", "dem", "so luong")
     )
+    # "bao nhiêu NGÀY / NĂM / TIỀN / %" is a factoid MEASURE question (how many
+    # days/years/money), NOT a catalog count ("bao nhiêu DỊCH VỤ / SẢN PHẨM").
+    # Treating it as a list/count query hijacked it to the catalog name lookup
+    # (a warranty "sau bao nhiêu ngày giám định" matched tyre rows instead of
+    # the policy doc). A "bao nhiêu" immediately followed by a measure unit is
+    # NOT a count signal. Domain-neutral: measure units are universal, not a
+    # brand/service literal.
+    if re.search(
+        r"bao nhieu\s+(ngay|nam|thang|tuan|gio|phut|giay|tien|dong|"
+        r"phan tram|km|kg|met|lit|lan|km/h|%)",
+        folded,
+    ):
+        has_count = False
     has_cat = any(s in folded for s in ("tu van ve", "dich vu ve", "co dich vu"))
     if not (has_list or has_count or has_cat):
         return None

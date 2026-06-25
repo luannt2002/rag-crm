@@ -395,6 +395,21 @@ def test_parse_code_query_unquoted_single_token_still_works() -> None:
     assert result is not None and result.keyword == "195/65R15"
 
 
+def test_parse_list_query_measure_unit_not_a_catalog_count() -> None:
+    """'bao nhiêu NGÀY / NĂM' is a factoid MEASURE, not a catalog count — it must
+    NOT route to the stats list lookup (which hijacked a warranty 'sau bao nhiêu
+    ngày giám định' to tyre rows). Real catalog counts still route."""
+    from ragbot.shared.query_range_parser import parse_list_query
+
+    # Measure questions → NOT a list query (fall through to vector/range).
+    assert parse_list_query("Sau bao nhiêu ngày có kết quả giám định bảo hành?") is None
+    assert parse_list_query("Thời hạn bảo hành bao nhiêu năm?") is None
+    assert parse_list_query("Đổi lốp trong vòng bao nhiêu giờ?") is None
+    # Genuine catalog count / list → still routes (keyword extracted).
+    assert parse_list_query("có bao nhiêu dịch vụ massage") is not None
+    assert parse_list_query("liệt kê các loại lốp") is not None
+
+
 def test_code_query_wins_over_polluted_list_keyword() -> None:
     """When a price factoid splits 'giá … bao nhiêu' around a spec code
     ('giá lốp 275/55R20 bao nhiêu'), the list parser captures a POLLUTED
