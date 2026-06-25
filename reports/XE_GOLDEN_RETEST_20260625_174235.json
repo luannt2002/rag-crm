@@ -1,0 +1,651 @@
+{
+ "by_cat": {
+  "N1-Thông tin sản phẩm": [
+   {
+    "cat": "N1-Thông tin sản phẩm",
+    "q": "Mã hàng của lốp xe NEOTERRA 195/65R16 92H NEOTOUR là gì?",
+    "exp_facts": [
+     "2-R16 195/65 NEO",
+     "195/65",
+     "195",
+     "65"
+    ],
+    "pass": true,
+    "chunks_used": 1,
+    "top_score": 1.0,
+    "src_preview": "Lốp xe NEOTERRA 195/65R16 92H NEOTOUR | ",
+    "answer": "Mã hàng của lốp xe NEOTERRA 195/65R16 92H NEOTOUR là 2-R16 195/65 NEO ạ. Anh/chị cần em hỗ trợ gì thêm không ạ?"
+   },
+   {
+    "cat": "N1-Thông tin sản phẩm",
+    "q": "Tên đầy đủ của sản phẩm có mã hàng '2-R13 155/80 LPD' là gì?",
+    "exp_facts": [
+     "155/80R13",
+     "155/80R",
+     "155"
+    ],
+    "pass": true,
+    "chunks_used": 1,
+    "top_score": 1.0,
+    "src_preview": "Lốp xe LANDSPIDER 155/80R13 79T CITYTRAX",
+    "answer": "Dạ, em chưa tìm thấy tên đầy đủ sản phẩm có mã hàng '2-R13 155/80 LPD' ạ. Anh/chị kiểm tra lại giúp em, hoặc cho em mã k"
+   },
+   {
+    "cat": "N1-Thông tin sản phẩm",
+    "q": "Kích thước 155/80R13 tương ứng với mã hàng nào trong hệ thống?",
+    "exp_facts": [
+     "2-R13 155/80 LPD",
+     "155/80",
+     "155",
+     "80"
+    ],
+    "pass": true,
+    "chunks_used": 1,
+    "top_score": 1.0,
+    "src_preview": "Lốp xe LANDSPIDER 155/80R13 79T CITYTRAX",
+    "answer": "Mã hàng tương ứng với kích thước 155/80R13 là 2-R13 155/80 LPD ạ. Anh/chị cần em hỗ trợ thêm gì không ạ?"
+   },
+   {
+    "cat": "N1-Thông tin sản phẩm",
+    "q": "Sản phẩm mã '2-ZR17 215/45 LPD' thuộc dòng lốp nào của Landspider?",
+    "exp_facts": [],
+    "pass": true,
+    "chunks_used": 1,
+    "top_score": 1.0,
+    "src_preview": "Lốp xe LANDSPIDER 215/45ZR17 91WXL CITYT",
+    "answer": "Dạ, em chưa tìm thấy thông tin dòng lốp cụ thể cho mã '2-ZR17 215/45 LPD' trong dữ liệu hiện có ạ. Anh/chị cần em hỗ trợ"
+   },
+   {
+    "cat": "N1-Thông tin sản phẩm",
+    "q": "Lốp xe Rovelo kích thước 235/75R15 thuộc dòng gai nào?",
+    "exp_facts": [],
+    "pass": true,
+    "chunks_used": 1,
+    "top_score": 1.0,
+    "src_preview": "Lốp xe LANDSPIDER LT235/75R15 104/101S W",
+    "answer": "Dạ, lốp xe Rovelo kích thước 235/75R15 thuộc dòng gai RIDGETRAK A/T II ạ. Anh/chị cần em hỗ trợ thêm gì không ạ?"
+   },
+   {
+    "cat": "N1-Thông tin sản phẩm",
+    "q": "Tên sản phẩm chính xác của lốp Rovelo có mã '2-R12C155/12' là gì?",
+    "exp_facts": [],
+    "pass": true,
+    "chunks_used": 1,
+    "top_score": 1.0,
+    "src_preview": "Lốp Rovelo 155R12C RCMX+: 774000 | categ",
+    "answer": "Dạ, em chưa tìm thấy tên sản phẩm chính xác của lốp Rovelo mã '2-R12C155/12' trong dữ liệu hiện có ạ. Anh/chị cần em hỗ "
+   },
+   {
+    "cat": "N1-Thông tin sản phẩm",
+    "q": "Mã hàng '2-ZR18 225/40 LPD' là của sản phẩm nào?",
+    "exp_facts": [
+     "225/40ZR18",
+     "225/40Z",
+     "225"
+    ],
+    "pass": true,
+    "chunks_used": 1,
+    "top_score": 1.0,
+    "src_preview": "Lốp xe LANDSPIDER 225/40ZR18 92WXL CITYT",
+    "answer": "Dạ, em chưa tìm thấy sản phẩm nào có mã hàng '2-ZR18 225/40 LPD' trong dữ liệu hiện có ạ. Anh/chị có thể cho em quy cách"
+   },
+   {
+    "cat": "N1-Thông tin sản phẩm",
+    "q": "Lốp Landspider 31X10.50R15LT thuộc dòng gai nào?",
+    "exp_facts": [],
+    "pass": true,
+    "chunks_used": 1,
+    "top_score": 1.0,
+    "src_preview": "Lốp xe LANDSPIDER 31X10.50R15LT 109S WIL",
+    "answer": "Dạ, lốp Landspider 31X10.50R15LT thuộc dòng gai WILDTRAXX A/T ạ. Anh/chị cần em hỗ trợ thêm gì không ạ?"
+   },
+   {
+    "cat": "N1-Thông tin sản phẩm",
+    "q": "Chỉ số tải trọng và tốc độ của lốp LANDSPIDER 215/70R16C là bao nhiêu?",
+    "exp_facts": [
+     "108/106T",
+     "108"
+    ],
+    "pass": true,
+    "chunks_used": 1,
+    "top_score": 1.0,
+    "src_preview": "Lốp xe LANDSPIDER 215/70R16C 108/106T CI",
+    "answer": "Dạ, chỉ số tải trọng và tốc độ của lốp LANDSPIDER 215/70R16C là 108/106T ạ. Anh/chị cần em hỗ trợ gì thêm không ạ?"
+   },
+   {
+    "cat": "N1-Thông tin sản phẩm",
+    "q": "Sản phẩm có mã '2-ZR21 275/40 DVT' thuộc thương hiệu lốp nào?",
+    "exp_facts": [],
+    "pass": true,
+    "chunks_used": 1,
+    "top_score": 1.0,
+    "src_preview": "Lốp xe DAVANTI 275/40ZR21 107Y XL DX640:",
+    "answer": "Dạ bên em hiện phân phối Landspider và Rovelo, chưa có hãng DAVANTI ạ. Anh/chị cho em quy cách lốp, em gợi ý loại tương "
+   }
+  ],
+  "N2-Tồn kho và Giá bán": [
+   {
+    "cat": "N2-Tồn kho và Giá bán",
+    "q": "Giá bán của lốp LANDSPIDER 155/80R13 G/P là bao nhiêu?",
+    "exp_facts": [
+     "684,000 VND",
+     "684",
+     "000"
+    ],
+    "pass": true,
+    "chunks_used": 1,
+    "top_score": 1.0,
+    "src_preview": "Lốp xe LANDSPIDER 155/80R13 79T CITYTRAX",
+    "answer": "Lốp LANDSPIDER 155/80R13 79T CITYTRAXX G/P giá 684.000đ/lốp ạ. Anh/chị cần em hỗ trợ thêm gì không ạ?"
+   },
+   {
+    "cat": "N2-Tồn kho và Giá bán",
+    "q": "Số lượng tồn kho hiện tại của mã hàng '2-R14 165/65 LPD' là bao nhiêu?",
+    "exp_facts": [
+     "404"
+    ],
+    "pass": false,
+    "chunks_used": 1,
+    "top_score": 1.0,
+    "src_preview": "Lốp xe LANDSPIDER 165/65R14 79H CITYTRAX",
+    "answer": "Lốp LANDSPIDER 165/65R14 79H CITYTRAXX G/P hiện còn 1 lốp ạ. Anh/chị cần em hỗ trợ gì thêm không ạ?"
+   },
+   {
+    "cat": "N2-Tồn kho và Giá bán",
+    "q": "Giá của lốp mã '2-ZR19 255/35 LPD' là bao nhiêu?",
+    "exp_facts": [
+     "2,160,000 VND",
+     "160",
+     "000"
+    ],
+    "pass": true,
+    "chunks_used": 1,
+    "top_score": 1.0,
+    "src_preview": "Lốp xe LANDSPIDER 255/35ZR19 96WXL CITYT",
+    "answer": "Lốp LANDSPIDER 255/35ZR19 96WXL CITYTRAXX H/P giá 2.160.000đ/lốp ạ. Anh/chị cần em hỗ trợ thêm gì không ạ?"
+   },
+   {
+    "cat": "N2-Tồn kho và Giá bán",
+    "q": "Lốp mã '2-R16 205/55 LPD' còn tồn bao nhiêu sản phẩm?",
+    "exp_facts": [
+     "780"
+    ],
+    "pass": false,
+    "chunks_used": 1,
+    "top_score": 1.0,
+    "src_preview": "Lốp xe LANDSPIDER 205/55R16 91V CITYTRAX",
+    "answer": "Dạ em chưa tìm thấy số lượng tồn kho cụ thể cho lốp mã '2-R16 205/55 LPD' ạ. Anh/chị vui lòng để lại số điện thoại, em k"
+   },
+   {
+    "cat": "N2-Tồn kho và Giá bán",
+    "q": "Sản phẩm '2-R17 225/60 LPD' có giá bán niêm yết là bao nhiêu?",
+    "exp_facts": [
+     "1,602,000 VND",
+     "602",
+     "000"
+    ],
+    "pass": true,
+    "chunks_used": 1,
+    "top_score": 1.0,
+    "src_preview": "Lốp xe LANDSPIDER 225/60R17 99H CITYTRAX",
+    "answer": "Lốp LANDSPIDER 225/60R17 99H CITYTRAXX H/T giá 1.602.000đ/lốp ạ. Anh/chị cần em hỗ trợ gì thêm không ạ?"
+   },
+   {
+    "cat": "N2-Tồn kho và Giá bán",
+    "q": "Loại lốp Landspider nào có giá bán cao nhất là 3,735,000 VND?",
+    "exp_facts": [
+     "2-ZR22 285/45 LPD",
+     "285/45ZR22",
+     "285/45Z",
+     "285/45"
+    ],
+    "pass": true,
+    "chunks_used": 1,
+    "top_score": 1.0,
+    "src_preview": "Lốp xe LANDSPIDER 285/45ZR22 114WXL CITY",
+    "answer": "Lốp LANDSPIDER 285/45ZR22 114WXL CITYTRAXX H/P có giá bán cao nhất là 3.735.000đ ạ. Anh/chị cần em hỗ trợ thêm gì không "
+   },
+   {
+    "cat": "N2-Tồn kho và Giá bán",
+    "q": "Cho biết số lượng tồn kho của lốp Rovelo 155R12C RCMX+?",
+    "exp_facts": [
+     "134"
+    ],
+    "pass": false,
+    "chunks_used": 1,
+    "top_score": 1.0,
+    "src_preview": "Lốp Rovelo 155R12C RCMX+: 774000 | categ",
+    "answer": "Dạ lốp Rovelo 155R12C RCMX+ hiện em chưa có thông tin số lượng tồn kho cụ thể ạ. Anh/chị vui lòng để lại số điện thoại, "
+   },
+   {
+    "cat": "N2-Tồn kho và Giá bán",
+    "q": "Lốp mã '2-R13 175/70 LPD' còn bao nhiêu cái trong kho?",
+    "exp_facts": [
+     "23"
+    ],
+    "pass": false,
+    "chunks_used": 1,
+    "top_score": 1.0,
+    "src_preview": "Lốp xe LANDSPIDER 175/70R13 82T CITYTRAX",
+    "answer": "Lốp LANDSPIDER 175/70R13 82T CITYTRAXX G/P hiện còn 0 lốp trong kho ạ. Anh/chị cần em hỗ trợ gì thêm không ạ?"
+   }
+  ],
+  "N3-Chính sách bảo hàn": [
+   {
+    "cat": "N3-Chính sách bảo hàn",
+    "q": "Chính sách bảo hành của Nam Phát áp dụng cho những thương hiệu nào?",
+    "exp_facts": [],
+    "pass": true,
+    "chunks_used": 1,
+    "top_score": 0.588775,
+    "src_preview": "CHÍNH SÁCH BẢO HÀNH LỐP XE\n\nÁp dụng cho ",
+    "answer": "Dạ, chính sách bảo hành của Nam Phát áp dụng cho thương hiệu Landspider (Thailand) và Rovelo (Vietnam) ạ. Anh/chị cần em"
+   },
+   {
+    "cat": "N3-Chính sách bảo hàn",
+    "q": "Thời hạn bảo hành của lốp xe là bao lâu?",
+    "exp_facts": [
+     "05 năm",
+     "1.6mm",
+     "05"
+    ],
+    "pass": true,
+    "chunks_used": 1,
+    "top_score": 0.339133,
+    "src_preview": "[I. Phạm vi áp dụng]\n- Áp dụng cho tất c",
+    "answer": "Dạ, thời hạn bảo hành của lốp xe Landspider và Rovelo là 5 năm kể từ ngày sản xuất hoặc đến khi gai còn ≥ 1.6mm, tùy điề"
+   },
+   {
+    "cat": "N3-Chính sách bảo hàn",
+    "q": "Nếu gai lốp còn trên 70% và bị lỗi do nhà sản xuất thì được xử lý như thế nào?",
+    "exp_facts": [
+     "100",
+     "01"
+    ],
+    "pass": true,
+    "chunks_used": 1,
+    "top_score": 0.625979,
+    "src_preview": "[II. Điều kiện bảo hành]\n1. Gai còn trên",
+    "answer": "Dạ, nếu gai lốp còn trên 70% và xác định lỗi do nhà sản xuất, anh/chị sẽ được đổi mới 100% một lốp tương đương ạ. Anh/ch"
+   },
+   {
+    "cat": "N3-Chính sách bảo hàn",
+    "q": "Khi gai lốp mòn xuống dưới 1.6mm thì còn được bảo hành không?",
+    "exp_facts": [
+     "1.6mm"
+    ],
+    "pass": true,
+    "chunks_used": 1,
+    "top_score": 1.0,
+    "src_preview": "225/50ZR18 99WXL CITYTRAXX H/P\n215/55ZR1",
+    "answer": "Dạ, khi gai lốp mòn xuống dưới 1.6mm thì không còn được bảo hành theo chính sách của Nam Phát ạ. Anh/chị cần em hỗ trợ t"
+   },
+   {
+    "cat": "N3-Chính sách bảo hàn",
+    "q": "Các hư hỏng do đường sá như cắt, rách, thủng có được bảo hành không?",
+    "exp_facts": [],
+    "pass": true,
+    "chunks_used": 1,
+    "top_score": 0.504428,
+    "src_preview": "[III. Các trường hợp không bảo hành]\n- H",
+    "answer": "Dạ, các hư hỏng do đường sá như cắt, rách, thủng, vết thâm, tác động mạnh không thuộc diện được bảo hành ạ. Anh/chị cần "
+   },
+   {
+    "cat": "N3-Chính sách bảo hàn",
+    "q": "Lốp bị mòn nhanh do sai góc đặt bánh xe có được bảo hành không?",
+    "exp_facts": [],
+    "pass": true,
+    "chunks_used": 1,
+    "top_score": 0.4926,
+    "src_preview": "[III. Các trường hợp không bảo hành]\n- H",
+    "answer": "Dạ, lốp bị mòn nhanh do sai góc đặt bánh xe không thuộc diện được bảo hành ạ, vì đây là hỏng do hệ thống xe gây ra. Anh/"
+   },
+   {
+    "cat": "N3-Chính sách bảo hàn",
+    "q": "Khách hàng cần làm gì để bắt đầu quy trình bảo hành lốp lỗi?",
+    "exp_facts": [],
+    "pass": true,
+    "chunks_used": 1,
+    "top_score": 0.389198,
+    "src_preview": "[V. Quy trình bảo hành]\n1. Đại lý/khách ",
+    "answer": "Dạ, để bắt đầu quy trình bảo hành lốp lỗi, khách hàng hoặc đại lý cần gửi lốp lỗi về điểm bán hoặc kho Nam Phát kèm theo"
+   },
+   {
+    "cat": "N3-Chính sách bảo hàn",
+    "q": "Sau bao nhiêu ngày làm việc thì khách hàng sẽ nhận được kết quả giám định bảo hành?",
+    "exp_facts": [
+     "7 ngày"
+    ],
+    "pass": true,
+    "chunks_used": 1,
+    "top_score": 0.448796,
+    "src_preview": "[V. Quy trình bảo hành]\n1. Đại lý/khách ",
+    "answer": "Dạ, thời gian nhận kết quả giám định bảo hành lốp là trong vòng 7 ngày làm việc kể từ khi gửi lốp lỗi về điểm bán hoặc k"
+   },
+   {
+    "cat": "N3-Chính sách bảo hàn",
+    "q": "Đại lý báo hàng lỗi sẽ được ưu tiên đổi lốp trong thời gian bao lâu?",
+    "exp_facts": [
+     "72 giờ",
+     "72"
+    ],
+    "pass": true,
+    "chunks_used": 1,
+    "top_score": 0.549038,
+    "src_preview": "[VII. Điều khoản bổ sung]\n- Chính sách đ",
+    "answer": "Dạ, đại lý báo hàng lỗi sẽ được ưu tiên xử lý nhanh và đổi lốp trong vòng 72 giờ ạ. Anh/chị cần em hỗ trợ thêm gì không "
+   },
+   {
+    "cat": "N3-Chính sách bảo hàn",
+    "q": "Chính sách cho hàng lỗi trong 3 tháng đầu tiên kể từ khi bán ra là gì?",
+    "exp_facts": [
+     "100"
+    ],
+    "pass": true,
+    "chunks_used": 1,
+    "top_score": 0.417046,
+    "src_preview": "[VII. Điều khoản bổ sung]\n- Chính sách đ",
+    "answer": "Dạ, hàng lỗi trong 3 tháng đầu kể từ khi bán ra sẽ được đổi mới 100% mà không tính phần % mòn gai ạ. Anh/chị cần em hỗ t"
+   },
+   {
+    "cat": "N3-Chính sách bảo hàn",
+    "q": "Số Hotline/Zalo để liên hệ bảo hành là số nào?",
+    "exp_facts": [
+     "0988 771 310",
+     "771",
+     "310"
+    ],
+    "pass": false,
+    "chunks_used": 1,
+    "top_score": 1.0,
+    "src_preview": "225/50ZR18 99WXL CITYTRAXX H/P\n215/55ZR1",
+    "answer": "Dạ, em là trợ lý tư vấn lốp xe của Nam Phát, chuyên hỗ trợ về lốp Landspider và Rovelo, bao gồm tra giá, tồn kho, chính "
+   },
+   {
+    "cat": "N3-Chính sách bảo hàn",
+    "q": "Địa chỉ kho lốp Nam Phát tại Hà Nội ở đâu?",
+    "exp_facts": [
+     "10"
+    ],
+    "pass": true,
+    "chunks_used": 1,
+    "top_score": 0.412984,
+    "src_preview": "CHÍNH SÁCH BẢO HÀNH LỐP XE\n\nÁp dụng cho ",
+    "answer": "Dạ, địa chỉ kho lốp Nam Phát tại Hà Nội là Kho Hải Ngân, Ngõ 3 Đê Đại Hà, Xóm 10, Yên Mỹ, Thanh Trì, Hà Nội ạ. Anh/chị c"
+   }
+  ],
+  "N4-Thông tin hàng đan": [
+   {
+    "cat": "N4-Thông tin hàng đan",
+    "q": "Lô hàng Landspider sắp tới dự kiến sẽ về vào ngày nào?",
+    "exp_facts": [
+     "28 tháng",
+     "28",
+     "11"
+    ],
+    "pass": false,
+    "chunks_used": 2,
+    "top_score": 0.097809,
+    "src_preview": "Tên,Nhóm,Giá,Aliases\nLốp xe LANDSPIDER 2",
+    "answer": "Dạ, lô hàng Landspider dự kiến sẽ về vào ngày 26 ạ. Anh/chị cần em hỗ trợ gì thêm không ạ?"
+   },
+   {
+    "cat": "N4-Thông tin hàng đan",
+    "q": "Kích thước lốp LT235/75R15 WILDTRAXX A/T có trong danh sách hàng sắp về không?",
+    "exp_facts": [
+     "28/11",
+     "28",
+     "11"
+    ],
+    "pass": true,
+    "chunks_used": 1,
+    "top_score": 1.0,
+    "src_preview": "Lốp xe LANDSPIDER LT235/75R15 104/101S W",
+    "answer": "Dạ, lốp LANDSPIDER LT235/75R15 104/101S WILDTRAXX A/T dự kiến sẽ về vào ngày 28 tháng 11 ạ. Anh/chị cần em hỗ trợ gì thê"
+   },
+   {
+    "cat": "N4-Thông tin hàng đan",
+    "q": "Những sản phẩm dòng CITYTRAXX H/T nào dự kiến về vào ngày 28/11?",
+    "exp_facts": [
+     "215/70R16",
+     "225/60R18",
+     "225/70R16",
+     "235/60R18"
+    ],
+    "pass": true,
+    "chunks_used": 1,
+    "top_score": 1.0,
+    "src_preview": "Lốp xe LANDSPIDER 215/70R16 100H CITYTRA",
+    "answer": "Dạ quy cách 215/70R16 100H CITYTRAXX H/T, 225/60R17 99H CITYTRAXX H/T, 225/60R18 100H CITYTRAXX H/T, 225/70R16 107HXL CI"
+   },
+   {
+    "cat": "N4-Thông tin hàng đan",
+    "q": "Lốp 275/45ZR21 CITYTRAXX H/P dự kiến cập kho khi nào?",
+    "exp_facts": [
+     "28 tháng",
+     "28",
+     "11"
+    ],
+    "pass": true,
+    "chunks_used": 1,
+    "top_score": 1.0,
+    "src_preview": "Lốp xe LANDSPIDER 275/45ZR21 110WXL CITY",
+    "answer": "Dạ, lốp LANDSPIDER 275/45ZR21 110W XL CITYTRAXX H/P dự kiến về vào ngày 28 tháng 11 ạ. Anh/chị cần em hỗ trợ gì thêm khô"
+   },
+   {
+    "cat": "N4-Thông tin hàng đan",
+    "q": "Kích thước 195/65R15 dòng CITYTRAXX G/P có hàng về đợt này không?",
+    "exp_facts": [
+     "28/11",
+     "28",
+     "11"
+    ],
+    "pass": true,
+    "chunks_used": 1,
+    "top_score": 1.0,
+    "src_preview": "Lốp Rovelo 195/65R15 RHP-A68: 981000 | c",
+    "answer": "Dạ, lốp LANDSPIDER 195/65R15 91H CITYTRAXX G/P dự kiến về vào ngày 28 tháng 11 ạ. Anh/chị cần em hỗ trợ gì thêm không ạ?"
+   }
+  ],
+  "N5-Hình ảnh và Date s": [
+   {
+    "cat": "N5-Hình ảnh và Date s",
+    "q": "Date sản xuất (date1) của lốp mã '2-R16 195/65 NEO' là bao nhiêu?",
+    "exp_facts": [
+     "26"
+    ],
+    "pass": false,
+    "chunks_used": 1,
+    "top_score": 1.0,
+    "src_preview": "Lốp xe NEOTERRA 195/65R16 92H NEOTOUR | ",
+    "answer": "Dạ, hiện tại em chưa có thông tin chính xác về ngày sản xuất của lốp mã '2-R16 195/65 NEO', anh/chị vui lòng để lại thôn"
+   },
+   {
+    "cat": "N5-Hình ảnh và Date s",
+    "q": "Link thư mục hình ảnh của lốp mã '2-R14 165/60 LPD' là gì?",
+    "exp_facts": [
+     "https://drive.google.com/drive/folders/1e7FaVP5kdpp0QNUETw2ukB76-Psc5iWY?usp=drive_link"
+    ],
+    "pass": false,
+    "chunks_used": 1,
+    "top_score": 1.0,
+    "src_preview": "Lốp xe LANDSPIDER 165/60R14 75H CITYTRAX",
+    "answer": "Dạ em là trợ lý tư vấn lốp xe của Nam Phát, chuyên lốp Landspider và Rovelo ạ. Em chưa thấy thông tin link hình ảnh của "
+   },
+   {
+    "cat": "N5-Hình ảnh và Date s",
+    "q": "Date sản xuất ghi nhận của lốp mã '2-R14 185/60 LPD' là bao nhiêu?",
+    "exp_facts": [
+     "25"
+    ],
+    "pass": false,
+    "chunks_used": 1,
+    "top_score": 1.0,
+    "src_preview": "Lốp xe LANDSPIDER 185/60R14 82H CITYTRAX",
+    "answer": "Dạ em chưa tìm thấy thông tin ngày sản xuất (date1) của lốp mã '2-R14 185/60 LPD' trong dữ liệu hiện có ạ. Anh/chị cần e"
+   },
+   {
+    "cat": "N5-Hình ảnh và Date s",
+    "q": "Sản phẩm mã '2-ZR17 225/50 LPD' có date sản xuất là bao nhiêu?",
+    "exp_facts": [
+     "26"
+    ],
+    "pass": false,
+    "chunks_used": 1,
+    "top_score": 1.0,
+    "src_preview": "Lốp xe LANDSPIDER 225/50ZR17 98WXL CITYT",
+    "answer": "Dạ em chưa tìm thấy thông tin ngày sản xuất (date1) của sản phẩm mã '2-ZR17 225/50 LPD' trong dữ liệu hiện có ạ. Anh/chị"
+   },
+   {
+    "cat": "N5-Hình ảnh và Date s",
+    "q": "Link hình ảnh của lốp LANDSPIDER 155/80R13 G/P nằm ở đâu?",
+    "exp_facts": [
+     "https://drive.google.com/drive/u/1/folders/12ataSHws-NzWS7492uVEq5OqdB7PD7sx"
+    ],
+    "pass": false,
+    "chunks_used": 1,
+    "top_score": 1.0,
+    "src_preview": "Lốp xe LANDSPIDER 155/80R13 79T CITYTRAX",
+    "answer": "Dạ em chưa thấy thông tin link hình ảnh của lốp LANDSPIDER 155/80R13 G/P trong dữ liệu hiện có ạ. Anh/chị cần em hỗ trợ "
+   }
+  ]
+ },
+ "fails": [
+  {
+   "cat": "N2-Tồn kho và Giá bán",
+   "q": "Số lượng tồn kho hiện tại của mã hàng '2-R14 165/65 LPD' là bao nhiêu?",
+   "exp_facts": [
+    "404"
+   ],
+   "pass": false,
+   "chunks_used": 1,
+   "top_score": 1.0,
+   "src_preview": "Lốp xe LANDSPIDER 165/65R14 79H CITYTRAX",
+   "answer": "Lốp LANDSPIDER 165/65R14 79H CITYTRAXX G/P hiện còn 1 lốp ạ. Anh/chị cần em hỗ trợ gì thêm không ạ?"
+  },
+  {
+   "cat": "N2-Tồn kho và Giá bán",
+   "q": "Lốp mã '2-R16 205/55 LPD' còn tồn bao nhiêu sản phẩm?",
+   "exp_facts": [
+    "780"
+   ],
+   "pass": false,
+   "chunks_used": 1,
+   "top_score": 1.0,
+   "src_preview": "Lốp xe LANDSPIDER 205/55R16 91V CITYTRAX",
+   "answer": "Dạ em chưa tìm thấy số lượng tồn kho cụ thể cho lốp mã '2-R16 205/55 LPD' ạ. Anh/chị vui lòng để lại số điện thoại, em k"
+  },
+  {
+   "cat": "N2-Tồn kho và Giá bán",
+   "q": "Cho biết số lượng tồn kho của lốp Rovelo 155R12C RCMX+?",
+   "exp_facts": [
+    "134"
+   ],
+   "pass": false,
+   "chunks_used": 1,
+   "top_score": 1.0,
+   "src_preview": "Lốp Rovelo 155R12C RCMX+: 774000 | categ",
+   "answer": "Dạ lốp Rovelo 155R12C RCMX+ hiện em chưa có thông tin số lượng tồn kho cụ thể ạ. Anh/chị vui lòng để lại số điện thoại, "
+  },
+  {
+   "cat": "N2-Tồn kho và Giá bán",
+   "q": "Lốp mã '2-R13 175/70 LPD' còn bao nhiêu cái trong kho?",
+   "exp_facts": [
+    "23"
+   ],
+   "pass": false,
+   "chunks_used": 1,
+   "top_score": 1.0,
+   "src_preview": "Lốp xe LANDSPIDER 175/70R13 82T CITYTRAX",
+   "answer": "Lốp LANDSPIDER 175/70R13 82T CITYTRAXX G/P hiện còn 0 lốp trong kho ạ. Anh/chị cần em hỗ trợ gì thêm không ạ?"
+  },
+  {
+   "cat": "N3-Chính sách bảo hàn",
+   "q": "Số Hotline/Zalo để liên hệ bảo hành là số nào?",
+   "exp_facts": [
+    "0988 771 310",
+    "771",
+    "310"
+   ],
+   "pass": false,
+   "chunks_used": 1,
+   "top_score": 1.0,
+   "src_preview": "225/50ZR18 99WXL CITYTRAXX H/P\n215/55ZR1",
+   "answer": "Dạ, em là trợ lý tư vấn lốp xe của Nam Phát, chuyên hỗ trợ về lốp Landspider và Rovelo, bao gồm tra giá, tồn kho, chính "
+  },
+  {
+   "cat": "N4-Thông tin hàng đan",
+   "q": "Lô hàng Landspider sắp tới dự kiến sẽ về vào ngày nào?",
+   "exp_facts": [
+    "28 tháng",
+    "28",
+    "11"
+   ],
+   "pass": false,
+   "chunks_used": 2,
+   "top_score": 0.097809,
+   "src_preview": "Tên,Nhóm,Giá,Aliases\nLốp xe LANDSPIDER 2",
+   "answer": "Dạ, lô hàng Landspider dự kiến sẽ về vào ngày 26 ạ. Anh/chị cần em hỗ trợ gì thêm không ạ?"
+  },
+  {
+   "cat": "N5-Hình ảnh và Date s",
+   "q": "Date sản xuất (date1) của lốp mã '2-R16 195/65 NEO' là bao nhiêu?",
+   "exp_facts": [
+    "26"
+   ],
+   "pass": false,
+   "chunks_used": 1,
+   "top_score": 1.0,
+   "src_preview": "Lốp xe NEOTERRA 195/65R16 92H NEOTOUR | ",
+   "answer": "Dạ, hiện tại em chưa có thông tin chính xác về ngày sản xuất của lốp mã '2-R16 195/65 NEO', anh/chị vui lòng để lại thôn"
+  },
+  {
+   "cat": "N5-Hình ảnh và Date s",
+   "q": "Link thư mục hình ảnh của lốp mã '2-R14 165/60 LPD' là gì?",
+   "exp_facts": [
+    "https://drive.google.com/drive/folders/1e7FaVP5kdpp0QNUETw2ukB76-Psc5iWY?usp=drive_link"
+   ],
+   "pass": false,
+   "chunks_used": 1,
+   "top_score": 1.0,
+   "src_preview": "Lốp xe LANDSPIDER 165/60R14 75H CITYTRAX",
+   "answer": "Dạ em là trợ lý tư vấn lốp xe của Nam Phát, chuyên lốp Landspider và Rovelo ạ. Em chưa thấy thông tin link hình ảnh của "
+  },
+  {
+   "cat": "N5-Hình ảnh và Date s",
+   "q": "Date sản xuất ghi nhận của lốp mã '2-R14 185/60 LPD' là bao nhiêu?",
+   "exp_facts": [
+    "25"
+   ],
+   "pass": false,
+   "chunks_used": 1,
+   "top_score": 1.0,
+   "src_preview": "Lốp xe LANDSPIDER 185/60R14 82H CITYTRAX",
+   "answer": "Dạ em chưa tìm thấy thông tin ngày sản xuất (date1) của lốp mã '2-R14 185/60 LPD' trong dữ liệu hiện có ạ. Anh/chị cần e"
+  },
+  {
+   "cat": "N5-Hình ảnh và Date s",
+   "q": "Sản phẩm mã '2-ZR17 225/50 LPD' có date sản xuất là bao nhiêu?",
+   "exp_facts": [
+    "26"
+   ],
+   "pass": false,
+   "chunks_used": 1,
+   "top_score": 1.0,
+   "src_preview": "Lốp xe LANDSPIDER 225/50ZR17 98WXL CITYT",
+   "answer": "Dạ em chưa tìm thấy thông tin ngày sản xuất (date1) của sản phẩm mã '2-ZR17 225/50 LPD' trong dữ liệu hiện có ạ. Anh/chị"
+  },
+  {
+   "cat": "N5-Hình ảnh và Date s",
+   "q": "Link hình ảnh của lốp LANDSPIDER 155/80R13 G/P nằm ở đâu?",
+   "exp_facts": [
+    "https://drive.google.com/drive/u/1/folders/12ataSHws-NzWS7492uVEq5OqdB7PD7sx"
+   ],
+   "pass": false,
+   "chunks_used": 1,
+   "top_score": 1.0,
+   "src_preview": "Lốp xe LANDSPIDER 155/80R13 79T CITYTRAX",
+   "answer": "Dạ em chưa thấy thông tin link hình ảnh của lốp LANDSPIDER 155/80R13 G/P trong dữ liệu hiện có ạ. Anh/chị cần em hỗ trợ "
+  }
+ ]
+}
