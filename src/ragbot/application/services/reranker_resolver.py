@@ -259,6 +259,18 @@ class RerankerResolver:
         )
         record = row.mappings().first()
         if not record:
+            # reranker_enabled=true but no (model, provider) row matched — a
+            # system_config drift (e.g. provider 'jina' ⊥ model 'zerank-2')
+            # silently degraded EVERY binding-less bot to NullReranker. Fail
+            # LOUD so the next drift is caught immediately, not via a coverage
+            # regression weeks later (silent-fallback ban, v2 bug lessons).
+            logger.warning(
+                "reranker_platform_default_unresolved_falling_back_to_null",
+                reranker_model=model_name,
+                reranker_provider=provider_code,
+                hint="system_config reranker_model/provider must match an "
+                "enabled ai_models.name + ai_providers.code row",
+            )
             return None
         return {
             "model_name": record["model_name"],
