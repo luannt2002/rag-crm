@@ -3,7 +3,30 @@
 > Always-updated current state. Git history was reset on 2026-06-14 (fresh start);
 > commit-SHA anchors no longer apply — this file is the source of truth.
 
-## Session 2026-06-23 (e) — Multi-agent audit (44-agent) + fix batch A/B + residual plan  ⟵ LATEST
+## Session 2026-06-25 (f) — Domain-neutral fairness program: 2/3 betrayals closed + enforcement  ⟵ LATEST
+
+> **Trigger** (user, binding): "chuẩn mindset expert — KHÔNG support riêng lẻ 1 bot / 1 lĩnh vực, 100% công bằng mọi bot, code real không đụng gì support riêng."
+>
+> **Audit** (6-agent full sweep, `reports/DOMAIN_NEUTRAL_BETRAYAL_AUDIT_20260625.md`): ✅ NO `if bot_id==...` forking; 4-key/RLS + answer/refuse text already neutral. ❌ **Betrayal #1** numeric/structured layer hardwired to VND-price (9 files); ❌ **Betrayal #2** VN hardcoded as routing LOGIC; ⚠️ **#3** domain vocab in universal prompts.
+>
+> **Shipped (5 commits + 3 Opus agents)**:
+> - **`5bf1792` T2+G4**: per-bot `custom_vocabulary["column_roles"]` (ADR-0006 authoritative tier) + G4 ingest data-quality advisory + `_is_header_row` accepts owner labels (fully-custom domains route).
+> - **`2ae8945`**: measure-unit guard `buoi/buoc` → spa 50Q **76%→86%** (measured).
+> - **`314ad43` Phase 1**: domain-neutral ratchet guard + scrub production doc-UUID leak.
+> - **`97286b9` Phase 2**: **Track B language→`language_packs`** (RoutingSignals, vi seed byte-identical + en, alembic `seed_routing_signals_260625`) + **full customer-literal scrub bot/brand 17→0**.
+> - **`7576301`**: Track B WIRED active (`retrieve.py` per-locale signals).
+>
+> **Enforcement** (the "công bằng" mechanism): `tests/unit/test_domain_neutral_guard.py` ratchet — bot/brand baseline **0** (any new customer literal fails CI), price-coupling **127** (decreasing-only, shrinks as ADR-0007 lands).
+>
+> **Status**: ✅ Betrayal #2 (language) + "support 1 bot" (literals) CLOSED + enforced. ⏳ **Betrayal #1 (PRICE-index) NOT done** — ADR-0007 (`docs/adr/0007-stats-price-index-to-attribute-index.md`) staged S1–S5, must measure A/B (big-bang would break live spa/xe/legal). Plan: `plans/20260625-domain-neutral-fairness/`.
+>
+> **Verify**: 154 + 385 (agent) unit pass; vi backward-compat held (spa 50Q 82–86 = flaky stats-race variance, routing provably identical); single alembic head. **ADRs**: 0005 (NORMALIZE-to-IR), 0006 (column-role 3-tier), 0007 (PRICE→ATTRIBUTE, Proposed).
+>
+> **NEXT**: Track A S1 render-faithful (surface generic `attributes_json` — closes combo/HALLU) after pinning the lossy aggregate render path.
+
+---
+
+## Session 2026-06-23 (e) — Multi-agent audit (44-agent) + fix batch A/B + residual plan
 
 > **Audit**: 44-agent workflow (6 dim → adversarial verify) trên luồng happy-case → **37 raised, 27 confirmed** (9 refuted, 6 downgraded). Verdict `has-real-bugs`. **Sacred rules SẠCH** (no app-override/inject AST-verified · DI · broad-except · version-ref). Bug ở shape-heuristic L1+L3, KHÔNG sysprompt.
 >
