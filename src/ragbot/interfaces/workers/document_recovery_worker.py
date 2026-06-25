@@ -2,8 +2,8 @@
 
 Phase 2 of the upload-flow case study (2026-05-16 / 2026-05-18 ship).
 
-Evidence: doc ``4d6c1e47-459b-4a5b-ab66-c454c1ae1ef1`` (Thông tư 09/2020)
-stuck ``state=DRAFT`` for 6h because the document worker crashed after
+Evidence: a tenant document stuck ``state=DRAFT`` for 6h because the
+document worker crashed after
 the bus delivered ``document.uploaded.v1`` but before the ingest service
 updated the document row. The outbox row was already marked
 ``processed`` by the publisher, so no second delivery happened. Operator

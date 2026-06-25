@@ -380,7 +380,7 @@ _ABBREVIATIONS = frozenset({
     "tp", "ts", "ths", "gs", "pgs", "cn", "bs", "ks",
     "stt", "đt", "đc", "sl", "ht", "nxb", "vd", "vv",
     # Titles / generic abbreviations whose trailing dot is NOT a sentence end
-    # (audit 2026-06-13: "Dr. Medispa" was split into two sentences). Kept
+    # (audit 2026-06-13: a "Dr. <Brand>" name was split into two sentences). Kept
     # domain-neutral — common across verticals, not tenant-specific.
     "dr", "mr", "mrs", "ms", "no", "vs",
 })

@@ -7,12 +7,12 @@ node + post-generate drift detect) and any state-tracking backend
 Why this port exists
 ~~~~~~~~~~~~~~~~~~~~
 Ragbot is RAG stateless: each turn LLM re-infers state from prose
-``conversation_history`` → drift accross turns. Multi-turn UI test on
-test-spa-id (2026-05-30 baseline) measured 15% HALLU rate via 3 pattern:
+``conversation_history`` → drift accross turns. A multi-turn UI test
+(2026-05-30 baseline) measured a 15% HALLU rate via 3 patterns:
 
-- BP-1 service name fusion (fabricate name from 2 corpus entries)
-- BP-2 price flip-flop (cùng service quote 199K turn 4, 800K turn 7)
-- BP-3 feature cross-service (gán PAYOT của Detox cho Thải độc da)
+- BP-1 entity name fusion (fabricate a name from 2 corpus entries)
+- BP-2 numeric flip-flop (same entity quoted value V1 turn 4, V2 turn 7)
+- BP-3 attribute cross-entity (assign entity A's attribute to entity B)
 
 Single-turn load test (12Q/30Q with hash-based connect_id) cannot catch
 these patterns — fresh connect_id per query → 0 history → 0 drift.
@@ -29,7 +29,7 @@ existing OOS refuse flow handles block via ``bots.oos_answer_template``.
 Sacred-rule alignment
 ~~~~~~~~~~~~~~~~~~~~~
 - Domain-neutral: port surface only uses generic concepts
-  (conversation_id, state dict, drift hits). No spa/medispa/booking
+  (conversation_id, state dict, drift hits). No tenant/industry/booking
   text in code.
 - Strategy + DI: Protocol contract; implementations live in
   ``infrastructure/conversation_state/`` (Null + Jsonb).
