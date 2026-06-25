@@ -135,13 +135,32 @@ def _is_discourse_opener(label: str) -> bool:
 _NAME_COL_TOKENS: frozenset[str] = frozenset({
     "ten", "name", "dich vu", "service", "san pham", "goi", "combo",
     "ten dich vu", "ten san pham", "ten goi", "product", "item",
+    # G1 synonyms — common header variants kept here so spec + checker stay in sync.
+    "ten hang", "ten mat hang", "ten san pham/dich vu", "mat hang",
+    "ten sp", "sp", "hang hoa", "ten goi dich vu", "product name", "item name",
 })
 _CATEGORY_COL_TOKENS: frozenset[str] = frozenset({
     "nhom", "danh muc", "category", "loai", "vung", "type", "khu vuc",
+    # G1 synonyms — group/stub/brand columns. "kho"/"ten kho" = warehouse stub
+    # (NOT the product name) — pins the xe-1 'Tên kho' ⊥ 'Tên hàng' disambiguation.
+    "kho", "ten kho", "kho hang", "phan loai", "thuong hieu", "nhan hieu",
+    "hang san xuat", "hsx", "brand", "group", "nhom san pham",
 })
 _PRICE_COL_TOKENS: frozenset[str] = frozenset({
     "gia", "price", "phi", "amount", "cost",
     "don gia", "gia le", "gia goc", "gia sale", "gia ban", "thanh tien", "unit price",
+    # G1 synonyms — price column variants.
+    "don gia ban", "gia ban le", "gia niem yet", "gia tien", "gia ban (vnd)",
+    "gia (vnd)", "selling price", "list price",
+})
+# An ALIASES/synonym column: ``;``-separated search variants for the entity (a size
+# asked in a different notation, a spelling/typo variant). Captured into
+# ParsedEntity.aliases → entity_synonyms so query_by_name_keyword matches an alias
+# even when entity_name uses another notation. Generic search/keyword grammar words,
+# domain-neutral — NO product/brand literal. Normalised (accent-stripped).
+_ALIASES_COL_TOKENS: frozenset[str] = frozenset({
+    "aliases", "synonym", "synonyms", "tu khoa", "keyword", "keywords",
+    "bien the", "variant", "variants",
 })
 # Non-role header words (ordinals / ids) — used for header DETECTION only, no role.
 _HEADER_EXTRA_TOKENS: frozenset[str] = frozenset({
@@ -150,7 +169,8 @@ _HEADER_EXTRA_TOKENS: frozenset[str] = frozenset({
 # Exact-match (normalised) column label keywords — union of all roles, for
 # _is_header_row(). Generic, domain-neutral.
 _HEADER_EXACT_TOKENS: frozenset[str] = (
-    _NAME_COL_TOKENS | _CATEGORY_COL_TOKENS | _PRICE_COL_TOKENS | _HEADER_EXTRA_TOKENS
+    _NAME_COL_TOKENS | _CATEGORY_COL_TOKENS | _PRICE_COL_TOKENS
+    | _ALIASES_COL_TOKENS | _HEADER_EXTRA_TOKENS
 )
 # Aggregate / structural-label words that are NEVER a catalog entity name — a
 # transposed / key-value / total row promotes one of these to a "name" ("Giá"=100k,
@@ -216,6 +236,11 @@ class ParsedEntity:
         price_secondary: Second price column (e.g. combo / package price), VND int.
         chunk_index:     Index of the source chunk in the input list.
         attributes:      Remaining key→value pairs from extra columns.
+        aliases:         ``;``-separated search variants from an Aliases/synonym
+                         column (size notations, spelling variants). ``None`` when
+                         the catalog has no aliases column. Written to the
+                         ``entity_synonyms`` search column at ingest so a query in a
+                         different notation still matches the entity.
     """
 
     name: str
@@ -224,6 +249,7 @@ class ParsedEntity:
     price_secondary: int | None
     chunk_index: int
     attributes: dict[str, Any] = field(default_factory=dict)
+    aliases: str | None = None
 
 
 def _is_header_row(cols: list[str]) -> bool:
@@ -304,28 +330,77 @@ def _split_cols(line: str) -> list[str]:
     return [c.strip() for c in row]
 
 
+def _role_match_score(token: str, words: set[str], role_tokens: frozenset[str]) -> int:
+    """Affinity of a normalised header ``token`` to a role's token set.
+
+    Cascade (no LLM, deterministic, domain-neutral): EXACT membership (100) >
+    multi-word phrase substring (60, e.g. 'don gia' inside 'don gia ban') >
+    whole-word match (30, e.g. 'gia' is a word of 'gia ban'). 0 = no signal.
+    The tiers keep the exact happy-case path winning outright while letting an
+    unseen header variant still bind instead of being silently dropped.
+    """
+    if token in role_tokens:
+        return 100
+    best = 0
+    for rt in role_tokens:
+        if " " in rt and rt in token:
+            best = max(best, 60)
+        elif rt in words:
+            best = max(best, 30)
+    return best
+
+
 def _column_roles(header: list[str]) -> dict[str, Any]:
     """Assign each header column a ROLE by its normalised token: the NAME column, a
-    CATEGORY/stub column, and the PRICE column(s). Lets a data row bind its entity to
-    the right column instead of blindly taking col-0 — which may be a category stub
-    (``Nhóm | Tên | Giá`` → name is col-1, not the "Cao cấp" group in col-0). SOTA
-    cell-role (Microsoft TATR / Docling row-header). Returns
-    ``{"name": idx|None, "category": idx|None, "price": [idx, ...]}``.
+    CATEGORY/stub column, the PRICE column(s), and an ALIASES/synonym column. Lets a
+    data row bind its entity to the right column instead of blindly taking col-0 —
+    which may be a category stub (``Nhóm | Tên | Giá`` → name is col-1, not the "Cao
+    cấp" group in col-0). The aliases role pulls a ``;``-separated search-variant
+    column out of the generic attributes dump and into ``ParsedEntity.aliases`` so it
+    becomes a searchable key. SOTA cell-role (Microsoft TATR / Docling row-header).
+    Returns ``{"name": idx|None, "category": idx|None, "price": [idx, ...],
+    "aliases": idx|None}``.
     """
+    # G1 cascade: each header scores against each role by exact (100) >
+    # phrase-substring (60) > whole-word (30). A header binds to its strictly-best
+    # role; a TIE (e.g. "Tên kho" scoring name via "ten" AND category via "kho")
+    # is SKIPPED so an ambiguous stub can't steal a role (the xe-1 fix). Exact-vocab
+    # still wins outright, so the happy-case path is byte-identical.
+    _roles_def = (
+        ("name", _NAME_COL_TOKENS),
+        ("category", _CATEGORY_COL_TOKENS),
+        ("aliases", _ALIASES_COL_TOKENS),
+        ("price", _PRICE_COL_TOKENS),
+    )
     name_idx: int | None = None
     cat_idx: int | None = None
+    alias_idx: int | None = None
     price_idxs: list[int] = []
     for i, cell in enumerate(header):
         token = _normalise(cell.strip()) if cell else ""
         if not token:
             continue
-        if name_idx is None and token in _NAME_COL_TOKENS:
-            name_idx = i
-        elif cat_idx is None and token in _CATEGORY_COL_TOKENS:
-            cat_idx = i
-        elif token in _PRICE_COL_TOKENS:
+        words = set(token.split())
+        scores = {role: _role_match_score(token, words, toks) for role, toks in _roles_def}
+        top = max(scores.values())
+        if top == 0:
+            continue
+        winners = [r for r, s in scores.items() if s == top]
+        if len(winners) > 1:
+            continue  # ambiguous (name⊥category tie) → bind nothing, avoid mis-pick
+        role = winners[0]
+        if role == "price":
             price_idxs.append(i)
-    return {"name": name_idx, "category": cat_idx, "price": price_idxs}
+        elif role == "name" and name_idx is None:
+            name_idx = i
+        elif role == "category" and cat_idx is None:
+            cat_idx = i
+        elif role == "aliases" and alias_idx is None:
+            alias_idx = i
+    return {
+        "name": name_idx, "category": cat_idx,
+        "price": price_idxs, "aliases": alias_idx,
+    }
 
 
 def _extract_entity_from_row(
@@ -351,10 +426,12 @@ def _extract_entity_from_row(
     name: str | None = None
     price_primary: int | None = None
     price_secondary: int | None = None
+    aliases: str | None = None
     attributes: dict[str, Any] = {}
 
     name_idx = roles.get("name") if roles else None
     cat_idx = roles.get("category") if roles else None
+    alias_idx = roles.get("aliases") if roles else None
     price_cols = set(roles["price"]) if roles and roles.get("price") else None
     # A category/stub column is a SEPARATE axis only when a distinct NAME column
     # also exists (``Nhóm | Tên | Giá``). In a 2-col ``Vùng | Giá`` the category-token
@@ -367,6 +444,13 @@ def _extract_entity_from_row(
             continue
         if cat_idx is not None and idx == cat_idx:
             continue  # category/stub column — resolved + forward-filled by the caller
+        if alias_idx is not None and idx == alias_idx:
+            # ALIASES/synonym column → its dedicated field, NOT name/price/attributes.
+            # Keeps the ``;``-separated search variants out of the name slot (they must
+            # never become the entity name) and out of the attributes dump (they go to
+            # the searchable ``entity_synonyms`` column instead). Empty cell → None.
+            aliases = col.strip() or None
+            continue
 
         # Price detection is column-role aware:
         #   * KNOWN price column → parse even when the cell carries extra words
@@ -426,6 +510,29 @@ def _extract_entity_from_row(
         else:
             label = header[idx] if idx < len(header) else f"col_{idx}"
             attributes[label] = col
+
+    # Role/data misalignment guard: a header with a leading empty column gives a
+    # name_idx that points one cell past an un-padded data row, so the role-aware
+    # name lands on a price/blank and the row would drop. When the name column
+    # yielded no name, fall back to the positional first field-like, non-money,
+    # non-role cell — recovering ragged rows WITHOUT changing aligned rows (where
+    # ``name`` is already set, so this never fires).
+    if name is None and name_idx is not None:
+        for idx, col in enumerate(cols):
+            stripped = (col or "").strip()
+            if not stripped or _is_pure_money(stripped):
+                continue
+            if re.match(r"^\d{1,3}\.?$", stripped):
+                continue
+            if (
+                (price_cols is not None and idx in price_cols)
+                or (cat_idx is not None and idx == cat_idx)
+                or (alias_idx is not None and idx == alias_idx)
+            ):
+                continue
+            if len(stripped) <= DEFAULT_STATS_ATTR_MAX_CHARS:
+                name = stripped
+                break
 
     # ══ OUT-OF-SCOPE DEFENSE — NOT happy-case behaviour, defence-in-depth only ══
     # A row that conforms to the template (short name cell + a price column) NEVER
@@ -488,6 +595,7 @@ def _extract_entity_from_row(
         price_secondary=price_secondary,
         chunk_index=chunk_index,
         attributes=attributes,
+        aliases=aliases,
     )
 
 
