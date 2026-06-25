@@ -393,9 +393,13 @@ def parse_list_query(query: str) -> RangeFilter | None:
     # brand/service literal.
     if re.search(
         r"bao nhieu\s+(ngay|nam|thang|tuan|gio|phut|giay|tien|dong|"
-        r"phan tram|km|kg|met|lit|lan|km/h|%)",
+        r"buoi|buoc|lan|phan tram|km|kg|met|lit|km/h|%)",
         folded,
     ):
+        # buoi (session) / buoc (process step): "quy trình gồm bao nhiêu bước",
+        # "gói dùng tối đa bao nhiêu buổi" are MEASURE factoids whose answer lives
+        # in a prose chunk — routing them to the catalog list/aggregate stats chunk
+        # made the bot refuse a fact it had (the spa process/session miss).
         has_count = False
     has_cat = any(s in folded for s in ("tu van ve", "dich vu ve", "co dich vu"))
     if not (has_list or has_count or has_cat):

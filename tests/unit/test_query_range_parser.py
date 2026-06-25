@@ -405,6 +405,12 @@ def test_parse_list_query_measure_unit_not_a_catalog_count() -> None:
     assert parse_list_query("Sau bao nhiêu ngày có kết quả giám định bảo hành?") is None
     assert parse_list_query("Thời hạn bảo hành bao nhiêu năm?") is None
     assert parse_list_query("Đổi lốp trong vòng bao nhiêu giờ?") is None
+    # "bao nhiêu BƯỚC / BUỔI" is a process/session MEASURE, not a catalog count —
+    # it must reach the vector prose chunk ("quy trình hơn 20 bước", "tối đa 10
+    # buổi") instead of the price-aggregate stats chunk (the spa miss).
+    assert parse_list_query("Quy trình tráng gương kim cương gồm bao nhiêu bước?") is None
+    assert parse_list_query("Mỗi gói Buffet được sử dụng tối đa bao nhiêu buổi?") is None
+    assert parse_list_query("Sau bao nhiêu buổi thì thấy hiệu quả triệt lông?") is None
     # Genuine catalog count / list → still routes (keyword extracted).
     assert parse_list_query("có bao nhiêu dịch vụ massage") is not None
     assert parse_list_query("liệt kê các loại lốp") is not None
