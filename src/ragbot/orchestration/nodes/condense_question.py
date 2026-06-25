@@ -35,7 +35,7 @@ async def condense_question(
     after the very first turn (history = [user_T1, bot_T1] = 2 messages),
     which is when condense matters most (T2 may reference T1 entity with
     pronoun). Now ``< 2`` so the first follow-up triggers condense.
-    Eval root-cause: "có ưu đãi gì k em" after "triệt lông nửa chân"
+    Eval root-cause: "có ưu đãi gì k em" after "<a service-name query>"
     was reaching rewrite with raw query (no T1 context), routing to
     generic promo chunks. Condense now bridges that gap.
     """

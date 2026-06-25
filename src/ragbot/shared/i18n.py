@@ -21,7 +21,8 @@ greeting / refusal copy on the bot row.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+import json
+from dataclasses import dataclass, field
 
 from ragbot.shared.constants import DEFAULT_LANGUAGE
 
@@ -81,6 +82,56 @@ _EN_MQ_AGGREGATION = (
 )
 
 
+# ---------------------------------------------------------------------------
+# Routing / intent SIGNAL lists — locale-scoped (Track B domain-neutral fix).
+#
+# The query_range_parser + heuristic_intent_classifier USED to hard-code the
+# Vietnamese signal literals inside engine logic, so an English (or any other
+# locale) bot could not route a "below X" / "list all" / superlative query and
+# silently fell through to vector — or, worse, an ascii-fold collision routed a
+# wrong path. These lists are now data, seeded per-locale into the
+# ``language_packs`` table (prompt_key ``routing_signals``, JSON-encoded) and
+# carried on the resolved ``LanguagePack``.
+#
+# Backward-compat invariant: the ``vi`` seed below is byte-identical to the old
+# hard-coded literals, so a ``vi`` bot routes exactly as before. A locale with
+# no signals for a given route simply has an empty list for that field → the
+# parser falls through to vector retrieval (neutral), never mis-routes.
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class RoutingSignals:
+    """Locale-scoped signal lists + regex used by the stats/intent routers.
+
+    Every field is a tuple of folded-ascii tokens (matched against the
+    diacritic-folded query) except the two ``*_re`` fields which carry a
+    raw regex *source string* (compiled lazily by the consumer). An empty
+    tuple / empty-string regex for a route means "this locale has no signal
+    for that route" → the consumer falls through to vector retrieval.
+    """
+
+    count_signals: tuple[str, ...] = ()
+    list_signals: tuple[str, ...] = ()
+    list_strip_phrases: tuple[str, ...] = ()
+    below_tokens: tuple[str, ...] = ()
+    above_tokens: tuple[str, ...] = ()
+    superlative_max_tokens: tuple[str, ...] = ()
+    superlative_min_tokens: tuple[str, ...] = ()
+    price_ask_signals: tuple[str, ...] = ()
+    price_structural_anchors: tuple[str, ...] = ()
+    price_strip_phrases: tuple[str, ...] = ()
+    list_count_signals: tuple[str, ...] = ()
+    list_category_signals: tuple[str, ...] = ()
+    price_factoid_guards: tuple[str, ...] = ()
+    # Regex SOURCE strings (compiled by the consumer). ``measure_unit_re``
+    # guards the "bao nhiêu <unit>" measure-factoid carve-out; the two intent
+    # regex tuples drive the Layer-1 heuristic classifier (label → source).
+    measure_unit_re: str = ""
+    # Heuristic intent regex: ordered tuple of (intent_label, regex_source).
+    intent_patterns: tuple[tuple[str, str], ...] = ()
+
+
 @dataclass(frozen=True)
 class LanguagePack:
     """Platform-internal prompts for one language."""
@@ -120,6 +171,209 @@ class LanguagePack:
     # 0146. Empty default in this in-memory fallback pack means
     # assembler returns bot.system_prompt unchanged when DB unseeded.
     sysprompt_default_rules: str = ""
+    # Locale-scoped routing/intent SIGNAL lists (Track B). Seeded per-locale
+    # in DB (prompt_key ``routing_signals``, JSON). The in-memory default is
+    # the ``vi``/``en`` seed below; an unknown locale gets the EMPTY-signal
+    # fallback (no route fires → vector). ``field(default_factory=...)`` so
+    # the frozen-dataclass default is never a shared mutable.
+    routing_signals: RoutingSignals = field(default_factory=RoutingSignals)
+
+
+# ---------------------------------------------------------------------------
+# Routing-signal seeds — vi is byte-identical to the OLD hard-coded parser /
+# classifier literals (backward-compat invariant); en is a reasonable English
+# signal set. Any locale missing from the DB falls back to ``_VI_ROUTING_SIGNALS``
+# via ``get_routing_signals(DEFAULT_LANGUAGE)`` so a ``vi`` deployment never
+# regresses, while ``en`` (and unknown locales pointed at ``_EN_ROUTING_SIGNALS``)
+# route on English signals.
+# ---------------------------------------------------------------------------
+_VI_ROUTING_SIGNALS = RoutingSignals(
+    count_signals=(
+        "có bao nhiêu", "bao nhieu", "dem", "đếm", "so luong", "số lượng",
+        "count",
+    ),
+    list_signals=(
+        "liet ke", "liệt kê", "danh sach", "danh sách", "toan bo", "toàn bộ",
+        "tat ca", "tất cả", "nhung gi", "những gì", "nhung cai", "những cái",
+        "co nhung", "có những", "list",
+    ),
+    list_strip_phrases=(
+        "có bao nhiêu", "co bao nhieu", "bao nhiêu", "bao nhieu",
+        "có mấy loại", "có mấy", "mấy loại", "may loai", "mấy", "may",
+        "liệt kê", "liet ke", "danh sách", "danh sach", "kể tên", "ke ten",
+        "có những", "co nhung", "những gì", "nhung gi", "có gì", "co gi",
+        "tư vấn về", "tu van ve", "dịch vụ về", "dich vu ve",
+        "có dịch vụ", "co dich vu", "tư vấn", "tu van", "cho xem", "show",
+        "list",
+        "dịch vụ", "dich vu", "bên em", "ben em", "cho mình", "cho minh",
+        "cho tôi", "cho toi", "giúp em", "giup em", "tất cả", "tat ca",
+        "loại", "loai", "hết", "với", "voi", "các", "của", "nào", "nao",
+        "về", "ve", "vào", "vao",
+        "không", "khong", "có", "co", "ạ", "à", "ra", "mình", "minh",
+        "shop", "cửa hàng", "cua hang", "giúp mình", "giup minh", "giúp",
+        "giup",
+    ),
+    below_tokens=(
+        "duoi", "it hon", "nho hon", "thap hon", "khong qua", "toi da",
+        "max", "< ", "<=",
+    ),
+    above_tokens=(
+        "tren", "hon", "lon hon", "cao hon", "tu", "min", "> ", ">=",
+    ),
+    superlative_max_tokens=(
+        "dat nhat", "mac nhat", "cao nhat", "cao cap nhat", "dat tien nhat",
+        "dat gia nhat", "most expensive", "highest price", "priciest",
+        "dearest",
+    ),
+    superlative_min_tokens=(
+        "re nhat", "thap nhat", "re tien nhat", "re gia nhat",
+        "phai chang nhat", "binh dan nhat", "cheapest", "lowest price",
+        "least expensive", "most affordable",
+    ),
+    price_ask_signals=(
+        "gia bao nhieu", "bao nhieu tien", "bao nhieu mot", "bao nhieu 1",
+        "gia the nao", "gia la bao nhieu", "bao tien", "het bao nhieu",
+        "tinh tien", "how much", "price of", "what is the price",
+    ),
+    price_structural_anchors=(
+        "dieu ", "khoan ", "chuong ", "diem ", "muc ", "thong tu",
+        "nghi dinh",
+    ),
+    # price_strip_phrases in the parser = list_strip_phrases + this extra tail;
+    # the seed carries ONLY the extra tail, the consumer concatenates them so a
+    # change to list_strip_phrases stays reflected (matches the old
+    # ``_LIST_STRIP_PHRASES + (...)`` construction byte-for-byte).
+    price_strip_phrases=(
+        "giá bao nhiêu", "gia bao nhieu", "bao nhiêu tiền", "bao nhieu tien",
+        "bao nhiêu một", "bao nhieu mot", "hết bao nhiêu", "het bao nhieu",
+        "giá thế nào", "gia the nao", "giá là bao nhiêu", "gia la bao nhieu",
+        "bao nhiêu", "bao nhieu", "giá", "gia", "tiền", "tien", "một", "mot",
+        "là", "la", "thế nào", "the nao", "bao tiền", "bao tien", "của",
+    ),
+    # parse_list_query's secondary count signal-set + category signal-set +
+    # the price-factoid early-return guards (folded forms).
+    list_count_signals=(
+        "bao nhieu", "may loai", "may cai", "dem", "so luong",
+    ),
+    list_category_signals=(
+        "tu van ve", "dich vu ve", "co dich vu",
+    ),
+    price_factoid_guards=(
+        "gia bao nhieu", "bao nhieu tien",
+    ),
+    measure_unit_re=(
+        r"bao nhieu\s+(ngay|nam|thang|tuan|gio|phut|giay|tien|dong|"
+        r"buoi|buoc|lan|phan tram|km|kg|met|lit|km/h|%)"
+    ),
+    intent_patterns=(
+        (
+            "greeting",
+            r"^(xin chào|hi|hello|chào em|chào bạn|chào shop|hey|xin chao)\b",
+        ),
+        (
+            "chitchat",
+            r"^(cảm ơn|cám ơn|thanks|thank you|ok\b|được rồi|tốt lắm|hay lắm|"
+            r"tuyệt|tuyệt vời|đúng rồi|vâng|dạ|oke|okay)\b",
+        ),
+        (
+            "aggregation",
+            r"(có mấy|bao nhiêu|liệt kê|tất cả|toàn bộ|kể tên|các loại|"
+            r"mấy loại|bao gồm những gì|gồm những gì)",
+        ),
+        (
+            "multi_hop",
+            r"(tại sao|vì sao|giải thích|nguyên nhân|lý do|how come|why)",
+        ),
+        (
+            "comparison",
+            r"(so sánh|khác nhau|khác gì|vs\b|versus|difference between|"
+            r"hơn hay kém|tốt hơn|nên chọn)",
+        ),
+    ),
+)
+
+# English signal set — reasonable English equivalents. Token lists are folded
+# (lower-case ascii) to match the consumer's diacritic-fold step (a no-op for
+# plain English). Routes a "below/under X" / "list all" / cheapest query on an
+# English bot; absent signals (e.g. no Vietnamese measure carve-out needed)
+# stay empty → those routes simply do not fire (fall through to vector).
+_EN_ROUTING_SIGNALS = RoutingSignals(
+    count_signals=("how many", "count", "number of"),
+    list_signals=(
+        "list", "list all", "all of", "show all", "everything", "what are",
+        "which ones",
+    ),
+    list_strip_phrases=(
+        "how many", "list all", "list", "show me", "show all", "all of",
+        "everything", "what are the", "what are", "which ones", "which",
+        "the", "a", "an", "of", "for", "please", "can you", "could you",
+        "tell me", "i want", "services", "products",
+    ),
+    below_tokens=(
+        "below", "under", "less than", "lower than", "cheaper than",
+        "at most", "no more than", "max", "< ", "<=",
+    ),
+    above_tokens=(
+        "above", "over", "more than", "greater than", "higher than",
+        "at least", "min", "> ", ">=",
+    ),
+    superlative_max_tokens=(
+        "most expensive", "highest price", "priciest", "dearest",
+        "costliest",
+    ),
+    superlative_min_tokens=(
+        "cheapest", "lowest price", "least expensive", "most affordable",
+    ),
+    price_ask_signals=(
+        "how much", "price of", "what is the price", "what's the price",
+        "cost of", "how much does", "how much is",
+    ),
+    price_structural_anchors=(
+        "article ", "clause ", "section ", "chapter ", "point ",
+        "circular ", "decree ",
+    ),
+    price_strip_phrases=(
+        "how much is", "how much does", "how much", "the price of",
+        "what is the price of", "what's the price of", "price of", "price",
+        "cost of", "cost", "the", "a", "an", "of", "for", "is", "does",
+        "do", "cost",
+    ),
+    list_count_signals=("how many", "number of"),
+    list_category_signals=("services for", "products for", "about"),
+    price_factoid_guards=("how much", "price of"),
+    # English uses an inline-number measure question rather than a fold
+    # collision; no carve-out regex needed → empty (route does not fire).
+    measure_unit_re="",
+    intent_patterns=(
+        ("greeting", r"^(hi|hello|hey|greetings|good morning|good afternoon)\b"),
+        (
+            "chitchat",
+            r"^(thanks|thank you|ok\b|okay|great|awesome|perfect|got it|"
+            r"sounds good|cool)\b",
+        ),
+        (
+            "aggregation",
+            r"(how many|list all|list|all of|everything|which ones|"
+            r"what are the)",
+        ),
+        ("multi_hop", r"(why|how come|explain|reason|because)"),
+        (
+            "comparison",
+            r"(compare|difference between|versus|\bvs\b|better than|"
+            r"which is better|should i choose)",
+        ),
+    ),
+)
+
+# Empty-signal fallback for a truly unknown locale that is NOT seeded and not
+# resolvable to a default — every route absent → vector retrieve. Never
+# mis-routes by construction (all token lists empty, regex empty).
+_EMPTY_ROUTING_SIGNALS = RoutingSignals()
+
+_ROUTING_SIGNALS_BY_CODE: dict[str, RoutingSignals] = {
+    "vi": _VI_ROUTING_SIGNALS,
+    "en": _EN_ROUTING_SIGNALS,
+}
 
 
 # ---------------------------------------------------------------------------
@@ -262,6 +516,7 @@ _VI_PACK = LanguagePack(
         "Em chưa có thông tin chính xác về vấn đề này trong tài liệu. "
         "Anh/chị có thể đặt câu hỏi khác hoặc liên hệ trực tiếp để được hỗ trợ cụ thể hơn ạ."
     ),
+    routing_signals=_VI_ROUTING_SIGNALS,
 )
 
 # ---------------------------------------------------------------------------
@@ -394,6 +649,7 @@ _EN_PACK = LanguagePack(
         "I don't have accurate information on this in the available documents. "
         "Please rephrase your question or contact us directly for more specific assistance."
     ),
+    routing_signals=_EN_ROUTING_SIGNALS,
 )
 
 # ---------------------------------------------------------------------------
@@ -405,6 +661,88 @@ PACKS: dict[str, LanguagePack] = {"vi": _VI_PACK, "en": _EN_PACK}
 def get_pack(language: str = DEFAULT_LANGUAGE) -> LanguagePack:
     """Get language pack. Falls back to Vietnamese if not found."""
     return PACKS.get(language, PACKS[DEFAULT_LANGUAGE])
+
+
+# ---------------------------------------------------------------------------
+# Routing-signal serde + accessor
+# ---------------------------------------------------------------------------
+# Field order is the JSON contract for the DB ``routing_signals`` row. Tuple
+# fields are stored as JSON arrays; intent_patterns as a list of [label, src]
+# pairs; regex sources as plain strings.
+_ROUTING_TUPLE_FIELDS: tuple[str, ...] = (
+    "count_signals", "list_signals", "list_strip_phrases", "below_tokens",
+    "above_tokens", "superlative_max_tokens", "superlative_min_tokens",
+    "price_ask_signals", "price_structural_anchors", "price_strip_phrases",
+    "list_count_signals", "list_category_signals", "price_factoid_guards",
+)
+
+
+def routing_signals_to_json(signals: RoutingSignals) -> str:
+    """Serialize a ``RoutingSignals`` to the canonical DB JSON blob."""
+    payload: dict[str, object] = {
+        f: list(getattr(signals, f)) for f in _ROUTING_TUPLE_FIELDS
+    }
+    payload["measure_unit_re"] = signals.measure_unit_re
+    payload["intent_patterns"] = [list(p) for p in signals.intent_patterns]
+    return json.dumps(payload, ensure_ascii=False, sort_keys=True)
+
+
+def routing_signals_from_json(
+    raw: str, *, fallback: RoutingSignals | None = None
+) -> RoutingSignals:
+    """Hydrate a ``RoutingSignals`` from the DB JSON blob.
+
+    Any malformed / missing field degrades to ``fallback`` (default = the
+    empty-signal object) for that field — never raises, so a corrupt row
+    cannot break routing (it degrades to vector for the affected route).
+    """
+    base = fallback if fallback is not None else _EMPTY_ROUTING_SIGNALS
+    if not raw or not raw.strip():
+        return base
+    try:
+        data = json.loads(raw)
+    except (ValueError, TypeError):
+        return base
+    if not isinstance(data, dict):
+        return base
+
+    def _tuple(key: str) -> tuple[str, ...]:
+        val = data.get(key)
+        if isinstance(val, list) and all(isinstance(x, str) for x in val):
+            return tuple(val)
+        return getattr(base, key)
+
+    raw_patterns = data.get("intent_patterns")
+    if isinstance(raw_patterns, list):
+        patterns = tuple(
+            (str(p[0]), str(p[1]))
+            for p in raw_patterns
+            if isinstance(p, (list, tuple)) and len(p) == 2
+        )
+    else:
+        patterns = base.intent_patterns
+    measure = data.get("measure_unit_re")
+    measure_re = measure if isinstance(measure, str) else base.measure_unit_re
+    return RoutingSignals(
+        **{f: _tuple(f) for f in _ROUTING_TUPLE_FIELDS},
+        measure_unit_re=measure_re,
+        intent_patterns=patterns,
+    )
+
+
+def get_routing_signals(language: str = DEFAULT_LANGUAGE) -> RoutingSignals:
+    """Return the in-memory routing-signal seed for ``language``.
+
+    Boot-guard fallback used by the parser / classifier when the DB-backed
+    pack is unavailable. Unknown locale → ``DEFAULT_LANGUAGE`` seed (vi), so
+    a ``vi`` deployment is always byte-identical to the legacy hard-coded
+    behaviour. A locale explicitly seeded with EMPTY signals routes nothing
+    (vector), never mis-routes.
+    """
+    pack = PACKS.get(language)
+    if pack is not None:
+        return pack.routing_signals
+    return PACKS[DEFAULT_LANGUAGE].routing_signals
 
 
 def language_pack_from_dict(
@@ -457,12 +795,25 @@ def language_pack_from_dict(
         sysprompt_default_rules=rows.get(
             "sysprompt_default_rules", base.sysprompt_default_rules,
         ),
+        # routing_signals stored as a JSON blob under the ``routing_signals``
+        # prompt_key; absent → keep the seed (vi byte-identical, en English).
+        routing_signals=(
+            routing_signals_from_json(
+                rows["routing_signals"], fallback=base.routing_signals
+            )
+            if "routing_signals" in rows
+            else base.routing_signals
+        ),
     )
 
 
 __all__ = [
     "LanguagePack",
+    "RoutingSignals",
     "get_pack",
+    "get_routing_signals",
+    "routing_signals_to_json",
+    "routing_signals_from_json",
     "language_pack_from_dict",
     "PACKS",
     "DEFAULT_LANGUAGE",

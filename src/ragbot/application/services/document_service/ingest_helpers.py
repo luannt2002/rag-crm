@@ -162,7 +162,7 @@ async def _bulk_insert_chunks(
     join. Caller passes the parent document's bot id; we propagate it
     onto every row so the SQL INSERT does not silently drop a row that
     would otherwise violate the constraint and abort the whole batch
-    (live evidence 2026-05-16 — Thông tư 09/2020 stuck DRAFT because
+    (live evidence 2026-05-16 — <a tenant document> stuck DRAFT because
     the previous version of this helper omitted the column).
 
     Args:

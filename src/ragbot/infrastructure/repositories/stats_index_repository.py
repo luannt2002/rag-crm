@@ -285,7 +285,7 @@ class StatsIndexRepository:
         the parser emits ``operation="max"/"min"`` and the route runs
         ``ORDER BY price <DESC|ASC> LIMIT N`` against the clean pre-extracted
         prices — instead of re-parsing raw retrieved chunks, which fails on
-        CSV price rows like ``Laser Carbon,1200000``.
+        CSV price rows like ``Item A,123000``.
 
         Args:
             direction: ``"max"`` → most expensive first; ``"min"`` → cheapest.
@@ -294,7 +294,7 @@ class StatsIndexRepository:
                 ``COALESCE(price_primary, price_secondary)``).
 
         NULL-priced rows are excluded, so a bot whose corpus has no prices
-        (e.g. a legal Thông tư) returns ``[]`` and the caller falls back to
+        (e.g. a legal/regulatory corpus) returns ``[]`` and the caller falls back to
         vector retrieve. Multi-tenant: scoped by ``record_bot_id`` (unique).
         """
         order = "DESC" if direction == "max" else "ASC"
@@ -525,20 +525,20 @@ class StatsIndexRepository:
             rows = result.fetchall()
             # Reverse/token fallback: the forward match (entity name CONTAINS the
             # keyword) misses a GRANULAR entity whose NAME is a word INSIDE the
-            # query — e.g. query "Triệt lông nách combo 10 buổi" vs entity "Nách".
+            # query — e.g. query "Service A variant B combo N units" vs entity "B".
             # When forward finds nothing, match entities whose name is a substring
             # of the query keyword, guarded by a min length so 1-3 char zone words
             # ("Mép", "sâu") can't over-match. Only fires on an EMPTY forward
             # result → cannot regress a working forward lookup. ORDER BY length
             # DESC prefers the most specific (longest) entity name.
             if not rows and kw:
-                # A short zone name ("Mặt"/"Tay"/"Râu", 3 chars) is the TARGET of a
-                # category-qualified query ("triệt lông mặt") but the plain length
+                # A short zone name ("B"/"C"/"D", 3 chars) is the TARGET of a
+                # category-qualified query ("category-word zone-B") but the plain length
                 # guard dropped it AND a CONTAINS match over-picks a category word in
-                # the MIDDLE ("lông"). Accept a short name when the keyword ENDS with
-                # it (trailing = the qualifying zone), and ORDER trailing matches
-                # first, then priced rows — so "triệt lông mặt" → "Mặt" (priced), not
-                # the null-price "lông". Reverse only fires on an empty forward result.
+                # the MIDDLE ("category-word"). Accept a short name when the keyword ENDS
+                # with it (trailing = the qualifying zone), and ORDER trailing matches
+                # first, then priced rows — so "category-word zone-B" → "B" (priced), not
+                # the null-price "category-word". Reverse only fires on empty forward.
                 rev_sql = (
                     "SELECT id, record_document_id, record_chunk_id, entity_name, "
                     "entity_category, price_primary, price_secondary, attributes_json "
@@ -565,7 +565,7 @@ class StatsIndexRepository:
             # Attributes fallback (P9): a code / SKU / stock / date / image link
             # the corpus keeps in a NON-role column lands in attributes_json,
             # which neither the forward name/synonym match nor the reverse match
-            # ever sees — so a "mã 2-R13 155/80 LPD" lookup returned nothing even
+            # ever sees — so a "code AB-12 X/Y Z" lookup returned nothing even
             # though the entity exists. As a LAST resort (forward AND reverse both
             # empty) match the keyword inside the attributes JSON text. Guarded by
             # a min keyword length so a short token cannot over-match every row

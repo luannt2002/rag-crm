@@ -125,8 +125,8 @@ DEFAULT_SYSPROMPT_LEAK_SKIP_INTENTS: Final[tuple[str, ...]] = (
     "chitchat",
 )
 # Stats/structured route: the answer relays an authoritative SQL row whose
-# synthetic chunk is pipe-delimited (e.g. "972000 | code: ... | quantity: 338"),
-# so the LLM REWORDS it into prose ("…giá 972.000đ, hiện còn 338 lốp"). That
+# synthetic chunk is pipe-delimited (e.g. "123000 | code: ... | quantity: 338"),
+# so the LLM REWORDS it into prose ("…giá 123.000đ, hiện còn 338 đơn vị"). That
 # prose is absent from the doc-shingle set (which only covers the literal
 # pipe-blob), so any 24-word overlap with the owner's answer-template sentences
 # in the system_prompt false-fires the leak guard and BLOCKS a correct factoid.
@@ -178,8 +178,8 @@ DEFAULT_CORPUS_CLEAN_EXCERPT_CHARS: Final[int] = 100
 # price-conflict detector. Below this the substring is too generic to be a
 # useful service identifier (e.g. single token "da").
 DEFAULT_CORPUS_CLEAN_SERVICE_MIN_CHARS: Final[int] = 8
-# Default Vietnamese price regex — matches K-suffix shorthand (199K, 1.5M),
-# dotted thousands (1.499.000), comma thousands (1,499,000) and bare 4-7 digit
+# Default Vietnamese price regex — matches K-suffix shorthand (123K, 1.5M),
+# dotted thousands (1.234.000), comma thousands (1,234,000) and bare 4-7 digit
 # numbers. Bot owner can override via --regex on the CLI.
 DEFAULT_CORPUS_CLEAN_PRICE_REGEX: Final[str] = (
     r"\d+[\.,]\d{3}(?:[\.,]\d{3})*|\d+(?:[KkMm])\b|\b\d{4,7}\b"

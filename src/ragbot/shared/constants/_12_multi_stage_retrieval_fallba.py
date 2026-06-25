@@ -71,7 +71,7 @@ DEFAULT_METADATA_LAYER3_LLM_ENABLED: Final[bool] = False
 DEFAULT_BM25_SYMBOL_PHRASE_ENABLED: Final[bool] = True
 # Rank BOOST added to a chunk's sparse score when it matches the symbol/code
 # phrase. The main rank expression scores on the full AND-query, so a chunk
-# holding the exact code but NOT the surrounding words ("195/65R15 về hàng" →
+# holding the exact code but NOT the surrounding words ("A1/B2C3 về hàng" →
 # the FAQ row has the code but not "về hàng") scored 0 and was drowned by
 # near-duplicate noise (e.g. a multilingual manifest whose boilerplate makes
 # every chunk embed alike). A boost well above typical ts_rank values (~0.01–

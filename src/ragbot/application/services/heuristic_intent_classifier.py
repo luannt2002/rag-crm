@@ -21,12 +21,11 @@ from dataclasses import dataclass
 from typing import Final
 
 from ragbot.shared.constants import (
-    INTENT_AGGREGATION,
+    DEFAULT_LANGUAGE,
     INTENT_CHITCHAT_LABEL,
-    INTENT_COMPARISON,
     INTENT_GREETING,
-    INTENT_MULTI_HOP,
 )
+from ragbot.shared.i18n import RoutingSignals, get_routing_signals
 
 
 @dataclass(frozen=True)
@@ -59,54 +58,38 @@ class HeuristicResult:
 # KHÔNG: factoid — factoid is the default fallback; no regex can safely detect
 # "needs RAG" without domain knowledge.
 
-_PATTERN_REGISTRY: list[tuple[str, re.Pattern[str]]] = [
-    # Greeting — high signal, narrow patterns, anchored
-    (
-        INTENT_GREETING,
-        re.compile(
-            r"^(xin chào|hi|hello|chào em|chào bạn|chào shop|hey|xin chao)\b",
-            re.IGNORECASE | re.UNICODE,
-        ),
-    ),
-    # Chitchat — acknowledgement / feedback tokens
-    (
-        INTENT_CHITCHAT_LABEL,
-        re.compile(
-            r"^(cảm ơn|cám ơn|thanks|thank you|ok\b|được rồi|tốt lắm|hay lắm|"
-            r"tuyệt|tuyệt vời|đúng rồi|vâng|dạ|oke|okay)\b",
-            re.IGNORECASE | re.UNICODE,
-        ),
-    ),
-    # Aggregation — enumerating / counting signals
-    (
-        INTENT_AGGREGATION,
-        re.compile(
-            r"(có mấy|bao nhiêu|liệt kê|tất cả|toàn bộ|kể tên|các loại|"
-            r"mấy loại|bao gồm những gì|gồm những gì)",
-            re.IGNORECASE | re.UNICODE,
-        ),
-    ),
-    # Multi-hop — causal / explanatory signals
-    (
-        INTENT_MULTI_HOP,
-        re.compile(
-            r"(tại sao|vì sao|giải thích|nguyên nhân|lý do|how come|why)",
-            re.IGNORECASE | re.UNICODE,
-        ),
-    ),
-    # Comparison — explicit compare signals
-    (
-        INTENT_COMPARISON,
-        re.compile(
-            r"(so sánh|khác nhau|khác gì|vs\b|versus|difference between|"
-            r"hơn hay kém|tốt hơn|nên chọn)",
-            re.IGNORECASE | re.UNICODE,
-        ),
-    ),
-]
+# The Vietnamese intent regex that USED to live inline here are now the ``vi``
+# seed of the language pack (``shared.i18n._VI_ROUTING_SIGNALS.intent_patterns``).
+# ``classify_heuristic`` compiles the registry from a resolved ``RoutingSignals``
+# so a non-Vietnamese bot classifies on ITS locale's patterns. The ``vi`` seed
+# preserves the original regex byte-for-byte → a ``vi`` bot is unchanged. Source
+# of truth = the DB-backed language pack; this in-memory seed is the boot guard.
+_DEFAULT_SIGNALS: Final[RoutingSignals] = get_routing_signals(DEFAULT_LANGUAGE)
+
+# Per-RoutingSignals compiled-registry cache. Keyed by object identity so the
+# hot path compiles each locale's patterns once (the seed objects are module
+# singletons; DB-hydrated packs are cached upstream by LanguagePackService).
+_REGISTRY_CACHE: dict[int, list[tuple[str, re.Pattern[str]]]] = {}
 
 
-def classify_heuristic(query: str) -> HeuristicResult:
+def _compiled_registry(
+    signals: RoutingSignals,
+) -> list[tuple[str, re.Pattern[str]]]:
+    """Return the (label, compiled_re) registry for ``signals`` (cached)."""
+    cached = _REGISTRY_CACHE.get(id(signals))
+    if cached is not None:
+        return cached
+    registry = [
+        (label, re.compile(src, re.IGNORECASE | re.UNICODE))
+        for label, src in signals.intent_patterns
+    ]
+    _REGISTRY_CACHE[id(signals)] = registry
+    return registry
+
+
+def classify_heuristic(
+    query: str, *, signals: RoutingSignals | None = None
+) -> HeuristicResult:
     """Layer 1 intent classify by regex.
 
     Scans the compiled pattern registry in order.  Returns the **first** match
@@ -114,6 +97,11 @@ def classify_heuristic(query: str) -> HeuristicResult:
     distinct intents would match (unlikely but possible) the first wins — the
     caller's LLM fallback path resolves ambiguity when confidence is below
     threshold anyway.
+
+    ``signals`` carries the locale-scoped intent regex (resolved from the bot's
+    language pack). When ``None`` the ``vi`` DEFAULT SEED is used, keeping legacy
+    call sites byte-identical. A locale with no intent patterns matches nothing
+    → returns ``intent=None`` (LLM fallback), never mis-classifies.
 
     Confidence logic:
     - Single pattern match on a greeting/chitchat (anchored) → 0.90 (very
@@ -130,8 +118,9 @@ def classify_heuristic(query: str) -> HeuristicResult:
     if not query or not query.strip():
         return HeuristicResult(intent=None, confidence=0.0, matched_pattern=None)
 
+    sig = signals if signals is not None else _DEFAULT_SIGNALS
     stripped = query.strip()
-    for intent_label, pattern in _PATTERN_REGISTRY:
+    for intent_label, pattern in _compiled_registry(sig):
         if pattern.search(stripped):
             # Greeting/chitchat are anchored → higher signal than mid-string patterns.
             if intent_label in (INTENT_GREETING, INTENT_CHITCHAT_LABEL):

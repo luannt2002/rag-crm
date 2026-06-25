@@ -42,9 +42,11 @@ _PRICE_COUPLING_RE = re.compile(
 
 _NOQA_RE = re.compile(r"#\s*noqa:\s*DN001")
 
-# Measured at guard introduction (2026-06-25), AFTER scrubbing the production
-# doc-UUID leak. Ratchet: these may only DECREASE.
-_BOT_BRAND_BASELINE = 17
+# Measured 2026-06-25 after the full customer-literal scrub. Ratchet: DECREASE-only.
+# Bot/brand is now ZERO — the engine names no single customer; any new reference
+# fails CI. Price-coupling is the remaining Betrayal #1 surface; it shrinks as
+# ADR-0007 (PRICE-index → ATTRIBUTE-index) lands.
+_BOT_BRAND_BASELINE = 0
 _PRICE_COUPLING_BASELINE = 127
 
 

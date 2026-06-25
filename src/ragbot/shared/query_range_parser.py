@@ -21,10 +21,12 @@ from typing import Final
 from ragbot.shared.constants import (
     CODE_QUERY_CONFIDENCE,
     DEFAULT_CODE_QUERY_PATTERN,
+    DEFAULT_LANGUAGE,
     RANGE_QUERY_MIN_CONFIDENCE,
     SUPERLATIVE_QUERY_CONFIDENCE,
     SUMMARY_QUERY_PATTERNS_VI,
 )
+from ragbot.shared.i18n import RoutingSignals, get_routing_signals
 from ragbot.shared.number_format import parse_money_vn as _canonical_parse_money
 
 # ---------------------------------------------------------------------------
@@ -103,44 +105,34 @@ class RangeFilter:
 
 
 # ---------------------------------------------------------------------------
-# Operation-signal detection
+# Locale-scoped signal resolution
 # ---------------------------------------------------------------------------
-
-_COUNT_SIGNALS: Final[tuple[str, ...]] = (
-    "có bao nhiêu",
-    "bao nhieu",
-    "dem",
-    "đếm",
-    "so luong",
-    "số lượng",
-    "count",
-)
-
-_LIST_SIGNALS: Final[tuple[str, ...]] = (
-    "liet ke",
-    "liệt kê",
-    "danh sach",
-    "danh sách",
-    "toan bo",
-    "toàn bộ",
-    "tat ca",
-    "tất cả",
-    "nhung gi",
-    "những gì",
-    "nhung cai",
-    "những cái",
-    "co nhung",
-    "có những",
-    "list",
-)
+# The Vietnamese signal literals that USED to live inline here are now the
+# ``vi`` seed of the language pack (``shared.i18n._VI_ROUTING_SIGNALS``). The
+# parser reads its token lists from a resolved ``RoutingSignals`` object so a
+# non-Vietnamese bot routes on ITS locale's signals. The ``vi`` seed is the
+# DEFAULT (boot guard) used when no signals object is passed — keeping a ``vi``
+# bot byte-identical to the legacy behaviour. Source of truth = the DB-backed
+# language pack; this module-level seed is only the last-resort fallback.
+_DEFAULT_SIGNALS: Final[RoutingSignals] = get_routing_signals(DEFAULT_LANGUAGE)
 
 
-def _detect_operation(folded: str) -> str:
+def _resolve_signals(signals: RoutingSignals | None) -> RoutingSignals:
+    """Return the caller's signals, or the vi DEFAULT SEED when None.
+
+    None preserves the legacy call-site contract (a ``vi`` bot). A locale
+    with empty signal lists routes nothing (vector fallback), never
+    mis-routes.
+    """
+    return signals if signals is not None else _DEFAULT_SIGNALS
+
+
+def _detect_operation(folded: str, signals: RoutingSignals) -> str:
     """Return "count" | "list" | "filter" based on presence of signals."""
-    for sig in _COUNT_SIGNALS:
+    for sig in signals.count_signals:
         if sig in folded:
             return "count"
-    for sig in _LIST_SIGNALS:
+    for sig in signals.list_signals:
         if sig in folded:
             return "list"
     return "filter"
@@ -154,60 +146,12 @@ def _detect_operation(folded: str) -> str:
 # We match on the diacritic-folded copy; money tokens are extracted from
 # the original text so parse_money_vn works correctly on "2tr", "500k" etc.
 
-# Tokens that indicate "below/max":
-_BELOW_TOKENS: Final[tuple[str, ...]] = (
-    "duoi",       # dưới
-    "it hon",     # ít hơn
-    "nho hon",    # nhỏ hơn
-    "thap hon",   # thấp hơn
-    "khong qua",  # không quá
-    "toi da",     # tối đa
-    "max",
-    "< ",
-    "<=",
-)
-
-# Tokens that indicate "above/min":
-_ABOVE_TOKENS: Final[tuple[str, ...]] = (
-    "tren",       # trên
-    "hon",        # hơn (standalone "lớn hơn", "cao hơn")
-    "lon hon",    # lớn hơn
-    "cao hon",    # cao hơn
-    "tu",         # từ (without "đến" — treated as lower bound only)
-    "min",
-    "> ",
-    ">=",
-)
-
-# Price-superlative tokens (diacritic-folded). A superlative carries no numeric
-# bound — it maps to an ORDER BY price DESC/ASC against the stats index. Only
-# unambiguously price-ranking phrases are listed; "tốt nhất" (best) and
-# duration/discount superlatives are intentionally excluded (handled, if at
-# all, by SuperlativeContextEnricher on retrieved chunks). Domain-neutral.
-_SUPERLATIVE_MAX_TOKENS: Final[tuple[str, ...]] = (
-    "dat nhat",        # đắt nhất
-    "mac nhat",        # mắc nhất
-    "cao nhat",        # cao nhất (giá cao nhất)
-    "cao cap nhat",    # cao cấp nhất
-    "dat tien nhat",   # đắt tiền nhất
-    "dat gia nhat",    # đắt giá nhất
-    "most expensive",
-    "highest price",
-    "priciest",
-    "dearest",
-)
-_SUPERLATIVE_MIN_TOKENS: Final[tuple[str, ...]] = (
-    "re nhat",         # rẻ nhất
-    "thap nhat",       # thấp nhất (giá thấp nhất)
-    "re tien nhat",    # rẻ tiền nhất
-    "re gia nhat",     # rẻ giá nhất
-    "phai chang nhat", # phải chăng nhất
-    "binh dan nhat",   # bình dân nhất
-    "cheapest",
-    "lowest price",
-    "least expensive",
-    "most affordable",
-)
+# below/above range tokens + price-superlative tokens are locale-scoped and
+# now live on ``RoutingSignals`` (below_tokens / above_tokens /
+# superlative_max_tokens / superlative_min_tokens). The vi seed preserves the
+# original folded literals byte-for-byte. A superlative carries no numeric
+# bound — it maps to an ORDER BY price DESC/ASC against the stats index.
+# Domain-neutral: tokens are signal data, not engine logic.
 
 # Range pattern: "từ X đến Y" / "X - Y" / "khoảng X"
 _RANGE_FROM_TO_RE: Final[re.Pattern[str]] = re.compile(
@@ -242,20 +186,28 @@ _MIN_BARE_PRICE_VND: Final[int] = 1000
 _DATE_OR_DOCNUM_TAIL_RE: Final[re.Pattern[str]] = re.compile(r"\s*/\s*\d")
 
 
-def parse_range_query(query: str) -> RangeFilter | None:
-    """Detect a price-range pattern in a Vietnamese natural-language query.
+def parse_range_query(
+    query: str, *, signals: RoutingSignals | None = None
+) -> RangeFilter | None:
+    """Detect a price-range pattern in a natural-language query.
 
     Returns a RangeFilter when a range pattern is detected with confidence
     >= RANGE_QUERY_MIN_CONFIDENCE, or None when the query shows no range
     signals (caller falls back to vector retrieve).
+
+    ``signals`` carries the locale-scoped routing-signal lists (resolved
+    from the bot's language pack). When ``None`` the ``vi`` DEFAULT SEED is
+    used, keeping legacy call sites byte-identical. A locale with empty
+    below/above/superlative lists simply detects no bound → returns None.
 
     Does not raise — all parse failures return None.
     """
     if not query or not query.strip():
         return None
 
+    sig = _resolve_signals(signals)
     folded = _ascii_fold(query)
-    operation = _detect_operation(folded)
+    operation = _detect_operation(folded, sig)
 
     # --- 1. "từ X đến Y" / "X - Y" -------------------------------------------
     m_range = _RANGE_FROM_TO_RE.search(folded)
@@ -290,7 +242,7 @@ def parse_range_query(query: str) -> RangeFilter | None:
             )
 
     # --- 3. "dưới X" / "<X" ---------------------------------------------------
-    for token in _BELOW_TOKENS:
+    for token in sig.below_tokens:
         if token in folded:
             money = _find_money_after_token(query, folded, token)
             if money is not None and money > 0:
@@ -303,7 +255,7 @@ def parse_range_query(query: str) -> RangeFilter | None:
                 )
 
     # --- 4. "trên X" / ">X" ---------------------------------------------------
-    for token in _ABOVE_TOKENS:
+    for token in sig.above_tokens:
         if token in folded:
             money = _find_money_after_token(query, folded, token)
             if money is not None and money > 0:
@@ -318,13 +270,13 @@ def parse_range_query(query: str) -> RangeFilter | None:
     # --- 5. superlative "đắt nhất" / "rẻ nhất" (no numeric bound) -------------
     # Checked LAST: an explicit range bound above is more specific and wins.
     # Maps to ORDER BY price DESC (max) / ASC (min) on the stats index.
-    for token in _SUPERLATIVE_MAX_TOKENS:
+    for token in sig.superlative_max_tokens:
         if token in folded:
             return RangeFilter(
                 price_min=None, price_max=None, price_column="any",
                 operation="max", confidence=SUPERLATIVE_QUERY_CONFIDENCE,
             )
-    for token in _SUPERLATIVE_MIN_TOKENS:
+    for token in sig.superlative_min_tokens:
         if token in folded:
             return RangeFilter(
                 price_min=None, price_max=None, price_column="any",
@@ -334,34 +286,16 @@ def parse_range_query(query: str) -> RangeFilter | None:
     return None
 
 
-# Signal/stopword phrases stripped to extract the lookup keyword. Both accented
-# and folded forms so a phrase is removed regardless of how the user typed it.
-_LIST_STRIP_PHRASES: Final[tuple[str, ...]] = (
-    "có bao nhiêu", "co bao nhieu", "bao nhiêu", "bao nhieu",
-    "có mấy loại", "có mấy", "mấy loại", "may loai", "mấy", "may",
-    "liệt kê", "liet ke", "danh sách", "danh sach", "kể tên", "ke ten",
-    "có những", "co nhung", "những gì", "nhung gi", "có gì", "co gi",
-    "tư vấn về", "tu van ve", "dịch vụ về", "dich vu ve",
-    "có dịch vụ", "co dich vu", "tư vấn", "tu van", "cho xem", "show", "list",
-    "dịch vụ", "dich vu", "bên em", "ben em", "cho mình", "cho minh",
-    "cho tôi", "cho toi", "giúp em", "giup em", "tất cả", "tat ca",
-    "loại", "loai", "hết", "với", "voi", "các", "của", "nào", "nao",
-    # Connective fillers that sit between "dịch vụ" and the real keyword
-    # ("có dịch vụ VÀO VỀ da chết", "dịch vụ VỀ da") — left in, they pollute
-    # the ILIKE keyword so it matches nothing → the list route silently falls
-    # back to vector (top-1 chunk) and only ONE service surfaces. Generic VN
-    # function words, domain-neutral.
-    "về", "ve", "vào", "vao",
-    "không", "khong", "có", "co", "ạ", "à", "ra", "mình", "minh",
-    # Store-ownership colloquialisms + help verbs that wrap the real noun in
-    # B2C chat ("Shop có … liệt kê giúp mình") — they polluted the keyword
-    # ("Shop lốp , giúp") so the ILIKE matched nothing → list_all fallback
-    # (oldest rows) missed the answer entity. Domain-neutral function words.
-    "shop", "cửa hàng", "cua hang", "giúp mình", "giup minh", "giúp", "giup",
-)
+# Signal/stopword phrases stripped to extract the lookup keyword now live on
+# ``RoutingSignals.list_strip_phrases`` (vi seed = byte-identical to the old
+# inline literals: both accented + folded forms). Domain-neutral function
+# words; each locale supplies its own stop-word set so the residual ILIKE
+# keyword keeps the real noun.
 
 
-def parse_list_query(query: str) -> RangeFilter | None:
+def parse_list_query(
+    query: str, *, signals: RoutingSignals | None = None
+) -> RangeFilter | None:
     """Detect a list/count/category query and extract its lookup keyword.
 
     "liệt kê dịch vụ tẩy da chết" → keyword "tẩy da chết";
@@ -372,18 +306,20 @@ def parse_list_query(query: str) -> RangeFilter | None:
     record — vector/BM25 retrieve only surfaces top-k, so list/count answers
     are otherwise incomplete). Returns None when no list/category signal is
     present or the residual keyword is too short to be a useful filter.
+
+    ``signals`` is the locale-scoped routing-signal set (default ``vi`` seed).
+    A locale with empty list/count/category signals returns None → vector.
     """
     if not query or not query.strip():
         return None
+    sig = _resolve_signals(signals)
     folded = _ascii_fold(query)
     # A price factoid ("… giá bao nhiêu") is NOT a list/count query — it asks
     # one price, not the full set. Let parse_range_query / vector handle it.
-    if "gia bao nhieu" in folded or "bao nhieu tien" in folded:
+    if any(g in folded for g in sig.price_factoid_guards):
         return None
-    has_list = any(s in folded for s in _LIST_SIGNALS)
-    has_count = any(
-        s in folded for s in ("bao nhieu", "may loai", "may cai", "dem", "so luong")
-    )
+    has_list = any(s in folded for s in sig.list_signals)
+    has_count = any(s in folded for s in sig.list_count_signals)
     # "bao nhiêu NGÀY / NĂM / TIỀN / %" is a factoid MEASURE question (how many
     # days/years/money), NOT a catalog count ("bao nhiêu DỊCH VỤ / SẢN PHẨM").
     # Treating it as a list/count query hijacked it to the catalog name lookup
@@ -391,24 +327,22 @@ def parse_list_query(query: str) -> RangeFilter | None:
     # the policy doc). A "bao nhiêu" immediately followed by a measure unit is
     # NOT a count signal. Domain-neutral: measure units are universal, not a
     # brand/service literal.
-    if re.search(
-        r"bao nhieu\s+(ngay|nam|thang|tuan|gio|phut|giay|tien|dong|"
-        r"buoi|buoc|lan|phan tram|km|kg|met|lit|km/h|%)",
-        folded,
-    ):
-        # buoi (session) / buoc (process step): "quy trình gồm bao nhiêu bước",
-        # "gói dùng tối đa bao nhiêu buổi" are MEASURE factoids whose answer lives
-        # in a prose chunk — routing them to the catalog list/aggregate stats chunk
-        # made the bot refuse a fact it had (the spa process/session miss).
+    # buoi (session) / buoc (process step): "quy trình gồm bao nhiêu bước",
+    # "gói dùng tối đa bao nhiêu buổi" are MEASURE factoids whose answer lives
+    # in a prose chunk — routing them to the catalog list/aggregate stats chunk
+    # made the bot refuse a fact it had (the spa process/session miss). The
+    # measure-unit guard regex is locale-scoped; an empty regex (locale with
+    # no fold collision) disables the carve-out cleanly.
+    if sig.measure_unit_re and re.search(sig.measure_unit_re, folded):
         has_count = False
-    has_cat = any(s in folded for s in ("tu van ve", "dich vu ve", "co dich vu"))
+    has_cat = any(s in folded for s in sig.list_category_signals)
     if not (has_list or has_count or has_cat):
         return None
     # Strip signal/stopword phrases (longest first) from the ORIGINAL query so
     # the residual keyword keeps its diacritics for the ILIKE corpus match.
     # Word-boundary so "hết" is not torn out of "chết" / "có" out of "sóc".
     kw = query
-    for ph in sorted(_LIST_STRIP_PHRASES, key=len, reverse=True):
+    for ph in sorted(sig.list_strip_phrases, key=len, reverse=True):
         kw = re.sub(
             r"\b" + re.escape(ph) + r"\b", " ", kw,
             flags=re.IGNORECASE | re.UNICODE,
@@ -422,31 +356,19 @@ def parse_list_query(query: str) -> RangeFilter | None:
     )
 
 
-# Price-ask signals (folded). A "<entity> giá bao nhiêu" question asks ONE
-# labelled price, so it must route to the name/category structured lookup
-# (1 entity = 1 labelled price → cross-entity conflation is impossible), NOT
-# the vector path where a multi-entity chunk lets the LLM attribute the wrong
-# price. Domain-neutral — keyed on the price-ask SHAPE, not any brand/service.
-_PRICE_ASK_SIGNALS: Final[tuple[str, ...]] = (
-    "gia bao nhieu", "bao nhieu tien", "bao nhieu mot", "bao nhieu 1",
-    "gia the nao", "gia la bao nhieu", "bao tien", "het bao nhieu",
-    "tinh tien", "how much", "price of", "what is the price",
-)
-# Structural anchors that mark a LEGAL/clause reference, not a catalog price.
-_PRICE_STRUCTURAL_ANCHORS: Final[tuple[str, ...]] = (
-    "dieu ", "khoan ", "chuong ", "diem ", "muc ", "thong tu", "nghi dinh",
-)
-# Phrases stripped to isolate the entity keyword (price-ask + list stopwords).
-_PRICE_STRIP_PHRASES: Final[tuple[str, ...]] = _LIST_STRIP_PHRASES + (
-    "giá bao nhiêu", "gia bao nhieu", "bao nhiêu tiền", "bao nhieu tien",
-    "bao nhiêu một", "bao nhieu mot", "hết bao nhiêu", "het bao nhieu",
-    "giá thế nào", "gia the nao", "giá là bao nhiêu", "gia la bao nhieu",
-    "bao nhiêu", "bao nhieu", "giá", "gia", "tiền", "tien", "một", "mot",
-    "là", "la", "thế nào", "the nao", "bao tiền", "bao tien", "của",
-)
+# Price-ask signals + structural anchors + strip phrases are locale-scoped on
+# ``RoutingSignals``. A "<entity> giá bao nhiêu" question asks ONE labelled
+# price, so it must route to the name/category structured lookup (1 entity = 1
+# labelled price → cross-entity conflation is impossible), NOT the vector path
+# where a multi-entity chunk lets the LLM attribute the wrong price.
+# Domain-neutral — keyed on the price-ask SHAPE, not any brand/service. The
+# vi seed reproduces the old ``_PRICE_STRIP_PHRASES = _LIST_STRIP_PHRASES + (...)``
+# construction by concatenating ``list_strip_phrases + price_strip_phrases``.
 
 
-def parse_price_of_entity_query(query: str) -> RangeFilter | None:
+def parse_price_of_entity_query(
+    query: str, *, signals: RoutingSignals | None = None
+) -> RangeFilter | None:
     """Detect a "<entity> giá bao nhiêu" price-of-entity factoid.
 
     Returns ``RangeFilter(operation="keyword", keyword=<entity>)`` so the caller
@@ -458,20 +380,25 @@ def parse_price_of_entity_query(query: str) -> RangeFilter | None:
     superlative is present (``parse_range_query`` owns those), when a legal
     clause anchor is present (Điều/Khoản → not a catalog price), or when the
     residual entity keyword is too short to be a useful lookup.
+
+    ``signals`` is the locale-scoped routing-signal set (default ``vi`` seed).
+    A locale with empty price-ask signals returns None → vector.
     """
     if not query or not query.strip():
         return None
+    sig = _resolve_signals(signals)
     folded = _ascii_fold(query)
-    if not any(s in folded for s in _PRICE_ASK_SIGNALS):
+    if not any(s in folded for s in sig.price_ask_signals):
         return None
     # A numeric range / superlative price question belongs to parse_range_query.
-    if parse_range_query(query) is not None:
+    if parse_range_query(query, signals=sig) is not None:
         return None
     # Legal clause reference, not a catalog item.
-    if any(a in folded for a in _PRICE_STRUCTURAL_ANCHORS):
+    if any(a in folded for a in sig.price_structural_anchors):
         return None
     kw = query
-    for ph in sorted(_PRICE_STRIP_PHRASES, key=len, reverse=True):
+    _price_strip = sig.list_strip_phrases + sig.price_strip_phrases
+    for ph in sorted(_price_strip, key=len, reverse=True):
         kw = re.sub(
             r"\b" + re.escape(ph) + r"\b", " ", kw,
             flags=re.IGNORECASE | re.UNICODE,

@@ -29,7 +29,7 @@ def _slugify_bot_id(raw: str) -> str:
       5. Strip leading/trailing dash
 
     Examples:
-      "thông tư - 09/2020/TT-NHNN" → "thong-tu-09-2020-tt-nhnn"
+      "Tài liệu - A/2020" → "tai-lieu-a-2020"
       "Bot Name 2024!" → "bot-name-2024"
       "   spaces   " → "spaces"
     """
@@ -61,7 +61,7 @@ class CreateBotRequest(BaseModel):
     @classmethod
     def _auto_slugify(cls, v: Any) -> str:
         # Auto-convert any input to URL-safe slug.
-        # "thông tư - 09/2020/TT-NHNN" → "thong-tu-09-2020-tt-nhnn"
+        # "Tài liệu - A/2020" → "tai-lieu-a-2020"
         # Prevents 404 on URL routing when raw input contains spaces / slashes / diacritics.
         if not isinstance(v, str):
             return v

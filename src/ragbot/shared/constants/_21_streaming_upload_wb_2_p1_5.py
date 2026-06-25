@@ -31,12 +31,12 @@ SUBJECT_DOCUMENT_UPLOAD_STREAM: Final[str] = "document.upload_stream.v1"
 DEFAULT_STATS_INDEX_QUERY_LIMIT: Final[int] = 1000
 # Reverse/token keyword fallback (query_by_name_keyword): when the forward match
 # (entity name CONTAINS the keyword) finds nothing, match entities whose NAME is
-# a word INSIDE the query — e.g. query "Triệt lông nách combo" vs entity "Nách".
-# Min entity-name length so 1-3 char zone words ("Mép", "sâu") can't over-match;
+# a word INSIDE the query — e.g. query "Item A variant combo" vs entity "Variant".
+# Min entity-name length so 1-3 char zone words ("Var", "sub") can't over-match;
 # small result cap so a granular price-of-entity lookup stays focused, not a flood.
 DEFAULT_STATS_REVERSE_MATCH_MIN_LEN: Final[int] = 4
 # A SHORTER name is still accepted in the reverse fallback when the keyword ENDS
-# with it — a category-qualified zone like "triệt lông mặt" → zone "Mặt" (3 chars).
+# with it — a category-qualified zone like "Item A sub" → zone "Sub" (3 chars).
 # The trailing position disambiguates the real target (the zone, at the end) from
 # a category word in the MIDDLE ("lông"), which a plain CONTAINS match over-picks.
 # Floor of 3 keeps 1-2 char tokens out; trailing-anchored so noise stays bounded.
@@ -80,13 +80,13 @@ RANGE_QUERY_MIN_CONFIDENCE: Final[float] = 0.7
 # returns a RangeFilter with operation "max"/"min" and null bounds; the stats
 # route then runs ORDER BY price DESC/ASC LIMIT K against the clean
 # document_service_index (not a re-parse of raw retrieved chunks, which fails
-# on CSV price formats like "Laser Carbon,1200000"). Domain-neutral.
+# on CSV price formats like "Item A,1234000"). Domain-neutral.
 SUPERLATIVE_QUERY_CONFIDENCE: Final[float] = 0.8
-# --- Code/spec lookup ("lốp 195/65R15 còn hàng?" → name/category ILIKE) -------
-# A query carrying a product/spec CODE (e.g. "195/65R15", "2-R17", a SKU /
+# --- Code/spec lookup ("mã A1/B2C3 còn hàng?" → name/category ILIKE) -------
+# A query carrying a product/spec CODE (e.g. "A1/B2C3", "2-X17", a SKU /
 # part number) is a single-record lookup: the user wants the row for that
 # exact code (stock / restock-date / price), not a fuzzy vector neighbour
-# (which returns a near-duplicate code's row → wrong tire). When such a code
+# (which returns a near-duplicate code's row → wrong record). When such a code
 # is present and no price/list/superlative signal applies, route to the
 # clean structured index via query_by_name_keyword(code). Domain-neutral:
 # keyed on "a code token is present", never on a bot/brand/corpus literal.
@@ -108,7 +108,7 @@ DEFAULT_STATS_PRICE_OF_ENTITY_ENABLED: Final[bool] = True
 # in context. Not a real DB id (no FK), just a stable structural marker.
 DEFAULT_STATS_SYNTHETIC_CHUNK_ID: Final[str] = "stats_index_synthetic"
 # Spec/product-code token detector for the code-lookup route. A code is an
-# alphanumeric run joined by one of / . - (e.g. 195/65R15, 2-R17, A1.B2) — a
+# alphanumeric run joined by one of / . - (e.g. A1/B2C3, 2-X17, A1.B2) — a
 # format no natural-language word takes. Universal token shape, not corpus
 # data, so it stays domain-neutral. Mirrors the BM25 symbol-phrase token in
 # pgvector_store so the same codes that need exact BM25 matching also route to
@@ -128,7 +128,7 @@ DEFAULT_STATS_SUPERLATIVE_LIMIT: Final[int] = 5
 # would dilute the chunk while keeping normal fields (answer/quantity/date).
 DEFAULT_STATS_ATTR_MAX_CHARS: Final[int] = 120
 # Max WORDS of a surfaced attribute value — a real field (price/date/"30 phút",
-# or a full product name like "Lốp xe LANDSPIDER 195/65R15 91H CITYTRAXX G/P")
+# or a full product name like "Product Item A A1/B2C3 91H Variant G/P")
 # is a short phrase; a mis-captured paragraph is many words. The char cap above
 # (120) is the primary bound; this word cap only skips short-but-wordy free-text
 # noise. Kept generous enough that a real product name / title (≈6-10 words) is

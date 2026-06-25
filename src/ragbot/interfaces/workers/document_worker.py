@@ -351,7 +351,7 @@ async def _handle_document_uploaded_inner(payload: dict[str, Any], container: Co
                 # Google Docs/Sheets viewer URL (``.../edit?gid=N``) → direct
                 # export URL so the fetch receives structured txt/csv, not an
                 # HTML login page. Setting mime/name routes it to the csv/sheets
-                # parser instead of OCR — fixes the xe-3 retry-storm where the
+                # parser instead of OCR — fixes the retry-storm where the
                 # HTML viewer parsed to empty text and looped to DLQ.
                 _export_url = google_link_service.to_export_url(source_url)
                 if _export_url != source_url:

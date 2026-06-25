@@ -161,7 +161,7 @@ DEFAULT_RERANK_CLIFF_GAP_RATIO: Final[float] = 0.35
 # plan_limits.rerank_cliff_absolute_floor.
 DEFAULT_RERANK_CLIFF_ABSOLUTE_FLOOR: Final[float] = 0.05
 # Default 3 (not 1): a single reranker mis-score must not collapse the kept set
-# to one chunk. Step-level forensic (2026-06-05, thong-tu Điều-56) showed the
+# to one chunk. Step-level forensic (2026-06-05, a legal-clause lookup) showed the
 # semantic reranker can under-rank an exact-answer legal/clause chunk that
 # lexical (BM25) ranks #1; with min_keep=1 the cliff then drops it, so the LLM
 # never sees the answer. Keeping >=3 makes the DEFAULT robust for every bot
@@ -186,7 +186,7 @@ DEFAULT_ADAPTIVE_CONTEXT_ENABLED: Final[bool] = False
 DEFAULT_ADAPTIVE_CONTEXT_HIGH_SCORE: Final[float] = 0.85
 DEFAULT_ADAPTIVE_CONTEXT_MAX_N: Final[int] = 3
 # Intents that need WIDE context (every row / both sides) must NOT be pruned —
-# A/B 2026-06-08: pruning aggregation dropped spa combo-price rows (correct
+# A/B 2026-06-08: pruning aggregation dropped combo-price rows (correct
 # -16pp). Synthesis/multi_hop benefit from focus (+4..+6pp); aggregation/
 # comparison do not.
 DEFAULT_ADAPTIVE_CONTEXT_EXEMPT_INTENTS: Final[tuple[str, ...]] = ("aggregation", "comparison")
@@ -212,7 +212,7 @@ INTENT_OUT_OF_SCOPE: Final[str] = "out_of_scope"
 
 # Intents whose answers need EVERY entity/clause chunk (multi-fact): the rerank
 # cliff's gap-cut keeps only the top score-cluster and drops answer chunks
-# (measured: thong-tu multi_hop → only 1 chunk survived). For these intents the
+# (measured: a legal-corpus multi_hop → only 1 chunk survived). For these intents the
 # filter keeps the full reranked set (min_keep = n_in) instead of cutting;
 # factoid/others still cliff normally.
 DEFAULT_RERANK_CLIFF_SKIP_INTENTS: Final[frozenset[str]] = frozenset(

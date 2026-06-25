@@ -32,7 +32,7 @@ def _chunk_table_csv(
 
     NOTE (2026-06-17): a key:value rendering of rows was trialled here to lift
     NL retrieval on price tables; measured neutral-to-slightly-negative on the
-    spa load test (the failing questions are aggregation/numeric — "đắt nhất",
+    price-table load test (the failing questions are aggregation/numeric — "đắt nhất",
     "dưới 500k" — which dense embeddings can't solve via text reformatting), so
     it was reverted. The real fix is a per-table LLM description (RAG-Anything
     Technique 1, O(tables)) or query-time aggregation, not row text format.

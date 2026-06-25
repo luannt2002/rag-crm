@@ -129,8 +129,8 @@ DEFAULT_QUERY_COMPLEXITY_THRESHOLD: Final[float] = 1.2
 # lookup ("Điều 55 ...", "Chương III ...") is a straight retrieve, not a
 # multi-entity fan-out. Without this, the article number inflates the
 # numeric weight → mis-route to the LLM decomposer, whose paraphrase
-# variants drop the structural anchor (UI trace 2026-05-27, thong-tu Chương
-# 3 → refuse SAI). Keyword group is case-insensitive (`(?i:...)`) and
+# variants drop the structural anchor (UI trace 2026-05-27, a legal-corpus
+# Chương 3 lookup → refuse SAI). Keyword group is case-insensitive (`(?i:...)`) and
 # multi-language (VN + EN structural words — NOT domain/brand tokens); the
 # Roman-numeral branch is uppercase-only so legal forms ("Chương III") match
 # while lowercase nouns ("Điều lệ") do NOT false-trigger. Arabic branch
@@ -230,8 +230,8 @@ DEFAULT_MMR_LAMBDA: Final[float] = 0.7
 
 # Per-intent MMR similarity threshold (260525 Bug #10). Default 0.88 is
 # too aggressive for ``aggregation`` queries: row-shape CSV chunks with
-# the same column structure but different data values (e.g. "Mặt,1499000"
-# vs "Râu,1499000") share template-level similarity but represent
+# the same column structure but different data values (e.g. "Item A,123000"
+# vs "Item B,123000") share template-level similarity but represent
 # DISTINCT entities. MMR-dedup collapses them into one chunk → the LLM
 # only sees one example → "1 dịch vụ" answer where 4 was expected.
 #

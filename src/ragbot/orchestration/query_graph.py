@@ -2316,7 +2316,7 @@ def build_graph(
             ]
             # B-1 (STEP-5): ``record_chunk_id`` is now populated, but the precise
             # per-entity chunks are intentionally NOT fetched into the LLM
-            # context — re-feeding raw rows changed answers (spa q11) and is a
+            # context — re-feeding raw rows changed answers (a tenant eval Q) and is a
             # separate quality change (W-I9, Phase C, its own A/B). Context stays
             # pre-B1: the synthetic record if built, else the doc-level fallback
             # below. STEP-5 attribution rides on the entities' ``record_chunk_id``
@@ -2455,7 +2455,7 @@ def build_graph(
                     )
             # LLM CONTEXT = the synthetic clean record only. Do NOT append the
             # raw per-entity source chunks (``linked_chunks``): re-feeding the raw
-            # table rows changed answers (spa COVERAGE 1.00->0.90 in the B-1 A/B)
+            # table rows changed answers (tenant COVERAGE 1.00->0.90 in the B-1 A/B)
             # and reintroduces the variant-blob noise the synthetic route exists
             # to avoid. STEP-5 attribution rides on ``entities`` (each carries
             # ``record_chunk_id``) — the callback writes ``request_chunk_refs``

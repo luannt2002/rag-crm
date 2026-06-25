@@ -146,7 +146,7 @@ DEFAULT_CR_CACHE_WARM_MIN_CHUNKS: Final[int] = 8
 # CR / per-chunk-enrich ROW GATE (2026-06-13). Tabular corpora chunked by
 # ``table_csv`` / ``table_dual_index`` emit one chunk per data row, and each
 # row already carries its column header + key:value structure (e.g.
-# "STT,Tên dịch vụ,Giá\n10,Laser carbon,1.200.000"). The Anthropic
+# "STT,Tên dịch vụ,Giá\n10,Item A,1.234.000"). The Anthropic
 # Contextual-Retrieval lift — and the legacy inline-enrich lift — is designed
 # for PROSE chunks that lose surrounding context; it is ~0 on self-describing
 # rows. Yet those rows dominate chunk count (a 225K-char sheet → hundreds of

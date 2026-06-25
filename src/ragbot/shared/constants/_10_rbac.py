@@ -83,7 +83,7 @@ PROMPT_INJECTION_PATTERNS: Final[tuple[str, ...]] = (
 # DTOs (Pydantic max_length). 5000 chars ≈ 2500 tokens (Vietnamese ~2 char/tok),
 # safely below the ~3000-token reasoning-degradation threshold (RAG-prompt
 # research 2024-25: long personas dilute every rule + cause over-refusal +
-# lost-in-the-middle). Was 20000 — that let test-spa bloat to 17K. Move
+# lost-in-the-middle). Was 20000 — that let a tenant bot bloat to 17K. Move
 # pricing/facts/domain data to corpus docs, not the persona.
 MAX_SYSTEM_PROMPT_CHARS: Final[int] = 5_000
 
@@ -204,7 +204,7 @@ DEFAULT_GENERATION_TEMPERATURE: Final[float] = 0.0
 # or make a discrete decision (routing/intent/grade/grounding) — randomness adds
 # no value and makes retrieval (hence the final answer) non-reproducible run to
 # run. Measured 2026-06-09: at the inherited ~0.3 the SAME multi-fact question
-# intermittently refused vs answered (spa Q7) because the reformulated sub-query
+# intermittently refused vs answered because the reformulated sub-query
 # shifted which chunks reached generation. Forcing 0.0 makes the pipeline
 # reproducible. HyDE is excluded on purpose (light variation aids recall).
 DEFAULT_DETERMINISTIC_TEMPERATURE: Final[float] = 0.0

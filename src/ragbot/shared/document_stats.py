@@ -96,10 +96,10 @@ def _is_discourse_opener(label: str) -> bool:
 # Money-format regex patterns — Vietnamese currency conventions.
 #
 # Supported formats (all produce an integer VND value):
-#   "1.499.000"  — dotted thousands (Vietnamese locale)
-#   "1,499,000"  — comma thousands (Western locale)
-#   "1499000"    — bare integer (4-8 digits)
-#   "1tr499"     — Vietnamese shorthand: 1 triệu + 499 (= 1,000,000 + 499,000)
+#   "1.234.000"  — dotted thousands (Vietnamese locale)
+#   "1,234,000"  — comma thousands (Western locale)
+#   "1234000"    — bare integer (4-8 digits)
+#   "1tr234"     — Vietnamese shorthand: 1 triệu + 234 (= 1,000,000 + 234,000)
 #   "499k"       — k-suffix (kilos = ×1,000)
 #   "1.5tr"      — decimal-triệu (1,500,000)
 #   "1M"         — M-suffix (= ×1,000,000 for English-language sheets)
@@ -142,7 +142,7 @@ _NAME_COL_TOKENS: frozenset[str] = frozenset({
 _CATEGORY_COL_TOKENS: frozenset[str] = frozenset({
     "nhom", "danh muc", "category", "loai", "vung", "type", "khu vuc",
     # G1 synonyms — group/stub/brand columns. "kho"/"ten kho" = warehouse stub
-    # (NOT the product name) — pins the xe-1 'Tên kho' ⊥ 'Tên hàng' disambiguation.
+    # (NOT the product name) — pins the 'Tên kho' ⊥ 'Tên hàng' disambiguation.
     "kho", "ten kho", "kho hang", "phan loai", "thuong hieu", "nhan hieu",
     "hang san xuat", "hsx", "brand", "group", "nhom san pham",
 })
@@ -203,11 +203,11 @@ def parse_money_vn(text: str) -> int | None:
     """Parse Vietnamese money format to integer VND.
 
     Supported:
-      - "1.499.000" / "1,499,000"  → dotted/comma thousands
-      - "1499000"                  → bare integer (4-8 digits)
-      - "1tr499"                   → 1,000,000 + 499,000 = 1,499,000
+      - "1.234.000" / "1,234,000"  → dotted/comma thousands
+      - "1234000"                  → bare integer (4-8 digits)
+      - "1tr234"                   → 1,000,000 + 234,000 = 1,234,000
       - "1.5tr"                    → 1,500,000
-      - "499k" / "499K"            → 499,000
+      - "234k" / "234K"            → 234,000
       - "1M"                       → 1,000,000
 
     Returns None when:
@@ -306,7 +306,7 @@ def _split_cols(line: str) -> list[str]:
     # or a quote, NEVER ``|`` — but its cells may contain a LITERAL pipe (e.g. a
     # synonym/Aliases column "a; b | code: X | price: 684000"). Gating on a leading
     # pipe stops that literal from hijacking the split (which glued name+price into
-    # one over-long cell → name-guard reject → 0 entities, the xe-3 price-loss bug).
+    # one over-long cell → name-guard reject → 0 entities, the price-loss bug).
     # Non-pipe lines fall through to the RFC-4180 CSV branch below.
     if line.lstrip().startswith("|"):
         parts = [c.replace("\\|", "|").strip() for c in re.split(r"(?<!\\)\|", line)]
@@ -414,7 +414,7 @@ def _column_roles(
     # G1 cascade: each header scores against each role by exact (100) >
     # phrase-substring (60) > whole-word (30). A header binds to its strictly-best
     # role; a TIE (e.g. "Tên kho" scoring name via "ten" AND category via "kho")
-    # is SKIPPED so an ambiguous stub can't steal a role (the xe-1 fix). Exact-vocab
+    # is SKIPPED so an ambiguous stub can't steal a role. Exact-vocab
     # still wins outright, so the happy-case path is byte-identical.
     _roles_def = (
         ("name", _NAME_COL_TOKENS),

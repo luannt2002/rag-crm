@@ -512,7 +512,7 @@ async def _build_pipeline_config(cfg_svc: SystemConfigService, bot_cfg: Any) -> 
         "understand_skip_below_tokens": raw.get("understand_skip_below_tokens", None),
         "understand_use_structured_output": raw.get("understand_use_structured_output", None),
         # Only audit-heavy bots need [chunk_id] citation markers in answers.
-        # Off by default — flow/script bots (spa, sales) shouldn't emit
+        # Off by default — flow/script bots shouldn't emit
         # brackets to end users.
         "citation_marker_required": bool(raw.get("citation_marker_required", False)),
         "reranker_enabled": bool(raw.get("reranker_enabled", True)),

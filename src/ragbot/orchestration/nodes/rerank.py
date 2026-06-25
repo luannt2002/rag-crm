@@ -261,7 +261,7 @@ async def rerank(
                 _gap = float(_pcfg(state, "rerank_cliff_gap_ratio", DEFAULT_RERANK_CLIFF_GAP_RATIO))
                 _mink = int(_pcfg(state, "rerank_cliff_min_keep", DEFAULT_RERANK_CLIFF_MIN_KEEP))
                 # Multi-fact intents need every entity/clause chunk — the gap-cut
-                # drops answer chunks (e.g. thong-tu multi_hop → 1 survived). Keep
+                # drops answer chunks (e.g. a legal corpus multi_hop → 1 survived). Keep
                 # the full reranked set for these intents instead of cliff-cutting.
                 _cliff_skip = _pcfg(state, "rerank_cliff_skip_intents", None)
                 _cliff_skip = (

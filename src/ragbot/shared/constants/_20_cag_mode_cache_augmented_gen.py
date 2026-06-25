@@ -247,7 +247,7 @@ DEFAULT_INGEST_MIN_LEAF_EMBED_COVERAGE: Final[float] = 0.8
 # processing. WITHOUT a time bound this becomes PERMANENT: once a replay is
 # marked 'processed' (on publish-to-stream) the doc is hidden forever — so a
 # replay whose downstream ingest then FAILED leaves the doc stuck in DRAFT with
-# no further sweep (observed: xe-3). Bounding the suppression to this cooldown
+# no further sweep (observed in a tenant ingest). Bounding the suppression to this cooldown
 # turns permanent-stuck into retry-with-backoff: after the window a still-stuck
 # doc is swept again. 1 h >> a full ingest (parse+chunk+embed), so a healthy
 # in-flight ingest is never double-replayed.

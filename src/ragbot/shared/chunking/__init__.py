@@ -376,7 +376,7 @@ def _prefix_section_headings(text: str, chunks: list[str]) -> list[str]:
     """Prepend each chunk's active markdown section heading when the splitter cut
     it off (Anthropic Contextual Retrieval + AdapChunk B3).
 
-    A "## Dịch vụ triệt lông" title and the table under it can land in different
+    A "## Mục Item A" title and the table under it can land in different
     chunks after a size-based split, stranding the table with no service context.
     For every chunk we locate its position in the source, find the nearest
     preceding ``##`` heading, and prepend it when the chunk does not already start
@@ -546,7 +546,7 @@ def smart_chunk(
 
     # Re-attach each section's markdown heading to any chunk the splitter severed
     # it from, so every chunk is self-describing (Anthropic Contextual Retrieval +
-    # AdapChunk B3): a "## Dịch vụ triệt lông" table stays linked to its service so
+    # AdapChunk B3): a "## Mục Item A" table stays linked to its section so
     # both the embedding AND the stats extractor can bind the row to its section.
     # No-op when the doc carries no markdown headings.
     if strategy != "hdt" and "#" in text:

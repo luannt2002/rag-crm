@@ -259,7 +259,7 @@ def _resolve_parent_headings(text: str, chunk: str) -> list[str]:
 
     Walks the original ``text`` up to and including the chunk's body so
     a section heading that lives at the top of the chunk itself (e.g.
-    ``## Triệt lông`` followed by the chunk's pricing rows) still
+    ``## Item A`` followed by the chunk's pricing rows) still
     surfaces as a parent — semantically it's the breadcrumb for
     everything below it.
 

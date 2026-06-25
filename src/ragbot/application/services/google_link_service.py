@@ -196,7 +196,7 @@ def to_export_url(url: str) -> str:
     """Rewrite a Google Docs/Sheets *viewer* URL (``.../edit?gid=N``) to its
     direct ``export`` URL (txt/csv). Pure, no I/O — the worker fetch path calls
     this BEFORE fetching so a Google Sheets link ingests as structured CSV
-    instead of an HTML login page (the xe-3 retry-storm root cause: the viewer
+    instead of an HTML login page (the retry-storm root cause: the viewer
     URL returned HTML, Kreuzberg OCR'd it → "empty after parse" → misclassified
     transient → retry-storm). Returns the URL unchanged when it is not a
     recognised Google Docs/Sheets link.

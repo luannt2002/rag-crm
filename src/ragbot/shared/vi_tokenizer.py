@@ -23,14 +23,14 @@ from ragbot.shared.constants import (
 logger = structlog.get_logger(__name__)
 
 # Product/spec codes that underthesea would shatter into loose tokens
-# ("195/65R15" → "195 / 65R15", "2-R17" → "2 - R17"). We mask them with a
+# ("A1/B2C3" → "A1 / B2C3", "2-X17" → "2 - X17"). We mask them with a
 # pure-letter placeholder, segment, then restore — so a code stays ONE BM25
 # token in both the corpus index and the query. Domain-neutral: any
-# separator-joined alphanumeric or digit+letter run (tire spec, SKU, part
+# separator-joined alphanumeric or digit+letter run (spec code, SKU, part
 # number, "91H"). Plain numbers (no letter / no separator) are NOT matched, so
 # prices and years tokenize normally.
 _CODE_TOKEN_RE = re.compile(
-    r"[A-Za-z0-9]+(?:[/.\-][A-Za-z0-9]+)+"   # 195/65R15, 2-R17, 1.200.000
+    r"[A-Za-z0-9]+(?:[/.\-][A-Za-z0-9]+)+"   # A1/B2C3, 2-X17, 1.234.000
     r"|[0-9]+[A-Za-z]+[A-Za-z0-9]*"          # 91H, 245R17
 )
 

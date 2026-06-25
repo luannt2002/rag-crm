@@ -213,7 +213,7 @@ def detect_vn_structural_anchor(query: str) -> tuple[str, str] | None:
         detect_vn_structural_anchor('Chương 3 nói gì') == ('Chương', '3')
         detect_vn_structural_anchor('Điều 55') == ('Điều', '55')
         detect_vn_structural_anchor('Mục III và Điều 22') is None  # multi-anchor
-        detect_vn_structural_anchor('giá triệt lông') is None
+        detect_vn_structural_anchor('giá Item A') is None
 
     Multi-anchor queries return None (orchestrator should NOT pre-filter —
     too restrictive; let normal retrieve handle).

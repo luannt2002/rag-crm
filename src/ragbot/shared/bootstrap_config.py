@@ -161,7 +161,7 @@ _ALLOWED_KEYS: frozenset[str] = frozenset(
         # 260525 Bug #10 — per-intent MMR similarity threshold.
         # Aggregation queries need looser dedup so row-shape CSV chunks
         # with the same column structure but different data values
-        # (e.g. multiple price rows at "1499000") survive MMR.
+        # (e.g. multiple price rows at "123000") survive MMR.
         "mmr_similarity_threshold_by_intent",
         # 260526 T2-CostPerf — per-intent skip flags for rewrite +
         # multi_query. Lightweight intents skip both LLM calls (~3.5s

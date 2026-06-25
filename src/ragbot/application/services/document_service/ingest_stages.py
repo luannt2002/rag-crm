@@ -740,7 +740,7 @@ class _StageChunkMixin:
                 # atomic row per chunk (dual_index also adds whole-table group
                 # chunks). Orphan-merge would fold short rows (< orphan_threshold
                 # chars) back into a multi-row blob, re-introducing the cross-row
-                # price conflate bug (spa-07). Keep row-atomic strategies intact.
+                # price conflate bug. Keep row-atomic strategies intact.
                 if _chunking_strategy in (
                     "table_csv", "table_dual_index", "parser_preserve",
                 ):

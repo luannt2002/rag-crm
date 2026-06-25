@@ -57,7 +57,7 @@ async def rewrite(
             raise InvariantViolation("LLM runtime not configured for node=rewriting")
         query = state["query"]
         # Thread last 2 history pairs into rewrite so multi-turn pronouns
-        # ("có ưu đãi không" after "triệt lông") resolve correctly.
+        # ("có ưu đãi không" after "<a service-name query>") resolve correctly.
         # Empty history → user_content stays the raw query, byte-identical
         # to pre-2026-05-27 behaviour for first-turn requests.
         _rw_history = state.get("conversation_history", []) or []
