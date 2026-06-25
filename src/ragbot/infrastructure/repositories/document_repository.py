@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime as _dt
+from typing import Any
 
 from sqlalchemy import select, text
 
@@ -46,8 +47,23 @@ def _row_to_document(row: DocumentModel) -> Document:
         acl=tuple(row.acl or ()),
         created_at=row.created_at,
         updated_at=row.updated_at,
-        metadata=dict(row.metadata_json or {}),
+        # ``has_raw_content`` is a DERIVED, non-persisted marker so the rechunk
+        # precondition (source_url OR stored raw_content) can be checked without
+        # loading the (potentially large) raw_content body into the entity. It is
+        # stripped before persist in ``_document_to_row`` so it never round-trips
+        # into ``metadata_json``.
+        metadata={
+            **dict(row.metadata_json or {}),
+            "has_raw_content": bool(row.raw_content),
+        },
     )
+
+
+def _persistable_metadata(meta: dict[str, Any]) -> dict[str, Any]:
+    """Drop derived/non-persisted markers before writing ``metadata_json`` so a
+    load→save round-trip never pollutes stored metadata (e.g. ``has_raw_content``
+    added by ``_row_to_document`` for the rechunk precondition check)."""
+    return {k: v for k, v in (meta or {}).items() if k != "has_raw_content"}
 
 
 def _document_to_row(doc: Document, *, workspace_id: WorkspaceId) -> DocumentModel:
@@ -72,7 +88,7 @@ def _document_to_row(doc: Document, *, workspace_id: WorkspaceId) -> DocumentMod
         version=doc.version,
         content_hash=doc.content_hash,
         acl=list(doc.acl),
-        metadata_json=dict(doc.metadata),
+        metadata_json=_persistable_metadata(doc.metadata),
     )
 
 
@@ -110,7 +126,7 @@ class SqlAlchemyDocumentRepository(TenantScopedRepository, DocumentRepositoryPor
                 existing.version = document.version
                 existing.content_hash = document.content_hash
                 existing.acl = list(document.acl)
-                existing.metadata_json = dict(document.metadata)
+                existing.metadata_json = _persistable_metadata(document.metadata)
             await session.commit()
 
     async def get_by_id(

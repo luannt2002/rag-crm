@@ -107,8 +107,13 @@ class Document:
     def __post_init__(self) -> None:
         if not self.tool_name:
             raise InvariantViolation("Document.tool_name is required")
-        if not self.source_url:
-            raise InvariantViolation("Document.source_url is required")
+        # ``source_url`` is NOT required: a bytes-uploaded document legitimately
+        # has no URL (its content lives in the ``raw_content`` column). Requiring
+        # it here rejected every bytes-upload on entity load, breaking
+        # rechunk-by-id for those docs. Whether the document has a REBUILDABLE
+        # content source (source_url OR raw_content) is a rechunk precondition,
+        # validated at the use-case layer (``_assert_reingestable``) which has DB
+        # access — it is not a construction-time domain invariant.
 
     # --- State machine ------------------------------------------------------
     def _transition(self, target: DocumentState) -> Document:

@@ -41,9 +41,15 @@ def _assert_reingestable(doc: object) -> None:
     source_url = (getattr(doc, "source_url", "") or "").strip()
     metadata = getattr(doc, "metadata", None) or {}
     raw_content = ""
+    has_raw = False
     if isinstance(metadata, dict):
         raw_content = (metadata.get("raw_content") or "").strip()
-    if not source_url and not raw_content:
+        # ``has_raw_content`` is the repo-derived presence marker — raw_content
+        # lives in a column, not metadata_json, so a bytes-uploaded doc has no
+        # ``metadata["raw_content"]`` body but DOES have stored content the
+        # worker reuses. Either signal proves the doc is rebuildable.
+        has_raw = bool(metadata.get("has_raw_content"))
+    if not source_url and not raw_content and not has_raw:
         raise InvariantViolation(
             f"document {getattr(doc, 'id', '?')} has no usable content source "
             "(empty source_url and no raw_content) — refusing to wipe chunks",
