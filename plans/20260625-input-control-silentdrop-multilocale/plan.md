@@ -5,9 +5,15 @@
 > **Nguồn**: design doc `docs/dev/INPUT_DATA_CONTROL_FLOW_DESIGN.md` §4/§6 + [[INPUT_CONTROL_ROOT_CAUSE_3PHILOSOPHIES_20260625]] + tldw ADAPT #1/#2/#3 + `z-luannt-system-design.txt`.
 > **Tier**: T1 (input-control → coverage). **Stance**: EVOLVE, không REWRITE. Domain-neutral, zero-hardcode, DB-seeded, HALLU=0.
 
-## QUYẾT ĐỊNH KIẾN TRÚC (chốt cho plan này — ADR-worthy, xem mục 6)
+## QUYẾT ĐỊNH KIẾN TRÚC (đã LOCK — 2 ADR)
 
-**CONSTRAIN vs ABSORB → chọn NORMALIZE-to-IR.** KHÔNG ném sở-thú-parser/OCR kiểu tldw (unmaintainable, 0 role-semantic). KHÔNG chỉ reject (quá hẹp). Giữ mô hình **mọi format → 1 normalizer riêng → 1 Unified IR (structured-markdown) → checker gate**. Ragbot ĐÃ ở mô hình này ~70% (registry đã có `excel/docx/google_sheets/pdf/kreuzberg/markdown/vlm` — verified). Việc cần = **đào sâu NORMALIZER + nối CHECKER**, KHÔNG thêm format.
+**[ADR-0005] CONSTRAIN vs ABSORB → NORMALIZE-to-IR.** KHÔNG ném sở-thú-parser/OCR (unmaintainable, 0 role-semantic). KHÔNG chỉ reject (quá hẹp). Mọi format → 1 normalizer riêng → 1 Unified IR → checker advisory. Ragbot đã ~70% (registry `excel/docx/google_sheets/pdf/kreuzberg/markdown/vlm`). Việc cần = **đào sâu NORMALIZER + nối CHECKER advisory**, KHÔNG thêm format. Khách upload raw, **hệ thống tự normalize** (khách 0 thao tác); DATA thiếu → **báo owner**, không silent, không chặn.
+
+**[ADR-0006] Column-role = minimal-universal + structural + per-bot custom_vocabulary — KHÔNG hardcode role per-domain.** Engine KHÔNG cần biết "cột này là gì". 3 tầng precedence:
+- **T2 per-bot `bots.custom_vocabulary`** (owner khai `{"column_roles":{...}}`) — authoritative, CLAUDE.md dòng 303. *(cột + `vocabulary_expander.py` đã có)*
+- **T1 structural inference** (0 vocab): NAME = cột unique+text-dài-nhất (confidence-gated); NUMERIC = range-queryable. Không chắc → fall-through, để T2 override.
+- **T3 generic labelled attribute**: mọi cột khác → `attributes_json` nhãn=header, search-by-label. *(đã có, proof: N4 "Ngày về" 80%)*
+- NAME = role universal DUY NHẤT bắt buộc; price/category/aliases = helper degrade-graceful. **CẤM thêm role per-domain** (stock/date/RAM/Điều...). Frozenset vi cũ → DEFAULT SEED `locale=vi` trong DB, không nguồn-sự-thật-code.
 
 ---
 
@@ -22,11 +28,16 @@
 | sync/async split + Redis Streams + 5 worker | `embedded_workers.py` (2-action) |
 | size guard fail-fast REJECT | `ingest_core.py:376-378` (`max_ingest_content_chars`) |
 | cliff filter · corpus_version cache-bust · decompose · HDT breadcrumb | (case study 1-4 trong system-design = đã có) |
+| **G1 column-role cascade** (exact>substring>word + misalign fallback) | **SHIPPED `7324145`** (75 test green) |
+| reranker provider/model align (was DEAD system-wide) | **SHIPPED `cf7f09b`** (giải thích N3 warranty 92%) |
+| ADR-0005 NORMALIZE-to-IR · ADR-0006 column-role | `c701abb` + ADR-0006 (Accepted) |
+| xe re-test categorized 40Q: **44% → 72%** | `56ad018` |
 
 | Gap THẬT còn lại (scope plan này) | Evidence |
 |---|---|
-| **G1** role-vocab exact-match (không fuzzy/substring) | `document_stats.py:172-179, 307-328` |
-| **G2** KHÔNG multi-locale (vi-only + vài EN lẻ) | `document_stats.py` 0 locale awareness |
+| ~~G1 exact-match~~ → **DONE** (`7324145`) | — |
+| ~~G2 locale-frozenset~~ → **HỦY** (ADR-0006: dùng structural + custom_vocabulary, không frozenset per-locale) | — |
+| **T2/T1/T3** role 3-tier (đọc custom_vocabulary + structural infer + harden generic-attr search) | ADR-0006 |
 | **G3** U5 enrich SKIP cho table row → chunk bảng không breadcrumb | `ingest_stages_enrich.py:190` `should_skip_row_enrich` |
 | **G4** checker offline-only, ingest KHÔNG surface warning | verified: `check_happy_case` chỉ self-import, chưa wired |
 | **G-OOM** chỉ REJECT file lớn, **không map-reduce SPLIT** → 224KB→2643 chunk OOM | `ingest_core.py:376` reject-only; README known gap |
@@ -55,13 +66,18 @@
 - **Reproduce harness**: chạy `check_happy_case.py` trên 1 fixture đa-locale → confirm cột bị demote.
 - Gate: tất cả test trên **FAIL** trước khi sang Phase 1.
 
-### Phase 1 — Multi-locale + fuzzy column-role (G1+G2)
-- **Schema**: bảng/seed `column_role_tokens(locale, role, token)` (alembic mới) — tokens hiện tại migrate thành `locale='vi'`; thêm `locale='en'` seed. Domain-neutral, tracked alembic (KHÔNG psql).
-- **Resolver**: `document_stats._column_roles()` đọc token theo locale (detect từ doc-profile) + **substring/fuzzy match** (normalized contains, ví dụ `ten hang` contains `ten`), tie-break theo độ dài match. Giữ exact-match ưu tiên 1.
-- **Locale detect**: thêm char-range detector nhẹ (pattern từ tldw `multilingual.py:75-116`, **không** pull `langdetect`) → trả locale cho resolver. Land ở doc-profile.
-- **Money parser** (G2 phụ): nới `_MONEY_UNIT_RE` cho `$`/`€` prefix + `1,234.56` decimal-comma-Western (config-driven, `tabular_markdown.py:40-69`).
-- Files: `shared/document_stats.py`, `shared/tabular_markdown.py`, doc-profile, `shared/constants` (default locale), alembic seed, `scripts/check_happy_case.py` (sync token source — đã import chung vocab).
-- Test: Phase-0 EN/vi-variant test PASS.
+### Phase 1 — Column-role 3-tier (RESHAPE theo ADR-0006)
+- **G1 cascade = ✅ DONE** (`7324145`): exact > phrase-substring > word + tie-skip + misalign fallback. **GIỮ làm matching-engine** cho cả 3 tầng; 75 test green. KHÔNG bỏ.
+- **T2 — đọc `bots.custom_vocabulary["column_roles"]`** (authoritative): khớp header → role do owner khai. Land: `document_stats._column_roles()` nhận `custom_vocab` param; lift từ `vocabulary_expander.py` (đã có). **Wins over T1/T3.**
+- **T1 — structural inference (0 vocab, conservative)**: NAME = cột unique+text-dài-nhất (confidence-gated, không chắc → skip); NUMERIC = mostly-số → range-queryable. Land: `document_stats.py` (mở rộng positional fallback hiện có).
+- **T3 — generic labelled attribute** (đã có): củng cố **search-by-label** cho query nhắm-nhãn ("tồn kho của X" → label "Tồn kho" + entity X). Verify `query_by_name_keyword`/synthetic-chunk surface attributes searchable.
+- **Vi-frozenset → DEFAULT SEED `locale=vi` (DB)**: KHÔNG nguồn-sự-thật-code. Alembic seed `column_role_tokens(locale, role, token)`; migrate frozenset hiện tại vào `locale=vi`.
+- Files: `shared/document_stats.py`, `vocabulary_expander.py` (reuse), alembic seed, `scripts/check_happy_case.py` (sync source).
+- Test: header phrased khác (vi/EN) PASS (đã green); + owner custom_vocab override PASS; + structural NAME-infer trên sheet không-vocab PASS; + label-targeted attribute query PASS.
+
+### ~~Phase~~ G2 locale-frozenset → **HỦY** (thay bằng ADR-0006)
+- Per-locale role-frozenset trong code = vẫn hardcode domain-assumption. **Bỏ.** Đa-ngôn-ngữ giải bằng DEFAULT SEED theo locale (DB) + per-bot `custom_vocabulary`, KHÔNG frozenset code per-locale.
+- Money parser nới `$`/`€`/decimal-comma vẫn giữ (kỹ thuật, không phải role) — config-driven `tabular_markdown.py:40-69`.
 
 ### Phase 2 — U5 breadcrumb cho table rows (G3) — ADAPT tldw #1
 - **Helper thuần** (`shared/chunking/breadcrumb.py`): port *thuật toán level-stack* từ `structure_aware.py:711-722` (KHÔNG port code/loguru/except) → từ heading ancestry sinh chuỗi `# Doc > ## Section`. Deterministic = HALLU-safe.
@@ -137,20 +153,21 @@
 - Long-context mode kiểu NotebookLM cho bot nhỏ → ADR riêng (hướng c).
 - Worker autoscaling / priority-queue noisy-neighbor → ops/infra (không phải code core).
 
-## 6. ADR cần viết (hard-to-reverse + real-trade-off)
-- **ADR-input-control**: ✅ ĐÃ VIẾT + Accepted — `docs/adr/0005-normalize-to-ir-input-philosophy.md`.
-  Khóa: NORMALIZE-to-IR (hệ thống tự normalize, KHÔNG bắt khách viết lại format); phân biệt FORMAT (không
-  giới hạn, auto-normalize) vs DATA-CONTENT (thiếu thì không đẻ ra được → advisory cho owner); checker =
-  advisory KHÔNG chặn. Lý do lock: anh xoay quanh quyết định này nhiều lần = load-bearing.
+## 6. ADR (đã LOCK)
+- **ADR-0005** ✅ Accepted (`c701abb`) — NORMALIZE-to-IR: hệ thống tự normalize (khách 0 viết lại format); FORMAT không giới hạn (auto) vs DATA-CONTENT thiếu (advisory, không đẻ ra được); checker advisory KHÔNG chặn.
+- **ADR-0006** ✅ Accepted (`docs/adr/0006-column-role-structural-and-custom-vocab.md`) — Column-role = T2 per-bot `custom_vocabulary` > T1 structural infer > T3 generic labelled attribute. NAME = role universal duy nhất; CẤM thêm role per-domain (stock/date/RAM/Điều...). Lý do lock: anh xoay quanh nhiều lần = load-bearing; chặn đúng lúc em suýt thêm role domain-coupled.
 
-## 7. Thứ tự ưu tiên đề xuất (impact, rẻ→đắt)
-1. **Source-fix** 4 sheet xe → 1 catalog WIDE + cột Tồn (data-tier, rẻ nhất, đòn bẩy cao nhất — ngoài code).
-2. Phase 5 G-Linearize (diệt Nhóm B HALLU).
-3. Phase 1 G1+G2 multi-locale role (mở input đa ngôn ngữ).
-4. Phase 2 G3 breadcrumb table (ADAPT tldw #1).
-5. Phase 7 G-Wire checker (hết silent success).
-6. Phase 6 G-OOM split (chống sập khi scale).
-7. Phase 3 G4 surface warning · Phase 8 G-Batch · Phase 4 tokenizer (T2 defer).
+## 7. Thứ tự ưu tiên (RESHAPE — honest, theo ADR-0006)
+
+**Honest (rule#0):** xe 72% ≈ TRẦN DATA thật. N5/N2 fail = bot **từ chối ĐÚNG** data nó không có (HALLU-safe), KHÔNG phải code-bug. Lever đẩy xe = **data (owner upload sheet thiếu) hoặc advisory**, KHÔNG phải thêm role. So 72% với NotebookLM là **không công bằng** (khác bộ data).
+
+1. **G4/G-Wire advisory** — ingest báo owner "cột Tồn/Date/Ảnh không có trong source" → owner BIẾT vì sao, hết silent. *(đúng "control input" anh muốn; code-fix ĐÚNG)*
+2. **G-Linearize** row có nhãn **generic** (`"Tên=X | Ngày về=28/11"`) — domain-neutral, giúp MỌI bot, diệt Nhóm B HALLU.
+3. **ADR-0006 T2+T3** — đọc `custom_vocabulary` + harden generic-attr search-by-label (cho car/legal/BĐS/phone, không enumerate).
+4. **ADR-0006 T1** structural NAME-infer (conservative).
+5. Phase 2 G3 breadcrumb table (ADAPT tldw #1).
+6. Phase 6 G-OOM split (chống sập khi scale) · Phase 8 G-Batch · Phase 4 tokenizer (T2 defer).
+7. **Owner-action** (ngoài code): upload sheet tồn-kho/ảnh/date thật → N5/N2 nhảy ngay (chứng minh code đã sẵn sàng).
 
 ---
 

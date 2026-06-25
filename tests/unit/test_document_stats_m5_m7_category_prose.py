@@ -53,12 +53,18 @@ def test_m7_keeps_priced_row_even_if_a_cell_ends_with_period() -> None:
 
 
 def test_real_short_product_codes_survive() -> None:
-    # No over-broad numbered-name filter — real SKUs ending in digits are KEPT.
+    # Role-aware (G1): when a distinct "Tên hàng" NAME column exists, the entity
+    # NAME is the product name and the "Mã hàng"/SKU column is preserved as a
+    # SEARCHABLE attribute (never silently dropped). The regression-guard intent —
+    # short SKUs ending in digits are KEPT — holds: they survive in attributes_json.
     content = (
         "Mã hàng, Tên hàng, Giá\n"
         "A68, Lốp xe NEOTERRA, 1500000\n"
         "RHP-A68, Lốp xe RHINO, 1800000\n"
     )
-    names = [n for n, _ in _names_cats(content)]
-    assert "A68" in names, f"A68 wrongly dropped: {names}"
-    assert "RHP-A68" in names, f"RHP-A68 wrongly dropped: {names}"
+    ents = parse_table_chunks([{"content": content}])
+    names = [e.name for e in ents]
+    assert names == ["Lốp xe NEOTERRA", "Lốp xe RHINO"], f"name col mis-bound: {names}"
+    skus = {str(v) for e in ents for v in e.attributes.values()}
+    assert "A68" in skus, f"A68 SKU dropped from attributes: {skus}"
+    assert "RHP-A68" in skus, f"RHP-A68 SKU dropped from attributes: {skus}"

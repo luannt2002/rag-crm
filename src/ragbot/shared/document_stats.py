@@ -252,13 +252,18 @@ class ParsedEntity:
     aliases: str | None = None
 
 
-def _is_header_row(cols: list[str]) -> bool:
+def _is_header_row(
+    cols: list[str], declared_labels: frozenset[str] | set[str] = frozenset()
+) -> bool:
     """Heuristic: return True if this row looks like a column-label header.
 
     Rules:
-    1. At least one cell must exactly match a known header token (after
-       accent normalisation). Exact-match avoids false positives like
-       "Service A" matching the "service" token.
+    1. At least one cell must exactly match a known header token (after accent
+       normalisation) OR a per-bot owner-declared column label (``declared_labels``,
+       already normalised). Exact-match avoids false positives like "Service A"
+       matching the "service" token; the declared set lets a FULLY-custom domain
+       (phone "Model/RAM/Pin", legal "Điều/Khoản") whose headers match no built-in
+       token still be recognised as a header so the owner's ``column_roles`` apply.
     2. No cell may contain a parseable money value — real data rows have
        prices; header rows have only column labels.
     """
@@ -270,7 +275,7 @@ def _is_header_row(cols: list[str]) -> bool:
             # Data row (has a price cell) → not a header
             return False
         normalised = _normalise(col.strip())
-        if normalised in _HEADER_EXACT_TOKENS:
+        if normalised in _HEADER_EXACT_TOKENS or normalised in declared_labels:
             has_label_match = True
     return has_label_match
 
@@ -350,7 +355,44 @@ def _role_match_score(token: str, words: set[str], role_tokens: frozenset[str]) 
     return best
 
 
-def _column_roles(header: list[str]) -> dict[str, Any]:
+# Per-bot ``custom_vocabulary["column_roles"]`` role-name vocabulary (ADR-0006
+# Tier 2). The owner declares what a column MEANS — the engine stays domain-neutral
+# (it never hardcodes "RAM" or "Tồn kho"). Free-form owner role strings are folded
+# to the four internal roles; ``attribute`` is an explicit "no special role, keep it
+# a generic searchable attribute" that also SUPPRESSES inference on that column.
+_CUSTOM_ROLE_ALIASES: dict[str, str] = {
+    "name": "name",
+    "value": "price", "price": "price",
+    "category": "category",
+    "aliases": "aliases", "alias": "aliases",
+    "attribute": "attribute", "attr": "attribute",
+}
+
+
+def _normalise_custom_roles(custom_roles: dict[str, str] | None) -> dict[str, str]:
+    """Fold an owner ``{header_label: role}`` map to ``{norm_label: internal_role}``.
+
+    Both the header label and the role string are accent/case folded so the owner
+    can write free-form ("Giá bán" → "Value"). An unknown role string is dropped
+    (that column falls through to inference), never raised — a typo in a per-bot
+    config must not abort ingest. Domain-neutral: code knows the four ROLE names,
+    never the owner's column meanings.
+    """
+    out: dict[str, str] = {}
+    if not custom_roles:
+        return out
+    for label, role in custom_roles.items():
+        if not label or not isinstance(role, str):
+            continue
+        canon = _CUSTOM_ROLE_ALIASES.get(_normalise(role.strip()))
+        if canon:
+            out[_normalise(str(label).strip())] = canon
+    return out
+
+
+def _column_roles(
+    header: list[str], custom_roles: dict[str, str] | None = None
+) -> dict[str, Any]:
     """Assign each header column a ROLE by its normalised token: the NAME column, a
     CATEGORY/stub column, the PRICE column(s), and an ALIASES/synonym column. Lets a
     data row bind its entity to the right column instead of blindly taking col-0 —
@@ -360,7 +402,15 @@ def _column_roles(header: list[str]) -> dict[str, Any]:
     becomes a searchable key. SOTA cell-role (Microsoft TATR / Docling row-header).
     Returns ``{"name": idx|None, "category": idx|None, "price": [idx, ...],
     "aliases": idx|None}``.
+
+    Role resolution is a 3-tier cascade (ADR-0006), precedence high→low:
+      * Tier 2 — per-bot ``custom_roles`` (owner-declared) is AUTHORITATIVE and wins
+        over inference; the engine stays domain-neutral (it reads the declaration,
+        it does not hardcode column meanings).
+      * Tier 1 — structural/vocab inference (the G1 cascade below).
+      * Tier 3 — every other column → generic ``attributes`` (downstream default).
     """
+    declared = _normalise_custom_roles(custom_roles)
     # G1 cascade: each header scores against each role by exact (100) >
     # phrase-substring (60) > whole-word (30). A header binds to its strictly-best
     # role; a TIE (e.g. "Tên kho" scoring name via "ten" AND category via "kho")
@@ -372,14 +422,31 @@ def _column_roles(header: list[str]) -> dict[str, Any]:
         ("aliases", _ALIASES_COL_TOKENS),
         ("price", _PRICE_COL_TOKENS),
     )
-    name_idx: int | None = None
-    cat_idx: int | None = None
-    alias_idx: int | None = None
+    # ``price`` is a LIST (multiple price columns); name/category/aliases are
+    # single-valued, first-wins. One ``_bind`` ladder is shared by both tiers so the
+    # Tier-2 and Tier-1 assignment can't drift (and keeps the branch count low).
+    single_idx: dict[str, int | None] = {"name": None, "category": None, "aliases": None}
     price_idxs: list[int] = []
+
+    def _bind(role: str, i: int) -> None:
+        if role == "price":
+            price_idxs.append(i)
+        elif single_idx.get(role) is None:
+            single_idx[role] = i
+
     for i, cell in enumerate(header):
         token = _normalise(cell.strip()) if cell else ""
         if not token:
             continue
+        # Tier 2 (authoritative): owner-declared role wins outright over inference.
+        # ``attribute`` is an explicit no-role → skip (keeps it a generic attribute
+        # AND suppresses any inferred role for that column).
+        forced = declared.get(token)
+        if forced is not None:
+            if forced != "attribute":
+                _bind(forced, i)
+            continue
+        # Tier 1: structural/vocab inference (G1 cascade).
         words = set(token.split())
         scores = {role: _role_match_score(token, words, toks) for role, toks in _roles_def}
         top = max(scores.values())
@@ -388,18 +455,10 @@ def _column_roles(header: list[str]) -> dict[str, Any]:
         winners = [r for r, s in scores.items() if s == top]
         if len(winners) > 1:
             continue  # ambiguous (name⊥category tie) → bind nothing, avoid mis-pick
-        role = winners[0]
-        if role == "price":
-            price_idxs.append(i)
-        elif role == "name" and name_idx is None:
-            name_idx = i
-        elif role == "category" and cat_idx is None:
-            cat_idx = i
-        elif role == "aliases" and alias_idx is None:
-            alias_idx = i
+        _bind(winners[0], i)
     return {
-        "name": name_idx, "category": cat_idx,
-        "price": price_idxs, "aliases": alias_idx,
+        "name": single_idx["name"], "category": single_idx["category"],
+        "price": price_idxs, "aliases": single_idx["aliases"],
     }
 
 
@@ -631,11 +690,19 @@ def _is_prose_row(cols: list[str]) -> bool:
     return non_empty[-1].endswith(_STATS_SENTENCE_END)
 
 
-def parse_table_chunks(chunks: list[dict]) -> list[ParsedEntity]:
+def parse_table_chunks(
+    chunks: list[dict], custom_roles: dict[str, str] | None = None
+) -> list[ParsedEntity]:
     """Extract structured entities from a list of CSV/table chunks.
 
     Each chunk dict is expected to have at minimum:
         {"content": "<chunk text>", ...}
+
+    ``custom_roles`` is the per-bot ``custom_vocabulary["column_roles"]`` map
+    (owner-declared ``{header_label: role}``, ADR-0006 Tier 2). It is AUTHORITATIVE
+    over header inference so a domain whose columns the engine can't infer (phone:
+    "RAM"/"Pin", real-estate: "Diện tích") still binds NAME/value correctly without
+    the engine hardcoding any domain vocabulary.
 
     Heuristic flow per chunk:
     1. Check if chunk has delimiter characters (skip pure prose).
@@ -648,6 +715,9 @@ def parse_table_chunks(chunks: list[dict]) -> list[ParsedEntity]:
     Returns a flat list of ParsedEntity across all input chunks.
     """
     entities: list[ParsedEntity] = []
+    # Owner-declared labels let a fully-custom header (no built-in token match) still
+    # be recognised so Tier-2 ``custom_roles`` actually apply at ingest.
+    _declared_labels = frozenset(_normalise_custom_roles(custom_roles))
 
     for chunk_idx, chunk in enumerate(chunks):
         # Prefer the RAW pre-enrichment chunk text when present: the persisted
@@ -696,10 +766,10 @@ def parse_table_chunks(chunks: list[dict]) -> list[ParsedEntity]:
             if not cols:
                 continue
 
-            # Detect header row (exact token match, no prices)
-            if _is_header_row(cols):
+            # Detect header row (exact token / owner-declared label match, no prices)
+            if _is_header_row(cols, _declared_labels):
                 header = cols
-                roles = _column_roles(cols)
+                roles = _column_roles(cols, custom_roles)
                 stub_fill = None  # new table → reset rowspan forward-fill
                 continue
 
@@ -746,6 +816,77 @@ def parse_table_chunks(chunks: list[dict]) -> list[ParsedEntity]:
                 entities.append(entity)
 
     return entities
+
+
+def analyze_table_headers(
+    chunks: list[dict], custom_roles: dict[str, str] | None = None
+) -> dict[str, Any]:
+    """Domain-neutral ingest data-quality ADVISORY (ADR-0005 — advisory, NOT blocking).
+
+    Walks the same header rows ``parse_table_chunks`` detects and, using the SAME
+    role resolver (``_column_roles`` → Tier-2 owner ``custom_roles`` + Tier-1 G1
+    inference), reports for the owner:
+
+      * ``has_name_column`` — did ANY table bind a NAME column? ``False`` is the real
+        coverage risk (entities can't be name-keyed); the owner should declare a NAME
+        role in ``custom_vocabulary["column_roles"]``.
+      * ``unassigned_columns`` — header labels that bound NO role AND the owner did
+        NOT declare → they fall to a generic searchable attribute (Tier 3). FYI only:
+        the data is NOT dropped; the owner declares a role only if they want
+        name/price/category behaviour for that column.
+      * ``tables_seen`` — number of header rows detected.
+
+    Never raises on bad input, never blocks ingest, never drops data. The engine
+    assumes NO column meanings — it reports the owner's own header labels back.
+    """
+    declared = _normalise_custom_roles(custom_roles)
+    declared_labels = frozenset(declared)
+    unassigned: list[str] = []
+    seen_unassigned: set[str] = set()
+    has_name = False
+    tables_seen = 0
+
+    for chunk in chunks:
+        content: str = chunk.get("raw_chunk") or chunk.get("content", "") or ""
+        for line in content.splitlines():
+            if _is_separator_line(line):
+                continue
+            cols = _split_cols(line)
+            if not cols or not _is_header_row(cols, declared_labels):
+                continue
+            tables_seen += 1
+            roles = _column_roles(cols, custom_roles)
+            if roles.get("name") is not None:
+                has_name = True
+            # A header cell is "assigned" when it holds a role index OR the owner
+            # declared it (incl. an explicit 'attribute' the owner chose) — those are
+            # intentional and must not be reported back as a surprise.
+            assigned_idx: set[int] = set()
+            if roles.get("name") is not None:
+                assigned_idx.add(roles["name"])
+            if roles.get("category") is not None:
+                assigned_idx.add(roles["category"])
+            if roles.get("aliases") is not None:
+                assigned_idx.add(roles["aliases"])
+            assigned_idx.update(roles.get("price") or [])
+            for idx, cell in enumerate(cols):
+                if idx in assigned_idx:
+                    continue
+                label = (cell or "").strip()
+                token = _normalise(label)
+                if not token or token.isdigit():
+                    continue  # empty / pure-number cell — not a labelled column
+                if token in declared:
+                    continue  # owner-declared (e.g. 'attribute') — intentional
+                if label not in seen_unassigned:
+                    seen_unassigned.add(label)
+                    unassigned.append(label)
+
+    return {
+        "has_name_column": has_name,
+        "unassigned_columns": unassigned,
+        "tables_seen": tables_seen,
+    }
 
 
 def aggregate_summary(entities: list[ParsedEntity]) -> dict[str, Any]:

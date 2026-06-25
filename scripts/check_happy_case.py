@@ -29,12 +29,25 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 from ragbot.shared.chunking import smart_chunk  # noqa: E402
 from ragbot.shared.constants import DEFAULT_TABLE_STRATEGY  # noqa: E402
 from ragbot.shared.document_stats import (  # noqa: E402
+    _ALIASES_COL_TOKENS,
+    _CATEGORY_COL_TOKENS,
+    _HEADER_EXTRA_TOKENS,
     _NAME_COL_TOKENS,
     _PRICE_COL_TOKENS,
     _normalise,
     parse_table_chunks,
 )
 from ragbot.shared.tabular_markdown import rows_to_structured_markdown  # noqa: E402
+
+# Every header token that maps to a recognised ROLE (name/category/price/aliases) or a
+# structural non-role label (ordinal/id). A header column whose normalised token is in
+# NONE of these is silently dumped to attributes_json at ingest (unsearchable) — the
+# checker flags it so the owner renames to a canonical token. Domain-neutral: imported
+# from the parser's single-source vocabulary, no per-bot literal.
+_RECOGNISED_COL_TOKENS: frozenset[str] = (
+    _NAME_COL_TOKENS | _CATEGORY_COL_TOKENS | _PRICE_COL_TOKENS
+    | _ALIASES_COL_TOKENS | _HEADER_EXTRA_TOKENS
+)
 
 
 def _ingest_table_chunks(content: str) -> list[dict]:
@@ -68,6 +81,35 @@ def _header_role(md: str, tokens: frozenset[str]) -> bool:
     return False
 _GIANT_CELL = 200   # a cell longer than this is prose, not a catalog field
 _PROSE_CELL = 80
+
+
+def _unassigned_header_cols(md: str) -> list[str]:
+    """Return header cells whose normalised token maps to NO recognised role.
+
+    Reads the FIRST pipe-table header row (the row before the ``| --- |`` separator,
+    or — when no separator — the first non-separator pipe row). A header cell whose
+    ``_normalise`` token is not in ``_RECOGNISED_COL_TOKENS`` is dumped to
+    attributes_json at ingest (unsearchable). Empty / pure-number / numbered-only cells
+    are skipped (they are not labelled columns). Domain-neutral: token-set membership.
+    """
+    for ln in md.splitlines():
+        s = ln.strip()
+        if not s.startswith("|"):
+            continue
+        if set(s) <= set("|-: "):
+            continue  # separator row — header is the row before, already returned
+        cells = [c.strip() for c in s.strip("|").split("|")]
+        unassigned: list[str] = []
+        for c in cells:
+            if not c:
+                continue
+            tok = _normalise(c)
+            if not tok or tok.isdigit():
+                continue
+            if tok not in _RECOGNISED_COL_TOKENS:
+                unassigned.append(c)
+        return unassigned
+    return []
 
 
 class Card:
@@ -116,6 +158,21 @@ def check_sheet(
     else:
         cards.append(Card(None, "header clarity", "no clear name/price header",
                           "add a header row: 'Tên, Giá' (or Tên dịch vụ / Đơn giá)"))
+
+    # C2b — column-role coverage. A header column whose token maps to NO role
+    # (name/category/price/aliases) is silently dumped to attributes_json at ingest →
+    # unsearchable. Tell the owner to rename it to a canonical token. A synonym/search
+    # column should be renamed to 'Aliases' (now a first-class role).
+    unassigned = _unassigned_header_cols(md)
+    if not unassigned:
+        cards.append(Card(True, "column roles", "every header column maps to a role"))
+    else:
+        cols = ", ".join(f"'{c}'" for c in unassigned)
+        cards.append(Card(None, "column roles",
+                          f"{len(unassigned)} column(s) map to no role → "
+                          f"dumped to attributes (unsearchable): {cols}",
+                          "rename to a canonical header — Tên / Nhóm / Giá / Aliases "
+                          "(a synonym/keyword column → 'Aliases')"))
 
     # C3 — entity density = the GROUND TRUTH of "did extraction succeed". A row that
     # parses to a clean entity is atomic regardless of how long an aux column (Aliases,

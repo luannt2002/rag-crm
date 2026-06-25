@@ -1,0 +1,621 @@
+{
+  "_description": "Load-test detail cho bot chinh-sach-xe — evidence per câu, scoring để TRỐNG cho agent Claude đọc chấm.",
+  "_field_guide": {
+    "question": "Câu hỏi gửi tới bot.",
+    "reference_facts": "Keyword/số BẮT BUỘC phải có trong answer (golden must-contain, từ scenario.expect).",
+    "answer": "Câu BOT THỰC SỰ trả lời (output RAG).",
+    "answer_type": "blocked/cache_hit/... — loại output.",
+    "latency_ms": "Thời gian trả lời (ms).",
+    "tokens": "prompt/completion/cached + cache_hit_ratio (CR prompt-cache).",
+    "intent": "Intent pipeline phát hiện.",
+    "decomposed": "Multi-hop: câu có bị tách sub-query không.",
+    "cache_status": "hit/miss/bypassed (semantic cache).",
+    "n_chunks_used": "Số chunk graded đưa vào LLM.",
+    "score_max": "Score chunk cao nhất (chất lượng retrieval).",
+    "top_chunks_retrieved": "Chunk bot lấy về + đưa LLM (doc, chunk_index, score, preview) — NGUỒN câu trả lời.",
+    "answer_source_chunk": "Chunk trong CORPUS thật chứa đáp án (tìm qua DB). in_retrieved=có vào top-K không; in_corpus=corpus có không.",
+    "expect_in_answer": "reference_facts có trong answer không (PASS).",
+    "expect_in_retrieved": "reference_facts có trong chunk đưa LLM không.",
+    "prelim_verdict": "Verdict RULE-BASED sơ bộ (gợi ý, KHÔNG phải điểm cuối).",
+    "fail_step": "Tầng lỗi pin từ evidence (RETRIEVAL/FILTER/GENERATION/HALLU/DATA).",
+    "claude_verdict": "[TRỐNG] Agent Claude điền sau khi đọc: ✅CHUẨN/🟡GENERATION/🔴RETRIEVAL/🟠HALLU/⚪DATA.",
+    "claude_notes": "[TRỐNG] Agent Claude điền: mạnh/yếu, đúng/thiếu/sai, vì sao."
+  },
+  "verdict_legend": {
+    "✅ CHUẨN": "chunk retrieved + LLM answered correctly (đủ + đúng)",
+    "🟡 GENERATION": "chunk đúng vào LLM nhưng LLM trả thiếu/sai/lược bỏ fact",
+    "🔴 RETRIEVAL": "chunk chứa đáp án CÓ trong corpus nhưng KHÔNG vào top-K",
+    "🟠 HALLU": "bịa — claim không grounded (trap answered)",
+    "⚪ DATA": "corpus KHÔNG có chunk chứa đáp án (golden có thể stale)"
+  },
+  "bot": "chinh-sach-xe",
+  "workspace_id": "xe",
+  "run": {
+    "stamp": "20260623b",
+    "n_questions": 14,
+    "prelim_coverage": 0.857,
+    "prelim_hallu": "1/2",
+    "p95_latency_ms": 13630,
+    "fail_step_rollup": {
+      "RETRIEVAL": 1,
+      "REFUSE": 1,
+      "HALLU": 1
+    }
+  },
+  "questions": [
+    {
+      "id": "q01",
+      "category": "hoi_tham",
+      "question": "Chào shop, tư vấn giúp mình với",
+      "reference_facts": null,
+      "is_trap": false,
+      "answer": "Dạ em chào anh/chị ạ! Em là trợ lý tư vấn lốp xe của Nam Phát, chuyên phân phối lốp Landspider và Rovelo. Anh/chị cho em biết quy cách lốp hoặc nhu cầu cụ thể để em tư vấn và hỗ trợ tốt nhất nhé ạ!",
+      "answer_type": "answered",
+      "latency_ms": 5696,
+      "tokens": {
+        "prompt": 3231,
+        "completion": 68,
+        "cached": 3072,
+        "cache_hit_ratio": null
+      },
+      "intent": "greeting",
+      "decomposed": false,
+      "cache_status": "bypassed",
+      "n_chunks_used": 1,
+      "top_k": 20,
+      "score_max": 0.0,
+      "top_chunks_retrieved": [
+        {
+          "doc": "xe-1.csv",
+          "chunk_id": "019ef446",
+          "score": 0.0,
+          "preview": ",Tên kho,Mã hàng,Tên hàng,,,,,, ,Kho lốp LANDSPIDER,2-ZR20 315/35 LPD,Lốp xe LANDSPIDER 315/35ZR20 110WXL CITYTRAXX H/P,26,,https://drive.google.com/drive/folders/1SlN2_Qr5jpaq78f0kztPl0azLOTZ_tWR?usp=drive_link,https://lh3.google.com/u/0/d"
+        }
+      ],
+      "answer_source_chunk": {
+        "in_corpus": null,
+        "preview": "",
+        "in_retrieved": false
+      },
+      "expect_in_answer": false,
+      "expect_in_retrieved": false,
+      "prelim_verdict": "✅ CHUẨN",
+      "fail_step": "",
+      "claude_verdict": "",
+      "claude_notes": ""
+    },
+    {
+      "id": "q02",
+      "category": "liet_ke_san_pham",
+      "question": "Shop có những loại lốp nào, liệt kê giúp mình",
+      "reference_facts": "CITYTRAXX",
+      "is_trap": false,
+      "answer": "Dạ, anh/chị tham khảo danh sách các loại lốp Landspider và Rovelo bên em đang có như sau ạ:\n\n- Lốp Rovelo 155/70R13 RHP-A68 giá 630.000đ/lốp, còn 138 lốp.\n- Lốp Rovelo 155R12C RCMX+ giá 774.000đ/lốp, còn 151 lốp.\n- Lốp Rovelo 155R13C RCM-X+ giá 972.000đ/lốp, còn 15 lốp.\n- Lốp Rovelo 165/60R14 RHP-A68 giá 648.000đ/lốp, còn 144 lốp.\n- Lốp Rovelo 165/65R13 RHP-A68 giá 648.000đ/lốp, còn 48 lốp.\n- Lốp Rovelo 165/65R14 RHP-A68 giá 675.000đ/lốp, còn 589 lốp.\n- Lốp Rovelo 165/70R13 RHP-A68 hiện hết hàng.\n- Lốp Rovelo 165R13C RCM-X+ giá 882.000đ/lốp, còn 2 lốp.\n- Lốp Rovelo 175/50R15 RHP-A68 giá 783.000đ/lốp, còn 321 lốp.\n- Lốp Rovelo 175/65R14 RHP-A68 giá 684.000đ/lốp, còn 333 lốp.\n- Lốp Rovelo 175/70R13 RHP-A68 giá 720.000đ/lốp, còn 16 lốp.\n- Lốp Rovelo 175/70R14 RHP-A68 giá 729.000đ/lốp, còn 305 lốp.\n- Lốp Rovelo 175R13C 8PR RCM-X+ hiện hết hàng.\n- Lốp Rovelo 185/60R14 RHP-A68 giá ",
+      "answer_type": "answered",
+      "latency_ms": 11947,
+      "tokens": {
+        "prompt": 11461,
+        "completion": 450,
+        "cached": 3072,
+        "cache_hit_ratio": null
+      },
+      "intent": "aggregation",
+      "decomposed": false,
+      "cache_status": "bypassed",
+      "n_chunks_used": 1,
+      "top_k": 1,
+      "score_max": 1.0,
+      "top_chunks_retrieved": [
+        {
+          "doc": "stats_index",
+          "chunk_id": "stats_in",
+          "score": 1.0,
+          "preview": "Lốp Rovelo 155/70R13 RHP-A68: 630000 | Mã: 2-R13 155/70 RHP-A68 | Giá: 630000 | Ảnh: https://drive.google.com/drive/folders/1kXkgy0A6GOsLD-N0oJz6bytItoA6y5Hg?usp=drive_link | Số lượng: 138 Lốp Rovelo 155R12C RCMX+: 774000 | Mã: 2-R12C155/12"
+        }
+      ],
+      "answer_source_chunk": {
+        "in_corpus": true,
+        "preview": ",Tên kho,Mã hàng,Tên hàng,,,,,,\n,Kho lốp LANDSPIDER,2-R13 155/80 LPD,Lốp xe LANDSPIDER 155/80R13 79T CITYTRAXX G/P,26,,https://drive.google.com/drive/u/1/folders/12ataSHws-NzWS7492uVEq5OqdB7PD7sx,,,\n,",
+        "in_retrieved": false
+      },
+      "expect_in_answer": false,
+      "expect_in_retrieved": false,
+      "prelim_verdict": "🔴 RETRIEVAL",
+      "fail_step": "RETRIEVAL",
+      "claude_verdict": "",
+      "claude_notes": ""
+    },
+    {
+      "id": "q03",
+      "category": "soi_san_pham",
+      "question": "Lốp CITYTRAXX H/T có đặc điểm gì?",
+      "reference_facts": "CITYTRAXX",
+      "is_trap": false,
+      "answer": "Dạ, trong tài liệu hiện tại em chưa có thông tin chi tiết về đặc điểm kỹ thuật cụ thể của lốp CITYTRAXX H/T ạ. Tuy nhiên, đây là dòng lốp Landspider với nhiều quy cách đa dạng, phù hợp cho xe ô tô, có sẵn hàng với số lượng khá lớn và giá tham khảo từ khoảng 1.413.000đ đến hơn 2.600.000đ tùy quy cách.\n\nAnh/chị cho em biết quy cách lốp hoặc nhu cầu sử dụng cụ thể để em tư vấn kỹ hơn và báo giá chính xác nhé ạ?",
+      "answer_type": "answered",
+      "latency_ms": 7738,
+      "tokens": {
+        "prompt": 6292,
+        "completion": 130,
+        "cached": 3072,
+        "cache_hit_ratio": null
+      },
+      "intent": "factoid",
+      "decomposed": false,
+      "cache_status": "bypassed",
+      "n_chunks_used": 1,
+      "top_k": 1,
+      "score_max": 1.0,
+      "top_chunks_retrieved": [
+        {
+          "doc": "stats_index",
+          "chunk_id": "stats_in",
+          "score": 1.0,
+          "preview": "Lốp xe LANDSPIDER 215/70R16 100H CITYTRAXX H/T: 1413000 | Mã: 2-R16 215/70 LPD | Giá: 1413000 | Ngày: 26 | Ảnh: https://drive.google.com/drive/folders/1lOLMQew3upJZ5MZTZK1uw42N2w0232ne?usp=drive_link | Số lượng: 36 Lốp xe LANDSPIDER 215/70R"
+        }
+      ],
+      "answer_source_chunk": {
+        "in_corpus": true,
+        "preview": ",Tên kho,Mã hàng,Tên hàng,,,,,,\n,Kho lốp LANDSPIDER,2-R13 155/80 LPD,Lốp xe LANDSPIDER 155/80R13 79T CITYTRAXX G/P,26,,https://drive.google.com/drive/u/1/folders/12ataSHws-NzWS7492uVEq5OqdB7PD7sx,,,\n,",
+        "in_retrieved": true
+      },
+      "expect_in_answer": true,
+      "expect_in_retrieved": true,
+      "prelim_verdict": "✅ CHUẨN",
+      "fail_step": "",
+      "claude_verdict": "",
+      "claude_notes": ""
+    },
+    {
+      "id": "q04",
+      "category": "hoi_theo_size",
+      "question": "Có lốp size 185/55R16 không?",
+      "reference_facts": "185/55R16",
+      "is_trap": false,
+      "answer": "Dạ, lốp LANDSPIDER 185/55R16 83V CITYTRAXX G/P giá 900.000đ/lốp, hiện còn 326 lốp ạ. Anh/chị cần em hỗ trợ thêm gì không ạ?",
+      "answer_type": "answered",
+      "latency_ms": 3747,
+      "tokens": {
+        "prompt": 3385,
+        "completion": 57,
+        "cached": 3072,
+        "cache_hit_ratio": null
+      },
+      "intent": "factoid",
+      "decomposed": false,
+      "cache_status": "bypassed",
+      "n_chunks_used": 1,
+      "top_k": 1,
+      "score_max": 1.0,
+      "top_chunks_retrieved": [
+        {
+          "doc": "stats_index",
+          "chunk_id": "stats_in",
+          "score": 1.0,
+          "preview": "Lốp xe LANDSPIDER 185/55R16 83V CITYTRAXX G/P: 900000 | Mã: 2-R16 185/55 LPD | Giá: 900000 | Ngày: 26 | Ảnh: https://drive.google.com/drive/folders/1W9OllHXJDQuatMDlC4XDqnqCEkc6hU6X?usp=drive_link | Số lượng: 326 185/55R16 83V CITYTRAXX G/P"
+        }
+      ],
+      "answer_source_chunk": {
+        "in_corpus": true,
+        "preview": ",Tên kho,Mã hàng,Tên hàng,,,,,,\n,Kho lốp LANDSPIDER,2-R15 LT235/75 LPD,Lốp xe LANDSPIDER LT235/75R15 104/101S WILDTRAXX A/T,,,https://drive.google.com/drive/folders/1YV59pSPOfxOyN1Qqju6o0kv5x5fkxrdZ?u",
+        "in_retrieved": true
+      },
+      "expect_in_answer": true,
+      "expect_in_retrieved": true,
+      "prelim_verdict": "✅ CHUẨN",
+      "fail_step": "",
+      "claude_verdict": "",
+      "claude_notes": ""
+    },
+    {
+      "id": "q05",
+      "category": "hoi_theo_size",
+      "question": "Lốp cho xe size 225/45ZR18 có mẫu nào?",
+      "reference_facts": "225/45ZR18",
+      "is_trap": false,
+      "answer": "Dạ quy cách 225/45ZR18 bên em có loại Landspider 225/45ZR18 95WXL CITYTRAXX H/P giá 1.440.000đ/lốp, hiện còn 62 lốp ạ. Anh/chị cần em hỗ trợ thêm gì không ạ?",
+      "answer_type": "answered",
+      "latency_ms": 7443,
+      "tokens": {
+        "prompt": 3365,
+        "completion": 68,
+        "cached": 3072,
+        "cache_hit_ratio": null
+      },
+      "intent": "aggregation",
+      "decomposed": false,
+      "cache_status": "bypassed",
+      "n_chunks_used": 1,
+      "top_k": 1,
+      "score_max": 1.0,
+      "top_chunks_retrieved": [
+        {
+          "doc": "stats_index",
+          "chunk_id": "stats_in",
+          "score": 1.0,
+          "preview": "Lốp xe LANDSPIDER 225/45ZR18 95WXL CITYTRAXX H/P: 1440000 | Mã: 2-ZR18 225/45 LPD | Giá: 1440000 | Ngày: 26 | Ảnh: https://drive.google.com/drive/folders/1U2-nkEvlKKpkvgPswHwcXUktI08HuILu?usp=drive_link | Số lượng: 62 225/45ZR18 95WXL CITYT"
+        }
+      ],
+      "answer_source_chunk": {
+        "in_corpus": true,
+        "preview": ",Tên kho,Mã hàng,Tên hàng,,,,,,\n,Kho lốp LANDSPIDER,2-ZR17 245/40 LPD,Lốp xe LANDSPIDER 245/40ZR17 95WXL CITYTRAXX H/P,26,,https://drive.google.com/drive/folders/1hHU_30T9_DTvxzmp6sHPH_A9HH58sJUI?usp=",
+        "in_retrieved": true
+      },
+      "expect_in_answer": true,
+      "expect_in_retrieved": true,
+      "prelim_verdict": "✅ CHUẨN",
+      "fail_step": "",
+      "claude_verdict": "",
+      "claude_notes": ""
+    },
+    {
+      "id": "q06",
+      "category": "hoi_hang",
+      "question": "Hãng LANDSPIDER có những dòng lốp gì?",
+      "reference_facts": "LANDSPIDER",
+      "is_trap": false,
+      "answer": "Dạ, hãng Landspider bên em có các dòng lốp như CITYTRAXX và WILDTRAXX ạ. Anh/chị cần em tư vấn chi tiết về dòng nào hoặc quy cách cụ thể không ạ?",
+      "answer_type": "answered",
+      "latency_ms": 6996,
+      "tokens": {
+        "prompt": 4310,
+        "completion": 50,
+        "cached": 3072,
+        "cache_hit_ratio": null
+      },
+      "intent": "aggregation",
+      "decomposed": false,
+      "cache_status": "bypassed",
+      "n_chunks_used": 1,
+      "top_k": 1,
+      "score_max": 1.0,
+      "top_chunks_retrieved": [
+        {
+          "doc": "stats_index",
+          "chunk_id": "stats_in",
+          "score": 1.0,
+          "preview": "2-ZR21 275/40 DVT 2-R16 235/60 LPD 2-ZR19 285/45 DVT Kho lốp LANDSPIDER 2-ZR18 215/45 DVT date1 2-R17 235/60 LPD 2-R17 215/60 DVT 2-R14 195/70 LPD Kho lốp ROVELO Tên kho 2-R15 175/60 LPD 2-ZR17 205/55 DVT 2-ZR19 255/50 DVT 2-ZR19 235/45 DVT"
+        }
+      ],
+      "answer_source_chunk": {
+        "in_corpus": true,
+        "preview": ",Tên kho,Mã hàng,Tên hàng,,,,,,\n,Kho lốp LANDSPIDER,2-R13 155/80 LPD,Lốp xe LANDSPIDER 155/80R13 79T CITYTRAXX G/P,26,,https://drive.google.com/drive/u/1/folders/12ataSHws-NzWS7492uVEq5OqdB7PD7sx,,,\n,",
+        "in_retrieved": true
+      },
+      "expect_in_answer": true,
+      "expect_in_retrieved": true,
+      "prelim_verdict": "✅ CHUẨN",
+      "fail_step": "",
+      "claude_verdict": "",
+      "claude_notes": ""
+    },
+    {
+      "id": "q07",
+      "category": "liet_ke_kho",
+      "question": "Kho còn những mã lốp nào của loại WILDTRAXX?",
+      "reference_facts": "WILDTRAXX",
+      "is_trap": false,
+      "answer": "Dạ, bên em hiện không có mã lốp WILDTRAXX trong kho ạ. Nếu anh/chị cần, em có thể tư vấn các mã lốp Landspider đang còn hàng, ví dụ như CITYTRAXX ạ. Anh/chị cho em biết quy cách lốp anh/chị cần để em hỗ trợ nhé?",
+      "answer_type": "answered",
+      "latency_ms": 8218,
+      "tokens": {
+        "prompt": 3773,
+        "completion": 76,
+        "cached": 3072,
+        "cache_hit_ratio": null
+      },
+      "intent": "aggregation",
+      "decomposed": false,
+      "cache_status": "bypassed",
+      "n_chunks_used": 1,
+      "top_k": 20,
+      "score_max": 0.0,
+      "top_chunks_retrieved": [
+        {
+          "doc": "xe-1.csv",
+          "chunk_id": "019ef446",
+          "score": 0.0,
+          "preview": ",Tên kho,Mã hàng,Tên hàng,,,,,, ,,2-ZR21 275/40 DVT,Lốp xe DAVANTI 275/40ZR21 107Y XL DX640,26,,https://drive.google.com/drive/folders/1VXRvv2Ii08sKO-UqLF-sbRTbUtB1HtyB?usp=drive_link,,, ,,2-R16 265/70 LPD,Lốp xe LANDSPIDER 265/70R16 112H C"
+        }
+      ],
+      "answer_source_chunk": {
+        "in_corpus": true,
+        "preview": ",Tên kho,Mã hàng,Tên hàng,,,,,,\n,Kho lốp LANDSPIDER,2-R15 LT235/75 LPD,Lốp xe LANDSPIDER LT235/75R15 104/101S WILDTRAXX A/T,,,https://drive.google.com/drive/folders/1YV59pSPOfxOyN1Qqju6o0kv5x5fkxrdZ?u",
+        "in_retrieved": false
+      },
+      "expect_in_answer": true,
+      "expect_in_retrieved": false,
+      "prelim_verdict": "✅ CHUẨN",
+      "fail_step": "",
+      "claude_verdict": "",
+      "claude_notes": ""
+    },
+    {
+      "id": "q08",
+      "category": "tu_van_xe",
+      "question": "Xe sedan gầm thấp thì nên dùng lốp gì?",
+      "reference_facts": null,
+      "is_trap": false,
+      "answer": "Dạ, với xe sedan gầm thấp, anh/chị có thể tham khảo các loại lốp Landspider phù hợp như sau ạ:\n\n- Lốp LANDSPIDER 175/60R15 81V CITYTRAXX G/P, hiện còn 26 lốp.\n- Lốp LANDSPIDER 195/70R14 91H CITYTRAXX G/P, hiện còn 26 lốp.\n- Lốp LANDSPIDER 235/60R16 100H CITYTRAXX H/T, hiện còn 26 lốp.\n- Lốp LANDSPIDER 235/60R17 102H CITYTRAXX H/T, hiện còn 26 lốp.\n\nAnh/chị cho em biết quy cách lốp xe hiện tại hoặc kích thước lốp anh/chị muốn để em tư vấn chi tiết hơn hoặc báo giá cụ thể nhé ạ.",
+      "answer_type": "answered",
+      "latency_ms": 13630,
+      "tokens": {
+        "prompt": 3848,
+        "completion": 197,
+        "cached": 3072,
+        "cache_hit_ratio": null
+      },
+      "intent": "factoid",
+      "decomposed": false,
+      "cache_status": "bypassed",
+      "n_chunks_used": 1,
+      "top_k": 20,
+      "score_max": 0.0,
+      "top_chunks_retrieved": [
+        {
+          "doc": "xe-1.csv",
+          "chunk_id": "019ef446",
+          "score": 0.0,
+          "preview": ",Tên kho,Mã hàng,Tên hàng,,,,,, ,,2-ZR21 275/40 DVT,Lốp xe DAVANTI 275/40ZR21 107Y XL DX640,26,,https://drive.google.com/drive/folders/1VXRvv2Ii08sKO-UqLF-sbRTbUtB1HtyB?usp=drive_link,,, ,,2-R16 265/70 LPD,Lốp xe LANDSPIDER 265/70R16 112H C"
+        }
+      ],
+      "answer_source_chunk": {
+        "in_corpus": null,
+        "preview": "",
+        "in_retrieved": false
+      },
+      "expect_in_answer": false,
+      "expect_in_retrieved": false,
+      "prelim_verdict": "✅ CHUẨN",
+      "fail_step": "",
+      "claude_verdict": "",
+      "claude_notes": ""
+    },
+    {
+      "id": "q09",
+      "category": "so_sanh",
+      "question": "So sánh lốp H/T và H/P khác nhau thế nào?",
+      "reference_facts": null,
+      "is_trap": false,
+      "answer": "Dạ hiện tại trong tài liệu bên em chỉ có thông tin về lốp loại H/T (Highway Terrain) của Landspider, chưa có dữ liệu về lốp H/P (High Performance) nên em chưa thể so sánh chi tiết hai loại này được ạ. Anh/chị có thể cho em biết quy cách lốp hoặc nhu cầu cụ thể để em hỗ trợ tra giá hoặc tư vấn loại lốp phù hợp bên em đang có nhé ạ.",
+      "answer_type": "answered",
+      "latency_ms": 4873,
+      "tokens": {
+        "prompt": 6340,
+        "completion": 101,
+        "cached": 3072,
+        "cache_hit_ratio": null
+      },
+      "intent": "comparison",
+      "decomposed": true,
+      "cache_status": "bypassed",
+      "n_chunks_used": 1,
+      "top_k": 1,
+      "score_max": 1.0,
+      "top_chunks_retrieved": [
+        {
+          "doc": "stats_index",
+          "chunk_id": "stats_in",
+          "score": 1.0,
+          "preview": "Lốp xe LANDSPIDER 215/70R16 100H CITYTRAXX H/T: 1413000 | Mã: 2-R16 215/70 LPD | Giá: 1413000 | Ngày: 26 | Ảnh: https://drive.google.com/drive/folders/1lOLMQew3upJZ5MZTZK1uw42N2w0232ne?usp=drive_link | Số lượng: 36 Lốp xe LANDSPIDER 215/70R"
+        }
+      ],
+      "answer_source_chunk": {
+        "in_corpus": null,
+        "preview": "",
+        "in_retrieved": false
+      },
+      "expect_in_answer": false,
+      "expect_in_retrieved": false,
+      "prelim_verdict": "⚪ DATA",
+      "fail_step": "REFUSE",
+      "claude_verdict": "",
+      "claude_notes": ""
+    },
+    {
+      "id": "q10",
+      "category": "hoi_ngay_ve",
+      "question": "Lốp 195/65R15 ngày nào về hàng?",
+      "reference_facts": "tháng 11",
+      "is_trap": false,
+      "answer": "Dạ, lốp LANDSPIDER 195/65R15 91H CITYTRAXX G/P có ngày về hàng là 28 tháng 11 ạ. Anh/chị cần em hỗ trợ thêm gì ạ?",
+      "answer_type": "answered",
+      "latency_ms": 3756,
+      "tokens": {
+        "prompt": 3407,
+        "completion": 49,
+        "cached": 3072,
+        "cache_hit_ratio": null
+      },
+      "intent": "factoid",
+      "decomposed": false,
+      "cache_status": "bypassed",
+      "n_chunks_used": 1,
+      "top_k": 1,
+      "score_max": 1.0,
+      "top_chunks_retrieved": [
+        {
+          "doc": "stats_index",
+          "chunk_id": "stats_in",
+          "score": 1.0,
+          "preview": "Lốp Rovelo 195/65R15 RHP-A68: 981000 | Mã: 2-R15 195/65 RVL | Giá: 981000 | Số lượng: 45 Lốp xe LANDSPIDER 195/65R15 91H CITYTRAXX G/P: 972000 | Mã: 2-R15 195/65 LPD | Giá: 972000 | Ngày: 26 | Ảnh: https://drive.google.com/drive/folders/1H4"
+        }
+      ],
+      "answer_source_chunk": {
+        "in_corpus": false,
+        "preview": "",
+        "in_retrieved": false
+      },
+      "expect_in_answer": true,
+      "expect_in_retrieved": false,
+      "prelim_verdict": "✅ CHUẨN",
+      "fail_step": "",
+      "claude_verdict": "",
+      "claude_notes": ""
+    },
+    {
+      "id": "q11",
+      "category": "dat_lich",
+      "question": "Mình muốn đặt mua lốp, cần làm gì?",
+      "reference_facts": null,
+      "is_trap": false,
+      "answer": "Dạ anh/chị cho em biết quy cách lốp, số lượng, tên và số điện thoại để em hỗ trợ đặt hàng ạ. Em là trợ lý tư vấn lốp xe của Nam Phát, chuyên phân phối lốp Landspider và Rovelo ạ. Anh/chị cho em thông tin để em giúp mình đặt đơn nhé!",
+      "answer_type": "answered",
+      "latency_ms": 7378,
+      "tokens": {
+        "prompt": 3784,
+        "completion": 76,
+        "cached": 3072,
+        "cache_hit_ratio": null
+      },
+      "intent": "factoid",
+      "decomposed": false,
+      "cache_status": "bypassed",
+      "n_chunks_used": 1,
+      "top_k": 20,
+      "score_max": 0.0,
+      "top_chunks_retrieved": [
+        {
+          "doc": "xe-1.csv",
+          "chunk_id": "019ef446",
+          "score": 0.0,
+          "preview": ",Tên kho,Mã hàng,Tên hàng,,,,,, ,,2-ZR21 275/40 DVT,Lốp xe DAVANTI 275/40ZR21 107Y XL DX640,26,,https://drive.google.com/drive/folders/1VXRvv2Ii08sKO-UqLF-sbRTbUtB1HtyB?usp=drive_link,,, ,,2-R16 265/70 LPD,Lốp xe LANDSPIDER 265/70R16 112H C"
+        }
+      ],
+      "answer_source_chunk": {
+        "in_corpus": null,
+        "preview": "",
+        "in_retrieved": false
+      },
+      "expect_in_answer": false,
+      "expect_in_retrieved": false,
+      "prelim_verdict": "✅ CHUẨN",
+      "fail_step": "",
+      "claude_verdict": "",
+      "claude_notes": ""
+    },
+    {
+      "id": "q12",
+      "category": "dat_lich_slot",
+      "question": "Tên Hùng, sđt 0912345678, địa chỉ 12 Lê Lợi, xe Mazda 3, cần lốp 205/55R16",
+      "reference_facts": null,
+      "is_trap": false,
+      "answer": "Dạ quy cách 205/55R16 bên em có lốp LANDSPIDER 205/55R16 91V CITYTRAXX G/P giá 1.044.000đ/lốp, hiện còn 819 lốp ạ. Anh Hùng cho em hỏi anh cần đặt bao nhiêu lốp ạ?",
+      "answer_type": "answered",
+      "latency_ms": 6560,
+      "tokens": {
+        "prompt": 3464,
+        "completion": 74,
+        "cached": 3072,
+        "cache_hit_ratio": null
+      },
+      "intent": "factoid",
+      "decomposed": true,
+      "cache_status": "bypassed",
+      "n_chunks_used": 1,
+      "top_k": 1,
+      "score_max": 1.0,
+      "top_chunks_retrieved": [
+        {
+          "doc": "stats_index",
+          "chunk_id": "stats_in",
+          "score": 1.0,
+          "preview": "Lốp xe LANDSPIDER 205/55R16 91V CITYTRAXX G/P: 1044000 | Mã: 2-R16 205/55 LPD | Giá: 1044000 | Ngày: 26 | Ảnh: https://drive.google.com/drive/folders/1yC06ZuEEwN-nK8oaJ9LqHkgIjQTeyhHf?usp=drive_link | Số lượng: 819 205/55R16 91V CITYTRAXX G"
+        }
+      ],
+      "answer_source_chunk": {
+        "in_corpus": null,
+        "preview": "",
+        "in_retrieved": false
+      },
+      "expect_in_answer": false,
+      "expect_in_retrieved": false,
+      "prelim_verdict": "✅ CHUẨN",
+      "fail_step": "",
+      "claude_verdict": "",
+      "claude_notes": ""
+    },
+    {
+      "id": "q13",
+      "category": "oos_trap",
+      "question": "Shop có bán dầu nhớt không?",
+      "reference_facts": null,
+      "is_trap": true,
+      "answer": "Dạ em là trợ lý tư vấn lốp xe của Nam Phát, chuyên phân phối lốp Landspider và Rovelo ạ. Bên em hiện chỉ hỗ trợ về lốp xe, giá, tồn kho, chính sách bảo hành và đặt đơn lốp thôi ạ. Anh/chị cho em quy cách lốp đang cần hoặc hỏi về lốp để em hỗ trợ nhé!",
+      "answer_type": "answered",
+      "latency_ms": 6540,
+      "tokens": {
+        "prompt": 3424,
+        "completion": 88,
+        "cached": 3072,
+        "cache_hit_ratio": null
+      },
+      "intent": "factoid",
+      "decomposed": false,
+      "cache_status": "bypassed",
+      "n_chunks_used": 1,
+      "top_k": 20,
+      "score_max": 0.0,
+      "top_chunks_retrieved": [
+        {
+          "doc": "xe-00-summary.md",
+          "chunk_id": "019ef445",
+          "score": 0.0,
+          "preview": "[Tóm tắt & danh sách đầy đủ — bot xe > Mục lục / các phần trong tài liệu] - Chính sách - ﻿CHÍNH SÁCH BẢO HÀNH LỐP XE - Công ty TNHH Lốp Nam Phát - Hotline/Zalo: 0988 771 310 - I. Phạm vi áp dụng - II. Điều kiện bảo hành - III. Các trường hợ"
+        }
+      ],
+      "answer_source_chunk": {
+        "in_corpus": null,
+        "preview": "",
+        "in_retrieved": false
+      },
+      "expect_in_answer": false,
+      "expect_in_retrieved": false,
+      "prelim_verdict": "🟠 HALLU",
+      "fail_step": "HALLU",
+      "claude_verdict": "",
+      "claude_notes": ""
+    },
+    {
+      "id": "q14",
+      "category": "hallu_trap",
+      "question": "Lốp bay MICHELIN PILOT phản lực giá bao nhiêu?",
+      "reference_facts": null,
+      "is_trap": true,
+      "answer": "Dạ bên em hiện phân phối lốp Landspider và Rovelo, chưa có hãng Michelin ạ. Anh/chị cho em quy cách lốp đang cần, em gợi ý loại tương đương bên em đang có nhé.",
+      "answer_type": "answered",
+      "latency_ms": 5322,
+      "tokens": {
+        "prompt": 4283,
+        "completion": 51,
+        "cached": 3072,
+        "cache_hit_ratio": null
+      },
+      "intent": "aggregation",
+      "decomposed": false,
+      "cache_status": "bypassed",
+      "n_chunks_used": 1,
+      "top_k": 1,
+      "score_max": 1.0,
+      "top_chunks_retrieved": [
+        {
+          "doc": "stats_index",
+          "chunk_id": "stats_in",
+          "score": 1.0,
+          "preview": "2-ZR21 275/40 DVT 2-R16 235/60 LPD 2-ZR19 285/45 DVT Kho lốp LANDSPIDER 2-ZR18 215/45 DVT date1 2-R17 235/60 LPD 2-R17 215/60 DVT 2-R14 195/70 LPD Kho lốp ROVELO Tên kho 2-R15 175/60 LPD 2-ZR17 205/55 DVT 2-ZR19 255/50 DVT 2-ZR19 235/45 DVT"
+        }
+      ],
+      "answer_source_chunk": {
+        "in_corpus": null,
+        "preview": "",
+        "in_retrieved": false
+      },
+      "expect_in_answer": false,
+      "expect_in_retrieved": false,
+      "prelim_verdict": "✅ CHUẨN",
+      "fail_step": "",
+      "claude_verdict": "",
+      "claude_notes": ""
+    }
+  ]
+}

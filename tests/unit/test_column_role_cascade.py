@@ -77,3 +77,59 @@ def test_unrelated_header_no_role() -> None:
     r = _roles(["Ghi chú lung tung", "Xyzzy"])
     assert r["name"] is None and r["category"] is None
     assert r["price"] == [] and r["aliases"] is None
+
+
+# ════════════════════════════════════════════════════════════════════════════
+# Tier 2 (ADR-0006) — per-bot custom_vocabulary["column_roles"] is AUTHORITATIVE.
+# The engine must NOT know what a column "means" per domain; the owner declares
+# it. Code reads the declaration (domain-neutral) and it WINS over inference.
+# ════════════════════════════════════════════════════════════════════════════
+def test_custom_roles_none_is_identical_to_inference() -> None:
+    # Passing no/empty declaration must be byte-identical to pure inference.
+    assert _column_roles(["Tên", "Nhóm", "Giá"], None) == _column_roles(["Tên", "Nhóm", "Giá"])
+    assert _column_roles(["Tên", "Giá"], {}) == _column_roles(["Tên", "Giá"])
+
+
+def test_custom_roles_phone_domain_inference_blind() -> None:
+    # Phone bot: inference recognises NONE of these headers (no price/name vocab).
+    header = ["Model", "RAM", "Pin"]
+    assert _column_roles(header)["name"] is None  # inference is blind
+    # Owner declares → name binds, RAM/Pin stay generic attributes.
+    r = _column_roles(header, {"Model": "name", "RAM": "attribute", "Pin": "attribute"})
+    assert r["name"] == 0
+    assert r["price"] == [] and r["category"] is None and r["aliases"] is None
+
+
+def test_custom_roles_value_synonym_maps_to_price() -> None:
+    # Real-estate: "Giá/m2" is not a standalone 'gia' word → inference misses it.
+    header = ["Diện tích", "Hướng", "Giá/m2"]
+    assert _column_roles(header)["price"] == []  # inference blind to slashed header
+    r = _column_roles(header, {"Diện tích": "name", "Giá/m2": "value"})
+    assert r["name"] == 0 and r["price"] == [2]
+
+
+def test_custom_roles_win_over_inference() -> None:
+    # Owner override beats the heuristic: "Tên" forced to category, not name.
+    r = _column_roles(["Tên", "Giá"], {"Tên": "category"})
+    assert r["category"] == 0
+    assert r["name"] is None  # inference would have said 0; owner overrode
+    assert r["price"] == [1]  # undeclared header still inferred
+
+
+def test_custom_role_attribute_suppresses_inference() -> None:
+    # Declaring a column 'attribute' pins it OUT of an inferred role.
+    r = _column_roles(["Tên", "Giá"], {"Giá": "attribute"})
+    assert r["price"] == []  # 'Giá' demoted to generic attribute by the owner
+    assert r["name"] == 0
+
+
+def test_custom_roles_unknown_role_string_falls_through() -> None:
+    # A garbage role value is ignored → inference still applies (no crash).
+    r = _column_roles(["Tên", "Giá"], {"Tên": "wat", "Giá": "price"})
+    assert r["name"] == 0 and r["price"] == [1]
+
+
+def test_custom_roles_accent_and_case_insensitive_match() -> None:
+    # Declaration label/role match is accent + case folded (owner free-form).
+    r = _column_roles(["Tên SP", "GIÁ BÁN"], {"ten sp": "NAME", "giá bán": "Value"})
+    assert r["name"] == 0 and r["price"] == [1]

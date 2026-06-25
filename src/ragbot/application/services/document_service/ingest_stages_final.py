@@ -12,6 +12,7 @@ from typing import Any
 import structlog
 
 from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
 
 from ragbot.application.dto.ai_specs import EmbeddingSpec
 from ragbot.shared.chunking import (
@@ -459,7 +460,64 @@ class _StageFinalizeMixin:
                     except (ValueError, TypeError, AttributeError):
                         pass
                 return _r
-            _raw_entities = parse_table_chunks([_raw_row(_r) for _r in rows])
+            # ADR-0006 Tier 2: per-bot owner-declared column roles are AUTHORITATIVE
+            # over header inference. The engine stays domain-neutral — it reads
+            # ``custom_vocabulary["column_roles"]`` (e.g. {"RAM": "attribute"}) but
+            # never hardcodes domain column meanings. Best-effort: a bot-repo failure
+            # must never block ingest, so fall back to inference-only on any error.
+            _custom_roles: dict[str, str] | None = None
+            if self._bot_repo is not None:
+                try:
+                    _bot_cfg = await self._bot_repo.get_by_id(
+                        record_bot_id, record_tenant_id=record_tenant_id,
+                    )
+                    _vocab = getattr(_bot_cfg, "custom_vocabulary", None) or {}
+                    _declared = _vocab.get("column_roles")
+                    if isinstance(_declared, dict) and _declared:
+                        _custom_roles = _declared
+                except (SQLAlchemyError, ValueError, TypeError, AttributeError) as exc:
+                    # Inference-only fallback; a bot-config lookup/shape error must
+                    # never block ingest (DB error, config drift) — narrow per policy.
+                    logger.warning(
+                        "stats_index_custom_roles_lookup_failed",
+                        record_document_id=str(doc_id),
+                        error_type=type(exc).__name__,
+                        error=str(exc)[:200],
+                    )
+            _stats_rows = [_raw_row(_r) for _r in rows]
+            _raw_entities = parse_table_chunks(_stats_rows, _custom_roles)
+            # G4 data-quality ADVISORY (ADR-0005 — advisory, NEVER blocking). Surface
+            # to the owner WHY coverage may be limited: a table with no resolvable
+            # NAME column (entities can't be name-keyed) and/or header columns that
+            # bound no role (searchable only as a generic attribute). The owner can
+            # then declare ``custom_vocabulary["column_roles"]``. Domain-neutral: it
+            # reports the owner's own header labels back; it does NOT drop data, does
+            # NOT change state, and a failure here must never break ingest.
+            try:
+                from ragbot.shared.document_stats import (  # noqa: PLC0415
+                    analyze_table_headers,
+                )
+                _dq = analyze_table_headers(_stats_rows, _custom_roles)
+                if _dq["tables_seen"] and (
+                    not _dq["has_name_column"] or _dq["unassigned_columns"]
+                ):
+                    logger.warning(
+                        "ingest_data_quality",
+                        record_document_id=str(doc_id),
+                        record_bot_id=str(record_bot_id),
+                        tables_seen=_dq["tables_seen"],
+                        has_name_column=_dq["has_name_column"],
+                        unassigned_columns=_dq["unassigned_columns"][:20],
+                        advice="declare column_roles in custom_vocabulary",
+                    )
+            except (ValueError, TypeError, KeyError, AttributeError) as exc:
+                # Advisory is best-effort observability — never block ingest.
+                logger.warning(
+                    "ingest_data_quality_failed",
+                    record_document_id=str(doc_id),
+                    error_type=type(exc).__name__,
+                    error=str(exc)[:200],
+                )
             # Dual-index emits each row in BOTH its own chunk AND a group/summary
             # chunk, so the same logical entity is extracted many times. Collapse
             # the duplicates BEFORE insert so the index holds one row per real
