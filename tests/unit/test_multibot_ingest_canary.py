@@ -21,6 +21,8 @@ they are the executable spec.
 """
 from __future__ import annotations
 
+import random
+
 import pytest
 
 from ragbot.shared.document_stats import parse_table_chunks
@@ -113,6 +115,39 @@ def test_english_domain_inferred() -> None:
     ents = parse_table_chunks([{"content": content}])
     assert ents and ents[0].name == "Widget Pro"
     assert ents[0].price_primary == 500000
+
+
+# ── INVARIANT (property-based) — the proof for the (N+1)th UNKNOWN bot ───────────
+# Enumerating known domains can't prove correctness for a future bot. These
+# invariants are tested on RANDOMLY-generated tables (random column names = an
+# unseen domain) so they cover the unbounded N: for ANY well-formed table the
+# engine must (a) not silently drop rows, and (b) lose no labelled value.
+@pytest.mark.parametrize("seed", range(25))
+def test_invariant_random_domain_no_silent_row_drop(seed: int) -> None:
+    rng = random.Random(seed)
+    ncols = rng.randint(3, 6)
+    # Random, never-before-seen header names (simulate any new bot's columns).
+    headers = [f"Field{rng.randint(100, 999)}{chr(65 + i)}" for i in range(ncols)]
+    nrows = rng.randint(2, 5)
+    rows = [
+        [f"v{seed}r{r}c{c}" for c in range(ncols)]  # short identifier-like values
+        for r in range(nrows)
+    ]
+    content = ",".join(headers) + "\n" + "\n".join(",".join(r) for r in rows)
+    ents = parse_table_chunks([{"content": content}])
+    # INV-1: a well-formed N-row table for an unseen domain must not vanish.
+    assert ents, f"seed={seed}: rows silently dropped for an unseen domain"
+    # INV-2: no labelled value is lost — every non-name cell value is retrievable
+    # somewhere (name / price / category / aliases / attributes).
+    surfaced = set()
+    for e in ents:
+        surfaced.add(e.name)
+        surfaced.update(str(v) for v in e.attributes.values())
+        if e.category:
+            surfaced.add(e.category)
+    flat = {c for row in rows for c in row}
+    lost = flat - surfaced
+    assert not lost, f"seed={seed}: values lost to nowhere (not name/attr/cat): {lost}"
 
 
 if __name__ == "__main__":  # pragma: no cover
