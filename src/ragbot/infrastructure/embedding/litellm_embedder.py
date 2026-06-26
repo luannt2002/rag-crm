@@ -150,6 +150,13 @@ class LiteLLMEmbedder(EmbeddingPort):
         spec_task = getattr(spec, "task", None) if spec is not None else None
         if spec_task is not None:
             extra_kwargs["task"] = spec_task
+        # OpenAI text-embedding-3-* supports matryoshka dimension reduction. Pass
+        # the target dimension so the produced vector matches the corpus column
+        # (e.g. 1024) instead of the model default (1536). Capability-keyed on the
+        # model name, not a bot/domain — other providers omit it.
+        _spec_dim = getattr(spec, "dimension", 0) if spec is not None else 0
+        if _spec_dim and "text-embedding-3" in model:
+            extra_kwargs["dimensions"] = _spec_dim
         pool_entry: ApiKeyEntry | None = None
         if model.startswith(JINA_EMBEDDING_MODEL_PREFIXES):
             jina_key, pool_entry = await self._resolve_jina_key()

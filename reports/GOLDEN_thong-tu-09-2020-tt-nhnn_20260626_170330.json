@@ -1,0 +1,617 @@
+{
+ "bot": "thong-tu-09-2020-tt-nhnn",
+ "pct": 54,
+ "total": "27/50",
+ "results": [
+  {
+   "cat": "Quy định chung và Giải thích t",
+   "q": "Phạm vi điều chỉnh của Thông tư 09/2020/TT-NHNN là gì?",
+   "exp": "Thông tư này quy định những yêu cầu tối thiểu về bảo đảm an toàn hệ th",
+   "facts": [],
+   "pass": true,
+   "chk": 1,
+   "sc": 1.0,
+   "ans": "Phạm vi điều chỉnh của Thông tư 09/2020/TT-NHNN là quy định về các yêu cầu tối thiểu bảo đảm an toàn hệ thống ",
+   "err": null
+  },
+  {
+   "cat": "Quy định chung và Giải thích t",
+   "q": "Đối tượng áp dụng của Thông tư này bao gồm những đơn vị nào?",
+   "exp": "Áp dụng đối với các tổ chức tín dụng, chi nhánh ngân hàng nước ngoài, ",
+   "facts": [
+    "NAPAS",
+    "VAMC"
+   ],
+   "pass": false,
+   "chk": 3,
+   "sc": 0.567211,
+   "ans": "Theo Điều 1 Khoản 2 Thông tư 09/2020/TT-NHNN, đối tượng áp dụng của Thông tư này bao gồm:\n\n- Các tổ chức tín d",
+   "err": null
+  },
+  {
+   "cat": "Quy định chung và Giải thích t",
+   "q": "Rủi ro công nghệ thông tin được định nghĩa như thế nào?",
+   "exp": "Là khả năng xảy ra tổn thất khi thực hiện các hoạt động liên quan đến ",
+   "facts": [
+    "Là"
+   ],
+   "pass": false,
+   "chk": 1,
+   "sc": 0.4533,
+   "ans": "Theo Điều 2 Thông tư 09/2020/TT-NHNN, rủi ro công nghệ thông tin là khả năng xảy ra tổn thất khi thực hiện các",
+   "err": null
+  },
+  {
+   "cat": "Quy định chung và Giải thích t",
+   "q": "Sự cố an toàn thông tin là gì?",
+   "exp": "Là việc thông tin số, hệ thống thông tin bị tấn công hoặc bị gây nguy ",
+   "facts": [
+    "Là"
+   ],
+   "pass": false,
+   "chk": 1,
+   "sc": 0.516408,
+   "ans": "Sự cố an toàn thông tin là việc thông tin số, hệ thống thông tin bị tấn công hoặc bị gây nguy hại, ảnh hưởng t",
+   "err": null
+  },
+  {
+   "cat": "Quy định chung và Giải thích t",
+   "q": "Xác thực đa yếu tố (MFA) yêu cầu tối thiểu bao nhiêu yếu tố?",
+   "exp": "Yêu cầu tối thiểu hai yếu tố để chứng minh tính đúng đắn của một danh ",
+   "facts": [
+    "để"
+   ],
+   "pass": false,
+   "chk": 1,
+   "sc": 1.0,
+   "ans": "Theo Thông tư 09/2020/TT-NHNN, xác thực đa yếu tố (MFA) yêu cầu tối thiểu hai yếu tố xác thực trở lên. Tuy nhi",
+   "err": null
+  },
+  {
+   "cat": "Quy định chung và Giải thích t",
+   "q": "Các yếu tố xác thực trong MFA bao gồm những loại nào?",
+   "exp": "Bao gồm: Thông tin người dùng biết (PIN, mật khẩu...); Những gì người ",
+   "facts": [
+    "PIN"
+   ],
+   "pass": false,
+   "chk": 1,
+   "sc": 0.36327,
+   "ans": "Theo Điều 2 Thông tư 09/2020/TT-NHNN, các yếu tố xác thực trong xác thực đa yếu tố (MFA) bao gồm ba loại:\n\n(i)",
+   "err": null
+  },
+  {
+   "cat": "Quy định chung và Giải thích t",
+   "q": "Nguyên tắc chung về bảo đảm an toàn thông tin là gì?",
+   "exp": "Xác định rõ quyền hạn, trách nhiệm từng bộ phận/cá nhân; phân loại hệ ",
+   "facts": [
+    "độ"
+   ],
+   "pass": false,
+   "chk": 2,
+   "sc": 0.668494,
+   "ans": "Theo Điều 3 Thông tư 09/2020/TT-NHNN, nguyên tắc chung về bảo đảm an toàn thông tin gồm:\n\n1. Xác định rõ quyền",
+   "err": null
+  },
+  {
+   "cat": "Phân loại Thông tin và Hệ thốn",
+   "q": "Thông tin trong hệ thống ngân hàng được phân loại theo những thuộc tính bí mật nào?",
+   "exp": "Gồm 4 loại: Thông tin công cộng, Thông tin riêng (nội bộ), Thông tin c",
+   "facts": [],
+   "pass": true,
+   "chk": 1,
+   "sc": 0.560078,
+   "ans": "Theo Điều 4 Thông tư 09/2020/TT-NHNN, thông tin xử lý, lưu trữ thông qua hệ thống thông tin trong hoạt động ng",
+   "err": null
+  },
+  {
+   "cat": "Phân loại Thông tin và Hệ thốn",
+   "q": "Thông tin cá nhân bao gồm những dữ liệu cụ thể nào?",
+   "exp": "Thông tin định danh khách hàng, tài khoản, tiền gửi, tài sản gửi, giao",
+   "facts": [],
+   "pass": true,
+   "chk": 1,
+   "sc": 0.318785,
+   "ans": "Theo Điều 4 Khoản 3 Thông tư 09/2020/TT-NHNN, thông tin cá nhân bao gồm các dữ liệu cụ thể sau:\n\n- Thông tin đ",
+   "err": null
+  },
+  {
+   "cat": "Phân loại Thông tin và Hệ thốn",
+   "q": "Hệ thống thông tin cấp độ 1 là gì?",
+   "exp": "Là hệ thống phục vụ hoạt động nội bộ và chỉ xử lý thông tin công cộng",
+   "facts": [
+    "Là"
+   ],
+   "pass": false,
+   "chk": 1,
+   "sc": 0.498738,
+   "ans": "Theo Điều 5 Khoản 2 Thông tư 09/2020/TT-NHNN, hệ thống thông tin cấp độ 1 là hệ thống thông tin phục vụ hoạt đ",
+   "err": null
+  },
+  {
+   "cat": "Phân loại Thông tin và Hệ thốn",
+   "q": "Tiêu chí xác định hệ thống thông tin cấp độ 3 là gì?",
+   "exp": "Xử lý thông tin bí mật nhà nước độ Mật; hoặc hệ thống nội bộ không chấ",
+   "facts": [
+    "Xử",
+    "độ"
+   ],
+   "pass": false,
+   "chk": 1,
+   "sc": 0.5895,
+   "ans": "Theo Điều 5 Khoản 4 Thông tư 09/2020/TT-NHNN, hệ thống thông tin cấp độ 3 được xác định khi có một trong các t",
+   "err": null
+  },
+  {
+   "cat": "Phân loại Thông tin và Hệ thốn",
+   "q": "Hệ thống thông tin cấp độ 5 xử lý loại thông tin gì?",
+   "exp": "Xử lý thông tin bí mật nhà nước ở cấp độ Tuyệt Mật",
+   "facts": [
+    "Xử",
+    "độ"
+   ],
+   "pass": false,
+   "chk": 1,
+   "sc": 0.579249,
+   "ans": "Theo Điều 5 Khoản 6 Thông tư 09/2020/TT-NHNN, hệ thống thông tin cấp độ 5 xử lý các loại thông tin sau:\n\na) Th",
+   "err": null
+  },
+  {
+   "cat": "Phân loại Thông tin và Hệ thốn",
+   "q": "Quy chế an toàn thông tin của tổ chức phải được rà soát định kỳ bao lâu một lần?",
+   "exp": "Tối thiểu mỗi năm một lần",
+   "facts": [],
+   "pass": true,
+   "chk": 1,
+   "sc": 0.491102,
+   "ans": "Theo Điều 6 Khoản 3 Thông tư 09/2020/TT-NHNN, tổ chức phải rà soát quy chế an toàn thông tin tối thiểu mỗi năm",
+   "err": null
+  },
+  {
+   "cat": "Quản lý tài sản Công nghệ thôn",
+   "q": "Tài sản công nghệ thông tin bao gồm những loại nào?",
+   "exp": "Tài sản thông tin, Tài sản vật lý và Tài sản phần mềm",
+   "facts": [],
+   "pass": true,
+   "chk": 1,
+   "sc": 0.554051,
+   "ans": "Theo Điều 7 Khoản 1 Thông tư 09/2020/TT-NHNN, tài sản công nghệ thông tin bao gồm các loại sau:\n\na) Tài sản th",
+   "err": null
+  },
+  {
+   "cat": "Quản lý tài sản Công nghệ thôn",
+   "q": "Tài sản thông tin bí mật cần được bảo vệ như thế nào?",
+   "exp": "Phải được mã hóa hoặc có biện pháp bảo vệ để bảo mật trong quá trình t",
+   "facts": [
+    "để"
+   ],
+   "pass": false,
+   "chk": 1,
+   "sc": 0.425947,
+   "ans": "Theo Điều 8 Khoản 3 Thông tư 09/2020/TT-NHNN, tài sản thông tin thuộc loại thông tin bí mật phải được mã hóa h",
+   "err": null
+  },
+  {
+   "cat": "Quản lý tài sản Công nghệ thôn",
+   "q": "Biện pháp chống thất thoát dữ liệu áp dụng cho hệ thống từ cấp độ mấy?",
+   "exp": "Từ cấp độ 3 trở lên",
+   "facts": [
+    "Từ",
+    "độ"
+   ],
+   "pass": false,
+   "chk": 2,
+   "sc": 0.423636,
+   "ans": "Theo Điều 22 Khoản 2 Thông tư 09/2020/TT-NHNN, biện pháp chống thất thoát dữ liệu áp dụng cho hệ thống thông t",
+   "err": null
+  },
+  {
+   "cat": "Quản lý tài sản Công nghệ thôn",
+   "q": "Quy định khi mang tài sản vật lý chứa thông tin bí mật ra khỏi trụ sở?",
+   "exp": "Phải được sự phê duyệt của cấp có thẩm quyền và thực hiện biện pháp bả",
+   "facts": [],
+   "pass": true,
+   "chk": 1,
+   "sc": 0.506903,
+   "ans": "Theo Điều 9 Khoản 4 Thông tư 09/2020/TT-NHNN, khi mang tài sản vật lý chứa thông tin bí mật ra khỏi trụ sở của",
+   "err": null
+  },
+  {
+   "cat": "Quản lý tài sản Công nghệ thôn",
+   "q": "Khi thanh lý tài sản vật lý chứa thông tin bí mật, tổ chức phải làm gì?",
+   "exp": "Thực hiện các biện pháp tiêu hủy hoặc xóa thông tin bảo đảm không có k",
+   "facts": [],
+   "pass": true,
+   "chk": 2,
+   "sc": 0.529966,
+   "ans": "Theo Điều 9 Khoản 5 Thông tư 09/2020/TT-NHNN, khi thanh lý tài sản vật lý có lưu trữ thông tin bí mật, tổ chức",
+   "err": null
+  },
+  {
+   "cat": "Quản lý tài sản Công nghệ thôn",
+   "q": "Tổ chức có cần quản lý các thiết bị di động kết nối vào mạng nội bộ không?",
+   "exp": "Có, các thiết bị phải được đăng ký để kiểm soát và giới hạn phạm vi kế",
+   "facts": [
+    "Có",
+    "để"
+   ],
+   "pass": false,
+   "chk": 1,
+   "sc": 0.572659,
+   "ans": "Theo Điều 11 Khoản 1 Thông tư 09/2020/TT-NHNN, các thiết bị di động khi kết nối vào hệ thống mạng nội bộ của t",
+   "err": null
+  },
+  {
+   "cat": "Quản lý tài sản Công nghệ thôn",
+   "q": "Biện pháp kỹ thuật cần có cho thiết bị di động phục vụ công việc là gì?",
+   "exp": "Chức năng vô hiệu hóa/xóa dữ liệu từ xa; sao lưu dữ liệu; bảo vệ dữ li",
+   "facts": [],
+   "pass": true,
+   "chk": 1,
+   "sc": 0.634902,
+   "ans": "Theo Điều 11 Khoản 4 Thông tư 09/2020/TT-NHNN, thiết bị di động được sử dụng để phục vụ công việc phải áp dụng",
+   "err": null
+  },
+  {
+   "cat": "Quản lý nguồn nhân lực",
+   "q": "Trách nhiệm của người đại diện hợp pháp trong bảo đảm an toàn thông tin là gì?",
+   "exp": "Trực tiếp tham gia chỉ đạo xây dựng chiến lược, kế hoạch an toàn thông",
+   "facts": [],
+   "pass": true,
+   "chk": 1,
+   "sc": 0.497773,
+   "ans": "Theo Điều 13 Khoản 1 Thông tư 09/2020/TT-NHNN, người đại diện hợp pháp phải trực tiếp tham gia chỉ đạo và có t",
+   "err": null
+  },
+  {
+   "cat": "Quản lý nguồn nhân lực",
+   "q": "Tổ chức quản lý hệ thống cấp độ 3 trở lên cần có bộ phận chuyên trách nào?",
+   "exp": "Thành lập hoặc chỉ định bộ phận chuyên trách về an toàn thông tin",
+   "facts": [],
+   "pass": true,
+   "chk": 1,
+   "sc": 0.543545,
+   "ans": "Theo Điều 13 Khoản 3 Điểm a Thông tư 09/2020/TT-NHNN, tổ chức quản lý trực tiếp hệ thống thông tin từ cấp độ 3",
+   "err": null
+  },
+  {
+   "cat": "Quản lý nguồn nhân lực",
+   "q": "Những nhiệm vụ nhân sự nào cần được tách biệt trong tổ chức quản lý hệ thống cấp độ 3 trở lên?",
+   "exp": "Tách biệt giữa phát triển với quản trị; phát triển với vận hành; quản ",
+   "facts": [],
+   "pass": true,
+   "chk": 2,
+   "sc": 0.55117,
+   "ans": "Theo Điều 13 Khoản 3 Điểm b Thông tư 09/2020/TT-NHNN, trong tổ chức quản lý hệ thống thông tin từ cấp độ 3 trở",
+   "err": null
+  },
+  {
+   "cat": "Quản lý nguồn nhân lực",
+   "q": "Yêu cầu đối với nhân sự mới tuyển dụng về bảo mật thông tin?",
+   "exp": "Phải cam kết bảo mật bằng văn bản, bao gồm trách nhiệm trong và sau kh",
+   "facts": [],
+   "pass": true,
+   "chk": 1,
+   "sc": 0.509498,
+   "ans": "Theo Điều 14 Khoản 3 Thông tư 09/2020/TT-NHNN, nhân sự mới tuyển dụng phải cam kết bảo mật thông tin bằng văn ",
+   "err": null
+  },
+  {
+   "cat": "Quản lý nguồn nhân lực",
+   "q": "Khi nhân viên nghỉ việc, tổ chức phải thực hiện bước gì quan trọng nhất về quyền truy cập?",
+   "exp": "Thu hồi ngay quyền truy cập hệ thống thông tin của cá nhân đó",
+   "facts": [
+    "đó"
+   ],
+   "pass": false,
+   "chk": 1,
+   "sc": 0.466123,
+   "ans": "Khi nhân viên nghỉ việc, tổ chức phải thực hiện thu hồi ngay quyền truy cập hệ thống thông tin của cá nhân ngh",
+   "err": null
+  },
+  {
+   "cat": "Quản lý nguồn nhân lực",
+   "q": "Tổ chức phải thông báo cho Ngân hàng Nhà nước những trường hợp kỷ luật nhân sự nào?",
+   "exp": "Các trường hợp sa thải, buộc thôi việc hoặc bị truy tố về tội phạm lĩn",
+   "facts": [
+    "CNTT"
+   ],
+   "pass": false,
+   "chk": 2,
+   "sc": 0.421753,
+   "ans": "Theo Điều 16 Khoản 6 Thông tư 09/2020/TT-NHNN, tổ chức phải thông báo cho Ngân hàng Nhà nước (Cục Công nghệ th",
+   "err": null
+  },
+  {
+   "cat": "An toàn vật lý và Môi trường l",
+   "q": "Khu vực lắp đặt máy chủ của hệ thống cấp độ 3 trở lên yêu cầu bảo vệ như thế nào?",
+   "exp": "Phải được cách ly với khu vực dùng chung, áp dụng biện pháp kiểm soát ",
+   "facts": [],
+   "pass": true,
+   "chk": 2,
+   "sc": 0.510082,
+   "ans": "Theo Điều 17 Khoản 3 Thông tư 09/2020/TT-NHNN, khu vực lắp đặt máy chủ, thiết bị lưu trữ, thiết bị an ninh bảo",
+   "err": null
+  },
+  {
+   "cat": "An toàn vật lý và Môi trường l",
+   "q": "Thời gian lưu trữ dữ liệu camera giám sát tại Trung tâm dữ liệu tối thiểu là bao lâu?",
+   "exp": "Tối thiểu 90 ngày",
+   "facts": [
+    "90 ngày"
+   ],
+   "pass": true,
+   "chk": 1,
+   "sc": 0.454347,
+   "ans": "Thời gian lưu trữ dữ liệu camera giám sát tại Trung tâm dữ liệu tối thiểu là 90 ngày, theo Điều 18 Điểm 9 Thôn",
+   "err": null
+  },
+  {
+   "cat": "An toàn vật lý và Môi trường l",
+   "q": "Trung tâm dữ liệu yêu cầu bao nhiêu nguồn điện?",
+   "exp": "Tối thiểu một nguồn điện lưới và một nguồn điện máy phát, có hệ thống ",
+   "facts": [
+    "UPS"
+   ],
+   "pass": false,
+   "chk": 1,
+   "sc": 1.0,
+   "ans": "Theo Điều 17 Khoản 4 Thông tư 09/2020/TT-NHNN, trung tâm dữ liệu của hệ thống thông tin từ cấp độ 3 trở lên ph",
+   "err": null
+  },
+  {
+   "cat": "An toàn vật lý và Môi trường l",
+   "q": "Yêu cầu về phòng cháy chữa cháy đối với Trung tâm dữ liệu?",
+   "exp": "Phải có hệ thống báo cháy và chữa cháy tự động, đảm bảo không làm hư h",
+   "facts": [],
+   "pass": true,
+   "chk": 1,
+   "sc": 0.533779,
+   "ans": "Theo Điều 18 Khoản 7 Thông tư 09/2020/TT-NHNN, Trung tâm dữ liệu phải có hệ thống báo cháy và chữa cháy tự độn",
+   "err": null
+  },
+  {
+   "cat": "Quản lý vận hành và Trao đổi t",
+   "q": "Môi trường vận hành hệ thống cấp độ 3 trở lên phải tách biệt với những môi trường nào?",
+   "exp": "Tách biệt với môi trường phát triển, kiểm tra và thử nghiệm",
+   "facts": [],
+   "pass": true,
+   "chk": 1,
+   "sc": 0.426741,
+   "ans": "Theo Điều 17 Khoản 3 Thông tư 09/2020/TT-NHNN, môi trường vận hành hệ thống thông tin từ cấp độ 3 trở lên phải",
+   "err": null
+  },
+  {
+   "cat": "Quản lý vận hành và Trao đổi t",
+   "q": "Giao dịch chuyển tiền liên ngân hàng từ bao nhiêu tiền trở lên phải áp dụng MFA tại bước phê duyệt cuối?",
+   "exp": "Từ 100 triệu đồng trở lên",
+   "facts": [
+    "Từ"
+   ],
+   "pass": false,
+   "chk": 1,
+   "sc": 1.0,
+   "ans": "Dạ, hiện tại em chưa có thông tin chính xác về ngưỡng giao dịch chuyển tiền liên ngân hàng áp dụng xác thực đa",
+   "err": null
+  },
+  {
+   "cat": "Quản lý vận hành và Trao đổi t",
+   "q": "Dữ liệu phát sinh của hệ thống cấp độ 3 trở lên phải được sao lưu trong vòng bao lâu?",
+   "exp": "Phải được sao lưu trong vòng 24 giờ",
+   "facts": [],
+   "pass": true,
+   "chk": 2,
+   "sc": 0.56375,
+   "ans": "Theo Điều 22 Khoản 2 Thông tư 09/2020/TT-NHNN, dữ liệu phát sinh của các hệ thống thông tin từ cấp độ 3 trở lê",
+   "err": null
+  },
+  {
+   "cat": "Quản lý vận hành và Trao đổi t",
+   "q": "Định kỳ kiểm tra phục hồi dữ liệu sao lưu từ phương tiện lưu trữ ngoài đối với hệ thống cấp độ 3 trở lên là bao lâu?",
+   "exp": "Tối thiểu một năm một lần",
+   "facts": [],
+   "pass": true,
+   "chk": 2,
+   "sc": 0.578375,
+   "ans": "Theo Điều 22 Khoản 4 Điểm a Thông tư 09/2020/TT-NHNN, định kỳ kiểm tra, phục hồi dữ liệu sao lưu từ phương tiệ",
+   "err": null
+  },
+  {
+   "cat": "Quản lý vận hành và Trao đổi t",
+   "q": "Khi trao đổi thông tin bí mật với bên ngoài, tổ chức cần làm gì?",
+   "exp": "Phải có văn bản thỏa thuận trách nhiệm và thông tin phải được mã hóa h",
+   "facts": [],
+   "pass": true,
+   "chk": 2,
+   "sc": 0.693285,
+   "ans": "Theo Điều 24 Khoản 2 và Khoản 3 Thông tư 09/2020/TT-NHNN, khi trao đổi thông tin bí mật với bên ngoài, tổ chức",
+   "err": null
+  },
+  {
+   "cat": "Quản lý vận hành và Trao đổi t",
+   "q": "Hệ thống dịch vụ giao dịch trực tuyến cần phát hiện và cảnh báo những tiêu chí gì?",
+   "exp": "Giao dịch đáng ngờ (thời gian, địa điểm, IP, số tiền...); hoạt động bấ",
+   "facts": [
+    "IP"
+   ],
+   "pass": false,
+   "chk": 1,
+   "sc": 0.527023,
+   "ans": "Theo Điều 25 Khoản 2 Thông tư 09/2020/TT-NHNN, hệ thống dịch vụ giao dịch trực tuyến phải áp dụng các biện phá",
+   "err": null
+  },
+  {
+   "cat": "Quản lý vận hành và Trao đổi t",
+   "q": "Thời gian lưu trữ nhật ký trực tuyến đối với hệ thống cấp độ 3 trở lên tối thiểu là bao lâu?",
+   "exp": "Tối thiểu 3 tháng trực tuyến và sao lưu tối thiểu một năm",
+   "facts": [
+    "3 tháng"
+   ],
+   "pass": true,
+   "chk": 1,
+   "sc": 0.521844,
+   "ans": "Theo Điều 26 Khoản 2 Thông tư 09/2020/TT-NHNN, dữ liệu nhật ký của các hệ thống thông tin từ cấp độ 3 trở lên ",
+   "err": null
+  },
+  {
+   "cat": "Quản lý truy cập và Bên thứ ba",
+   "q": "Yêu cầu về độ dài mã khóa bí mật (mật khẩu) truy cập hệ thống?",
+   "exp": "Phải có độ dài từ sáu ký tự trở lên",
+   "facts": [
+    "độ"
+   ],
+   "pass": false,
+   "chk": 1,
+   "sc": 0.515438,
+   "ans": "Theo Điều 28 Khoản 2 Điểm a Thông tư 09/2020/TT-NHNN, mã khóa bí mật phải có độ dài từ sáu ký tự trở lên.",
+   "err": null
+  },
+  {
+   "cat": "Quản lý truy cập và Bên thứ ba",
+   "q": "Kết nối từ Internet vào mạng nội bộ để làm việc yêu cầu biện pháp gì?",
+   "exp": "Sử dụng mạng riêng ảo (VPN) và xác thực đa yếu tố (MFA)",
+   "facts": [
+    "Sử",
+    "VPN",
+    "MFA"
+   ],
+   "pass": false,
+   "chk": 1,
+   "sc": 0.415784,
+   "ans": "Theo Điều 29 Khoản 6 Thông tư 09/2020/TT-NHNN, kết nối từ mạng Internet vào mạng nội bộ của tổ chức để phục vụ",
+   "err": null
+  },
+  {
+   "cat": "Quản lý truy cập và Bên thứ ba",
+   "q": "Nguyên tắc phân quyền truy cập cho người sử dụng?",
+   "exp": "Bảo đảm nguyên tắc quyền vừa đủ để thực hiện nhiệm vụ được giao",
+   "facts": [
+    "đủ",
+    "để"
+   ],
+   "pass": false,
+   "chk": 1,
+   "sc": 0.425016,
+   "ans": "Nguyên tắc phân quyền truy cập cho người sử dụng theo Điều 30 Khoản 3 Thông tư 09/2020/TT-NHNN là bảo đảm cấp ",
+   "err": null
+  },
+  {
+   "cat": "Quản lý truy cập và Bên thứ ba",
+   "q": "Hệ thống cấp độ 4 trở lên yêu cầu MFA cho những truy cập nào?",
+   "exp": "Khi truy cập quản trị các máy chủ, ứng dụng và thiết bị mạng, an ninh ",
+   "facts": [],
+   "pass": true,
+   "chk": 1,
+   "sc": 0.515857,
+   "ans": "Theo Điều 30 Khoản 6 Thông tư 09/2020/TT-NHNN, đối với các hệ thống thông tin từ cấp độ 4 trở lên phải áp dụng",
+   "err": null
+  },
+  {
+   "cat": "Quản lý truy cập và Bên thứ ba",
+   "q": "Khi thuê bên thứ ba quản trị hệ thống cấp độ 3 trở lên, tổ chức phải gửi báo cáo gì cho NHNN?",
+   "exp": "Gửi báo cáo đánh giá rủi ro cho Cục Công nghệ thông tin",
+   "facts": [],
+   "pass": true,
+   "chk": 2,
+   "sc": 0.579252,
+   "ans": "Khi thuê bên thứ ba thực hiện toàn bộ công việc quản trị hệ thống thông tin từ cấp độ 3 trở lên và các hệ thốn",
+   "err": null
+  },
+  {
+   "cat": "Quản lý truy cập và Bên thứ ba",
+   "q": "Tiêu chí lựa chọn bên thứ ba cung cấp dịch vụ điện toán đám mây?",
+   "exp": "Phải là doanh nghiệp, có hạ tầng",
+   "facts": [],
+   "pass": true,
+   "chk": 1,
+   "sc": 0.554922,
+   "ans": "Tiêu chí lựa chọn bên thứ ba cung cấp dịch vụ điện toán đám mây theo Điều 34 Thông tư 09/2020/TT-NHNN bao gồm ",
+   "err": null
+  },
+  {
+   "cat": "Phát triển hệ thống và Xử lý s",
+   "q": "Khi phát triển phần mềm, có được dùng dữ liệu thật của khách hàng để kiểm thử không?",
+   "exp": "Không, trừ khi đã thực hiện các biện pháp che giấu hoặc thay đổi thông",
+   "facts": [
+    "đã"
+   ],
+   "pass": false,
+   "chk": 2,
+   "sc": 0.556311,
+   "ans": "Theo Điều 40 Khoản 2 Thông tư 09/2020/TT-NHNN, khi phát triển phần mềm, tổ chức không được sử dụng dữ liệu thậ",
+   "err": null
+  },
+  {
+   "cat": "Phát triển hệ thống và Xử lý s",
+   "q": "Tần suất kiểm tra, đánh giá an toàn thông tin đối với hệ thống cấp độ 4 là bao lâu?",
+   "exp": "Tối thiểu một năm một lần",
+   "facts": [],
+   "pass": true,
+   "chk": 2,
+   "sc": 0.585449,
+   "ans": "Theo Điều 42 Khoản 3 điểm b Thông tư 09/2020/TT-NHNN, tần suất kiểm tra, đánh giá an toàn thông tin đối với hệ",
+   "err": null
+  },
+  {
+   "cat": "Phát triển hệ thống và Xử lý s",
+   "q": "Thời hạn thông báo kết quả giám định bảo hành lốp xe (trong file Chính sách bảo hành lốp)?",
+   "exp": "Kết quả được thông báo trong vòng 7 ngày làm việc",
+   "facts": [
+    "7 ngày"
+   ],
+   "pass": false,
+   "chk": 1,
+   "sc": -0.018772,
+   "ans": "Dạ, hiện tại em chưa có thông tin chính xác về thời hạn thông báo kết quả giám định bảo hành lốp xe trong file",
+   "err": null
+  },
+  {
+   "cat": "Phát triển hệ thống và Xử lý s",
+   "q": "Thời gian yêu cầu báo cáo sự cố an toàn thông tin về NHNN?",
+   "exp": "Trong vòng 24 giờ kể từ thời điểm phát hiện sự cố",
+   "facts": [],
+   "pass": true,
+   "chk": 1,
+   "sc": 0.439502,
+   "ans": "Theo Điều 54 Khoản 1 Thông tư 09/2020/TT-NHNN, tổ chức phải gửi báo cáo sự cố an toàn thông tin trong vòng 24 ",
+   "err": null
+  },
+  {
+   "cat": "Phát triển hệ thống và Xử lý s",
+   "q": "Sau khi khắc phục xong sự cố, tổ chức phải gửi báo cáo hoàn thành trong vòng mấy ngày?",
+   "exp": "Trong vòng 05 ngày làm việc",
+   "facts": [
+    "05 ngày"
+   ],
+   "pass": true,
+   "chk": 1,
+   "sc": 0.461638,
+   "ans": "Theo Điều 54 Khoản 1 Thông tư 09/2020/TT-NHNN, tổ chức phải gửi báo cáo hoàn thành khắc phục sự cố trong vòng ",
+   "err": null
+  },
+  {
+   "cat": "Phát triển hệ thống và Xử lý s",
+   "q": "Hệ thống dự phòng của hệ thống cấp độ 3 trở lên phải có khả năng thay thế hệ thống chính trong bao lâu?",
+   "exp": "Trong vòng 4 giờ (ngoại trừ hệ thống xử lý bí mật nhà nước)",
+   "facts": [],
+   "pass": true,
+   "chk": 1,
+   "sc": 0.479446,
+   "ans": "Theo Điều 50 Khoản 1 điểm c Thông tư 09/2020/TT-NHNN, hệ thống dự phòng của hệ thống thông tin từ cấp độ 3 trở",
+   "err": null
+  },
+  {
+   "cat": "Phát triển hệ thống và Xử lý s",
+   "q": "Tần suất diễn tập phương án xử lý sự cố an toàn thông tin?",
+   "exp": "Định kỳ hàng năm cho tối thiểu một trong các hệ thống cấp độ 3 trở lên",
+   "facts": [
+    "độ"
+   ],
+   "pass": false,
+   "chk": 1,
+   "sc": 0.624147,
+   "ans": "Theo Điều 46 Khoản 6 Thông tư 09/2020/TT-NHNN, tổ chức phải định kỳ hàng năm tổ chức diễn tập phương án xử lý ",
+   "err": null
+  }
+ ]
+}
