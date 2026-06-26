@@ -36,7 +36,6 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from ragbot.infrastructure.db.engine import session_with_tenant
 from ragbot.shared.constants import (
-    DEFAULT_STATS_ATTRS_MATCH_MIN_LEN,
     DEFAULT_STATS_INDEX_QUERY_LIMIT,
     DEFAULT_STATS_REVERSE_MATCH_LIMIT,
     DEFAULT_STATS_REVERSE_MATCH_MIN_LEN,
@@ -45,6 +44,17 @@ from ragbot.shared.constants import (
 from ragbot.shared.document_stats import ParsedEntity
 
 logger = structlog.get_logger(__name__)
+
+# ING-7 serving guard: a canonical DELETE soft-deletes the parent ``documents``
+# row (sets ``deleted_at``) + drops its vector chunks, but the pre-extracted
+# entities in ``document_service_index`` are NOT purged synchronously. Every
+# read path therefore JOINs the parent document and keeps only live rows, so a
+# deleted catalog's entities can never resurface in a price/list/keyword answer
+# — independent of whether the row-purge already ran. ``dsi`` aliases the index
+# table; ``d`` the parent. ``record_document_id`` (index) ≠ ``id`` (documents),
+# so unqualified column refs elsewhere stay unambiguous after the join.
+_DOC_LIVE_JOIN = "JOIN documents AS d ON d.id = dsi.record_document_id"
+_DOC_LIVE_PREDICATE = "d.deleted_at IS NULL"
 
 
 class StatsIndexRepository:
@@ -112,7 +122,6 @@ class StatsIndexRepository:
                     f":entity_name_{i}, :entity_category_{i}, "
                     f":price_primary_{i}, :price_secondary_{i}, "
                     f"CAST(:attributes_json_{i} AS jsonb), "
-                    f":entity_synonyms_{i}, "
                     f"(SELECT id FROM document_chunks "
                     f"WHERE record_document_id = :doc_id "
                     f"AND chunk_index = :chunk_index_{i} LIMIT 1))"
@@ -122,10 +131,6 @@ class StatsIndexRepository:
                 params[f"price_primary_{i}"] = entity.price_primary
                 params[f"price_secondary_{i}"] = entity.price_secondary
                 params[f"chunk_index_{i}"] = entity.chunk_index
-                # Aliases/synonym search variants → entity_synonyms (NULL when the
-                # catalog has no aliases column). Captured by document_stats; this is
-                # the searchable backing column query_by_name_keyword ORs against.
-                params[f"entity_synonyms_{i}"] = getattr(entity, "aliases", None)
                 # Merge chunk_index into attributes_json for traceability.
                 attrs = dict(entity.attributes) if entity.attributes else {}
                 attrs["chunk_index"] = entity.chunk_index
@@ -136,7 +141,7 @@ class StatsIndexRepository:
                 "(record_tenant_id, workspace_id, record_bot_id, "
                 "record_document_id, entity_name, entity_category, "
                 "price_primary, price_secondary, attributes_json, "
-                "entity_synonyms, record_chunk_id) "
+                "record_chunk_id) "
                 f"VALUES {', '.join(value_clauses)}"
             )
             await session.execute(text(sql), params)
@@ -241,16 +246,17 @@ class StatsIndexRepository:
                 )
                 params["price_max"] = price_max
 
-        where_parts = ["record_bot_id = :bot_id"]
+        where_parts = ["dsi.record_bot_id = :bot_id", _DOC_LIVE_PREDICATE]
         where_parts.extend(price_clauses)
         where_sql = " AND ".join(where_parts)
 
         sql = (
-            "SELECT id, record_document_id, entity_name, "
-            "entity_category, price_primary, price_secondary, attributes_json, "
-            "record_chunk_id "
-            f"FROM document_service_index WHERE {where_sql} "
-            f"ORDER BY price_primary ASC NULLS LAST "
+            "SELECT dsi.id, dsi.record_document_id, dsi.entity_name, "
+            "dsi.entity_category, dsi.price_primary, dsi.price_secondary, "
+            "dsi.attributes_json, dsi.record_chunk_id "
+            f"FROM document_service_index AS dsi {_DOC_LIVE_JOIN} "
+            f"WHERE {where_sql} "
+            f"ORDER BY dsi.price_primary ASC NULLS LAST "
             f"LIMIT :limit"
         )
         async with self._sf() as session:
@@ -285,7 +291,7 @@ class StatsIndexRepository:
         the parser emits ``operation="max"/"min"`` and the route runs
         ``ORDER BY price <DESC|ASC> LIMIT N`` against the clean pre-extracted
         prices — instead of re-parsing raw retrieved chunks, which fails on
-        CSV price rows like ``Item A,123000``.
+        CSV price rows like ``Laser Carbon,1200000``.
 
         Args:
             direction: ``"max"`` → most expensive first; ``"min"`` → cheapest.
@@ -294,7 +300,7 @@ class StatsIndexRepository:
                 ``COALESCE(price_primary, price_secondary)``).
 
         NULL-priced rows are excluded, so a bot whose corpus has no prices
-        (e.g. a legal/regulatory corpus) returns ``[]`` and the caller falls back to
+        (e.g. a legal Thông tư) returns ``[]`` and the caller falls back to
         vector retrieve. Multi-tenant: scoped by ``record_bot_id`` (unique).
         """
         order = "DESC" if direction == "max" else "ASC"
@@ -311,10 +317,12 @@ class StatsIndexRepository:
             )
         effective_limit = min(limit, DEFAULT_STATS_INDEX_QUERY_LIMIT)
         sql = (
-            "SELECT id, record_document_id, record_chunk_id, entity_name, "
-            "entity_category, price_primary, price_secondary, attributes_json "
-            "FROM document_service_index "
-            f"WHERE record_bot_id = :bot_id AND {not_null} "
+            "SELECT dsi.id, dsi.record_document_id, dsi.record_chunk_id, "
+            "dsi.entity_name, dsi.entity_category, dsi.price_primary, "
+            "dsi.price_secondary, dsi.attributes_json "
+            f"FROM document_service_index AS dsi {_DOC_LIVE_JOIN} "
+            f"WHERE dsi.record_bot_id = :bot_id AND {_DOC_LIVE_PREDICATE} "
+            f"AND {not_null} "
             f"ORDER BY {price_expr} {order} "
             "LIMIT :limit"
         )
@@ -381,13 +389,13 @@ class StatsIndexRepository:
                 )
                 params["price_max"] = price_max
 
-        where_parts = ["record_bot_id = :bot_id"]
+        where_parts = ["dsi.record_bot_id = :bot_id", _DOC_LIVE_PREDICATE]
         where_parts.extend(price_clauses)
         where_sql = " AND ".join(where_parts)
 
         sql = (
-            "SELECT COUNT(*) FROM document_service_index "
-            f"WHERE {where_sql}"
+            "SELECT COUNT(*) FROM document_service_index AS dsi "
+            f"{_DOC_LIVE_JOIN} WHERE {where_sql}"
         )
         async with self._sf() as session:
             result = await session.execute(text(sql), params)
@@ -410,18 +418,13 @@ class StatsIndexRepository:
             List of row dicts (same shape as ``query_by_price_range``).
         """
         effective_limit = min(limit, DEFAULT_STATS_INDEX_QUERY_LIMIT)
-        # ``attributes_json`` MUST be selected: the synthetic-chunk renderer loops it
-        # to surface the owner's generic labelled fields ("Giá Combo 10 buổi", "Tồn",
-        # "date1", "RAM"). Omitting it made the list/aggregate route emit only the
-        # name + headline value — the LLM never saw the combo price / stock / date,
-        # so it refused or extrapolated. Same shape as the other query methods.
         sql = (
-            "SELECT id, record_document_id, entity_name, "
-            "entity_category, price_primary, price_secondary, record_chunk_id, "
-            "attributes_json "
-            "FROM document_service_index "
-            "WHERE record_bot_id = :bot_id "
-            "ORDER BY created_at ASC "
+            "SELECT dsi.id, dsi.record_document_id, dsi.entity_name, "
+            "dsi.entity_category, dsi.price_primary, dsi.price_secondary, "
+            "dsi.record_chunk_id "
+            f"FROM document_service_index AS dsi {_DOC_LIVE_JOIN} "
+            f"WHERE dsi.record_bot_id = :bot_id AND {_DOC_LIVE_PREDICATE} "
+            "ORDER BY dsi.created_at ASC "
             "LIMIT :limit"
         )
         async with self._sf() as session:
@@ -440,7 +443,6 @@ class StatsIndexRepository:
                 "price_primary": row[4],
                 "price_secondary": row[5],
                 "record_chunk_id": row[6],
-                "attributes_json": row[7],
             }
             for row in rows
         ]
@@ -504,22 +506,17 @@ class StatsIndexRepository:
             or_clauses.append(
                 f"unaccent(entity_name) ILIKE unaccent(:kw{i}) "
                 f"OR unaccent(entity_category) ILIKE unaccent(:kw{i}) "
-                # ALIASES/synonym column: an entity whose search variants list the
-                # asked notation matches even when entity_name uses another ("265/50ZR20"
-                # name, but the row's Aliases carry "265/50R20" = the query). The fold
-                # collapses single digit-separators so notation-variants still hit.
-                f"OR unaccent(entity_synonyms) ILIKE unaccent(:kw{i}) "
-                f"OR {_fold('entity_name')} LIKE '%' || {_fold(f':kwn{i}')} || '%' "
-                f"OR {_fold('entity_synonyms')} LIKE '%' || {_fold(f':kwn{i}')} || '%'"
+                f"OR {_fold('entity_name')} LIKE '%' || {_fold(f':kwn{i}')} || '%'"
             )
             params[f"kw{i}"] = f"%{v}%"
             params[f"kwn{i}"] = v
         where_match = " OR ".join(f"({c})" for c in or_clauses)
         sql = (
-            "SELECT id, record_document_id, record_chunk_id, entity_name, "
-            "entity_category, price_primary, price_secondary, attributes_json "
-            "FROM document_service_index "
-            "WHERE record_bot_id = :bot_id "
+            "SELECT dsi.id, dsi.record_document_id, dsi.record_chunk_id, "
+            "dsi.entity_name, dsi.entity_category, dsi.price_primary, "
+            "dsi.price_secondary, dsi.attributes_json "
+            f"FROM document_service_index AS dsi {_DOC_LIVE_JOIN} "
+            f"WHERE dsi.record_bot_id = :bot_id AND {_DOC_LIVE_PREDICATE} "
             f"AND ({where_match}) "
             # Prefer a priced row: a price query must never surface a NULL-price
             # notation-variant when a priced sibling also matches the fold.
@@ -532,25 +529,26 @@ class StatsIndexRepository:
             rows = result.fetchall()
             # Reverse/token fallback: the forward match (entity name CONTAINS the
             # keyword) misses a GRANULAR entity whose NAME is a word INSIDE the
-            # query — e.g. query "Service A variant B combo N units" vs entity "B".
+            # query — e.g. query "Triệt lông nách combo 10 buổi" vs entity "Nách".
             # When forward finds nothing, match entities whose name is a substring
             # of the query keyword, guarded by a min length so 1-3 char zone words
             # ("Mép", "sâu") can't over-match. Only fires on an EMPTY forward
             # result → cannot regress a working forward lookup. ORDER BY length
             # DESC prefers the most specific (longest) entity name.
             if not rows and kw:
-                # A short zone name ("B"/"C"/"D", 3 chars) is the TARGET of a
-                # category-qualified query ("category-word zone-B") but the plain length
+                # A short zone name ("Mặt"/"Tay"/"Râu", 3 chars) is the TARGET of a
+                # category-qualified query ("triệt lông mặt") but the plain length
                 # guard dropped it AND a CONTAINS match over-picks a category word in
-                # the MIDDLE ("category-word"). Accept a short name when the keyword ENDS
-                # with it (trailing = the qualifying zone), and ORDER trailing matches
-                # first, then priced rows — so "category-word zone-B" → "B" (priced), not
-                # the null-price "category-word". Reverse only fires on empty forward.
+                # the MIDDLE ("lông"). Accept a short name when the keyword ENDS with
+                # it (trailing = the qualifying zone), and ORDER trailing matches
+                # first, then priced rows — so "triệt lông mặt" → "Mặt" (priced), not
+                # the null-price "lông". Reverse only fires on an empty forward result.
                 rev_sql = (
-                    "SELECT id, record_document_id, record_chunk_id, entity_name, "
-                    "entity_category, price_primary, price_secondary, attributes_json "
-                    "FROM document_service_index "
-                    "WHERE record_bot_id = :bot_id "
+                    "SELECT dsi.id, dsi.record_document_id, dsi.record_chunk_id, "
+                    "dsi.entity_name, dsi.entity_category, dsi.price_primary, "
+                    "dsi.price_secondary, dsi.attributes_json "
+                    f"FROM document_service_index AS dsi {_DOC_LIVE_JOIN} "
+                    f"WHERE dsi.record_bot_id = :bot_id AND {_DOC_LIVE_PREDICATE} "
                     "AND unaccent(:kwfull) ILIKE '%' || unaccent(entity_name) || '%' "
                     "AND (char_length(entity_name) >= :min_len "
                     "     OR (char_length(entity_name) >= :short_floor "
@@ -566,36 +564,6 @@ class StatsIndexRepository:
                     "short_floor": DEFAULT_STATS_REVERSE_MATCH_SHORT_FLOOR,
                     "kwfull": kw,
                     "rev_limit": min(effective_limit, DEFAULT_STATS_REVERSE_MATCH_LIMIT),
-                })
-                rows = result.fetchall()
-
-            # Attributes fallback (P9): a code / SKU / stock / date / image link
-            # the corpus keeps in a NON-role column lands in attributes_json,
-            # which neither the forward name/synonym match nor the reverse match
-            # ever sees — so a "code AB-12 X/Y Z" lookup returned nothing even
-            # though the entity exists. As a LAST resort (forward AND reverse both
-            # empty) match the keyword inside the attributes JSON text. Guarded by
-            # a min keyword length so a short token cannot over-match every row
-            # that shares a warehouse / category word. Fires only on an empty
-            # result → never regresses a working name lookup.
-            if not rows and kw and len(kw) >= DEFAULT_STATS_ATTRS_MATCH_MIN_LEN:
-                attr_sql = (
-                    "SELECT id, record_document_id, record_chunk_id, entity_name, "
-                    "entity_category, price_primary, price_secondary, attributes_json "
-                    "FROM document_service_index "
-                    "WHERE record_bot_id = :bot_id "
-                    "AND unaccent(attributes_json::text) ILIKE unaccent(:kwlike) "
-                    "ORDER BY (price_primary IS NOT NULL "
-                    "          OR price_secondary IS NOT NULL) DESC, "
-                    "char_length(entity_name) DESC "
-                    "LIMIT :attr_limit"
-                )
-                result = await session.execute(text(attr_sql), {
-                    "bot_id": record_bot_id,
-                    "kwlike": f"%{kw}%",
-                    "attr_limit": min(
-                        effective_limit, DEFAULT_STATS_REVERSE_MATCH_LIMIT,
-                    ),
                 })
                 rows = result.fetchall()
 

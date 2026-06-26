@@ -447,6 +447,13 @@ def _column_roles(
     # Tier-2 and Tier-1 assignment can't drift (and keeps the branch count low).
     single_idx: dict[str, int | None] = {"name": None, "category": None, "aliases": None}
     price_idxs: list[int] = []
+    # Columns the OWNER explicitly declared as a generic ``attribute`` (no special
+    # role). They must keep their value as a labelled attribute and — crucially —
+    # NEVER be hijacked by the unknown-pure-money→price fallback: a stock/count the
+    # owner tagged ``attribute`` (e.g. "Số lượng tồn" = 40400) is NOT a price even
+    # though it parses as one. Late-binding / attribute-generic: the owner's
+    # declaration is authoritative over a numeric-shape guess.
+    attr_idxs: list[int] = []
 
     def _bind(role: str, i: int) -> None:
         if role == "price":
@@ -459,11 +466,14 @@ def _column_roles(
         if not token:
             continue
         # Tier 2 (authoritative): owner-declared role wins outright over inference.
-        # ``attribute`` is an explicit no-role → skip (keeps it a generic attribute
-        # AND suppresses any inferred role for that column).
+        # ``attribute`` is an explicit no-role → record the index so the row
+        # extractor keeps it a generic attribute AND suppresses the pure-money price
+        # fallback for that column.
         forced = declared.get(token)
         if forced is not None:
-            if forced != "attribute":
+            if forced == "attribute":
+                attr_idxs.append(i)
+            else:
                 _bind(forced, i)
             continue
         # Tier 1: structural/vocab inference (G1 cascade).
@@ -479,6 +489,7 @@ def _column_roles(
     return {
         "name": single_idx["name"], "category": single_idx["category"],
         "price": price_idxs, "aliases": single_idx["aliases"],
+        "attribute": attr_idxs,
     }
 
 
@@ -512,6 +523,10 @@ def _extract_entity_from_row(
     cat_idx = roles.get("category") if roles else None
     alias_idx = roles.get("aliases") if roles else None
     price_cols = set(roles["price"]) if roles and roles.get("price") else None
+    # Owner-declared generic-attribute columns — the pure-money price fallback is
+    # SUPPRESSED here so a numeric value the owner tagged ``attribute`` (a stock /
+    # count that parses as money) is kept a labelled attribute, never a fake price.
+    attr_cols = set(roles["attribute"]) if roles and roles.get("attribute") else None
     # A category/stub column is a SEPARATE axis only when a distinct NAME column
     # also exists (``Nhóm | Tên | Giá``). In a 2-col ``Vùng | Giá`` the category-token
     # column IS the entity name — skipping it would drop the row (no name left).
@@ -522,7 +537,22 @@ def _extract_entity_from_row(
         if not col:
             continue
         if cat_idx is not None and idx == cat_idx:
-            continue  # category/stub column — resolved + forward-filled by the caller
+            # Category/stub column — its GROUP label is resolved + forward-filled into
+            # ``entity.category`` by the caller. But the per-row VALUE must still be
+            # retained as a labelled attribute (late-binding / attribute-generic): a
+            # header that the inference reads as a category may actually hold a generic
+            # value the owner queries by ("Tồn kho" stock-count mis-bound by the "kho"
+            # warehouse token). Surfacing it under its own header keeps every column
+            # equal — no value is dropped because of a role guess. Skipped when the
+            # cell is blank or duplicates the name. Domain-neutral (label = the corpus
+            # header), zero floor applied (a stock/count is NOT a price).
+            _cat_val = col.strip()
+            if _cat_val and _cat_val != name:
+                _cat_hdr = (
+                    header[idx].strip() if idx < len(header) and header[idx] else ""
+                )
+                attributes.setdefault(_cat_hdr or f"col_{idx}", _cat_val)
+            continue
         if alias_idx is not None and idx == alias_idx:
             # ALIASES/synonym column → its dedicated field, NOT name/price/attributes.
             # Keeps the ``;``-separated search variants out of the name slot (they must
@@ -537,6 +567,13 @@ def _extract_entity_from_row(
         #     asserts it is a price, so the pure-money guard would only lose data.
         #   * UNKNOWN column (no header role) → require PURE money so a NAME that
         #     merely contains a money phrase ("Gói 6 triệu") is not read as a value.
+        #   * OWNER-DECLARED ``attribute`` column → NEVER a price; the owner's
+        #     declaration overrides the numeric shape (a stock/count tagged
+        #     ``attribute`` that parses as money stays a labelled attribute).
+        if attr_cols is not None and idx in attr_cols:
+            label = header[idx] if idx < len(header) else f"col_{idx}"
+            attributes[label] = col
+            continue
         if price_cols is not None and idx in price_cols:
             # KNOWN price column → parse even with extra words ("500k/buổi").
             money = parse_money_vn(col)
@@ -607,6 +644,7 @@ def _extract_entity_from_row(
                 (price_cols is not None and idx in price_cols)
                 or (cat_idx is not None and idx == cat_idx)
                 or (alias_idx is not None and idx == alias_idx)
+                or (attr_cols is not None and idx in attr_cols)
             ):
                 continue
             if len(stripped) <= DEFAULT_STATS_ATTR_MAX_CHARS:
@@ -978,6 +1016,7 @@ def analyze_table_headers(
             if roles.get("aliases") is not None:
                 assigned_idx.add(roles["aliases"])
             assigned_idx.update(roles.get("price") or [])
+            assigned_idx.update(roles.get("attribute") or [])
             for idx, cell in enumerate(cols):
                 if idx in assigned_idx:
                     continue

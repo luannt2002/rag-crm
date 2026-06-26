@@ -48,10 +48,7 @@ from ragbot.infrastructure.observability.metrics import (
     document_ingest_duration_seconds,
     document_ingest_total,
 )
-from ragbot.infrastructure.parser.registry import (
-    build_parser,
-    detect_parser_robust,
-)
+from ragbot.infrastructure.parser.registry import build_parser, detect_parser
 from ragbot.shared.constants import (
     DEFAULT_HTTP_TIMEOUT_S,
     DEFAULT_NARRATE_PROVIDER,
@@ -92,6 +89,45 @@ def _is_refetchable_url(url: str) -> bool:
     that is NOT fetchable — its content lives only in ``documents.raw_content``.
     """
     return (url or "").strip().lower().startswith(("http://", "https://"))
+
+
+# DLC-2 transient classification (single source of truth): a 429 / 5xx / network
+# fault is recoverable, so the message is RE-RAISED for bus XCLAIM-redelivery and
+# the BE-to-BE idempotency row is LEFT at ``"processing"`` (the row TTL is the
+# backstop). Everything else (ValueError / TypeError / KeyError = malformed
+# payload) is terminal — retrying just burns budget, so the row is marked
+# ``failed`` for a stable partner-visible state. Used by BOTH the re-raise gate
+# and the idempotency lifecycle marking so the two can never disagree.
+_TRANSIENT_INGEST_ERRORS: tuple[type[BaseException], ...] = (
+    ExternalServiceError,
+    EmbeddingError,
+    IngestError,
+    ConnectionError,
+    TimeoutError,
+    OSError,
+    httpx.HTTPError,
+)
+
+
+def _is_transient_ingest_error(exc: BaseException) -> bool:
+    """True when *exc* is a recoverable ingest failure (retry-worthy)."""
+    return isinstance(exc, _TRANSIENT_INGEST_ERRORS)
+
+
+def _ingest_idempotency_service(container: Container) -> Any | None:
+    """Resolve the BE-to-BE idempotency service, or None when unavailable.
+
+    The lifecycle marking is opt-in: only the upload that carried an
+    ``X-Idempotency-Key`` queued a payload with ``idempotency_key``. A
+    container without the provider (older test harness) degrades to None so
+    the marking is skipped rather than crashing the ingest.
+    """
+    if not hasattr(container, "ingest_idempotency_service"):
+        return None
+    try:
+        return container.ingest_idempotency_service()
+    except Exception:  # noqa: BLE001 — DI hook best-effort; missing provider must not break ingest
+        return None
 
 
 async def handle_document_uploaded(payload: dict[str, Any], container: Container) -> None:
@@ -183,6 +219,9 @@ async def _handle_document_uploaded_inner(payload: dict[str, Any], container: Co
     source_url = payload["source_url"]
     tool_name = payload["tool_name"]
     mime_type = payload.get("mime_type", "application/octet-stream")
+    # BE-to-BE idempotency key (DLC-1): present only when the upload carried an
+    # ``X-Idempotency-Key`` header. Empty/missing → lifecycle marking skipped.
+    idempotency_key = (payload.get("idempotency_key") or "").strip()
 
     # Slug carried on the queued event mirrors the bot row at publish
     # time; missing values fall back via the central resolver
@@ -343,7 +382,6 @@ async def _handle_document_uploaded_inner(payload: dict[str, Any], container: Co
             # actionable error instead of a cryptic protocol crash.
             _fetchable = _is_refetchable_url(source_url)
             registry_routed = False
-            _raw: bytes = b""
             try:
                 if not _fetchable:
                     raise _LocalSourceNotRefetchable(source_url)
@@ -351,7 +389,7 @@ async def _handle_document_uploaded_inner(payload: dict[str, Any], container: Co
                 # Google Docs/Sheets viewer URL (``.../edit?gid=N``) → direct
                 # export URL so the fetch receives structured txt/csv, not an
                 # HTML login page. Setting mime/name routes it to the csv/sheets
-                # parser instead of OCR — fixes the retry-storm where the
+                # parser instead of OCR — fixes the xe-3 retry-storm where the
                 # HTML viewer parsed to empty text and looped to DLQ.
                 _export_url = google_link_service.to_export_url(source_url)
                 if _export_url != source_url:
@@ -371,35 +409,27 @@ async def _handle_document_uploaded_inner(payload: dict[str, Any], container: Co
                 if _doc_name and "." in _doc_name:
                     _ext = _doc_name[_doc_name.rfind("."):].lower()
 
-                # Fetch the body ONCE, up front, so detection can byte-sniff an
-                # ambiguous mime (octet-stream / empty) and the same bytes feed
-                # BOTH the registry parser and the OCR fallback — no double GET.
-                # follow_redirects: a Google ``export?format=docx`` returns a 307
-                # to a googleusercontent.com host; without following it
-                # raise_for_status() turns the redirect into an HTTPStatusError
-                # and the ingest dies (doc stuck DRAFT, 0 chunks).
-                async with httpx.AsyncClient(
-                    timeout=DEFAULT_HTTP_TIMEOUT_S, follow_redirects=True,
-                ) as cli:
-                    _resp = await cli.get(source_url)
-                    _resp.raise_for_status()
-                    _raw = _resp.content
-
-                # VLM image branch (multimodal): an image upload is captioned by
-                # a vision model when ``vlm_provider`` is enabled, else falls
-                # through to the OCR path. The VLM parser needs injected llm+spec,
-                # so it is built here explicitly (a no-arg probe cannot).
+                # VLM image branch (multimodal Phase 2): an image upload is captioned
+                # by a vision model when ``vlm_provider`` is enabled, else falls through
+                # to the legacy OCR path. The VLM parser needs injected llm+spec, so it
+                # is built here explicitly (detect_parser's no-arg probe cannot).
                 parser = await _try_build_vlm_image_parser(
                     container, bot_id=bot_id, tenant_id=tenant_id,
                     trace_id=trace_id, mime_type=mime_type or "",
                 )
                 if parser is None:
-                    # Robust detection: trust the declared (mime, ext) first,
-                    # then byte-sniff the fetched body so an XLSX/DOCX/CSV that
-                    # arrives as octet-stream still routes to its structured
-                    # parser instead of falling through to flat OCR.
-                    parser = detect_parser_robust(mime_type or "", _ext, _raw)
+                    parser = detect_parser(mime_type or "", _ext)
                 if parser is not None:
+                    # follow_redirects: Google Docs ``export?format=docx`` returns
+                    # a 307 to a googleusercontent.com host; without following it
+                    # raise_for_status() turns the redirect into an HTTPStatusError
+                    # and the ingest dies (doc stuck DRAFT, 0 chunks).
+                    async with httpx.AsyncClient(
+                        timeout=DEFAULT_HTTP_TIMEOUT_S, follow_redirects=True,
+                    ) as cli:
+                        _resp = await cli.get(source_url)
+                        _resp.raise_for_status()
+                        _raw = _resp.content
                     _chunks = await parser.parse(
                         _raw, file_name=_doc_name or "doc",
                     )
@@ -435,12 +465,7 @@ async def _handle_document_uploaded_inner(payload: dict[str, Any], container: Co
                 # the registry can't structurally parse. Only for refetchable
                 # http(s) sources (a local:// upload has no fetchable URL).
                 ocr = container.ocr()
-                # Reuse the already-fetched bytes (avoids a second GET and lets
-                # the OCR adapter byte-sniff the real type); fall back to the URL
-                # only when the upfront fetch did not run.
-                parsed = await ocr.parse(
-                    _raw if _raw else source_url, mime_type_hint=mime_type,
-                )
+                parsed = await ocr.parse(source_url, mime_type_hint=mime_type)
                 # Keep the structure-aware Block stream alongside the flat
                 # text (ADR-W3-D1 S1): ``content`` stays the fallback, but
                 # ``blocks`` lets ingest carry the parser's type/atomicity
@@ -605,6 +630,27 @@ async def _handle_document_uploaded_inner(payload: dict[str, Any], container: Co
                 "corpus_version": 1,
             },
         )
+        # DLC-1: stamp the BE-to-BE idempotency row ``done`` + bind the
+        # document UUID so a partner retry within the TTL short-circuits to
+        # the original document instead of re-ingesting. Best-effort — a
+        # successful ingest must never be reported as failed because the
+        # idempotency store hiccuped.
+        if idempotency_key:
+            _idem = _ingest_idempotency_service(container)
+            if _idem is not None:
+                try:
+                    await _idem.mark_done(
+                        record_tenant_id=UUID(str(tenant_id)),
+                        workspace_id=str(workspace_slug),
+                        idempotency_key=idempotency_key,
+                        record_document_id=UUID(str(document_id)),
+                    )
+                except Exception:  # noqa: BLE001 — idempotency marking is best-effort
+                    logger.warning(
+                        "ingest_idempotency_mark_done_failed",
+                        doc_id=str(document_id),
+                        exc_info=True,
+                    )
         try:
             document_ingest_total.labels(status="success").inc()
             document_ingest_duration_seconds.observe(time.perf_counter() - _ingest_t0)
@@ -653,19 +699,35 @@ async def _handle_document_uploaded_inner(payload: dict[str, Any], container: Co
         except Exception:  # noqa: BLE001
             pass
 
+        _transient = _is_transient_ingest_error(exc)
+
+        # DLC-1 / DLC-2: a TERMINAL failure marks the BE-to-BE idempotency row
+        # ``failed`` so a partner retry sees a stable state — never stuck
+        # ``"processing"``. A TRANSIENT failure is LEFT at ``"processing"`` so
+        # the bus redelivery can still mark it ``done`` on a later success; the
+        # row TTL is the backstop if every retry exhausts. Best-effort.
+        if idempotency_key and not _transient:
+            _idem = _ingest_idempotency_service(container)
+            if _idem is not None:
+                try:
+                    await _idem.mark_failed(
+                        record_tenant_id=UUID(str(tenant_id)),
+                        workspace_id=str(workspace_slug),
+                        idempotency_key=idempotency_key,
+                    )
+                except Exception:  # noqa: BLE001 — idempotency marking is best-effort
+                    logger.warning(
+                        "ingest_idempotency_mark_failed_failed",
+                        doc_id=str(document_id),
+                        exc_info=True,
+                    )
+
         # HIGH #2 fix (audit 2026-05-13): re-raise TRANSIENT failures so
         # bus skips XACK → recover_pending_messages XCLAIMs the message
         # and retries up to dead-letter. Terminal errors (ValueError /
         # TypeError / KeyError = malformed payload) stay swallowed —
         # retrying them just burns rate-limit budget.
-        if isinstance(
-            exc,
-            (
-                ExternalServiceError, EmbeddingError, IngestError,
-                ConnectionError, TimeoutError, OSError,
-                httpx.HTTPError,
-            ),
-        ):
+        if _transient:
             raise
 
 

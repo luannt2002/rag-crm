@@ -33,14 +33,15 @@ from ragbot.shared.constants import (
     DEFAULT_GROUNDING_CHECK_ASYNC_TOP_SCORE_THRESHOLD,
     DEFAULT_GROUNDING_CHECK_ENABLED,
     DEFAULT_GROUNDING_CHECK_THRESHOLD,
+    DEFAULT_GROUNDING_FAILURE_MODE,
     DEFAULT_GROUNDING_INTENTS,
-    DEFAULT_STATS_ROUTE_SKIP_GROUNDING,
     DEFAULT_GUARDRAIL_LEAK_MIN_MATCH_COUNT,
     DEFAULT_GUARDRAIL_LEAK_SHINGLE_SIZE,
     DEFAULT_SYSPROMPT_LEAK_SKIP_INTENTS,
     DEFAULT_SYSPROMPT_LEAK_SKIP_STATS_ROUTE,
     DEFAULT_GUARDRAIL_OOS_SIMILARITY_THRESHOLD,
     DEFAULT_PIPELINE_PARALLEL_OUTPUT_GUARDS_ENABLED,
+    GROUNDING_FAILURE_MODE_FAIL_OPEN,
 )
 from ragbot.shared.errors import InvariantViolation
 
@@ -94,19 +95,14 @@ async def guard_output(
             _grounding_intents = DEFAULT_GROUNDING_INTENTS
         _current_intent = state.get("intent") or ""
         _grounding_eligible = _current_intent in _grounding_intents
-        # Stats/structured-index route. Historically grounding was SKIPPED here
-        # because the LLM REFORMATS exact rows ("còn 338 cái" vs chunk
-        # "quantity: 338") and the fuzzy judge could false-block a correct
-        # answer. But skipping let an answer cite a value NOT present in the
-        # matched entity (a stock number leaked from history) pass unchecked —
-        # a HALLU breach. Default now KEEPS grounding on for stats
-        # (DEFAULT_STATS_ROUTE_SKIP_GROUNDING=False); a bot that hits
-        # false-blocks on legitimately-reformatted structured answers can
-        # re-enable the skip per-bot. (grade/rerank stay skipped on stats — CRAG
-        # would wrongly drop the authoritative synthetic chunk.)
-        if str(state.get("retrieve_mode") or "").startswith("stats") and bool(
-            _pcfg(state, "stats_route_skip_grounding", DEFAULT_STATS_ROUTE_SKIP_GROUNDING)
-        ):
+        # Stats/aggregation route answers come from the authoritative structured
+        # index (exact price/quantity/date SQL), not fuzzy retrieval — the LLM
+        # relays those rows and the answer often REFORMATS them ("còn 338 cái"
+        # vs chunk "quantity: 338"), which the fuzzy grounding judge mislabels
+        # unsupported and FALSE-BLOCKS a correct answer. Skip grounding when the
+        # route is a stats lookup (HALLU traps never reach it — they return 0
+        # rows → vector path → grounding still applies). Per-bot overridable.
+        if str(state.get("retrieve_mode") or "").startswith("stats"):
             _grounding_eligible = False
         _grounding_check_skipped = bool(
             _grounding_enabled and not _grounding_eligible
@@ -218,6 +214,33 @@ async def guard_output(
                     return out
             llm_fn = _grounding_llm
 
+        # AG-A2 — grounding-net fail-CLOSED. The HALLU net was silently OFF
+        # whenever the grounding judge could NOT run: grounding is enabled and
+        # the intent is grounding-eligible (so the answer SHOULD have been
+        # verified), the per-bot async ship-then-check path is NOT in play, yet
+        # ``llm_fn`` is None — the LLM runtime is unwired (model_resolver / llm
+        # missing). Previously the node returned the answer UNVERIFIED. Default
+        # ``fail_closed`` substitutes the bot's ``oos_answer_template`` (the
+        # existing refuse branch) instead of shipping an ungrounded answer,
+        # honouring HALLU=0 sacred. Bot owner opts back into the legacy
+        # pass-through per-bot via ``plan_limits.grounding_failure_mode =
+        # "fail_open"``. This is NOT an answer-override (sacred-rule 10): it is
+        # the same refuse-with-template path the output guardrail already uses
+        # on a block.
+        _grounder_dead = bool(
+            _grounding_enabled
+            and _grounding_eligible
+            and not _grounding_async
+            and llm_fn is None
+        )
+        _grounding_failure_mode = str(
+            _pcfg(state, "grounding_failure_mode", DEFAULT_GROUNDING_FAILURE_MODE)
+            or DEFAULT_GROUNDING_FAILURE_MODE
+        )
+        _grounding_fail_closed = _grounder_dead and (
+            _grounding_failure_mode != GROUNDING_FAILURE_MODE_FAIL_OPEN
+        )
+
         _leak_shingle_size = int(_pcfg(state, "guardrail_leak_shingle_size", DEFAULT_GUARDRAIL_LEAK_SHINGLE_SIZE))
         _leak_min_match = int(_pcfg(state, "guardrail_leak_min_match_count", DEFAULT_GUARDRAIL_LEAK_MIN_MATCH_COUNT))
         _sys_prompt = state.get("system_prompt", "")
@@ -314,6 +337,8 @@ async def guard_output(
             grounding_check_async_top_score=round(_async_top_score, 4),
             intent=_current_intent,
             parallel_enabled=_will_parallel,
+            grounder_dead=_grounder_dead,
+            grounding_failure_mode=_grounding_failure_mode,
         )
 
         _oos_template = _resolved_oos_template(state)
@@ -325,6 +350,35 @@ async def guard_output(
             )
         )
         _citation_marker_required = bool(_pcfg(state, "citation_marker_required", False))
+
+        # AG-A2 fail-CLOSED action point. The grounding judge could not run for
+        # a grounding-eligible answer; refuse rather than ship UNVERIFIED. Done
+        # here (after the oos template resolves, before the regex/parallel
+        # guards run) so the substitution reuses the node's existing refuse
+        # contract — same shape the GuardrailBlocked path returns.
+        if _grounding_fail_closed:
+            logger.warning(
+                "grounding_fail_closed",
+                request_id=str(state.get("request_id") or ""),
+                record_bot_id=str(state.get("record_bot_id") or ""),
+                intent=_current_intent,
+                reason="grounder_unwired",
+            )
+            flags.append(
+                {
+                    "stage": "output",
+                    "rule_id": "grounding_fail_closed",
+                    "severity": "block",
+                    "action": "block",
+                    "blocked": True,
+                }
+            )
+            return {
+                "guardrail_flags": flags,
+                "answer": _oos_template,
+                "answer_type": "blocked",
+                "answer_reason": "Grounding unavailable (fail_closed)",
+            }
 
         if _will_parallel:
             # Task A: regex-only check_output (grounding disabled so the

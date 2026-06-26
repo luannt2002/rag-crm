@@ -102,6 +102,76 @@ def test_s2_blob_alias_col0_does_not_drop_row() -> None:
     assert "404" in vals, f"quantity(stock) 404 not captured as a labelled attr: {_attrs(ents)}"
 
 
+# ── ATTRIBUTE-GENERIC: a non-price column whose header collides with a category
+# token ("Tồn kho" stock vs "kho" warehouse) must keep its value as a labelled
+# attribute — a stock count is NOT a price and must never be dropped (xe-7 bug:
+# "tồn kho 165/65R14" answered the price 702 instead of the stock 404). ─────────
+def test_stock_column_value_not_dropped_no_roles() -> None:
+    content = "Tên hàng,Tồn kho,Đơn giá\n165/65R14,404,702000\n"
+    ents = parse_table_chunks([{"content": content}])
+    assert ents, "stock row produced no entity"
+    e = ents[0]
+    assert e.name == "165/65R14"
+    assert e.price_primary == 702000  # price stays the price
+    vals = {str(v) for v in _attrs([e]).values()}
+    keys = " ".join(_attrs([e])).lower()
+    # the stock count must be retrievable under its OWN column label, NOT lost.
+    assert "404" in vals, f"stock 404 dropped (price-bias): name={e.name} attrs={e.attributes}"
+    assert "ton kho" in keys or "kho" in keys, (
+        f"stock column label lost: {list(_attrs([e]))}"
+    )
+    # the stock count must NOT be confused with the price.
+    assert e.price_primary != 404
+
+
+# A small non-price integer in a generic (non-price) column survives as an
+# attribute — the ingest price-floor must apply ONLY to price columns, never to
+# arbitrary numeric attributes (quantity, count, code). Domain-neutral.
+def test_small_number_in_generic_column_survives() -> None:
+    content = "Mã,Số lượng,Giá\nSP-1,7,500000\n"
+    ents = parse_table_chunks([{"content": content}])
+    assert ents
+    vals = {str(v) for v in _attrs(ents).values()}
+    assert "7" in vals, f"small count 7 floored away: {_attrs(ents)}"
+    assert ents[0].price_primary == 500000
+
+
+# ── OPTIONAL OVERRIDE (column_roles): when the owner DECLARES a numeric column as
+# a generic 'attribute', a value that parses as money (a large stock count) must
+# NOT be hijacked into a price — the declaration is authoritative over shape. ────
+def test_declared_attribute_numeric_not_read_as_price() -> None:
+    content = "Tên,Số lượng tồn,Đơn giá\n165R,40400,702000\n"
+    ents = parse_table_chunks(
+        [{"content": content}],
+        {"Tên": "name", "Số lượng tồn": "attribute", "Đơn giá": "value"},
+    )
+    assert ents
+    e = ents[0]
+    assert e.price_primary == 702000, f"price mis-bound: {e.price_primary}"
+    # the stock count stays a labelled attribute, never a (secondary) price.
+    assert e.price_secondary is None, f"stock leaked into price_secondary: {e.price_secondary}"
+    assert str(e.attributes.get("Số lượng tồn")) == "40400", f"stock attr lost: {e.attributes}"
+
+
+# ── HEADER ROBUST: a section-title line above a sub-table must NOT be eaten as a
+# data value, AND its rows bind to it as the section. (xe "Kho lốp ROVELO"). ─────
+def test_section_title_line_not_a_data_value() -> None:
+    content = (
+        "Kho lốp ROVELO\n"
+        "Tên hàng,Tồn kho,Đơn giá\n"
+        "165/65R14,404,702000\n"
+    )
+    ents = parse_table_chunks([{"content": content}])
+    assert ents, "rows under a section title produced no entity"
+    names = [e.name for e in ents]
+    assert "165/65R14" in names
+    # the title is a category for the row, never a fake entity name.
+    assert "Kho lốp ROVELO" not in names
+    assert any(e.category == "Kho lốp ROVELO" for e in ents), (
+        f"section title not bound as category: {[(e.name, e.category) for e in ents]}"
+    )
+
+
 # ── English domain via structural inference (no custom roles) ────────────────────
 def test_english_domain_inferred() -> None:
     content = "Item,Category,Price\nWidget Pro,Tools,500000\n"
@@ -141,6 +211,34 @@ def test_invariant_random_domain_no_silent_row_drop(seed: int) -> None:
     flat = {c for row in rows for c in row}
     lost = flat - surfaced
     assert not lost, f"seed={seed}: values lost to nowhere (not name/attr/cat): {lost}"
+
+
+# INV-3 (property-based): a SMALL non-price integer (stock/qty/count, below the
+# price floor) in an unseen non-price column must survive as a labelled value for
+# ANY domain — the price floor must never silence a generic numeric attribute.
+@pytest.mark.parametrize("seed", range(25))
+def test_invariant_small_numeric_attribute_not_floored(seed: int) -> None:
+    rng = random.Random(seed)
+    small = rng.randint(1, 999)  # below DEFAULT_PRICE_MIN_VND — a count, not money
+    price = rng.randint(100_000, 9_000_000)
+    # name col + a random non-price numeric col + a real price col.
+    qty_hdr = f"Đếm{rng.randint(10, 99)}"  # unseen quantity-like header
+    content = (
+        f"Tên,{qty_hdr},Giá\n"
+        f"Item-{seed},{small},{price}\n"
+    )
+    ents = parse_table_chunks([{"content": content}])
+    assert ents, f"seed={seed}: row with a small numeric attribute dropped"
+    surfaced = set()
+    for e in ents:
+        surfaced.update(str(v) for v in e.attributes.values())
+    assert str(small) in surfaced, (
+        f"seed={seed}: small count {small} floored away: {[e.attributes for e in ents]}"
+    )
+    # the real price is still picked up as the price.
+    assert any(e.price_primary == price for e in ents), (
+        f"seed={seed}: price {price} not bound"
+    )
 
 
 if __name__ == "__main__":  # pragma: no cover

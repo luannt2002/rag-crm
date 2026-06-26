@@ -288,3 +288,20 @@ DEFAULT_AUTO_MERGE_SIBLING_THRESHOLD: Final[int] = 2
 # dominate). 0 = unbounded.
 DEFAULT_AUTO_MERGE_MAX_PARENTS: Final[int] = 5
 
+
+
+# Grounding-net failure mode (AG-A2). When the grounding judge cannot RUN at
+# all — the LLM runtime is unwired (model_resolver / llm is None) or no
+# "grounding" binding resolves — the answer would otherwise pass through
+# UNVERIFIED: the HALLU net is silently OFF. ``fail_closed`` substitutes the
+# bot's ``oos_answer_template`` (the existing refuse branch) instead of
+# shipping an ungrounded answer, honouring HALLU=0 sacred. ``fail_open``
+# restores the legacy pass-through for bots that explicitly accept the risk
+# (per-bot opt-out via ``plan_limits.grounding_failure_mode``). Only applies
+# when grounding is enabled AND the intent is grounding-eligible AND the sync
+# judge was expected (NOT the per-bot async path, which ships-then-checks by
+# its own opt-in contract).
+GROUNDING_FAILURE_MODE_FAIL_CLOSED: Final[str] = "fail_closed"
+GROUNDING_FAILURE_MODE_FAIL_OPEN: Final[str] = "fail_open"
+DEFAULT_GROUNDING_FAILURE_MODE: Final[str] = GROUNDING_FAILURE_MODE_FAIL_CLOSED
+
