@@ -690,6 +690,85 @@ def _is_prose_row(cols: list[str]) -> bool:
     return non_empty[-1].endswith(_STATS_SENTENCE_END)
 
 
+def _row_has_gaps(cols: list[str]) -> bool:
+    """True when a row has BOTH filled and empty cells — the shape of the top row of
+    a split (2-row) header (``Tên kho|Mã|Tên hàng|(empty)|(empty)``). A normal
+    single-row header has no empty cells, so this never fires on the happy case."""
+    return any(c.strip() for c in cols) and any(not c.strip() for c in cols)
+
+
+def _is_header_continuation(top: list[str], bottom: list[str]) -> bool:
+    """True when ``bottom`` is the SECOND row of a split header: it fills ≥1 of
+    ``top``'s empty positions and does NOT overlap any of ``top``'s filled cells.
+
+    Domain-neutral (no money/number assumption): a real DATA row carries a value
+    under every named column → it overlaps ``top``'s filled cells → rejected. Only a
+    complementary continuation row (names where row 1 was blank, blank where row 1
+    named) is merged."""
+    m = min(len(top), len(bottom))
+    fills = False
+    for j in range(m):
+        t, b = top[j].strip(), bottom[j].strip()
+        if t and b:
+            return False  # overlap → bottom is a data row, not a header continuation
+        if b and not t:
+            fills = True
+    return fills
+
+
+def _merge_header_rows(top: list[str], bottom: list[str]) -> list[str]:
+    """Header-path concat (SOTA: Docling/TATR/MixRAG): per column, join the non-empty
+    parts of the two header rows. Gap-fill (``(empty)`` + ``date1`` → ``date1``) and
+    hierarchical concat (``Giá`` + ``2024`` → ``Giá 2024``). Domain-neutral, no LLM."""
+    n = max(len(top), len(bottom))
+    out: list[str] = []
+    for j in range(n):
+        t = top[j].strip() if j < len(top) else ""
+        b = bottom[j].strip() if j < len(bottom) else ""
+        out.append(" ".join(p for p in (t, b) if p))
+    return out
+
+
+def _cols_to_csv(cols: list[str]) -> str:
+    """Serialise merged header cols back to one CSV line (RFC-4180 quoting) so the
+    main parse loop re-splits it identically to a real header row."""
+    buf = io.StringIO()
+    csv.writer(buf).writerow(cols)
+    return buf.getvalue().rstrip("\r\n")
+
+
+def _premerge_split_headers(
+    lines: list[str], declared_labels: frozenset[str]
+) -> list[str]:
+    """Collapse a 2-row (split / merged-cell) header into ONE labelled header line.
+
+    A header row whose own cells have GAPS, immediately followed by a label-only row
+    that FILLS those gaps, is a split header — merge the two so the row-2 column names
+    (date1 / hình ảnh / Tồn) are not lost to ``col_N`` at extraction. Deterministic,
+    domain-neutral. A single-row header (no gaps) or a priced data row below is left
+    untouched, so the happy case is byte-identical.
+    """
+    out: list[str] = []
+    i, n = 0, len(lines)
+    while i < n:
+        line = lines[i]
+        if line.strip() and not _is_separator_line(line):
+            cols = _split_cols(line)
+            if cols and _is_header_row(cols, declared_labels) and _row_has_gaps(cols):
+                j = i + 1
+                while j < n and (not lines[j].strip() or _is_separator_line(lines[j])):
+                    j += 1
+                if j < n:
+                    next_cols = _split_cols(lines[j])
+                    if _is_header_continuation(cols, next_cols):
+                        out.append(_cols_to_csv(_merge_header_rows(cols, next_cols)))
+                        i = j + 1
+                        continue
+        out.append(line)
+        i += 1
+    return out
+
+
 def parse_table_chunks(
     chunks: list[dict], custom_roles: dict[str, str] | None = None
 ) -> list[ParsedEntity]:
@@ -739,6 +818,10 @@ def parse_table_chunks(
         )
         if not has_delimiter:
             continue
+
+        # Collapse a 2-row (split / merged-cell) header so row-2 column names
+        # (date1 / hình ảnh / Tồn) are not lost to col_N — SOTA header-path concat.
+        lines = _premerge_split_headers(lines, _declared_labels)
 
         header: list[str] = []
         roles: dict[str, Any] = {}

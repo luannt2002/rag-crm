@@ -410,9 +410,15 @@ class StatsIndexRepository:
             List of row dicts (same shape as ``query_by_price_range``).
         """
         effective_limit = min(limit, DEFAULT_STATS_INDEX_QUERY_LIMIT)
+        # ``attributes_json`` MUST be selected: the synthetic-chunk renderer loops it
+        # to surface the owner's generic labelled fields ("Giá Combo 10 buổi", "Tồn",
+        # "date1", "RAM"). Omitting it made the list/aggregate route emit only the
+        # name + headline value — the LLM never saw the combo price / stock / date,
+        # so it refused or extrapolated. Same shape as the other query methods.
         sql = (
             "SELECT id, record_document_id, entity_name, "
-            "entity_category, price_primary, price_secondary, record_chunk_id "
+            "entity_category, price_primary, price_secondary, record_chunk_id, "
+            "attributes_json "
             "FROM document_service_index "
             "WHERE record_bot_id = :bot_id "
             "ORDER BY created_at ASC "
@@ -434,6 +440,7 @@ class StatsIndexRepository:
                 "price_primary": row[4],
                 "price_secondary": row[5],
                 "record_chunk_id": row[6],
+                "attributes_json": row[7],
             }
             for row in rows
         ]
