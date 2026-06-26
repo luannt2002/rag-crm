@@ -98,6 +98,9 @@ class _FakeSession:
         self.load_value: object = None
         self.last_update_state: dict | None = None
         self.commit_called = False
+        # Capture every (sql, params) pair so tenant-scope tests can assert
+        # the GUC bind + WHERE clause without a live DB.
+        self.calls: list[tuple[str, dict | None]] = []
 
     async def __aenter__(self) -> "_FakeSession":
         return self
@@ -105,8 +108,9 @@ class _FakeSession:
     async def __aexit__(self, *a: object) -> None:
         return None
 
-    async def execute(self, stmt, params=None) -> "_FakeResult":  # noqa: ARG002
+    async def execute(self, stmt, params=None) -> "_FakeResult":
         sql = str(stmt).lower()
+        self.calls.append((sql, params))
         if "select" in sql:
             return _FakeResult(self.load_value)
         if "update" in sql:
@@ -172,6 +176,87 @@ async def test_jsonb_save_state_none_conversation_id_noops() -> None:
     g = JsonbConversationState(session_factory=_session_factory(sess))
     await g.save_state(conversation_id=None, state={"x": 1})
     assert sess.last_update_state is None
+
+
+# --------------------------------------------------------------------------- #
+# SB-2: tenant-scoped save (defence-in-depth + GUC bind)                       #
+# --------------------------------------------------------------------------- #
+@pytest.mark.asyncio
+async def test_jsonb_save_state_scopes_update_by_tenant() -> None:
+    """The UPDATE WHERE clause must carry record_tenant_id (not id-only).
+
+    A bare ``WHERE id = :id`` lets a poisoned/mismatched conversation_id
+    write across tenants when the RLS GUC is unset (superuser DSN). The
+    write must be scoped on the tenant column too.
+    """
+    sess = _FakeSession()
+    g = JsonbConversationState(session_factory=_session_factory(sess))
+    tid = uuid4()
+    await g.save_state(
+        conversation_id=uuid4(),
+        state={"intent": "booking"},
+        record_tenant_id=tid,
+    )
+    update_calls = [(sql, p) for sql, p in sess.calls if "update conversations" in sql]
+    assert update_calls, "expected an UPDATE conversations statement"
+    sql, params = update_calls[0]
+    assert "record_tenant_id" in sql, "UPDATE must be tenant-scoped"
+    assert params is not None
+    assert str(params.get("tid")) == str(tid)
+
+
+@pytest.mark.asyncio
+async def test_jsonb_save_state_binds_tenant_guc() -> None:
+    """When a tenant is passed, SET LOCAL app.tenant_id must run first.
+
+    This routes the write through a tenant-scoped session so RLS enforces
+    even when the request contextvar (after_begin hook) is not bound — the
+    worker / out-of-request save path.
+    """
+    sess = _FakeSession()
+    g = JsonbConversationState(session_factory=_session_factory(sess))
+    tid = uuid4()
+    await g.save_state(
+        conversation_id=uuid4(),
+        state={"intent": "booking"},
+        record_tenant_id=tid,
+    )
+    set_local_calls = [sql for sql, _ in sess.calls if "set local app.tenant_id" in sql]
+    assert set_local_calls, "expected a SET LOCAL app.tenant_id bind"
+    # GUC bind must precede the UPDATE (same transaction, ordering matters).
+    sql_order = [sql for sql, _ in sess.calls]
+    guc_idx = next(i for i, s in enumerate(sql_order) if "set local app.tenant_id" in s)
+    upd_idx = next(i for i, s in enumerate(sql_order) if "update conversations" in s)
+    assert guc_idx < upd_idx
+
+
+@pytest.mark.asyncio
+async def test_jsonb_save_state_rejects_non_uuid_tenant() -> None:
+    """A poisoned (non-UUID) tenant value must NOT be interpolated into SQL.
+
+    SET LOCAL takes no bind params; a bad value would be a SQL-injection
+    vector. The save degrades (no GUC bind, no tenant-scoped write) rather
+    than building a hostile literal.
+    """
+    sess = _FakeSession()
+    g = JsonbConversationState(session_factory=_session_factory(sess))
+    await g.save_state(
+        conversation_id=uuid4(),
+        state={"intent": "booking"},
+        record_tenant_id="not-a-uuid'; DROP TABLE conversations; --",
+    )
+    set_local_calls = [sql for sql, _ in sess.calls if "set local app.tenant_id" in sql]
+    assert not set_local_calls, "must not bind GUC from a non-UUID tenant value"
+
+
+@pytest.mark.asyncio
+async def test_jsonb_save_state_tenant_optional_backward_compat() -> None:
+    """Without record_tenant_id the save still works (RLS hook covers it)."""
+    sess = _FakeSession()
+    g = JsonbConversationState(session_factory=_session_factory(sess))
+    await g.save_state(conversation_id=uuid4(), state={"intent": "booking"})
+    assert sess.last_update_state == {"intent": "booking"}
+    assert sess.commit_called
 
 
 @pytest.mark.asyncio

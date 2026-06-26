@@ -957,6 +957,7 @@ async def generate(
                 await conversation_state.save_state(
                     conversation_id=conv_id_for_save,
                     state=_action_state_new,
+                    record_tenant_id=state.get("record_tenant_id"),
                 )
             except Exception as exc:  # noqa: BLE001
                 logger.debug(

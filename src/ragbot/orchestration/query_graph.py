@@ -6,7 +6,6 @@ import asyncio
 import contextlib
 import functools
 import inspect
-import os
 import re
 import time
 from datetime import datetime
@@ -15,104 +14,59 @@ from typing import Any, get_args
 
 import structlog
 from langgraph.graph import END, StateGraph
-from sqlalchemy import text as sa_text
-from sqlalchemy.exc import SQLAlchemyError
 
-from ragbot.application.services.model_resolver import (
-    resolve_purpose_for_intent as _resolve_purpose_for_intent,
-    to_embedding_spec as _to_embedding_spec,
-)
 from ragbot.application.ports.audit_logger_port import AuditLoggerPort
-from ragbot.application.ports.cache_port import CachedResponse
 from ragbot.application.ports.guardrail_port import (
-    GuardrailHit,
     GuardrailPort,
 )
 from ragbot.application.ports.vector_store_port import HybridQuery
+from ragbot.application.services.model_resolver import (
+    to_embedding_spec as _to_embedding_spec,
+)
+
 # OutputGuardrail static-method utility (llm_grounding_check + helpers).
 # Static-only — no Port wrap needed; orchestration imports the class
 # directly the way it would import any other pure-function module.
 from ragbot.infrastructure.guardrails.local_guardrail import OutputGuardrail
 from ragbot.infrastructure.observability.invocation_logger import InvocationLogger
-from ragbot.orchestration.nodes.critique_parser import (
-    critique_parse as _critique_parse_node,
+from ragbot.orchestration.nodes.adaptive_decompose import (
+    adaptive_decompose as _adaptive_decompose_node,
 )
-from ragbot.orchestration.nodes.rewrite_retry import rewrite_retry as _rewrite_retry_node
-from ragbot.orchestration.nodes.router import router as _router_node
-from ragbot.orchestration.nodes.guard_input import guard_input as _guard_input_node
 from ragbot.orchestration.nodes.check_cache import check_cache as _check_cache_node
 from ragbot.orchestration.nodes.condense_question import (
     condense_question as _condense_question_node,
 )
-from ragbot.orchestration.nodes.rewrite import rewrite as _rewrite_node
+from ragbot.orchestration.nodes.critique_parser import (
+    critique_parse as _critique_parse_node,
+)
 from ragbot.orchestration.nodes.decompose import decompose as _decompose_node
-from ragbot.orchestration.nodes.adaptive_decompose import (
-    adaptive_decompose as _adaptive_decompose_node,
+from ragbot.orchestration.nodes.generate import generate as _generate_node
+from ragbot.orchestration.nodes.grade import grade as _grade_node
+from ragbot.orchestration.nodes.graph_retrieve import (
+    graph_retrieve_node as _graph_retrieve_node,
+)
+from ragbot.orchestration.nodes.guard_input import guard_input as _guard_input_node
+from ragbot.orchestration.nodes.guard_output import (
+    guard_output as _guard_output_node,
+)
+from ragbot.orchestration.nodes.mmr_dedup import mmr_dedup as _mmr_dedup_node
+from ragbot.orchestration.nodes.neighbor_expand import (
+    neighbor_expand as _neighbor_expand_node,
+)
+from ragbot.orchestration.nodes.persist import persist as _persist_node
+from ragbot.orchestration.nodes.query_complexity import (
+    classify_query_complexity as _classify_query_complexity,
 )
 from ragbot.orchestration.nodes.query_complexity_node import (
     query_complexity_node as _query_complexity_node,
 )
-from ragbot.orchestration.nodes.generate import generate as _generate_node
-from ragbot.orchestration.nodes.grade import grade as _grade_node
-from ragbot.orchestration.nodes.guard_output import (
-    guard_output as _guard_output_node,
-)
-from ragbot.orchestration.nodes.persist import persist as _persist_node
 from ragbot.orchestration.nodes.reflect import reflect as _reflect_node
-from ragbot.orchestration.nodes.retrieve import retrieve as _retrieve_node
 from ragbot.orchestration.nodes.rerank import rerank as _rerank_node
-from ragbot.orchestration.nodes.mmr_dedup import mmr_dedup as _mmr_dedup_node
-from ragbot.orchestration.nodes.graph_retrieve import (
-    graph_retrieve_node as _graph_retrieve_node,
-)
-from ragbot.orchestration.nodes.neighbor_expand import (
-    neighbor_expand as _neighbor_expand_node,
-)
-from ragbot.orchestration.nodes.understand import (
-    understand_query as _understand_query_node,
-)
-from ragbot.orchestration.nodes.speculative_retrieve import (
-    decide_keep_speculative as _decide_keep_speculative,
-    intent_consumes_mq as _intent_consumes_mq,
-)
-from ragbot.orchestration.state import GraphState
-from ragbot.orchestration.nodes.query_complexity import (
-    classify_query_complexity as _classify_query_complexity,
-)
-from ragbot.orchestration.nodes.cascade_router_helper import apply_cascade_routing
-from ragbot.shared.errors import (
-    AuditEmitError,
-    EmbeddingError,
-    InvariantViolation,
-    RetrievalError,
-)
-from ragbot.shared.embedding_cache import get_cached_embedding, set_cached_embedding
-from ragbot.shared.prompt_compression import compress_chunks
-from ragbot.shared.prompt_token_opt import apply_token_opt
-from ragbot.shared.token_budget import compute_output_cap
-from ragbot.shared.vi_tokenizer import expand_abbreviations, restore_diacritics
-from ragbot.shared.chunking import (
-    build_vn_structural_like_clauses,
-    detect_vn_structural_anchor,
-)
-from ragbot.shared.query_range_parser import (
-    parse_range_query as _parse_range_query,
-    matches_summary_pattern as _matches_summary_pattern,
-)
-# Pure stateless helpers extracted to a sibling module (Phase 6 god-file
-# split). Re-imported here so existing import paths
-# (``from ragbot.orchestration.query_graph import _is_null_lexical`` etc.)
-# and the di_kwargs threading into node functions keep working unchanged.
-from ragbot.orchestration.query_graph_helpers import (
-    _compute_bot_cache_version,
-    _is_null_lexical,
-    _parse_doc_type_vocabulary,
-    _pcfg,
-    _render_captured_slots,
-    _uuid_or_none,
-    expand_parent_chunks,
-    parse_decomposed_sub_queries,
-)
+from ragbot.orchestration.nodes.retrieve import retrieve as _retrieve_node
+from ragbot.orchestration.nodes.rewrite import rewrite as _rewrite_node
+from ragbot.orchestration.nodes.rewrite_retry import rewrite_retry as _rewrite_retry_node
+from ragbot.orchestration.nodes.router import router as _router_node
+
 # Conditional-edge routing deciders (pure state->str; capture no di_kwargs).
 # Registered by reference in build_graph's add_conditional_edges calls; the
 # route-function test fixture captures them by __name__ off the compiled graph.
@@ -126,6 +80,38 @@ from ragbot.orchestration.nodes.routing import (
     _retrieve_route,
     _router_route,
     _understand_query_route,
+)
+from ragbot.orchestration.nodes.speculative_retrieve import (
+    intent_consumes_mq as _intent_consumes_mq,
+)
+from ragbot.orchestration.nodes.understand import (
+    understand_query as _understand_query_node,
+)
+
+# Pure stateless helpers extracted to a sibling module (Phase 6 god-file
+# split). Re-imported here so existing import paths
+# (``from ragbot.orchestration.query_graph import _is_null_lexical`` etc.)
+# and the di_kwargs threading into node functions keep working unchanged.
+from ragbot.orchestration.query_graph_helpers import (
+    _compute_bot_cache_version,
+    _is_null_lexical,
+    _parse_doc_type_vocabulary,
+    _pcfg,
+    _render_captured_slots,
+    _uuid_or_none,
+    expand_parent_chunks,
+)
+from ragbot.orchestration.state import GraphState
+from ragbot.shared.chunking import (
+    build_vn_structural_like_clauses,
+    detect_vn_structural_anchor,
+)
+from ragbot.shared.embedding_cache import get_cached_embedding, set_cached_embedding
+from ragbot.shared.errors import (
+    AuditEmitError,
+    EmbeddingError,
+    InvariantViolation,
+    RetrievalError,
 )
 
 logger = structlog.get_logger(__name__)
@@ -141,6 +127,7 @@ except ImportError:
 # Soft import — Layer 3 disabled if litellm missing at startup
 try:
     import litellm as _litellm_module
+
     from ragbot.infrastructure.metadata_filter.generic_llm_extractor import (
         GenericLLMMetadataExtractor as _L3Extractor,
     )
@@ -203,219 +190,88 @@ try:  # B5 async grounding breach counter — optional in unit tests
 except ImportError:
     _grounding_fail_total_metric = None  # type: ignore[assignment]
 
-from ragbot.shared.constants import (
-    ACTION_CAPTURED_SLOTS_PLACEHOLDER,
-    DEFAULT_ANSWER_AUTONOMY_PERCENT,
-    DEFAULT_CASCADE_ROUTING_ENABLED,
-    DEFAULT_HYDE_ENABLED,
-    DEFAULT_CHUNK_TYPE_TEXT,
-    DEFAULT_CITATIONS_TOP_K,
-    DEFAULT_XML_WRAP_ENABLED,
-    XML_WRAP_DEFAULT_ON_FROM_DATE,
-    LEGACY_CORPUS_VERSION_TAG,
-    DEFAULT_CRAG_FALLBACK_COUNT,
-    DEFAULT_CRAG_GRADE_CONCURRENCY,
-    DEFAULT_CRAG_LENIENT_GRADE_FOR_COMPOUND_INTENTS_ENABLED,
-    DEFAULT_CRAG_LENIENT_GRADE_INTENTS,
-    DEFAULT_CRAG_FALLBACK_RELATIVE_RATIO,
-    DEFAULT_CRAG_MIN_FALLBACK_SCORE,
-    DEFAULT_CRAG_MIN_FALLBACK_SCORE_BY_INTENT,
-    DEFAULT_CRAG_MIN_RELEVANT_COUNT,
-    DEFAULT_CRAG_MIN_RELEVANT_FRACTION,
-    DEFAULT_CR_ENHANCED_ENABLED,
-    DEFAULT_DECOMPOSE_TOP_K_PER_SUBQUERY,
-    DEFAULT_GENERATE_CONTEXT_TRUST_HINT_ENABLED,
-    DEFAULT_GENERATE_HISTORY_MAX_MSGS,
-    DEFAULT_DETERMINISTIC_LLM_PURPOSES,
-    DEFAULT_DETERMINISTIC_TEMPERATURE,
-    DEFAULT_GENERATE_MAX_TOKENS_BY_INTENT,
-    DEFAULT_GENERATE_USE_STRUCTURED_OUTPUT,
-    DEFAULT_GENERATION_TEMPERATURE,
-    DEFAULT_INTENT_FALLBACK,
-    INTENT_CHITCHAT,
-    INTENT_GREETING,
-    INTENT_MULTI_HOP,
-    DEFAULT_GRADE_TIMEOUT_S,
-    DEFAULT_GRADE_USE_BATCH,
-    DEFAULT_GRADE_USE_STRUCTURED_OUTPUT,
-    DEFAULT_UNDERSTAND_CONDENSED_QUERY_AUDIT_PREVIEW_LEN,
-    DEFAULT_UNDERSTAND_USE_STRUCTURED_OUTPUT,
-    DEFAULT_LITM_REORDER_ENABLED,
-    DEFAULT_REFUSE_SHORT_CIRCUIT_ENABLED,
-    MAX_HISTORY_MESSAGE_CHARS,
-    DEFAULT_METADATA_AWARE_RETRIEVAL_ENABLED,
-    DEFAULT_METADATA_LAYER3_LLM_ENABLED,
-    DEFAULT_METADATA_FALLBACK_RELAX_ENABLED,
-    DEFAULT_MULTI_QUERY_COMPLEXITY_MIN,
-    DEFAULT_MULTI_QUERY_ENABLED,
-    DEFAULT_MULTI_QUERY_MAX_VARIANTS,
-    DEFAULT_MULTI_QUERY_MODEL,
-    DEFAULT_MULTI_QUERY_MIN_TOKENS,
-    DEFAULT_MULTI_QUERY_N_VARIANTS,
-    DEFAULT_MULTI_QUERY_SKIP_CHITCHAT_INTENT,
-    DEFAULT_MULTI_QUERY_TIMEOUT_S,
-    DEFAULT_MQ_ENTITY_CONFIDENCE_GATE,
-    DEFAULT_MQ_VARIANT_SIMILARITY_DEDUP_THRESHOLD,
-    DEFAULT_GREETING_PATTERNS,
-    DEFAULT_PIPELINE_MULTI_QUERY_EMBED_BATCH_ENABLED,
-    DEFAULT_PIPELINE_PARALLEL_CACHE_UNDERSTAND_ENABLED,
-    DEFAULT_PIPELINE_PARALLEL_OUTPUT_GUARDS_ENABLED,
-    DEFAULT_PIPELINE_PARALLEL_REWRITE_MQ_ENABLED,
-    DEFAULT_MULTI_QUERY_ENABLED_BY_INTENT,
-    DEFAULT_SKIP_UNDERSTAND_FOR_GREETING,
-    DEFAULT_UNDERSTAND_SKIP_BELOW_TOKENS,
-    DEFAULT_REFLECT_USE_STRUCTURED_OUTPUT,
-    DEFAULT_RERANK_CLIFF_ABSOLUTE_FLOOR,
-    DEFAULT_RERANK_CLIFF_GAP_RATIO,
-    DEFAULT_RERANK_CLIFF_MIN_KEEP,
-    DEFAULT_RERANK_CLIFF_SKIP_INTENTS,
-    DEFAULT_RERANK_MAX_CHUNKS_TO_LLM,
-    DEFAULT_RERANK_RETRIEVAL_SAFETY_N,
-    DEFAULT_ADAPTIVE_CONTEXT_ENABLED,
-    DEFAULT_ADAPTIVE_CONTEXT_HIGH_SCORE,
-    DEFAULT_ADAPTIVE_CONTEXT_MAX_N,
-    DEFAULT_ADAPTIVE_CONTEXT_EXEMPT_INTENTS,
-    DEFAULT_RERANK_FILTER_STRATEGY,
-    DEFAULT_RERANK_THRESHOLD_GATE_AFTER_CLIFF_ENABLED,
-    DEFAULT_RERANKER_MIN_SCORE,
-    DEFAULT_RERANKER_MIN_SCORE_ACTIVE,
-    DEFAULT_RERANKER_MIN_SCORE_BYPASS,
-    DEFAULT_RETRIEVAL_EARLY_EXIT_THRESHOLD,
-    DEFAULT_RETRIEVAL_MULTISTAGE_ENABLED,
-    DEFAULT_RETRIEVAL_STAGES,
-    DEFAULT_RETRIEVE_FALLBACK_ENABLED,
-    DEFAULT_RETRIEVE_FALLBACK_TOP_K,
-    DEFAULT_RRF_K,
-    DEFAULT_SSE_PRODUCER_TIMEOUT_S,
-    DEFAULT_OUTPUT_TOKENS_PER_RESPONSE,
-    _REFUSE_ANSWER_TYPES,
-)
 from ragbot.application.dto.llm_schemas import (
     GenerateFlatOutput,
     GenerateOutput,
-    GradeBatchOutput,
-    GradeOutput,
-    ReflectOutput,
     UnderstandOutput,
 )
 from ragbot.application.services.structured_output_helper import (
     call_with_schema as _call_with_schema,
 )
+from ragbot.application.services.superlative_context_enricher import (
+    SuperlativeContextEnricher as _SuperlativeContextEnricher,
+)
 from ragbot.infrastructure.llm.dynamic_litellm_router import (
     compute_cost_usd as _router_compute_cost,
 )
-from ragbot.application.services.query_intent_extractor import (
-    extract_intent as _extract_query_intent,
-)
-from ragbot.application.services.heuristic_intent_classifier import (
-    classify_heuristic as _classify_heuristic,
-)
-from ragbot.application.services.superlative_context_enricher import (
-    SuperlativeContextEnricher as _SuperlativeContextEnricher,
-    get_enricher_for_language as _get_superlative_enricher,
+from ragbot.shared.constants import (
+    DEFAULT_DETERMINISTIC_LLM_PURPOSES,
+    DEFAULT_DETERMINISTIC_TEMPERATURE,
+    DEFAULT_GENERATION_TEMPERATURE,
+    DEFAULT_GREETING_PATTERNS,
+    DEFAULT_HYDE_ENABLED,
+    DEFAULT_INTENT_FALLBACK,
+    DEFAULT_MQ_VARIANT_SIMILARITY_DEDUP_THRESHOLD,
+    DEFAULT_MULTI_QUERY_COMPLEXITY_MIN,
+    DEFAULT_MULTI_QUERY_ENABLED,
+    DEFAULT_MULTI_QUERY_ENABLED_BY_INTENT,
+    DEFAULT_MULTI_QUERY_MAX_VARIANTS,
+    DEFAULT_MULTI_QUERY_MIN_TOKENS,
+    DEFAULT_MULTI_QUERY_MODEL,
+    DEFAULT_MULTI_QUERY_N_VARIANTS,
+    DEFAULT_MULTI_QUERY_SKIP_CHITCHAT_INTENT,
+    DEFAULT_MULTI_QUERY_TIMEOUT_S,
+    DEFAULT_PIPELINE_PARALLEL_CACHE_UNDERSTAND_ENABLED,
+    DEFAULT_PIPELINE_PARALLEL_REWRITE_MQ_ENABLED,
+    DEFAULT_SKIP_UNDERSTAND_FOR_GREETING,
+    DEFAULT_SSE_PRODUCER_TIMEOUT_S,
+    DEFAULT_UNDERSTAND_SKIP_BELOW_TOKENS,
+    DEFAULT_XML_WRAP_ENABLED,
+    INTENT_CHITCHAT,
+    INTENT_GREETING,
+    INTENT_MULTI_HOP,
+    LEGACY_CORPUS_VERSION_TAG,
+    XML_WRAP_DEFAULT_ON_FROM_DATE,
 )
 
 _SUPERLATIVE_ENRICHER = _SuperlativeContextEnricher()
-from ragbot.application.services.adaptive_rerank_weight import (
-    adaptive_weight_enabled as _adaptive_weight_enabled,
-    resolve_intent_weights as _resolve_intent_weights,
-)
 from ragbot.application.services.multi_query_expansion import (
     dedup_variants as mq_dedup_variants,
-    expand_query as mq_expand_query,
-    expand_query_with_entities as mq_expand_query_with_entities,
-    rrf_merge_chunks as mq_rrf_merge_chunks,
 )
-from ragbot.application.services.vocabulary_expander import (
-    get_default_expander as _get_vocab_expander,
+from ragbot.application.services.multi_query_expansion import (
+    expand_query as mq_expand_query,
+)
+from ragbot.application.services.multi_query_expansion import (
+    expand_query_with_entities as mq_expand_query_with_entities,
 )
 from ragbot.shared.constants import (
-    DEFAULT_BM25_NORMALIZATION_FLAGS,
-    DEFAULT_CHITCHAT_QUERY_MAX_TOKENS,
-    DEFAULT_HALLU_TRAP_KEYWORDS,
     DEFAULT_EMBEDDING_COLUMN,
     DEFAULT_EMBEDDING_DIM,
     DEFAULT_EMBEDDING_FALLBACK_VERSION,
     DEFAULT_EMBEDDING_TASK_QUERY,
     DEFAULT_ENTITY_GROUNDING_ENABLED,
     DEFAULT_ENTITY_GROUNDING_MAX_ENTITIES,
-    DEFAULT_GENERIC_VOCAB_ENABLED,
-    DEFAULT_GENERIC_VOCAB_MAX_MATCHES_PER_QUERY,
-    DEFAULT_GENERIC_VOCAB_MAX_EXPANSIONS_PER_MATCH,
-    DEFAULT_GENERATE_P95_SLA_MS,
-    DEFAULT_GROUNDING_CHECK_ASYNC_ENABLED,
-    DEFAULT_GROUNDING_CHECK_ASYNC_INTENTS,
-    DEFAULT_GROUNDING_CHECK_ASYNC_TOP_SCORE_THRESHOLD,
-    DEFAULT_GROUNDING_CHECK_ENABLED,
-    DEFAULT_GROUNDING_CHECK_THRESHOLD,
-    DEFAULT_GROUNDING_INTENTS,
-    DEFAULT_GUARDRAIL_LEAK_SHINGLE_SIZE,
-    DEFAULT_GUARDRAIL_OOS_SIMILARITY_THRESHOLD,
     DEFAULT_LANGUAGE,
-    DEFAULT_LEXICAL_RRF_K,
-    DEFAULT_LEXICAL_TOP_K,
-    DEFAULT_MAX_REFLECT_RETRIES,
-    DEFAULT_REFLECT_SKIP_IF_GROUNDED,
-    DEFAULT_REFLECT_SKIP_TOP_SCORE_FLOOR,
-    DEFAULT_PROMPT_COMPRESSION_ENABLED,
-    DEFAULT_PROMPT_COMPRESSION_MAX_CHARS_PER_CHUNK,
-    DEFAULT_PROMPT_TOKEN_OPT_DEDUPE_JACCARD_THRESHOLD,
-    DEFAULT_PROMPT_TOKEN_OPT_ENABLED,
-    DEFAULT_PROMPT_TOKEN_OPT_FACTOID_SKIP_HISTORY,
-    DEFAULT_PROMPT_TOKEN_OPT_MIN_CHUNK_SCORE,
-    DEFAULT_GENERATE_CONTEXT_CHARS_CAP,
-    DEFAULT_REFLECT_ANSWER_PREVIEW_CHARS,
-    DEFAULT_REFLECT_CONTEXT_CHUNK_CAP,
-    DEFAULT_REFLECT_CONTEXT_CHUNK_CHARS,
-    DEFAULT_RERANK_TOP_N,
-    DEFAULT_SEMANTIC_CACHE_TTL,
     DEFAULT_PIPELINE_MULTI_QUERY_SPECULATIVE_ENABLED,
     DEFAULT_PIPELINE_MULTI_QUERY_SPECULATIVE_TIMEOUT_S,
+    DEFAULT_RETRIEVE_TOP_K_BY_INTENT,
     DEFAULT_SPECULATIVE_RETRIEVE_ENABLED,
     DEFAULT_SPECULATIVE_RETRIEVE_TIMEOUT_S,
-    DEFAULT_SPECULATIVE_SIMILARITY_THRESHOLD,
-    DEFAULT_SEMANTIC_CACHE_SKIP_NUMERIC,
-    DEFAULT_TOP_K,
-    DEFAULT_RERANK_TOP_N_BY_INTENT,
-    DEFAULT_RETRIEVE_TOP_K_BY_INTENT,
-    DEFAULT_UNDERSTAND_BOT_CONTEXT_PREVIEW_CHARS,
-    DEFAULT_UNDERSTAND_QUERY_CACHE_TTL_S,
-    DEFAULT_STATS_INDEX_LIMIT,
-    DEFAULT_STATS_RACE_TIMEOUT_S,
-    DEFAULT_STATS_INDEX_RACE_ENABLED,
-    DEFAULT_STATS_SUPERLATIVE_LIMIT,
     DEFAULT_STATS_ATTR_MAX_CHARS,
     DEFAULT_STATS_ATTR_MAX_WORDS,
+    DEFAULT_STATS_INDEX_LIMIT,
+    DEFAULT_STATS_SUPERLATIVE_LIMIT,
     DEFAULT_STATS_SYNTHETIC_CHUNK_ID,
-    RANGE_QUERY_MIN_CONFIDENCE,
-    DEFAULT_STRUCTURAL_REF_FALLBACK_PATTERN,
+    DEFAULT_TOP_K,
     INTENT_AGGREGATION,
     INTENT_COMPARISON,
-    HEURISTIC_INTENT_CONFIDENCE_THRESHOLD,
-    DEFAULT_HEURISTIC_INTENT_ENABLED,
-    DEFAULT_GUARD_OUTPUT_PARALLEL_ENABLED,
 )
-from ragbot.shared.bootstrap_config import get_boot_config as _get_boot_config
-from ragbot.shared.context_utils import reorder_for_lost_in_middle
-from ragbot.shared.autonomy_resolver import autonomy_band, clamp_autonomy_percent
-
 from ragbot.shared.i18n import LanguagePack, get_pack, language_pack_from_dict
 
 # CRAG grade vocabulary + pure chunk/grade filters live in retrieval_filter
 # (strangler Phase 2). Re-exported here so existing call sites + test imports
 # (`from ragbot.orchestration.query_graph import _cliff_detect_filter`) are
 # unchanged.
-from ragbot.orchestration.retrieval_filter import (  # noqa: E402
-    CRAG_GRADE_AMBIGUOUS,
-    CRAG_GRADE_IRRELEVANT,
-    CRAG_GRADE_RELEVANT,
-    _autocut,
-    _cliff_detect_filter,
-    _CRAG_VALID_GRADES,
-    _is_retrieval_adequate,
-    _remap_grade_for_intent,
-    _rerank_threshold_gate,
-)
 
 _CITATION_RE = re.compile(r"\[chunk:([0-9a-f\-]+)\]", re.IGNORECASE)
 
@@ -452,8 +308,7 @@ async def retry_hybrid_with_original(
             kwargs["record_tenant_id"] = state["record_tenant_id"]
         raw = await vector_store.hybrid_search(**kwargs)
         return list(raw or [])
-    except (RetrievalError, asyncio.TimeoutError, OSError,
-            RuntimeError, ValueError, TypeError) as _retr_exc:
+    except (TimeoutError, RetrievalError, OSError, RuntimeError, ValueError, TypeError) as _retr_exc:
         # Vector / hybrid retrieval FAILED (≠ "found nothing"). Fail LOUD:
         # mark the turn as degraded so the answer/grounding path can avoid
         # fabricating from an empty context, and log at ERROR (not warning)
@@ -476,7 +331,7 @@ async def retry_hybrid_with_original(
 _VALID_INTENTS: list[str] = list(get_args(UnderstandOutput.model_fields["intent"].annotation))
 
 
-def _lang(state: Any) -> LanguagePack:  # noqa: ANN401
+def _lang(state: Any) -> LanguagePack:
     """Return active LanguagePack: state-injected DB rows take precedence over the static fallback.
 
     The language code resolves from ``state["language"]`` (set upstream from the
@@ -493,7 +348,7 @@ def _lang(state: Any) -> LanguagePack:  # noqa: ANN401
         return language_pack_from_dict(language, rows)
     return get_pack(language)
 
-def _resolve_xml_wrap_enabled(state: Any) -> bool:  # noqa: ANN401
+def _resolve_xml_wrap_enabled(state: Any) -> bool:
     """Return the effective ``xml_wrap_enabled`` decision for this request.
 
     Resolution chain (highest wins):
@@ -539,7 +394,7 @@ _STRUCTURED_SUBANSWER_INTENTS: frozenset[str] = frozenset(
 )
 
 
-def _resolve_generate_schema(state: Any) -> type:  # noqa: ANN401
+def _resolve_generate_schema(state: Any) -> type:
     """Pick the generation structured-output schema for this turn.
 
     Returns :class:`GenerateOutput` (with the ``sub_answers`` reasoning-first
@@ -563,7 +418,7 @@ def _resolve_generate_schema(state: Any) -> type:  # noqa: ANN401
     return GenerateFlatOutput
 
 
-def _understand_greeting_short_circuit(state: Any) -> str | None:  # noqa: ANN401
+def _understand_greeting_short_circuit(state: Any) -> str | None:
     """Return reason string ("short" / "greeting") if understand should bypass
     the LLM call for this turn, else ``None``.
 
@@ -611,7 +466,7 @@ def _understand_greeting_short_circuit(state: Any) -> str | None:  # noqa: ANN40
     return None
 
 
-def _required_channel_type(state: Any) -> str:  # noqa: ANN401
+def _required_channel_type(state: Any) -> str:
     """3-key REQUIRED — refuse silent default; caller must populate state."""
     ch = state.get("channel_type")
     if not ch:
@@ -621,7 +476,7 @@ def _required_channel_type(state: Any) -> str:  # noqa: ANN401
     return str(ch)
 
 
-def _resolved_oos_template(state: Any) -> str:  # noqa: ANN401
+def _resolved_oos_template(state: Any) -> str:
     """Return the OOS template stashed by the upstream 7-tier resolver.
 
     Canonical resolution happens once per request, before the LangGraph
@@ -655,7 +510,7 @@ def _resolved_oos_template(state: Any) -> str:  # noqa: ANN401
     return str(legacy) if legacy else ""
 
 
-def _oos_text(state: Any) -> str:  # noqa: ANN401
+def _oos_text(state: Any) -> str:
     """Return the per-bot OOS template with ``{bot_name}`` substituted.
 
     Thin wrapper around :func:`_resolved_oos_template` that applies the
@@ -668,7 +523,7 @@ def _oos_text(state: Any) -> str:  # noqa: ANN401
     return template.replace("{bot_name}", str(_pcfg(state, "bot_name", "") or ""))
 
 
-def _check_embed_model_consistency(state: Any, spec: Any, log: Any) -> bool:  # noqa: ANN401
+def _check_embed_model_consistency(state: Any, spec: Any, log: Any) -> bool:
     """Detect query vs ingest embedding model mismatch. Detection-only, never raises."""
     expected_model = str(_pcfg(state, "embedding_model", "") or "").strip()
     resolved_model = getattr(spec, "model_name", None) if spec is not None else None
@@ -731,7 +586,7 @@ async def _resolve_and_complete(
     return payload, cfg
 
 
-def _resolve_stats_keyword_synonyms(state: Any, keyword: str) -> list[str]:  # noqa: ANN401
+def _resolve_stats_keyword_synonyms(state: Any, keyword: str) -> list[str]:
     """Per-bot synonym variants for a stats-route keyword (domain-neutral).
 
     Reads ``bot_custom_vocabulary["synonyms"]`` — an owner-taught map like
@@ -806,7 +661,7 @@ async def _run_grounding_check_background(
             _llm_complete_fn,
             threshold=threshold,
         )
-    except Exception as exc:  # noqa: BLE001 — background task; response already shipped, must not crash worker loop
+    except Exception as exc:
         logger.warning(
             "grounding_async_judge_error",
             error_type=type(exc).__name__,
@@ -1162,7 +1017,7 @@ def build_graph(
                             sink.put(delta),
                             timeout=DEFAULT_SSE_PRODUCER_TIMEOUT_S,
                         )
-                    except asyncio.TimeoutError as exc:
+                    except TimeoutError as exc:
                         logger.warning(
                             "sse_consumer_lagging_dropping_token",
                             request_id=str(state.get("request_id")),
@@ -1321,6 +1176,12 @@ def build_graph(
             if max_tokens_override is not None and max_tokens_override > 0:
                 if _so_max_tokens is None or max_tokens_override < _so_max_tokens:
                     _so_max_tokens = int(max_tokens_override)
+            # Capability-driven structured-output transport: surface the
+            # resolved model's declared capabilities so the helper picks
+            # json_object (loose) vs json_schema (strict) vs tool mode —
+            # NOT a name-substring guess. None when unresolved → helper
+            # falls back to legacy name routing.
+            caps_obj = getattr(cfg, "capabilities", None)
             parsed = await _call_with_schema(
                 litellm_module=litellm_module,
                 litellm_name=model_id,
@@ -1333,6 +1194,8 @@ def build_graph(
                 temperature=getattr(params_obj, "temperature", None),
                 max_tokens=_so_max_tokens,
                 usage_sink=_capture_so_usage,
+                supports_json_mode=getattr(caps_obj, "supports_json_mode", None),
+                supports_tools=getattr(caps_obj, "supports_tool_use", None),
             )
             # Record before async-with exits; caller-side ctx.record() is dropped.
             response_text = (
@@ -1423,8 +1286,7 @@ def build_graph(
             if "record_tenant_id" in params:
                 kwargs["record_tenant_id"] = state.get("record_tenant_id")
             results = await embedder.embed_batch(cold_texts, **kwargs)
-        except (EmbeddingError, asyncio.TimeoutError, OSError,
-                RuntimeError, ValueError, AttributeError):
+        except (TimeoutError, EmbeddingError, OSError, RuntimeError, ValueError, AttributeError):
             # Best-effort prewarm; per-branch embed handles fallback.
             logger.warning("multi_query_embed_prewarm_failed", exc_info=True)
             return
@@ -1543,8 +1405,7 @@ def build_graph(
                 if result:
                     await set_cached_embedding(redis_client, query_text, result, model=emb_model, dim=emb_dim or len(result))
                 return result
-        except (EmbeddingError, asyncio.TimeoutError, OSError,
-                RuntimeError, ValueError, AttributeError) as _emb_exc:
+        except (TimeoutError, EmbeddingError, OSError, RuntimeError, ValueError, AttributeError) as _emb_exc:
             # Embed FAILED (≠ "no vector by design"): fail LOUD — flag the turn
             # degraded so the answer path won't fabricate from a vector-less
             # context, and ERROR-log with error_type for alerting. Empty list
@@ -1701,7 +1562,7 @@ def build_graph(
                         )
                 raw = await vector_store.hybrid_search(**_hs_kwargs)
                 return raw_embed, list(raw or [])
-        except Exception:  # noqa: BLE001 — best-effort background task wrapper
+        except Exception:
             logger.warning("speculative_hybrid_search_failed", exc_info=True)
         return raw_embed, []
 
@@ -1818,8 +1679,7 @@ def build_graph(
                 with contextlib.suppress(asyncio.CancelledError, Exception):
                     await spec_mq_task
             raise
-        except (InvariantViolation, asyncio.TimeoutError, OSError,
-                RuntimeError, ValueError, KeyError) as exc:
+        except (TimeoutError, InvariantViolation, OSError, RuntimeError, ValueError, KeyError) as exc:
             # Mirror sequential understand_query fallback so parallel and
             # sequential paths are observably identical on LLM failure.
             logger.warning("understand_in_parallel_failed", exc_info=exc)
@@ -1836,7 +1696,7 @@ def build_graph(
             # (wait_for) and explicit cancellation surface here.
             try:
                 spec_embed, spec_chunks = await spec_task
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 logger.warning("speculative_retrieve_timeout")
                 spec_embed, spec_chunks = [], []
             except asyncio.CancelledError:
@@ -1863,7 +1723,7 @@ def build_graph(
             if _intent_consumes_mq(_resolved_intent, _mq_intent_map):
                 try:
                     mq_variants = await spec_mq_task
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     logger.warning(
                         "pipeline_multi_query_speculative_timeout",
                         intent=_resolved_intent,
@@ -2117,8 +1977,7 @@ def build_graph(
                     )
                 if not queries:
                     queries = [query_text]
-            except (asyncio.TimeoutError, OSError, RuntimeError,
-                    ValueError, KeyError, AttributeError):
+            except (TimeoutError, OSError, RuntimeError, ValueError, KeyError, AttributeError):
                 # Multi-query expansion failure → fall back to single
                 # query (contract: retrieval must always proceed).
                 logger.warning("multi_query_parallel_failed", exc_info=True)

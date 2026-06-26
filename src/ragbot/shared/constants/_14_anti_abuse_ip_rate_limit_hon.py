@@ -178,6 +178,11 @@ OPENAI_STRUCTURED_OUTPUT_PROVIDER_CODES: Final[tuple[str, ...]] = (
 # plus a few node-internal subtypes); the LRU just needs headroom above that
 # steady-state set so churn is rare.
 DEFAULT_STRUCTURED_OUTPUT_SCHEMA_CACHE_SIZE: Final[int] = 64
+# Bounded repair retries for structured output: when the first response fails
+# schema validation the helper re-issues the call ONCE with an appended repair
+# instruction. 0 disables repair; values >1 are intentionally not honoured —
+# the helper caps at a single extra round-trip so a flaky model can't loop.
+DEFAULT_STRUCTURED_OUTPUT_REPAIR_RETRIES: Final[int] = 1
 
 # NFC preserves diacritics; NFKC over-normalizes (destroys technical Unicode).
 DEFAULT_NORMALIZATION_FORM: Final[str] = "NFC"

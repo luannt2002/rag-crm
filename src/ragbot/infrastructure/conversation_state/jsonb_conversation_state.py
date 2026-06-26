@@ -112,7 +112,7 @@ class JsonbConversationState(ConversationStatePort):
                 if isinstance(value, str):
                     return json.loads(value) if value else {}
                 return {}
-        except Exception as exc:  # noqa: BLE001 — graceful degrade
+        except Exception as exc:
             logger.warning(
                 "conversation_state_load_failed",
                 conversation_id=str(conversation_id),
@@ -126,30 +126,77 @@ class JsonbConversationState(ConversationStatePort):
         *,
         conversation_id: UUID | None,
         state: dict[str, Any],
+        record_tenant_id: UUID | None = None,
     ) -> None:
         if conversation_id is None:
             return
         clean = self._sanitize(state)
+        # Defence-in-depth tenant scope: when the caller knows the owning
+        # tenant, narrow the UPDATE to that tenant column AND bind the RLS
+        # GUC so the write is tenant-scoped even when the request contextvar
+        # (after_begin hook) is unbound (worker / out-of-request path) or the
+        # runtime DSN is still a superuser (RLS inert). A poisoned non-UUID
+        # value is refused (SET LOCAL takes no bind params) rather than
+        # interpolated.
+        safe_tid = self._safe_tenant_uuid(record_tenant_id)
         try:
             async with self._sf() as session:
-                await session.execute(
-                    text(
-                        """
-                        UPDATE conversations
-                        SET action_state = CAST(:s AS jsonb)
-                        WHERE id = :id
-                        """,
-                    ),
-                    {"id": conversation_id, "s": json.dumps(clean, ensure_ascii=False)},
-                )
+                if safe_tid is not None:
+                    await session.execute(
+                        text(f"SET LOCAL app.tenant_id = '{safe_tid}'"),
+                    )
+                    await session.execute(
+                        text(
+                            """
+                            UPDATE conversations
+                            SET action_state = CAST(:s AS jsonb)
+                            WHERE id = :id AND record_tenant_id = :tid
+                            """,
+                        ),
+                        {
+                            "id": conversation_id,
+                            "s": json.dumps(clean, ensure_ascii=False),
+                            "tid": safe_tid,
+                        },
+                    )
+                else:
+                    await session.execute(
+                        text(
+                            """
+                            UPDATE conversations
+                            SET action_state = CAST(:s AS jsonb)
+                            WHERE id = :id
+                            """,
+                        ),
+                        {"id": conversation_id, "s": json.dumps(clean, ensure_ascii=False)},
+                    )
                 await session.commit()
-        except Exception as exc:  # noqa: BLE001 — graceful degrade
+        except Exception as exc:
             logger.warning(
                 "conversation_state_save_failed",
                 conversation_id=str(conversation_id),
                 error=str(exc),
                 error_type=type(exc).__name__,
             )
+
+    @staticmethod
+    def _safe_tenant_uuid(value: UUID | None) -> str | None:
+        """Return a UUID-validated tenant string, or ``None`` when absent/invalid.
+
+        ``SET LOCAL`` cannot take bind params so the value is interpolated;
+        we refuse anything that does not parse as a UUID (defence against a
+        poisoned tenant value reaching raw SQL).
+        """
+        if value is None:
+            return None
+        try:
+            return str(UUID(str(value)))
+        except (TypeError, ValueError):
+            logger.warning(
+                "conversation_state_bad_tenant_id",
+                value=str(value),
+            )
+            return None
 
     def _sanitize(self, state: dict[str, Any]) -> dict[str, Any]:
         """Bound the persisted blob: drop unknown top-level keys, drop null

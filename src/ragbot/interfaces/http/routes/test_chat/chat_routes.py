@@ -16,6 +16,7 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError  # noqa: F401 — used by carved handlers
 
+from ragbot.infrastructure.repositories.history_reconcile import HistoryReconciler
 from ragbot.shared.bot_limits import resolve_bot_limit
 from ragbot.shared.hashing import content_hash_required
 from ragbot.shared.constants import (
@@ -318,20 +319,15 @@ async def test_chat(req: TestChatRequest, request: Request) -> dict:
         max_history = _chat_max_history_cfg
 
     # ── Step C: history query — depends on max_history from Step B ──
-    async with sf() as session:
-        history_rows = (await session.execute(
-            text("""
-                SELECT role, content FROM (
-                    SELECT id, role, content
-                    FROM chat_histories
-                    WHERE record_bot_id = :bid AND channel_type = :ch AND connect_id = :cid
-                    ORDER BY id DESC LIMIT :lim
-                ) sub ORDER BY id ASC
-            """),
-            {"bid": bot_cfg.id, "ch": req.channel_type, "cid": connect_id, "lim": max_history},
-        )).fetchall()
-
-    conversation_history = [{"role": r[0], "content": r[1]} for r in history_rows]
+    # MT-1 reconcile: merge chat_histories (this transport) + messages
+    # (worker transport) for the same (record_bot_id, connect_id) so
+    # cross-transport multi-turn context survives. Read-path only.
+    conversation_history = await HistoryReconciler(sf).load(
+        record_bot_id=bot_cfg.id,
+        connect_id=connect_id,
+        channel_type=req.channel_type,
+        limit=max_history,
+    )
 
     # Rolling summary — thresholds fetched in Step B gather above.
     conversation_history = _apply_rolling_summary(
@@ -816,20 +812,14 @@ async def test_chat_stream(req: TestChatRequest, request: Request) -> StreamingR
         max_history = system_max
 
     # ── 1. LOAD HISTORY ──
-    async with sf() as session:
-        history_rows = (await session.execute(
-            text("""
-                SELECT role, content FROM (
-                    SELECT id, role, content
-                    FROM chat_histories
-                    WHERE record_bot_id = :bid AND channel_type = :ch AND connect_id = :cid
-                    ORDER BY id DESC LIMIT :lim
-                ) sub ORDER BY id ASC
-            """),
-            {"bid": bot_cfg.id, "ch": req.channel_type, "cid": connect_id, "lim": max_history},
-        )).fetchall()
-
-    conversation_history = [{"role": r[0], "content": r[1]} for r in history_rows]
+    # MT-1 reconcile: merge chat_histories (this transport) + messages
+    # (worker transport) for the same (record_bot_id, connect_id).
+    conversation_history = await HistoryReconciler(sf).load(
+        record_bot_id=bot_cfg.id,
+        connect_id=connect_id,
+        channel_type=req.channel_type,
+        limit=max_history,
+    )
 
     # ── 2. BUILD + RUN PRODUCTION PIPELINE ──
     from ragbot.orchestration.graph_assembly import (  # noqa: PLC0415

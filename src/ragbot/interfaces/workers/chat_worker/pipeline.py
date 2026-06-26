@@ -47,6 +47,11 @@ from ragbot.shared.constants import (
 )
 from ragbot.application.services.step_tracker import StepTracker
 from ragbot.application.services.system_config_service import SystemConfigService
+from ragbot.infrastructure.repositories.history_reconcile import (
+    HistoryReconciler,
+    HistoryTurn,
+    merge_history_sources,
+)
 from ragbot.orchestration.graph_assembly import (
     build_chat_initial_state,
     build_graph_di_kwargs,
@@ -481,20 +486,38 @@ async def _handle_chat_received_body(
         try:
             async with tracker.step("history_load") as _hist_ctx:
                 conv_for_history = await conv_repo.get_by_id(conv_id, record_tenant_id=record_tenant_id)
+                # ``chat_max_history`` is part of the batched ``_cfg`` snapshot
+                # loaded above (see ``_CHAT_CONFIG_KEYS``) — no extra Redis
+                # round-trip. ``DEFAULT_MAX_HISTORY`` is the SSoT default in
+                # ``shared/constants.py`` (operator-tunable per system_config).
+                _hist_limit = _cfg_int(_cfg, "chat_max_history", DEFAULT_MAX_HISTORY) or DEFAULT_MAX_HISTORY
+                # Messages-store turns (this transport's own write path) —
+                # carry ``created_at`` so the cross-store merge is time-correct.
+                _msg_turns: list[HistoryTurn] = []
                 if conv_for_history and hasattr(conv_for_history, "messages"):
-                    # ``chat_max_history`` is part of the batched ``_cfg`` snapshot
-                    # loaded above (see ``_CHAT_CONFIG_KEYS``) — no extra Redis
-                    # round-trip. ``DEFAULT_MAX_HISTORY`` is the SSoT default in
-                    # ``shared/constants.py`` (operator-tunable per system_config).
-                    _hist_limit = _cfg_int(_cfg, "chat_max_history", DEFAULT_MAX_HISTORY) or DEFAULT_MAX_HISTORY
                     recent = conv_for_history.history_for_llm(limit=_hist_limit) if hasattr(conv_for_history, "history_for_llm") else (
                         conv_for_history.messages[-_hist_limit:] if hasattr(conv_for_history.messages, '__getitem__') else []
                     )
-                    conversation_history = [
-                        {"role": m.role, "content": m.content}
+                    _msg_turns = [
+                        HistoryTurn(role=m.role, content=m.content, created_at=getattr(m, "created_at", None))
                         for m in recent
                         if m.content
                     ]
+                # MT-1 reconcile: also pull the HTTP/SSE store (chat_histories)
+                # for the same (record_bot_id, connect_id) so a user who
+                # alternates transports keeps full cross-transport context.
+                # Read-path only; the worker still writes solely to ``messages``.
+                _http_turns = await HistoryReconciler(
+                    container.session_factory(),
+                ).load_chat_histories_turns(
+                    record_bot_id=record_bot_id,
+                    connect_id=str(user_id),
+                    channel_type=payload.get("channel_type"),
+                    limit=_hist_limit,
+                )
+                conversation_history = merge_history_sources(
+                    [_msg_turns, _http_turns], limit=_hist_limit,
+                )
                 _hist_ctx.set_metadata(
                     n_messages=len(conversation_history),
                     found=conv_for_history is not None,

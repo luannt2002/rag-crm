@@ -19,9 +19,23 @@ def test_accepts_minimal_valid_payload():
     assert out.intent == "factoid"
 
 
-def test_rejects_empty_condensed_query():
-    with pytest.raises(ValidationError):
-        UnderstandOutput(condensed_query="", intent="factoid")
+def test_accepts_empty_condensed_query():
+    """S0-C: condensed_query is now OPTIONAL (default "").
+
+    A model that emits an empty rewrite must NOT break understand — the
+    orchestrator keeps the original query when condensed is empty, so the
+    schema degrades to a no-rewrite pass instead of a validation failure.
+    """
+    out = UnderstandOutput(condensed_query="", intent="factoid")
+    assert out.condensed_query == ""
+    assert out.intent == "factoid"
+
+
+def test_accepts_missing_condensed_query():
+    """S0-C: omitting condensed_query entirely defaults to "" (qwen3 case)."""
+    out = UnderstandOutput.model_validate({"intent": "factoid"})
+    assert out.condensed_query == ""
+    assert out.intent == "factoid"
 
 
 def test_rejects_unknown_intent_typo():

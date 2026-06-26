@@ -72,11 +72,18 @@ class ConversationStatePort(Protocol):
         *,
         conversation_id: UUID | None,
         state: dict[str, Any],
+        record_tenant_id: UUID | None = None,
     ) -> None:
         """Persist updated state for this conversation.
 
         Implementations MUST tolerate ``conversation_id is None`` (no-op)
         so the orchestration node can call unconditionally.
+
+        ``record_tenant_id`` (optional) scopes the write to the owning
+        tenant — defence-in-depth so a poisoned/mismatched
+        ``conversation_id`` cannot write across tenants when the RLS GUC
+        is unset (e.g. under a superuser DSN). When provided, the backend
+        also binds ``app.tenant_id`` so RLS enforces on the same write.
         """
         ...
 

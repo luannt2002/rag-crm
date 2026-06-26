@@ -35,6 +35,7 @@ class NullConversationState(ConversationStatePort):
         *,
         conversation_id: UUID | None,  # noqa: ARG002
         state: dict[str, Any],  # noqa: ARG002
+        record_tenant_id: UUID | None = None,  # noqa: ARG002
     ) -> None:
         return
 

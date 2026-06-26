@@ -5,9 +5,28 @@ Anthropic `tool_choice` so the provider enforces the contract. Callers
 receive a validated Pydantic instance or ``None`` on failure; ad-hoc
 regex / ``json.loads`` retry logic moves out of the orchestration layer.
 
-Provider routing — case-insensitive substring match on the LiteLLM model
-name AND the provider code so a model like ``"azure/gpt-4o"`` driven through
-provider code ``"azure_ai"`` lands on the OpenAI branch.
+Dispatch — capability-driven, NOT name-substring. When the resolver
+surfaces the model's declared capabilities (``supports_json_mode`` /
+``supports_tools`` from ``ai_models``), routing keys off those flags so an
+OpenAI-compatible endpoint that does NOT implement strict ``json_schema``
+(e.g. Qwen3 served behind an OpenAI-shape gateway) gets the looser
+``response_format={"type": "json_object"}`` mode instead of a strict schema
+it rejects. Order of preference:
+
+1. ``supports_json_mode`` → ``json_object`` mode (loose; the model emits a
+   JSON object, validated client-side against the Pydantic schema).
+2. else OpenAI-compatible (legacy name/code match) → strict ``json_schema``.
+3. else ``supports_tools`` / Anthropic → ``tool_choice`` function call.
+4. else → plain completion + best-effort JSON parse.
+
+When the capability flags are ``None`` (older callers), the legacy
+name-substring routing is preserved byte-for-byte so existing behaviour is
+unchanged.
+
+A bounded single repair retry re-issues the call with an appended repair
+instruction when the first response fails schema validation — one extra
+round-trip (``DEFAULT_STRUCTURED_OUTPUT_REPAIR_RETRIES``), never an
+unbounded loop.
 
 Domain-neutral by design — schemas are passed in by the caller; this module
 holds zero tenant or industry knowledge.
@@ -26,6 +45,7 @@ from pydantic import BaseModel, ValidationError
 
 from ragbot.shared.constants import (
     ANTHROPIC_PROVIDER_CODES,
+    DEFAULT_STRUCTURED_OUTPUT_REPAIR_RETRIES,
     DEFAULT_STRUCTURED_OUTPUT_SCHEMA_CACHE_SIZE,
     OPENAI_STRUCTURED_OUTPUT_PROVIDER_CODES,
 )
@@ -125,6 +145,70 @@ def _is_anthropic(litellm_name: str | None, provider_code: str | None) -> bool:
     """Anthropic Claude: ``tools=[…] tool_choice={…}`` path."""
     h = _haystack(litellm_name, provider_code)
     return any(token in h for token in ANTHROPIC_PROVIDER_CODES)
+
+
+# Structured-output transport modes.
+_MODE_JSON_OBJECT = "json_object"   # loose response_format, client-side validate
+_MODE_JSON_SCHEMA = "json_schema"   # strict OpenAI provider-enforced schema
+_MODE_TOOL = "tool"                 # function tool_choice (Anthropic-shape)
+_MODE_PLAIN = "plain"               # no provider enforcement, parse text
+
+
+def _select_mode(
+    *,
+    litellm_name: str | None,
+    provider_code: str | None,
+    supports_json_mode: bool | None,
+    supports_tools: bool | None,
+) -> str:
+    """Pick the structured-output transport for this model.
+
+    Capability flags (resolver-surfaced from ``ai_models``) win over the
+    legacy name-substring routing. A model that advertises ``json_mode``
+    but NOT strict ``json_schema`` (the Qwen3-behind-OpenAI-gateway case)
+    must take the loose ``json_object`` path; forcing strict ``json_schema``
+    there yields ``Extra-inputs`` / missing-field rejections.
+
+    Precedence:
+
+    1. ``supports_json_mode`` → ``json_object``.
+    2. legacy OpenAI-compatible match → strict ``json_schema``.
+    3. ``supports_tools`` OR Anthropic match → ``tool``.
+    4. otherwise → ``plain``.
+
+    When BOTH capability flags are ``None`` the function reduces to the
+    pre-existing name-substring routing (json_schema for OpenAI-compatible,
+    tool for Anthropic, plain otherwise) so legacy callers are unchanged.
+    """
+    if supports_json_mode:
+        return _MODE_JSON_OBJECT
+    if _is_openai_compatible(litellm_name, provider_code):
+        return _MODE_JSON_SCHEMA
+    if supports_tools or _is_anthropic(litellm_name, provider_code):
+        return _MODE_TOOL
+    return _MODE_PLAIN
+
+
+def _build_repair_messages(
+    messages: list[dict], schema: type[T], schema_name: str
+) -> list[dict]:
+    """Append a single repair instruction so the model re-emits valid JSON.
+
+    The repair turn restates the JSON-schema contract and asks the model to
+    return ONLY a JSON object/array matching it. Domain-neutral: the schema
+    itself is the contract, no tenant/industry text. Appended as one extra
+    ``user`` turn — the caller's original ``system_prompt`` (bot owner SoT)
+    is never mutated.
+    """
+    schema_json = _json_mod.dumps(
+        schema.model_json_schema(), ensure_ascii=False, sort_keys=True,
+    )
+    repair = (
+        "Your previous reply did not match the required schema. "
+        f"Return ONLY a single JSON value matching this JSON Schema named "
+        f"{schema_name} — no prose, no markdown fences:\n{schema_json}"
+    )
+    return [*messages, {"role": "user", "content": repair}]
 
 
 def _extract_text(response: Any) -> str:
@@ -232,7 +316,7 @@ async def _emit_usage_sink(
         )
         if asyncio.iscoroutine(result):
             await result
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         logger.debug("structured_output_usage_sink_failed", err=str(exc))
 
 
@@ -325,6 +409,223 @@ def _scan_first_json_block(text: str) -> str | None:
     return None
 
 
+async def _safe_acompletion(
+    *,
+    litellm_module: Any,
+    schema_name: str,
+    provider_code: str | None,
+    litellm_name: str,
+    **call_kwargs: Any,
+) -> Any | None:
+    """Single guarded ``acompletion`` call shared by every transport branch.
+
+    Returns the response object, or ``None`` when the provider call raised
+    (logged once here). Centralising the broad-except keeps exactly one
+    BLE001 site for the four transport modes instead of duplicating it per
+    branch — fewer broad-except sites, identical degrade-silent behaviour
+    (transport error → ``None`` → caller skips repair).
+    """
+    try:
+        return await litellm_module.acompletion(**call_kwargs)
+    except Exception as exc:
+        logger.warning(
+            "structured_output_provider_call_failed",
+            schema=schema_name, provider=provider_code,
+            model=litellm_name, error=str(exc),
+        )
+        return None
+
+
+async def _attempt_json_schema(
+    *,
+    litellm_module: Any,
+    common_kwargs: dict[str, Any],
+    schema: type[T],
+    schema_name: str,
+    provider_code: str | None,
+    litellm_name: str,
+    fallback_to_json_parse: bool,
+    usage_sink: StructuredUsageSink | None,
+) -> tuple[T | None, bool]:
+    """Strict OpenAI ``json_schema`` attempt. Returns ``(parsed, call_ok)``.
+
+    ``call_ok`` is False only when the provider call itself raised (no usable
+    response) — the caller treats that as terminal and does not repair. A
+    ``None`` parse with ``call_ok=True`` means "response came back but failed
+    validation", which IS repairable.
+    """
+    response_format = {
+        "type": "json_schema",
+        "json_schema": {
+            "name": schema_name,
+            "schema": _cached_hardened_schema(schema),
+            "strict": True,
+        },
+    }
+    resp = await _safe_acompletion(
+        litellm_module=litellm_module,
+        schema_name=schema_name,
+        provider_code=provider_code,
+        litellm_name=litellm_name,
+        response_format=response_format,
+        **common_kwargs,
+    )
+    if resp is None:
+        return None, False
+    text = _extract_text(resp)
+    await _emit_usage_sink(usage_sink, resp, text)
+    try:
+        return schema.model_validate_json(text), True
+    except (ValidationError, ValueError) as exc:
+        logger.warning(
+            "structured_output_validation_failed",
+            schema=schema_name, provider=provider_code, error=str(exc),
+        )
+        if fallback_to_json_parse:
+            return _fallback_json_parse(resp, schema), True
+        return None, True
+
+
+async def _attempt_json_object(
+    *,
+    litellm_module: Any,
+    common_kwargs: dict[str, Any],
+    schema: type[T],
+    schema_name: str,
+    provider_code: str | None,
+    litellm_name: str,
+    fallback_to_json_parse: bool,
+    usage_sink: StructuredUsageSink | None,
+) -> tuple[T | None, bool]:
+    """Loose ``response_format={"type": "json_object"}`` attempt.
+
+    The provider only guarantees the body is *a* JSON object — the schema is
+    enforced client-side via ``model_validate``. This is the path for models
+    that advertise ``supports_json_mode`` but not strict ``json_schema``
+    (e.g. Qwen3 behind an OpenAI-shape gateway).
+    """
+    resp = await _safe_acompletion(
+        litellm_module=litellm_module,
+        schema_name=schema_name,
+        provider_code=provider_code,
+        litellm_name=litellm_name,
+        response_format={"type": "json_object"},
+        **common_kwargs,
+    )
+    if resp is None:
+        return None, False
+    text = _extract_text(resp)
+    await _emit_usage_sink(usage_sink, resp, text)
+    try:
+        return schema.model_validate_json(text), True
+    except (ValidationError, ValueError) as exc:
+        logger.warning(
+            "structured_output_validation_failed",
+            schema=schema_name, provider=provider_code, error=str(exc),
+        )
+        if fallback_to_json_parse:
+            return _fallback_json_parse(resp, schema), True
+        return None, True
+
+
+async def _attempt_tool(
+    *,
+    litellm_module: Any,
+    common_kwargs: dict[str, Any],
+    schema: type[T],
+    schema_name: str,
+    provider_code: str | None,
+    litellm_name: str,
+    fallback_to_json_parse: bool,
+    usage_sink: StructuredUsageSink | None,
+) -> tuple[T | None, bool]:
+    """Function ``tool_choice`` attempt (Anthropic-shape tool-use)."""
+    tool_def = {
+        "type": "function",
+        "function": {
+            "name": "submit_response",
+            "description": f"Submit {schema_name} structured response.",
+            "parameters": _cached_hardened_schema(schema),
+        },
+    }
+    # Anthropic prompt cache: stamp ephemeral cache_control on the first
+    # system message so the structured-output path enjoys the same 90%
+    # input-token discount the free-form path already gets via the router.
+    from ragbot.shared.anthropic_cache import apply_anthropic_cache_control
+    cached_kwargs = dict(common_kwargs)
+    cached_kwargs["messages"] = apply_anthropic_cache_control(
+        common_kwargs["messages"],
+        litellm_name=litellm_name,
+        provider_code=provider_code,
+    )
+    resp = await _safe_acompletion(
+        litellm_module=litellm_module,
+        schema_name=schema_name,
+        provider_code=provider_code,
+        litellm_name=litellm_name,
+        tools=[tool_def],
+        tool_choice={
+            "type": "function",
+            "function": {"name": "submit_response"},
+        },
+        **cached_kwargs,
+    )
+    if resp is None:
+        return None, False
+    args = _extract_anthropic_tool_args(resp)
+    sink_text = _json_mod.dumps(args) if args is not None else _extract_text(resp)
+    await _emit_usage_sink(usage_sink, resp, sink_text)
+    if args is None:
+        if fallback_to_json_parse:
+            return _fallback_json_parse(resp, schema), True
+        return None, True
+    try:
+        return schema.model_validate(args), True
+    except (ValidationError, ValueError) as exc:
+        logger.warning(
+            "structured_output_validation_failed",
+            schema=schema_name, provider=provider_code, error=str(exc),
+        )
+        if fallback_to_json_parse:
+            return _fallback_json_parse(resp, schema), True
+        return None, True
+
+
+async def _attempt_plain(
+    *,
+    litellm_module: Any,
+    common_kwargs: dict[str, Any],
+    schema: type[T],
+    schema_name: str,
+    provider_code: str | None,
+    litellm_name: str,
+    fallback_to_json_parse: bool,
+    usage_sink: StructuredUsageSink | None,
+) -> tuple[T | None, bool]:
+    """Plain completion + best-effort JSON parse (no provider enforcement)."""
+    resp = await _safe_acompletion(
+        litellm_module=litellm_module,
+        schema_name=schema_name,
+        provider_code=provider_code,
+        litellm_name=litellm_name,
+        **common_kwargs,
+    )
+    if resp is None:
+        return None, False
+    await _emit_usage_sink(usage_sink, resp, _extract_text(resp))
+    if fallback_to_json_parse:
+        return _fallback_json_parse(resp, schema), True
+    return None, True
+
+
+_MODE_DISPATCH = {
+    _MODE_JSON_SCHEMA: _attempt_json_schema,
+    _MODE_JSON_OBJECT: _attempt_json_object,
+    _MODE_TOOL: _attempt_tool,
+    _MODE_PLAIN: _attempt_plain,
+}
+
+
 async def call_with_schema(
     *,
     litellm_module: Any,
@@ -337,6 +638,9 @@ async def call_with_schema(
     timeout: float | None = None,
     fallback_to_json_parse: bool = True,
     usage_sink: StructuredUsageSink | None = None,
+    supports_json_mode: bool | None = None,
+    supports_tools: bool | None = None,
+    repair_retries: int | None = None,
     **kwargs: Any,
 ) -> T | None:
     """Call an LLM and return a validated Pydantic instance, or ``None``.
@@ -351,7 +655,7 @@ async def call_with_schema(
         (provider-prefixed wire name).
     provider_code
         Provider code from the bot's resolved runtime (DB ``ai_providers.code``).
-        Used together with ``litellm_name`` for routing.
+        Used together with ``litellm_name`` for legacy name routing.
     messages
         Standard OpenAI-shape ``[{"role": ..., "content": ...}]`` payload.
     schema
@@ -362,6 +666,15 @@ async def call_with_schema(
         When True (default), if the provider call returns text that doesn't
         validate, try a plain ``model_validate_json`` on the response body
         before giving up. Disable for strict-mode callers.
+    supports_json_mode, supports_tools
+        Resolver-surfaced model capabilities (``ai_models`` columns). When
+        ``supports_json_mode`` is True the loose ``json_object`` transport is
+        used instead of strict ``json_schema``; when both are ``None`` the
+        legacy name-substring routing applies (unchanged behaviour).
+    repair_retries
+        Number of bounded repair retries on validation failure. ``None``
+        defaults to :data:`DEFAULT_STRUCTURED_OUTPUT_REPAIR_RETRIES`. Capped
+        at that constant so callers cannot request an unbounded loop.
     **kwargs
         Extra args forwarded to ``litellm.acompletion`` (temperature,
         max_tokens, etc.).
@@ -372,136 +685,54 @@ async def call_with_schema(
     are expected to handle ``None`` explicitly (e.g. fall back to the
     legacy parse path or skip the node).
     """
-    common_kwargs: dict[str, Any] = {
-        "model": litellm_name,
-        "messages": messages,
-        **kwargs,
-    }
+    base_kwargs: dict[str, Any] = {"model": litellm_name, **kwargs}
     if api_key is not None:
-        common_kwargs["api_key"] = api_key
+        base_kwargs["api_key"] = api_key
     if api_base is not None:
-        common_kwargs["api_base"] = api_base
+        base_kwargs["api_base"] = api_base
     if timeout is not None:
-        common_kwargs["timeout"] = timeout
+        base_kwargs["timeout"] = timeout
 
     schema_name = schema.__name__
+    mode = _select_mode(
+        litellm_name=litellm_name,
+        provider_code=provider_code,
+        supports_json_mode=supports_json_mode,
+        supports_tools=supports_tools,
+    )
+    attempt = _MODE_DISPATCH[mode]
 
-    if _is_openai_compatible(litellm_name, provider_code):
-        json_schema = _cached_hardened_schema(schema)
-        response_format = {
-            "type": "json_schema",
-            "json_schema": {
-                "name": schema_name,
-                "schema": json_schema,
-                "strict": True,
-            },
-        }
-        try:
-            resp = await litellm_module.acompletion(
-                response_format=response_format,
-                **common_kwargs,
-            )
-        except Exception as exc:  # noqa: BLE001
-            logger.warning(
-                "structured_output_provider_call_failed",
-                schema=schema_name,
-                provider=provider_code,
-                model=litellm_name,
-                error=str(exc),
-            )
-            return None
-        text = _extract_text(resp)
-        await _emit_usage_sink(usage_sink, resp, text)
-        try:
-            return schema.model_validate_json(text)
-        except (ValidationError, ValueError) as exc:
-            logger.warning(
-                "structured_output_validation_failed",
-                schema=schema_name,
-                provider=provider_code,
-                error=str(exc),
-            )
-            if fallback_to_json_parse:
-                return _fallback_json_parse(resp, schema)
-            return None
+    # Bounded repair: 0..DEFAULT cap. None → default; negative/over-cap clamp.
+    cap = DEFAULT_STRUCTURED_OUTPUT_REPAIR_RETRIES
+    retries = cap if repair_retries is None else max(0, min(int(repair_retries), cap))
 
-    if _is_anthropic(litellm_name, provider_code):
-        tool_def = {
-            "type": "function",
-            "function": {
-                "name": "submit_response",
-                "description": f"Submit {schema_name} structured response.",
-                "parameters": _cached_hardened_schema(schema),
-            },
-        }
-        # Anthropic prompt cache: stamp ephemeral cache_control on the first
-        # system message so the structured-output path enjoys the same 90%
-        # input-token discount the free-form path already gets via the
-        # router. Without this every structured grade / reflect / understand
-        # call rebuilds the cache from scratch — Wave 2 cost leak.
-        from ragbot.shared.anthropic_cache import apply_anthropic_cache_control
-        cached_kwargs = dict(common_kwargs)
-        cached_kwargs["messages"] = apply_anthropic_cache_control(
-            common_kwargs["messages"],
-            litellm_name=litellm_name,
+    attempt_messages = messages
+    # total tries = 1 initial + ``retries`` repair turns
+    for attempt_idx in range(retries + 1):
+        common_kwargs = dict(base_kwargs)
+        common_kwargs["messages"] = attempt_messages
+        parsed, call_ok = await attempt(
+            litellm_module=litellm_module,
+            common_kwargs=common_kwargs,
+            schema=schema,
+            schema_name=schema_name,
             provider_code=provider_code,
+            litellm_name=litellm_name,
+            fallback_to_json_parse=fallback_to_json_parse,
+            usage_sink=usage_sink,
         )
-        try:
-            resp = await litellm_module.acompletion(
-                tools=[tool_def],
-                tool_choice={
-                    "type": "function",
-                    "function": {"name": "submit_response"},
-                },
-                **cached_kwargs,
-            )
-        except Exception as exc:  # noqa: BLE001
-            logger.warning(
-                "structured_output_provider_call_failed",
-                schema=schema_name,
-                provider=provider_code,
-                model=litellm_name,
-                error=str(exc),
-            )
+        if parsed is not None:
+            return parsed
+        # No more repair budget, or the provider call itself failed (no usable
+        # response to repair) → stop.
+        if attempt_idx >= retries or not call_ok:
             return None
-        args = _extract_anthropic_tool_args(resp)
-        # Emit usage even when the schema validation falls through — token
-        # counts are valid as long as the provider returned a response, and
-        # we want failed-validation calls accounted for separately rather
-        # than silently dropped.
-        sink_text = _json_mod.dumps(args) if args is not None else _extract_text(resp)
-        await _emit_usage_sink(usage_sink, resp, sink_text)
-        if args is None:
-            if fallback_to_json_parse:
-                return _fallback_json_parse(resp, schema)
-            return None
-        try:
-            return schema.model_validate(args)
-        except (ValidationError, ValueError) as exc:
-            logger.warning(
-                "structured_output_validation_failed",
-                schema=schema_name,
-                provider=provider_code,
-                error=str(exc),
-            )
-            return None
-
-    # Unknown provider — no provider-side enforcement available.
-    # Fall through to plain acompletion + best-effort JSON parse.
-    try:
-        resp = await litellm_module.acompletion(**common_kwargs)
-    except Exception as exc:  # noqa: BLE001
-        logger.warning(
-            "structured_output_provider_call_failed",
-            schema=schema_name,
-            provider=provider_code,
-            model=litellm_name,
-            error=str(exc),
+        logger.info(
+            "structured_output_repair_retry",
+            schema=schema_name, provider=provider_code,
+            model=litellm_name, attempt=attempt_idx + 1,
         )
-        return None
-    await _emit_usage_sink(usage_sink, resp, _extract_text(resp))
-    if fallback_to_json_parse:
-        return _fallback_json_parse(resp, schema)
+        attempt_messages = _build_repair_messages(messages, schema, schema_name)
     return None
 
 

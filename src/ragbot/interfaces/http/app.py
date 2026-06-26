@@ -2,21 +2,19 @@
 
 from __future__ import annotations
 
-from contextlib import asynccontextmanager
-from typing import Any, AsyncIterator
-
 import asyncio
-
-from redis.exceptions import RedisError
 import os
-import structlog
-
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from pathlib import Path
+from typing import Any
 
+import structlog
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse, ORJSONResponse, Response
 from fastapi.staticfiles import StaticFiles
+from redis.exceptions import RedisError
 
 from ragbot.bootstrap import Container
 from ragbot.config.logging import setup_logging
@@ -48,6 +46,8 @@ from ragbot.shared.constants import (
     DEFAULT_RL_IP_WINDOW_S,
     DEFAULT_SECURITY_HEADERS_HSTS_ENABLED,
     GZIP_MINIMUM_SIZE,
+    RAGBOT_ALLOW_SUPERUSER_RUNTIME_ENV,
+    RAGBOT_ALLOW_SUPERUSER_RUNTIME_VALUE,
     RAGBOT_METRICS_AUTH_TOKEN_ENV,
 )
 
@@ -85,7 +85,8 @@ def _check_reranker_preflight(
     # Lazy import to keep the preflight helper unit-testable without
     # pulling in the heavy reranker dependencies at module load.
     from ragbot.infrastructure.reranker.registry import (  # noqa: PLC0415
-        build_reranker, list_providers,
+        build_reranker,
+        list_providers,
     )
 
     provider_key = (provider or "").strip().lower()
@@ -166,6 +167,89 @@ def _check_required_provider_keys(settings: Any) -> None:
         raise RuntimeError(msg)
 
 
+def _evaluate_runtime_db_role(
+    *,
+    rolname: str,
+    is_superuser: bool,
+    is_bypassrls: bool,
+    allow_superuser: bool,
+) -> None:
+    """Decide whether the runtime DB role is safe for RLS — pure, testable.
+
+    RLS layer 2: the policies only apply when the app connects as a
+    NOSUPERUSER + NOBYPASSRLS role. A superuser / ``rolbypassrls`` runtime
+    role silently bypasses EVERY policy — cross-tenant leak with nothing in
+    the logs. We refuse to boot in that state unless the operator has
+    explicitly opted into the escape (a superuser DSN is still useful during
+    the staged RLS cut-over, before ``DATABASE_URL_APP`` points at the
+    ``ragbot_app`` role).
+
+    Raises ``RuntimeError`` when the role bypasses RLS and the escape is OFF.
+    """
+    if not (is_superuser or is_bypassrls):
+        return
+    if allow_superuser:
+        logger.warning(
+            "runtime_db_role_bypasses_rls_allowed",
+            rolname=rolname,
+            is_superuser=is_superuser,
+            is_bypassrls=is_bypassrls,
+            escape_env=RAGBOT_ALLOW_SUPERUSER_RUNTIME_ENV,
+        )
+        return
+    raise RuntimeError(
+        f"Runtime DB role {rolname!r} bypasses RLS "
+        f"(rolsuper={is_superuser}, rolbypassrls={is_bypassrls}). RLS "
+        f"policies are inert under this role — cross-tenant isolation is "
+        f"NOT enforced. Point DATABASE_URL_APP at the NOBYPASSRLS "
+        f"'ragbot_app' role, or set "
+        f"{RAGBOT_ALLOW_SUPERUSER_RUNTIME_ENV}="
+        f"{RAGBOT_ALLOW_SUPERUSER_RUNTIME_VALUE} to opt in knowingly."
+    )
+
+
+async def _check_runtime_db_role(engine: Any) -> None:
+    """Fetch the runtime connection's role flags + evaluate them.
+
+    Best-effort on the *fetch* (a DB blip must not block boot), fail-loud on
+    the *verdict* (a confirmed RLS-bypassing role raises). When the DB is
+    unreachable we log and continue — the role check re-runs on the next
+    boot and per-request RLS still depends on the GUC hook regardless.
+    """
+    from sqlalchemy import text  # noqa: PLC0415 — local import keeps module-load light
+
+    allow = (
+        os.getenv(RAGBOT_ALLOW_SUPERUSER_RUNTIME_ENV, "").strip()
+        == RAGBOT_ALLOW_SUPERUSER_RUNTIME_VALUE
+    )
+    try:
+        async with engine.connect() as conn:
+            row = (
+                await conn.execute(
+                    text(
+                        "SELECT rolname, rolsuper, rolbypassrls "
+                        "FROM pg_roles WHERE rolname = current_user"
+                    )
+                )
+            ).first()
+    except (OSError, RuntimeError) as exc:
+        # Transport / pool init blip — degrade silent (re-checked next boot).
+        logger.warning(
+            "runtime_db_role_check_skipped",
+            reason=type(exc).__name__,
+        )
+        return
+    if row is None:
+        logger.warning("runtime_db_role_check_no_row")
+        return
+    _evaluate_runtime_db_role(
+        rolname=str(row[0]),
+        is_superuser=bool(row[1]),
+        is_bypassrls=bool(row[2]),
+        allow_superuser=allow,
+    )
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Quản lý vòng đời app: khởi tạo container, cache, shutdown tài nguyên.
@@ -189,8 +273,13 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.container = container
     app.state.settings = settings
 
+    # RLS layer-2 fail-loud: refuse to boot on a superuser / BYPASSRLS runtime
+    # role (policies inert → cross-tenant leak) unless the operator opted into
+    # the documented escape. Runs before request traffic is served.
+    await _check_runtime_db_role(container.db_engine())
+
     # Init observability (OTel + Sentry — graceful fallback if packages absent)
-    from ragbot.infrastructure.observability.tracing import init_tracing, init_sentry
+    from ragbot.infrastructure.observability.tracing import init_sentry, init_tracing
     init_tracing(service_name="ragbot")
     init_sentry(dsn=getattr(settings.observability, "sentry_dsn", None))
 
@@ -198,7 +287,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     try:
         bus = container.bus()
         await bus.ensure_streams()
-    except (RedisError, OSError, asyncio.TimeoutError, RuntimeError):
+    except (TimeoutError, RedisError, OSError, RuntimeError):
         # Narrow: bus.ensure_streams calls XGROUP CREATE / XADD probe —
         # only Redis transport + asyncio-runtime classes are reachable.
         # AttributeError / TypeError surface loud (programmer bug at
@@ -209,7 +298,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     try:
         llm = container.llm()
         await llm.refresh_routing()
-    except Exception:  # noqa: BLE001 — startup best-effort; LiteLLM/DB blip must not block boot
+    except Exception:
         logger.warning("llm_refresh_skipped", reason="ai_models table empty or DB unavailable")
 
     # Prime ModelRuntimeConfig L1 cache + BotRegistry cache in parallel.
@@ -218,7 +307,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
             resolver = container.model_resolver()
             loaded = await resolver.bootstrap_cache()
             logger.info("model_resolver_bootstrap", entries=loaded)
-        except Exception:  # noqa: BLE001 — startup cache prime best-effort; first request will lazy-load on miss
+        except Exception:
             logger.warning("model_resolver_bootstrap_skipped")
 
     async def _bootstrap_bot_registry() -> None:
@@ -226,7 +315,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
             registry = container.bot_registry_service()
             loaded = await registry.bootstrap_cache()
             logger.info("bot_registry_bootstrap_done", entries=loaded)
-        except Exception:  # noqa: BLE001 — startup cache prime best-effort; first request will lazy-load on miss
+        except Exception:
             logger.warning("bot_registry_bootstrap_skipped")
 
     async def _bootstrap_guardrail_rules() -> None:
@@ -268,7 +357,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
             await svc.ensure_owner_token(redis_client=redis)
             loaded = await svc.bootstrap_cache(redis)
             logger.info("api_tokens_bootstrap", entries=loaded)
-        except Exception:  # noqa: BLE001 — startup token cache best-effort; verify path falls through to DB
+        except Exception:
             logger.warning("api_tokens_bootstrap_skipped")
 
     await asyncio.gather(
@@ -297,7 +386,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
                 db_value=_db_cors_raw,
                 note="system_config override takes effect only after restart",
             )
-    except Exception:  # noqa: BLE001 — non-fatal diagnostic
+    except Exception:
         logger.debug("cors_db_check_skipped")
 
     # Reranker preflight: fail-loud at startup when reranker is enabled but the
@@ -317,7 +406,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         )
         _rr_enabled = await _rr_svc.get("reranker_enabled", True)
         _rr_provider = await _rr_svc.get("reranker_provider", None)
-    except Exception:  # noqa: BLE001 — DB unavailable, defer to settings
+    except Exception:
         _rr_enabled = settings.reranker.enabled
     _check_reranker_preflight(
         enabled=bool(_rr_enabled),
@@ -364,22 +453,22 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
             )
             try:
                 await stop_embedded_workers(embedded_worker_tasks)
-            except (OSError, RuntimeError, asyncio.TimeoutError):
+            except (TimeoutError, OSError, RuntimeError):
                 # Narrow shutdown drain — the inner supervisor already
                 # absorbs RedisError / CancelledError on its side; only
                 # asyncio runtime / OS-level errors can reach here.
                 logger.warning("embedded_workers_teardown_failed", exc_info=True)
         try:
             await container.bus().close()
-        except Exception:  # noqa: BLE001 — shutdown drain; isolate any failure type so subsequent disposers still run
+        except Exception:
             pass
         try:
             await container.cache().close()
-        except Exception:  # noqa: BLE001 — shutdown drain; isolate any failure type so subsequent disposers still run
+        except Exception:
             pass
         try:
             await container.db_engine().dispose()
-        except Exception:  # noqa: BLE001 — shutdown drain; isolate any failure type so process exits cleanly
+        except Exception:
             pass
         logger.info("ragbot.shutdown_complete")
 
@@ -485,11 +574,11 @@ def create_app() -> FastAPI:
     # the per-IP fail-ban counter, but inside IP rate limit so flooders
     # are short-circuited at the cheapest layer.
     if settings.app.anti_abuse_enabled:
-        from ragbot.shared.hmac_signing import (  # noqa: F401 — touch-import surfaces module-load errors at boot
-            compute_signature,
-        )
         from ragbot.interfaces.http.middlewares.anti_abuse import (
             AntiAbuseMiddleware,
+        )
+        from ragbot.shared.hmac_signing import (  # noqa: F401 — touch-import surfaces module-load errors at boot
+            compute_signature,
         )
         _trusted_proxies = frozenset(
             p.strip() for p in (settings.app.trusted_proxies or "").split(",") if p.strip()

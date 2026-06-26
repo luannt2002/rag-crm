@@ -61,13 +61,20 @@ class UnderstandOutput(BaseModel):
     exclusively via ``system_prompt``. When the LLM populates this field
     (per its own self-calibration), the application uses it; when absent,
     fallback keeps every existing flow unchanged.
+
+    ``condensed_query`` is OPTIONAL (default ``""``). A model that does not
+    emit a rewrite — or emits an empty one — must not break understand:
+    the orchestrator already keeps the original ``state["query"]`` whenever
+    the condensed value is empty, so the effective default is "the query
+    itself". Hardening this lets a model behind an OpenAI-shape gateway
+    that drops/empties the field degrade to a no-rewrite pass instead of a
+    schema-validation failure that empties the whole understand result.
     """
 
     model_config = _STRICT_JSON_SCHEMA_CONFIG
 
     condensed_query: str = Field(
-        ...,
-        min_length=1,
+        default="",
         max_length=DEFAULT_UNDERSTAND_CONDENSED_QUERY_MAX_LEN,
     )
     intent: Literal[
@@ -205,16 +212,16 @@ class GroundingVerdictsOutput(BaseModel):
 
 
 __all__ = [
-    "GradeOutput",
-    "ReflectOutput",
-    "DecomposeOutput",
-    "UnderstandOutput",
-    "CitationItem",
-    "SubAnswerItem",
-    "GenerateOutput",
-    "GenerateFlatOutput",
     "ChunkGradeItem",
+    "CitationItem",
+    "DecomposeOutput",
+    "GenerateFlatOutput",
+    "GenerateOutput",
     "GradeBatchOutput",
+    "GradeOutput",
     "GroundingVerdict",
     "GroundingVerdictsOutput",
+    "ReflectOutput",
+    "SubAnswerItem",
+    "UnderstandOutput",
 ]

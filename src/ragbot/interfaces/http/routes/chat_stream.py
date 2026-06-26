@@ -34,6 +34,7 @@ from starlette.responses import StreamingResponse
 
 from ragbot.application.services.system_config_service import SystemConfigService
 from ragbot.config.logging import bind_request_context
+from ragbot.infrastructure.repositories.history_reconcile import HistoryReconciler
 from ragbot.interfaces.http._sse_helper import _STREAM_SENTINEL, stream_real_llm
 from ragbot.interfaces.http.middlewares.rbac import require_permission_dep
 from ragbot.interfaces.http.schemas.chat_schema import ChatRequest
@@ -152,23 +153,18 @@ async def chat_stream(req: ChatRequest, request: Request) -> StreamingResponse:
     max_history = req.history_limit or system_max
 
     # ── 1. LOAD HISTORY (best-effort; missing history = empty list) ──
+    # MT-1 reconcile: merge BOTH stores (chat_histories written here +
+    # messages/conversations written by the worker transport) so a user
+    # who alternates transports under the same connect_id keeps full
+    # multi-turn context. Read-path only — no second write store.
     conversation_history: list[dict[str, str]] = []
     try:
-        async with sf() as session:
-            rows = (await session.execute(
-                sa_text(
-                    """
-                    SELECT role, content FROM (
-                        SELECT id, role, content
-                        FROM chat_histories
-                        WHERE record_bot_id = :bid AND channel_type = :ch AND connect_id = :cid
-                        ORDER BY id DESC LIMIT :lim
-                    ) sub ORDER BY id ASC
-                    """,
-                ),
-                {"bid": bot_cfg.id, "ch": req.channel_type, "cid": connect_id, "lim": max_history},
-            )).fetchall()
-            conversation_history = [{"role": r[0], "content": r[1]} for r in rows]
+        conversation_history = await HistoryReconciler(sf).load(
+            record_bot_id=bot_cfg.id,
+            connect_id=connect_id,
+            channel_type=req.channel_type,
+            limit=max_history,
+        )
     except SQLAlchemyError as exc:
         # DB unavailable / query timeout — degrade to empty history rather
         # than 500ing the chat call. ``logger.exception`` preserves the

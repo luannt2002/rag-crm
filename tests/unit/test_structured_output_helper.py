@@ -292,3 +292,185 @@ async def test_openai_path_does_not_inject_anthropic_cache_control() -> None:
     forwarded = stub.last_kwargs["messages"]
     # OpenAI path: messages stay as plain str-content shape.
     assert forwarded[0]["content"] == "You are a careful judge."
+
+
+# --- S0-C: capability-driven dispatch + repair retry --------------------------
+
+from ragbot.application.dto.llm_schemas import UnderstandOutput  # noqa: E402
+
+
+class _SequencedLiteLLM:
+    """Yields a different content body per ``acompletion`` call.
+
+    Used to verify the bounded repair retry: first call returns garbage,
+    second returns valid JSON. Records every call's kwargs.
+    """
+
+    def __init__(self, bodies: list[str]) -> None:
+        self._bodies = bodies
+        self.calls: list[dict[str, Any]] = []
+
+    async def acompletion(self, **kwargs: Any) -> _FakeResponse:
+        self.calls.append(kwargs)
+        idx = min(len(self.calls) - 1, len(self._bodies) - 1)
+        return _FakeResponse(_FakeMessage(content=self._bodies[idx]))
+
+
+@pytest.mark.asyncio
+async def test_supports_json_mode_uses_json_object_not_strict_schema() -> None:
+    """A model advertising json_mode (e.g. Qwen3 behind OpenAI gateway) must
+    take the loose json_object transport, NOT strict json_schema."""
+    body = json.dumps({"grade": "yes", "reason": "ok"})
+    stub = _StubLiteLLMOpenAI(body)
+    out = await call_with_schema(
+        litellm_module=stub,
+        litellm_name="openai/some-qwen3",
+        provider_code="openai",  # legacy match would force json_schema
+        messages=[{"role": "user", "content": "q"}],
+        schema=GradeOutput,
+        supports_json_mode=True,
+    )
+    assert isinstance(out, GradeOutput)
+    rf = stub.last_kwargs["response_format"]
+    assert rf == {"type": "json_object"}
+    # Strict json_schema must NOT have been used.
+    assert rf.get("type") != "json_schema"
+
+
+@pytest.mark.asyncio
+async def test_supports_tools_uses_tool_mode_for_non_anthropic_name() -> None:
+    """supports_tools=True routes to function tool_choice even when the model
+    name does not match the Anthropic substring list."""
+    args = {"action": "keep", "reason": "fine"}
+    stub = _StubLiteLLMAnthropic(args)
+    out = await call_with_schema(
+        litellm_module=stub,
+        litellm_name="vendor/mystery-llm",
+        provider_code="vendor",
+        messages=[{"role": "user", "content": "q"}],
+        schema=ReflectOutput,
+        supports_tools=True,
+    )
+    assert isinstance(out, ReflectOutput)
+    assert "tools" in stub.last_kwargs
+    assert stub.last_kwargs["tool_choice"]["function"]["name"] == "submit_response"
+
+
+@pytest.mark.asyncio
+async def test_legacy_routing_unchanged_when_caps_none() -> None:
+    """No capability flags → legacy json_schema for OpenAI-compatible."""
+    body = json.dumps({"grade": "partial", "reason": ""})
+    stub = _StubLiteLLMOpenAI(body)
+    await call_with_schema(
+        litellm_module=stub,
+        litellm_name="openai/gpt-4.1-mini",
+        provider_code="openai",
+        messages=[{"role": "user", "content": "q"}],
+        schema=GradeOutput,
+    )
+    rf = stub.last_kwargs["response_format"]
+    assert rf["type"] == "json_schema"
+    assert rf["json_schema"]["strict"] is True
+
+
+@pytest.mark.asyncio
+async def test_repair_retry_recovers_after_bad_shape() -> None:
+    """First response is wrong shape, repair turn returns valid JSON →
+    helper returns the validated instance without raising."""
+    bad = json.dumps({"unexpected": "field"})         # missing 'grade'
+    good = json.dumps({"grade": "no", "reason": "x"})
+    stub = _SequencedLiteLLM([bad, good])
+    out = await call_with_schema(
+        litellm_module=stub,
+        litellm_name="openai/some-qwen3",
+        provider_code="openai",
+        messages=[{"role": "user", "content": "q"}],
+        schema=GradeOutput,
+        supports_json_mode=True,
+        fallback_to_json_parse=False,  # isolate the repair path
+    )
+    assert isinstance(out, GradeOutput)
+    assert out.grade == "no"
+    # Exactly two acompletion calls: initial + one repair.
+    assert len(stub.calls) == 2
+    # The repair call appended an extra user turn restating the schema.
+    repaired_msgs = stub.calls[1]["messages"]
+    assert len(repaired_msgs) == 2
+    assert repaired_msgs[-1]["role"] == "user"
+    assert "GradeOutput" in repaired_msgs[-1]["content"]
+
+
+@pytest.mark.asyncio
+async def test_repair_retry_is_bounded_returns_none_not_raise() -> None:
+    """Both attempts return bad shape → bounded retry stops at 1 repair and
+    returns None (degrade), never an infinite loop, never a raise."""
+    bad = json.dumps({"unexpected": "field"})
+    stub = _SequencedLiteLLM([bad, bad, bad])
+    out = await call_with_schema(
+        litellm_module=stub,
+        litellm_name="openai/some-qwen3",
+        provider_code="openai",
+        messages=[{"role": "user", "content": "q"}],
+        schema=GradeOutput,
+        supports_json_mode=True,
+        fallback_to_json_parse=False,
+    )
+    assert out is None
+    # 1 initial + 1 repair = 2; bounded, NOT 3.
+    assert len(stub.calls) == 2
+
+
+@pytest.mark.asyncio
+async def test_repair_disabled_when_retries_zero() -> None:
+    """repair_retries=0 → single attempt, no repair turn."""
+    bad = json.dumps({"unexpected": "field"})
+    good = json.dumps({"grade": "no", "reason": "x"})
+    stub = _SequencedLiteLLM([bad, good])
+    out = await call_with_schema(
+        litellm_module=stub,
+        litellm_name="openai/some-qwen3",
+        provider_code="openai",
+        messages=[{"role": "user", "content": "q"}],
+        schema=GradeOutput,
+        supports_json_mode=True,
+        fallback_to_json_parse=False,
+        repair_retries=0,
+    )
+    assert out is None
+    assert len(stub.calls) == 1
+
+
+@pytest.mark.asyncio
+async def test_understand_output_condensed_query_optional() -> None:
+    """qwen3 omitting condensed_query must not break understand — schema now
+    defaults it to empty string instead of raising on the missing field."""
+    body = json.dumps({"intent": "factoid"})  # no condensed_query, no confidence
+    stub = _StubLiteLLMOpenAI(body)
+    out = await call_with_schema(
+        litellm_module=stub,
+        litellm_name="openai/some-qwen3",
+        provider_code="openai",
+        messages=[{"role": "user", "content": "q"}],
+        schema=UnderstandOutput,
+        supports_json_mode=True,
+        fallback_to_json_parse=False,
+    )
+    assert isinstance(out, UnderstandOutput)
+    assert out.condensed_query == ""
+    assert out.intent == "factoid"
+
+
+@pytest.mark.asyncio
+async def test_no_repair_when_provider_call_raises() -> None:
+    """A raising provider call (no usable response) is terminal — the helper
+    returns None immediately, it does NOT spend a repair turn."""
+    stub = _StubLiteLLMRaising(RuntimeError("upstream 500"))
+    out = await call_with_schema(
+        litellm_module=stub,
+        litellm_name="openai/some-qwen3",
+        provider_code="openai",
+        messages=[{"role": "user", "content": "q"}],
+        schema=GradeOutput,
+        supports_json_mode=True,
+    )
+    assert out is None
