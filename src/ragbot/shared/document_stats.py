@@ -92,6 +92,26 @@ def _is_discourse_opener(label: str) -> bool:
     parts = low.split()
     return bool(parts) and parts[0] in _STATS_CLAUSE_OPENER_FIRST
 
+
+def _is_delimited_list_cell(cell: str) -> bool:
+    """True when a long cell is a DELIMITED VALUE LIST (a synonym/alias blob like
+    ``"code-a, code a, brand code-a, …"``), NOT a prose sentence.
+
+    Many separators + short segments = a list; a prose sentence of the same length
+    has few commas and long clauses. Domain-neutral (punctuation shape only, no
+    corpus literal). Lets a long ALIASES column sitting in col-0 coexist with a real
+    NAME in a later column instead of the prose-noise guard dropping the whole row
+    (a real catalog's identifier is a short id/name column, not a huge synonym blob
+    that some exports put in the first column)."""
+    seps = cell.count(",") + cell.count(";")
+    if seps < 3:  # noqa: PLR2004 — minimum separators for a list vs a prose clause
+        return False
+    segs = [s.strip() for s in re.split(r"[,;]", cell) if s.strip()]
+    if len(segs) < 3:  # noqa: PLR2004 — at least 3 value segments
+        return False
+    # Every segment is short (value-like, not a sentence clause).
+    return all(len(s.split()) <= DEFAULT_STATS_ATTR_MAX_WORDS for s in segs)
+
 # ---------------------------------------------------------------------------
 # Money-format regex patterns — Vietnamese currency conventions.
 #
@@ -637,7 +657,13 @@ def _extract_entity_from_row(
         if first_cell and first_cell != name and (
             first_cell[:1] in _STATS_BULLET_LEADS
             or _is_discourse_opener(first_cell)
-            or len(first_cell) > DEFAULT_STATS_ATTR_MAX_CHARS
+            or (
+                len(first_cell) > DEFAULT_STATS_ATTR_MAX_CHARS
+                # A long first cell drops the row ONLY when it is PROSE. A long
+                # DELIMITED list (an aliases/synonym blob in col-0) is legitimate —
+                # the real name lives in a later column; keep the row.
+                and not _is_delimited_list_cell(first_cell)
+            )
         ):
             name = None
 

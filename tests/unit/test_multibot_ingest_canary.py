@@ -85,13 +85,6 @@ def test_s1_split_header_labels_row2_columns() -> None:
 
 
 # ── Shape S2 — name column is NOT col-0 (xe-3 shape: synonym-blob col-0) ─────────
-@pytest.mark.xfail(
-    reason="SPEC for the multi-bot ingest fix (Trụ 2): NAME must resolve by "
-    "structural inference / owner role (the short identifier column), NOT positional "
-    "col-0; a long delimited col-0 is an ALIASES blob, not a reason to drop the row. "
-    "Pending — fix in document_stats role resolution + re-ingest.",
-    strict=False,
-)
 def test_s2_blob_alias_col0_does_not_drop_row() -> None:
     # col-0 is a long ;/comma synonym blob; the real id is "code"/"productname".
     blob = ", ".join(f"variant {i}" for i in range(40))  # long delimited alias list
