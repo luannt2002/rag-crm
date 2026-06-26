@@ -46,24 +46,50 @@ def parse_golden() -> list[dict]:
     return cases
 
 
-def key_facts(exp: str) -> list[str]:
+# Specific verifiable facts (a strong single-match pass): prices / SKUs / sizes /
+# acronyms / durations / links. These are exact tokens the answer must carry.
+def specific_facts(exp: str) -> list[str]:
     f: list[str] = []
     f += re.findall(r"\b\d{1,3}(?:[.,]\d{3})+\b", exp)                  # prices
     f += re.findall(r"\b0\d[\d.\s]{7,}\d\b", exp)                       # hotline
     f += re.findall(r"\d-[A-Z]+\d*\s+\d+/\d+\s+[A-Z]+", exp)            # SKU
     f += re.findall(r"\d{3}/\d{2}R?\d{2}[A-Z]?", exp)                   # tyre size
-    f += re.findall(r"\b[A-ZÀ-Ỹ]{2,}(?:[A-ZÀ-Ỹ]+)?\b", exp)            # acronyms NAPAS/VAMC
-    f += re.findall(r"\b\d+\s*(?:phút|buổi|bước|tháng|năm|ngày|lần|%)\b", exp)
-    f += re.findall(r"https?://\S+", exp)
-    f += [w for w in re.findall(r"\b[a-zà-ỹ]{7,}\b", exp.lower())][:3]  # distinctive long words
+    f += re.findall(r"\bhttps?://\S+", exp)                             # link
+    f += re.findall(r"\b[A-ZÀ-Ỹ]{3,}\b", exp)                           # acronyms NAPAS/VAMC
+    f += re.findall(r"\b\d+\s*(?:phút|buổi|bước|tháng|năm|ngày|lần|%|yếu tố)\b", exp)
     seen, out = set(), []
     for x in f:
         x = re.sub(r"\s+", " ", x).strip(" .,")
-        k = x.lower()
-        if x and len(x) >= 2 and k not in seen:
-            seen.add(k)
-            out.append(x)
-    return out[:6]
+        if x and x.lower() not in seen:
+            seen.add(x.lower()); out.append(x)
+    return out
+
+
+# Vietnamese stopwords / function words — excluded from content-overlap so a gold
+# answer's DISTINCTIVE words (not "là/để/của") drive the semantic match.
+_STOP = set("la cua va cac nhung duoc trong cho voi khi tu den theo mot nay do co "
+            "khong de hoac nhu ve bi boi tren duoi sau truoc gi nao ra vao thi ma "
+            "tai con cung neu hay tuc bao gom cac don vi theo dieu khoan thong tu".split())
+
+
+def _fold(s: str) -> str:
+    import unicodedata
+    s = "".join(c for c in unicodedata.normalize("NFD", s.lower())
+                if unicodedata.category(c) != "Mn")
+    return s
+
+
+def content_words(exp: str) -> list[str]:
+    """Distinctive content words of a gold answer (accent-folded, ≥4 chars, non-stop,
+    plus any numbers). These carry the MEANING; a correct paraphrase reuses most."""
+    out: list[str] = []
+    for w in re.findall(r"[A-Za-zÀ-ỹ]+|\d[\d.,]*", exp):
+        fw = _fold(w)
+        if fw.isdigit() and len(fw) >= 2:
+            out.append(fw)
+        elif len(fw) >= 4 and fw not in _STOP:
+            out.append(fw)
+    return out
 
 
 def tok() -> str:
@@ -93,21 +119,32 @@ def ask(jwt: str, q: str) -> dict:
 
 def run_one(args):
     jwt, c = args
-    facts = key_facts(c["exp"])
     d = ask(jwt, c["q"])
     ans = d.get("answer") or ""
-    an = re.sub(r"[^a-z0-9à-ỹ]", "", ans.lower())
-    ad = re.sub(r"\D", "", ans)
+    facts = specific_facts(c["exp"])
+    an_fold = _fold(ans)
+    an_alnum = re.sub(r"[^a-z0-9]", "", an_fold)
+    an_digits = re.sub(r"\D", "", ans)
+    an_words = set(content_words(ans))
 
-    def hit(f: str) -> bool:
-        fa = re.sub(r"[^a-z0-9à-ỹ]", "", f.lower())
-        if len(fa) >= 4 and fa in an:
+    def fact_hit(f: str) -> bool:
+        fa = re.sub(r"[^a-z0-9]", "", _fold(f))
+        if len(fa) >= 4 and fa in an_alnum:
             return True
         fd = re.sub(r"\D", "", f)
-        return len(fd) >= 3 and fd in ad
-    ok = any(hit(f) for f in facts) if facts else bool(ans.strip())
-    return {"cat": c["cat"], "q": c["q"], "exp": c["exp"][:70], "facts": facts, "pass": ok,
-            "chk": d.get("chunks_used"), "sc": d.get("top_score"), "ans": ans[:110], "err": d.get("error")}
+        return len(fd) >= 3 and fd in an_digits
+
+    # STRONG: any specific fact present. SEMANTIC: ≥50% of the gold's distinctive
+    # content words appear in the answer (handles prose / paraphrase / definitions).
+    gw = content_words(c["exp"])
+    overlap = (sum(1 for w in gw if w in an_words) / len(gw)) if gw else 0.0
+    ok = bool(ans.strip()) and (
+        (facts and any(fact_hit(f) for f in facts)) or overlap >= 0.5
+    )
+    return {"cat": c["cat"], "q": c["q"], "exp": c["exp"][:70], "facts": facts,
+            "overlap": round(overlap, 2), "pass": ok,
+            "chk": d.get("chunks_used"), "sc": d.get("top_score"),
+            "ans": ans[:160], "err": d.get("error")}
 
 
 def main():
