@@ -132,6 +132,10 @@ _RETRYABLE_LLM_EXCEPTIONS: tuple[type[BaseException], ...] = (
     litellm.exceptions.RateLimitError,
     litellm.exceptions.ServiceUnavailableError,
     litellm.exceptions.APIConnectionError,
+    # Gateway 5xx (e.g. an OpenAI-compatible proxy hiccupping under load) is a
+    # transient outage, not a client bug — retry the same provider before giving
+    # up, otherwise one flaky 500 empties the whole turn.
+    litellm.exceptions.InternalServerError,
 )
 
 # A 429 rate-limit is flow-control, NOT a provider outage: the provider is
