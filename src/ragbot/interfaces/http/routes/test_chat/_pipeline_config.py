@@ -365,6 +365,9 @@ async def _build_pipeline_config(cfg_svc: SystemConfigService, bot_cfg: Any) -> 
             raw.get("embedding_dimension"), DEFAULT_ZEROENTROPY_EMBEDDING_DIM,
         ),
         "embedding_model": raw.get("embedding_model") or "unknown",
+        # Provider for the embedding-cache identity key (F10): provider+model+dim
+        # so a provider/dim swap cannot serve stale cross-distribution vectors.
+        "embedding_provider": raw.get("embedding_provider") or "unknown",
         "condense_history_limit": _coerce_int(raw.get("pipeline_condense_history_limit"), 6),
         "grade_chunk_preview": _coerce_int(raw.get("pipeline_grade_chunk_preview"), 500),
         "reflect_answer_preview": _coerce_int(raw.get("pipeline_reflect_answer_preview"), 500),

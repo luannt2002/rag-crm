@@ -443,10 +443,10 @@ async def test_j1_embed_batch_prewarm_seeds_redis_cache() -> None:
     # In-memory shim for redis embedding cache so the test is hermetic.
     cache: dict[str, list[float]] = {}
 
-    async def _get(_redis, text, *, model, dim):
+    async def _get(_redis, text, *, model, dim, provider=None):
         return cache.get(f"{model}:{dim}:{text}")
 
-    async def _set(_redis, text, emb, *, model, dim, ttl=None):
+    async def _set(_redis, text, emb, *, model, dim, provider=None, ttl=None):
         cache[f"{model}:{dim}:{text}"] = list(emb)
 
     import ragbot.orchestration.query_graph as qg
@@ -509,7 +509,7 @@ async def test_j1_prewarm_sets_embedding_column() -> None:
 
     import ragbot.orchestration.query_graph as qg
 
-    async def _get(_redis, text, *, model, dim):
+    async def _get(_redis, text, *, model, dim, provider=None):
         return None
 
     async def _set(*_a, **_kw):
