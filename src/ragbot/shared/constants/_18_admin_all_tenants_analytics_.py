@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import Final  # noqa: F401
-from ._17_260509_a1_pipeline_audit_6_c import *  # noqa: F401,F403
+from ._17_pipeline_audit import *  # noqa: F401,F403
 
 # --- Admin all-tenants analytics endpoint -----------------------------------
 # Default page size when caller omits ``limit`` on /admin/analytics/all-tenants.

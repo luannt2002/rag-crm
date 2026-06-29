@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import Final  # noqa: F401
-from ._13_adapchunk_layer_1_ocr_parser import *  # noqa: F401,F403
+from ._13_adapchunk_ocr_parser import *  # noqa: F401,F403
 
 # --- Anti-abuse + IP rate limit + honeypot ---------------------------
 ANTI_ABUSE_SUSPICIOUS_IP_REDIS_KEY: Final[str] = "ragbot:antiabuse:suspicious_ips"

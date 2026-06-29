@@ -229,4 +229,3 @@ DEFAULT_CACHE_PURGE_GRACE_HOURS: Final[int] = 24
 # the constant, with version-ref tokens scrubbed per CLAUDE.md no-version-ref
 # rule. All values are SSoT defaults; bot owners override via system_config /
 # pipeline_config.
-

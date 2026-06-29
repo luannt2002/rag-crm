@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import Final  # noqa: F401
-from ._19_sprint3_ekimetrics_selector_ import *  # noqa: F401,F403
+from ._19_ekimetrics_selector import *  # noqa: F401,F403
 
 # --- CAG Mode (Cache-Augmented Generation) -----------
 # Owner-opt-in alternative path to RAG retrieval. When the bot owner flips

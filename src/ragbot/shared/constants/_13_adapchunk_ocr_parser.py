@@ -225,4 +225,3 @@ DEFAULT_SECURITY_HEADERS_COEP_PATHS: Final[tuple[str, ...]] = (
     "/docs", "/redoc", "/openapi.json",
 )
 DEFAULT_SECURITY_HEADERS_PERMITTED_CROSS_DOMAIN: Final[str] = "none"
-

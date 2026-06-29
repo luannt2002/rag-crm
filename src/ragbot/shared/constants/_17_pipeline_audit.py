@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import Final  # noqa: F401
-from ._16_prompt_token_squeeze_phase_b import *  # noqa: F401,F403
+from ._16_prompt_token_squeeze import *  # noqa: F401,F403
 
 # --- 260509-a1-pipeline-audit (6 constants) ---
 DEFAULT_PROXIMITY_CACHE_LSH_BUCKETS: Final[int] = 64

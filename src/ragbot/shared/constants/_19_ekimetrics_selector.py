@@ -151,4 +151,3 @@ DEFAULT_LEXICAL_RETRIEVAL_PROVIDER: Final[str] = "null"
 #     miss (paper Figure 5 — cross-over around 80-120K depending on model).
 #   - Conservative floor: ops can raise via system_config without code change.
 DEFAULT_CAG_MAX_CORPUS_TOKENS: Final[int] = 80000
-
