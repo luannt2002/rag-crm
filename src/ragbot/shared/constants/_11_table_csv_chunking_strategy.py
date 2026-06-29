@@ -32,6 +32,19 @@ DEFAULT_TABLE_STRATEGY: Final[str] = "table_csv"
 # ``_IngestCtx.chunking_strategy`` field default — single source of truth
 # for "unknown/baseline strategy" so no caller inlines the literal.
 DEFAULT_INGEST_STRATEGY_NAME: Final[str] = "recursive"
+
+# Canonical chunking-strategy identity names. These are the registry /
+# dispatch keys shared by the weighted scorer (``DEFAULT_STRATEGY_WEIGHTS``
+# keys), the cross-check overrides, and the resolver allow-list. Named here
+# so logic code (``select_strategy`` / ``apply_cross_check``) references the
+# identity by constant instead of inlining the string literal — single
+# source of truth for the strategy name set. Values are byte-identical to
+# the prior inline literals (behaviour-neutral).
+CHUNK_STRATEGY_HDT: Final[str] = "hdt"
+CHUNK_STRATEGY_SEMANTIC: Final[str] = "semantic"
+CHUNK_STRATEGY_RECURSIVE: Final[str] = "recursive"
+CHUNK_STRATEGY_HYBRID: Final[str] = "hybrid"
+CHUNK_STRATEGY_PROPOSITION: Final[str] = "proposition"
 # Allowed table strategies — used by the policy resolver to reject typos.
 ALLOWED_TABLE_STRATEGIES: Final[frozenset[str]] = frozenset({
     "table_csv", "table_dual_index",

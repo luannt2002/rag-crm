@@ -198,4 +198,14 @@ NARRATE_METADATA_KEY_BLOCK_TYPE: Final[str] = "block_type"
 # so retrieval / eval / admin debug tooling reads them consistently.
 NARRATE_METADATA_KEY_NARRATED_TEXT: Final[str] = "narrated_text"
 NARRATE_METADATA_KEY_RAW_CHUNK: Final[str] = "raw_chunk"
+# Chunk-metadata keys for the F5 dual-read producer side. ``original_content``
+# preserves the pre-transform raw source bytes of a chunk (pre-CR-prefix,
+# pre-narrate) so an atomic TABLE / FORMULA block survives verbatim for
+# citation reconstruction and offline analysis even after the embed-target
+# text was enriched/narrated. ``block_types`` records the shape-detected
+# block-type provenance (uppercase, mirrors ``DEFAULT_ATOMIC_BLOCK_TYPES``).
+# Single source of truth so retrieval / eval / admin tooling reads them
+# consistently with the ``Chunk`` entity fields of the same name.
+CHUNK_METADATA_KEY_ORIGINAL_CONTENT: Final[str] = "original_content"
+CHUNK_METADATA_KEY_BLOCK_TYPES: Final[str] = "block_types"
 

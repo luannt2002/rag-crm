@@ -68,6 +68,8 @@ from ragbot.shared.constants import (
     DEFAULT_VI_COMPOUND_SEGMENTATION_INGEST_ENABLED,
     DEFAULT_VI_COMPOUND_SEGMENTATION_TIMEOUT_S,
     DEFAULT_WHOLE_DOC_MAX_TOPIC_SIGNALS,
+    CHUNK_METADATA_KEY_BLOCK_TYPES,
+    CHUNK_METADATA_KEY_ORIGINAL_CONTENT,
     NARRATE_METADATA_KEY_BLOCK_TYPE,
     NARRATE_METADATA_KEY_NARRATED_TEXT,
     NARRATE_METADATA_KEY_RAW_CHUNK,
@@ -112,6 +114,35 @@ from ragbot.application.services.narrate_dispatch import (
 )
 
 logger = structlog.get_logger(__name__)
+
+
+def _atomic_original_meta(raw_text: str) -> dict[str, Any]:
+    """Build the F5 dual-read producer-side metadata for a chunk.
+
+    ``raw_text`` is the PRE-transform source of the chunk (pre-CR-prefix,
+    pre-narrate) — i.e. the raw ``chunk_text`` tuple element from
+    ``chunks_to_embed``. For an atomic TABLE / FORMULA / IMAGE / CODE block
+    this is the block content verbatim; persisting it as ``original_content``
+    lets downstream citation / eval / admin tooling recover the unenriched
+    source even after the embed-target text was enriched + narrated.
+
+    ``block_types`` is shape-detected (domain-neutral, no vocabulary) via
+    :func:`_split_into_blocks_with_atomic` and uppercased to mirror the
+    ``Chunk.block_types`` / ``DEFAULT_ATOMIC_BLOCK_TYPES`` vocabulary. Empty
+    or whitespace ``raw_text`` yields ``original_content`` unchanged and an
+    empty block-type list (no spurious ``text`` label).
+    """
+    meta: dict[str, Any] = {CHUNK_METADATA_KEY_ORIGINAL_CONTENT: raw_text}
+    if raw_text and raw_text.strip():
+        seen: list[str] = []
+        for _btype, _content in _split_into_blocks_with_atomic(raw_text):
+            up = _btype.upper()
+            if up not in seen:
+                seen.append(up)
+        meta[CHUNK_METADATA_KEY_BLOCK_TYPES] = seen
+    else:
+        meta[CHUNK_METADATA_KEY_BLOCK_TYPES] = []
+    return meta
 
 
 from ragbot.application.services.document_service.ingest_stages import _IngestCtx
@@ -729,6 +760,15 @@ class _StageStoreMixin:
                         _struct_refs = extract_structured_refs(persisted_text)
                         if _struct_refs:
                             chunk_meta.update(_struct_refs)
+                    # F5 dual-read producer side: persist the pre-transform
+                    # raw source (chunk_text — pre-CR-prefix, pre-narrate) as
+                    # ``original_content`` + shape-detected ``block_types`` so
+                    # an atomic TABLE / FORMULA block survives verbatim in the
+                    # row metadata even though ``content`` holds the enriched
+                    # embed-target. Set with setdefault so a stronger upstream
+                    # signal (none on the parent path today) would win.
+                    for _k, _v in _atomic_original_meta(chunk_text).items():
+                        chunk_meta.setdefault(_k, _v)
                     # M21: deterministic UUID5 when per-bot flag is set,
                     # else legacy uuid.uuid4() — factory closure resolved
                     # once before the DB write loop above.
@@ -833,6 +873,12 @@ class _StageStoreMixin:
                         chunk_meta[NARRATE_METADATA_KEY_BLOCK_TYPE] = (
                             _narrate_meta[NARRATE_METADATA_KEY_BLOCK_TYPE]
                         )
+                    # F5 dual-read producer side — see parent-loop comment.
+                    # setdefault so CR's ``raw_chunk`` (set above) is not
+                    # disturbed; ``original_content`` is the pre-transform
+                    # source preserved for citation reconstruction.
+                    for _k, _v in _atomic_original_meta(chunk_text).items():
+                        chunk_meta.setdefault(_k, _v)
                     child_rows.append({
                         "id": _make_chunk_id(persisted_text),
                         "doc_id": doc_id,
@@ -939,6 +985,9 @@ class _StageStoreMixin:
                         chunk_meta[NARRATE_METADATA_KEY_BLOCK_TYPE] = (
                             _narrate_meta[NARRATE_METADATA_KEY_BLOCK_TYPE]
                         )
+                    # F5 dual-read producer side — see parent-loop comment.
+                    for _k, _v in _atomic_original_meta(chunk_text).items():
+                        chunk_meta.setdefault(_k, _v)
                     rows.append({
                         "id": _make_chunk_id(persisted_text),
                         "doc_id": doc_id,

@@ -48,7 +48,11 @@ from ragbot.infrastructure.observability.metrics import (
     document_ingest_duration_seconds,
     document_ingest_total,
 )
-from ragbot.infrastructure.parser.registry import build_parser, detect_parser
+from ragbot.infrastructure.parser.registry import (
+    build_parser,
+    detect_parser,
+    detect_parser_robust,
+)
 from ragbot.shared.constants import (
     DEFAULT_HTTP_TIMEOUT_S,
     DEFAULT_NARRATE_PROVIDER,
@@ -424,19 +428,35 @@ async def _handle_document_uploaded_inner(payload: dict[str, Any], container: Co
                     container, bot_id=bot_id, tenant_id=tenant_id,
                     trace_id=trace_id, mime_type=mime_type or "",
                 )
+                # Fetch the body BEFORE type-detection so the detection can
+                # byte-sniff the real bytes — the same canonical order
+                # DocumentService uses (declared mime/ext first, then sniff the
+                # body on a miss; see document_service __init__.py + registry
+                # detect_parser_robust). Fetching first lets a URL whose body
+                # arrives as octet-stream / no-ext (e.g. a ``?download`` PDF
+                # link) still route to its structured parser instead of
+                # silently dropping to flat OCR.
+                # follow_redirects: Google Docs ``export?format=docx`` returns
+                # a 307 to a googleusercontent.com host; without following it
+                # raise_for_status() turns the redirect into an HTTPStatusError
+                # and the ingest dies (doc stuck DRAFT, 0 chunks).
+                async with httpx.AsyncClient(
+                    timeout=DEFAULT_HTTP_TIMEOUT_S, follow_redirects=True,
+                ) as cli:
+                    _resp = await cli.get(source_url)
+                    _resp.raise_for_status()
+                    _raw = _resp.content
                 if parser is None:
-                    parser = detect_parser(mime_type or "", _ext)
+                    # detect_parser_robust = detect_parser + byte-sniff fallback
+                    # (registry.py). NOT plain detect_parser — which returns None
+                    # for octet-stream/no-ext bodies and would drop them to flat
+                    # OCR. Pass the module ``detect_parser`` so BOTH the declared
+                    # and the sniffed lookup use the registry, mirroring the
+                    # DocumentService canonical path.
+                    parser = detect_parser_robust(
+                        mime_type or "", _ext, _raw, detector=detect_parser,
+                    )
                 if parser is not None:
-                    # follow_redirects: Google Docs ``export?format=docx`` returns
-                    # a 307 to a googleusercontent.com host; without following it
-                    # raise_for_status() turns the redirect into an HTTPStatusError
-                    # and the ingest dies (doc stuck DRAFT, 0 chunks).
-                    async with httpx.AsyncClient(
-                        timeout=DEFAULT_HTTP_TIMEOUT_S, follow_redirects=True,
-                    ) as cli:
-                        _resp = await cli.get(source_url)
-                        _resp.raise_for_status()
-                        _raw = _resp.content
                     _chunks = await parser.parse(
                         _raw, file_name=_doc_name or "doc",
                     )

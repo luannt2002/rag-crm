@@ -460,7 +460,7 @@ def select_strategy(
     # path is the whole point of citing legal text and weight-based scoring
     # was letting recursive win on docs where avg_text_length was small.
     if (total_headings + vn_markers) >= DEFAULT_HIERARCHICAL_PROMOTE_MIN_MATCHES:
-        return ("hdt", 1.0)
+        return (CHUNK_STRATEGY_HDT, 1.0)
 
     # Ekimetrics 5-metric selector (LREC 2026, arXiv 2603.25333) — runs ONLY for
     # AMBIGUOUS PROSE docs, AFTER the structural certainties above (CSV → table,
@@ -487,8 +487,8 @@ def select_strategy(
     scores: dict[str, float] = {}
 
     # HDT scoring
-    w = _W["hdt"]
-    scores["hdt"] = (
+    w = _W[CHUNK_STRATEGY_HDT]
+    scores[CHUNK_STRATEGY_HDT] = (
         min(total_headings / DEFAULT_HDT_HEADINGS_NORM, 1.0) * w["headings_norm"]
         + (1.0 if has_toc else 0.0) * w["has_toc"]
         + (1.0 if h2_count >= DEFAULT_HDT_H2_MIN_COUNT else 0.0) * w["has_h2_group"]
@@ -496,8 +496,8 @@ def select_strategy(
     )
 
     # Semantic scoring
-    w = _W["semantic"]
-    scores["semantic"] = (
+    w = _W[CHUNK_STRATEGY_SEMANTIC]
+    scores[CHUNK_STRATEGY_SEMANTIC] = (
         avg_norm * w["avg_len_norm"]
         + (1.0 if total_headings <= DEFAULT_SEMANTIC_FEW_HEADINGS_MAX else 0.0) * w["few_headings"]
         + (1.0 if table_count == 0 else 0.0) * w["no_tables"]
@@ -505,8 +505,8 @@ def select_strategy(
     )
 
     # Recursive scoring (always viable baseline)
-    w = _W["recursive"]
-    scores["recursive"] = (
+    w = _W[CHUNK_STRATEGY_RECURSIVE]
+    scores[CHUNK_STRATEGY_RECURSIVE] = (
         w["base"]
         + min(table_count / DEFAULT_RECURSIVE_TABLES_NORM, 1.0) * w["tables_norm"]
         + (1.0 if avg_len < DEFAULT_RECURSIVE_SHORT_AVG_LEN else 0.0) * w["short_avg_len"]
@@ -514,8 +514,8 @@ def select_strategy(
     )
 
     # Hybrid scoring: high for mixed content (headings + long prose)
-    w = _W["hybrid"]
-    scores["hybrid"] = (
+    w = _W[CHUNK_STRATEGY_HYBRID]
+    scores[CHUNK_STRATEGY_HYBRID] = (
         min(total_headings / DEFAULT_HYBRID_HEADINGS_NORM, 1.0) * w["headings_norm"]
         + (1.0 if mixed > DEFAULT_HYBRID_MIXED_THRESHOLD else 0.0) * w["mixed_content"]
         + (1.0 if total_words > DEFAULT_HYBRID_LONG_DOC_WORDS else 0.0) * w["is_long_doc"]
@@ -523,8 +523,8 @@ def select_strategy(
     )
 
     # Proposition scoring: high for long dense text with few headings
-    w = _W["proposition"]
-    scores["proposition"] = (
+    w = _W[CHUNK_STRATEGY_PROPOSITION]
+    scores[CHUNK_STRATEGY_PROPOSITION] = (
         avg_norm * w["avg_len_norm"]
         + (1.0 if total_headings <= DEFAULT_PROPOSITION_FEW_HEADINGS_MAX else 0.0) * w["few_headings"]
         + (1.0 if total_words > DEFAULT_PROPOSITION_LONG_DOC_WORDS else 0.0) * w["is_long_doc"]
@@ -536,7 +536,7 @@ def select_strategy(
 
     # Fallback: low confidence → recursive (safest)
     if confidence < DEFAULT_STRATEGY_MIN_CONFIDENCE:
-        return ("recursive", DEFAULT_STRATEGY_MIN_CONFIDENCE)
+        return (CHUNK_STRATEGY_RECURSIVE, DEFAULT_STRATEGY_MIN_CONFIDENCE)
 
     return (best, round(confidence, 2))
 
@@ -660,23 +660,23 @@ def apply_cross_check(
     # Rule 1 — Low-confidence fallback (Databricks pattern).
     if confidence < conf_threshold:
         overrides.append((
-            "hybrid",
+            CHUNK_STRATEGY_HYBRID,
             DEFAULT_ADAPCHUNK_L5_OVERRIDE_CONFIDENCE_FALLBACK,
             "low_confidence_fallback",
         ))
 
     # Rule 2 — HDT pick but too few headings to justify it.
-    if strategy == "hdt" and total_headings < hdt_min_headings:
+    if strategy == CHUNK_STRATEGY_HDT and total_headings < hdt_min_headings:
         overrides.append((
-            "semantic",
+            CHUNK_STRATEGY_SEMANTIC,
             DEFAULT_ADAPCHUNK_L5_OVERRIDE_CONFIDENCE_RULE,
             "hdt_but_few_headings",
         ))
 
     # Rule 3 — Semantic pick but average block too short to be prose.
-    if strategy == "semantic" and avg_block_len < semantic_min_avg:
+    if strategy == CHUNK_STRATEGY_SEMANTIC and avg_block_len < semantic_min_avg:
         overrides.append((
-            "proposition",
+            CHUNK_STRATEGY_PROPOSITION,
             DEFAULT_ADAPCHUNK_L5_OVERRIDE_CONFIDENCE_RULE,
             "semantic_but_short_blocks",
         ))
@@ -684,12 +684,12 @@ def apply_cross_check(
     # Rule 4 — Proposition pick but long paragraphs + many headings; HDT
     # preserves structure better than atomic propositions here.
     if (
-        strategy == "proposition"
+        strategy == CHUNK_STRATEGY_PROPOSITION
         and avg_block_len > prop_max_avg
         and total_headings > prop_max_headings
     ):
         overrides.append((
-            "hdt",
+            CHUNK_STRATEGY_HDT,
             DEFAULT_ADAPCHUNK_L5_OVERRIDE_CONFIDENCE_RULE,
             "proposition_but_long_structured",
         ))
@@ -698,7 +698,7 @@ def apply_cross_check(
     # NOT silently rewrite the selector's pick here; a low-confidence
     # rule should not undo a deliberate selector choice. Operator inspects
     # the event and tunes weights if needed.
-    if mixed_score > mixed_warn and strategy != "hybrid":
+    if mixed_score > mixed_warn and strategy != CHUNK_STRATEGY_HYBRID:
         logger.warning(
             "adapchunk_l5_mixed_content_not_hybrid",
             strategy=strategy,
