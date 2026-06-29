@@ -832,6 +832,32 @@ class _StageChunkMixin:
                     sample=_dropped_nums[:5],
                 )
 
+            # P0-2 (structural superset) lossless CHAR-coverage (OBSERVE-only):
+            # every CHARACTER of the source must be covered by some chunk —
+            # numbers are a subset of chars, so this generalises the numeric gate
+            # above and catches a silently-dropped prose span (the sentence that
+            # carries the answer) the numeric check cannot see. Deterministic,
+            # no LLM, domain/currency/language-neutral; tol + min_locatable come
+            # from the constants SSoT inside coverage.py. NEVER raises — pure
+            # observability, so it can only LOG (no answer inject/override).
+            from ragbot.shared.chunking.coverage import check_chunk_gaps  # noqa: PLC0415 — local keeps hot-path import lean
+            _cov = check_chunk_gaps(chunks, ctx.content)
+            if not _cov.ok:
+                _u4_ctx.set_metadata(
+                    char_coverage_ratio=_cov.coverage_ratio,
+                    char_gaps=len(_cov.uncovered_spans),
+                )
+                logger.warning(
+                    "chunk_char_coverage_gap",
+                    doc_id=str(doc_id),
+                    record_bot_id=str(record_bot_id),
+                    strategy_used=_u4_strategy_used,
+                    coverage_ratio=_cov.coverage_ratio,
+                    uncovered_spans=len(_cov.uncovered_spans),
+                    unlocated_chunks=_cov.unlocated_chunks,
+                    sample=_cov.uncovered_spans[:5],
+                )
+
         # Progress checkpoint after U4 chunk: 20% done, chunks_total known.
         await _update_doc_progress(
             self._sf, record_tenant_id, doc_id,
