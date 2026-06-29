@@ -99,6 +99,41 @@ def _looks_header(cells: list[str]) -> bool:
     return sum(1 for c in ne if _is_label_like(c)) >= max(2, (len(ne) + 1) // 2)
 
 
+def _is_header_continuation(top: list[str], bottom: list[str]) -> bool:
+    """True when *bottom* is the SECOND row of a SPLIT header: it FILLS ≥1 of *top*'s
+    EMPTY positions and does NOT overlap any of *top*'s filled cells.
+
+    A spreadsheet whose column names span TWO stacked rows (row 1 = the first
+    columns, row 2 = the later columns with empty leads) is a stacked 2-row header, e.g.
+    ``[«», A, B, C, «», «», …]`` then ``[«», «», «», «», D, E, …]``.
+    Merging the two BEFORE the table opens keeps the row-2 names
+    real instead of collapsing to ``col_N``. Domain-neutral, shape-only: a real DATA
+    row carries a value under a named column → it overlaps *top*'s filled cells →
+    rejected, so this never fires on the happy single-row case."""
+    m = min(len(top), len(bottom))
+    fills = False
+    for j in range(m):
+        t, b = top[j].strip(), bottom[j].strip()
+        if t and b:
+            return False  # overlap → bottom is a data row, not a continuation
+        if b and not t:
+            fills = True
+    return fills
+
+
+def _merge_header_fill(top: list[str], bottom: list[str]) -> list[str]:
+    """Fill *top*'s EMPTY positions from *bottom* (header-path gap-fill, SOTA
+    Docling/TATR). Per column keep *top*'s label, else take *bottom*'s. Deterministic,
+    no LLM, domain-neutral."""
+    n = max(len(top), len(bottom))
+    out: list[str] = []
+    for j in range(n):
+        t = top[j].strip() if j < len(top) else ""
+        b = bottom[j].strip() if j < len(bottom) else ""
+        out.append(t or b)
+    return out
+
+
 def _md_escape(cell: str) -> str:
     return cell.replace("|", "\\|").replace("\n", " ").strip()
 
@@ -127,6 +162,9 @@ def rows_to_structured_markdown(rows: list[list[str]]) -> str:  # noqa: PLR0915 
 
     norm = [[(c or "").strip() for c in raw] for raw in rows]
     n = len(norm)
+    # Indices already absorbed as the SECOND row of a merged split-header — skipped
+    # by the linear loop below so a continuation row is never re-emitted as DATA.
+    consumed: set[int] = set()
 
     def _precedes_table(i: int) -> bool:
         """Lookahead: is the next non-empty row a header/data row? A LONG 1-cell
@@ -140,6 +178,8 @@ def rows_to_structured_markdown(rows: list[list[str]]) -> str:  # noqa: PLR0915 
         return False
 
     for i, cells in enumerate(norm):
+        if i in consumed:
+            continue
         ne = _nonempty(cells)
 
         # SEPARATOR — close any open table, table boundary.
@@ -199,7 +239,26 @@ def rows_to_structured_markdown(rows: list[list[str]]) -> str:  # noqa: PLR0915 
         # every row re-promoted to its own one-row header, shredding row↔header binding.
         if _looks_header(cells) and not _has_money(cells) and not table_open:
             close_table()
-            open_header(cells)
+            # MULTI-ROW HEADER MERGE — a label-only header with EMPTY cells whose
+            # NEXT row is a label-only continuation filling those empties is a SPLIT
+            # (2-row) header. Gap-fill the two into ONE header BEFORE open_header and
+            # CONSUME the continuation, so the row-2 column names become real
+            # labels instead of col_N (the col_N CRUX). A clean single-row header
+            # has no empty cells → never merges (byte-identical).
+            hdr_cells = cells
+            if any(not c.strip() for c in cells):
+                for nxt in range(i + 1, n):
+                    if not _nonempty(norm[nxt]):
+                        break  # blank row = table boundary, not a continuation
+                    if (
+                        _looks_header(norm[nxt])
+                        and not _has_money(norm[nxt])
+                        and _is_header_continuation(cells, norm[nxt])
+                    ):
+                        hdr_cells = _merge_header_fill(cells, norm[nxt])
+                        consumed.add(nxt)
+                    break
+            open_header(hdr_cells)
             continue
 
         # DATA row.

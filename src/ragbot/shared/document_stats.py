@@ -181,7 +181,7 @@ _NAME_COL_TOKENS: frozenset[str] = frozenset({
 _CATEGORY_COL_TOKENS: frozenset[str] = frozenset({
     "nhom", "danh muc", "category", "loai", "vung", "type", "khu vuc",
     # G1 synonyms — group/stub/brand columns. "kho"/"ten kho" = warehouse stub
-    # (NOT the product name) — pins the 'Tên kho' ⊥ 'Tên hàng' disambiguation.
+    # (NOT the product name) — pins the 'col-A' ⊥ 'col-C' disambiguation.
     "kho", "ten kho", "kho hang", "phan loai", "thuong hieu", "nhan hieu",
     "hang san xuat", "hsx", "brand", "group", "nhom san pham",
 })
@@ -226,6 +226,20 @@ _REJECT_NAME_TOKENS: frozenset[str] = _HEADER_EXACT_TOKENS | _AGGREGATE_TOKENS
 # Separator-line detection: a line is a separator when every comma/pipe-split
 # field matches only dashes, equals, or spaces.
 _SEP_FIELD_RE = re.compile(r"^[\-=\s]*$")
+
+# A POSITIONAL placeholder column label the converter emits for an unlabeled cell
+# (``open_header`` fills an empty header position with ``col{i+1}``). It is the
+# INVERSE of that generation — pure structure, NOT a vocabulary/domain literal — so
+# an ALREADY-STORED chunk whose header baked ``col5..col10`` is recognised as having
+# unlabeled (gap-equivalent) columns and a following continuation row can still fill
+# them with their REAL names at extraction time.
+_COL_N_PLACEHOLDER_RE: re.Pattern[str] = re.compile(r"^col_?\d+$", re.IGNORECASE)
+
+
+def _is_col_n_placeholder(cell: str) -> bool:
+    """True when *cell* is a positional ``col_N`` placeholder (an unlabeled column),
+    NOT a real header label. Treated as a GAP so a stored split-header merges."""
+    return bool(_COL_N_PLACEHOLDER_RE.match(cell.strip()))
 
 
 def _normalise(text: str) -> str:
@@ -482,7 +496,7 @@ def _column_roles(
     declared = _normalise_custom_roles(custom_roles)
     # G1 cascade: each header scores against each role by exact (100) >
     # phrase-substring (60) > whole-word (30). A header binds to its strictly-best
-    # role; a TIE (e.g. "Tên kho" scoring name via "ten" AND category via "kho")
+    # role; a TIE (e.g. "col-A" scoring name via "ten" AND category via "kho")
     # is SKIPPED so an ambiguous stub can't steal a role. Exact-vocab
     # still wins outright, so the happy-case path is byte-identical.
     _roles_def = (
@@ -804,10 +818,16 @@ def _is_prose_row(cols: list[str]) -> bool:
 
 
 def _row_has_gaps(cols: list[str]) -> bool:
-    """True when a row has BOTH filled and empty cells — the shape of the top row of
-    a split (2-row) header (``Tên kho|Mã|Tên hàng|(empty)|(empty)``). A normal
-    single-row header has no empty cells, so this never fires on the happy case."""
-    return any(c.strip() for c in cols) and any(not c.strip() for c in cols)
+    """True when a row has BOTH a real label AND a gap — the shape of the top row of a
+    split (2-row) header (``A|B|C|(empty)|(empty)``). A GAP is an empty
+    cell OR a ``col_N`` POSITIONAL PLACEHOLDER: an already-stored chunk whose header
+    baked ``col5..col10`` carries no empty cell but still has unlabeled columns a
+    continuation row can fill. A normal single-row header has neither empty cells nor
+    ``col_N`` placeholders, so this never fires on the happy case (byte-identical)."""
+    return (
+        any(c.strip() and not _is_col_n_placeholder(c) for c in cols)
+        and any(not c.strip() or _is_col_n_placeholder(c) for c in cols)
+    )
 
 
 def _is_header_continuation(top: list[str], bottom: list[str]) -> bool:
@@ -817,28 +837,36 @@ def _is_header_continuation(top: list[str], bottom: list[str]) -> bool:
     Domain-neutral (no money/number assumption): a real DATA row carries a value
     under every named column → it overlaps ``top``'s filled cells → rejected. Only a
     complementary continuation row (names where row 1 was blank, blank where row 1
-    named) is merged."""
+    named) is merged. A ``col_N`` POSITIONAL PLACEHOLDER in ``top`` counts as an
+    EMPTY position the continuation may fill — so an already-stored chunk whose header
+    baked ``col5..col10`` still merges its real labels over the placeholders."""
     m = min(len(top), len(bottom))
     fills = False
     for j in range(m):
         t, b = top[j].strip(), bottom[j].strip()
-        if t and b:
+        t_labeled = bool(t) and not _is_col_n_placeholder(t)
+        if t_labeled and b:
             return False  # overlap → bottom is a data row, not a header continuation
-        if b and not t:
+        if b and not t_labeled:
             fills = True
     return fills
 
 
 def _merge_header_rows(top: list[str], bottom: list[str]) -> list[str]:
     """Header-path concat (SOTA: Docling/TATR/MixRAG): per column, join the non-empty
-    parts of the two header rows. Gap-fill (``(empty)`` + ``date1`` → ``date1``) and
-    hierarchical concat (``Giá`` + ``2024`` → ``Giá 2024``). Domain-neutral, no LLM."""
+    parts of the two header rows. Gap-fill (``(empty)`` + ``D`` → ``D``) and
+    hierarchical concat (``X`` + ``2024`` → ``X 2024``). A ``col_N`` POSITIONAL
+    PLACEHOLDER in ``top`` is REPLACED by the continuation label (``col5`` + ``D``
+    → ``D``, never ``col5 D``) so a stored col_N column gets its real name.
+    Domain-neutral, no LLM."""
     n = max(len(top), len(bottom))
     out: list[str] = []
     for j in range(n):
         t = top[j].strip() if j < len(top) else ""
         b = bottom[j].strip() if j < len(bottom) else ""
-        out.append(" ".join(p for p in (t, b) if p))
+        if _is_col_n_placeholder(t):
+            t = ""  # placeholder yields to a real continuation label
+        out.append(" ".join(p for p in (t, b) if p) or (top[j].strip() if j < len(top) else ""))
     return out
 
 
@@ -857,7 +885,7 @@ def _premerge_split_headers(
 
     A header row whose own cells have GAPS, immediately followed by a label-only row
     that FILLS those gaps, is a split header — merge the two so the row-2 column names
-    (date1 / hình ảnh / Tồn) are not lost to ``col_N`` at extraction. Deterministic,
+    (the continuation labels) are not lost to ``col_N`` at extraction. Deterministic,
     domain-neutral. A single-row header (no gaps) or a priced data row below is left
     untouched, so the happy case is byte-identical.
     """
@@ -933,7 +961,7 @@ def parse_table_chunks(
             continue
 
         # Collapse a 2-row (split / merged-cell) header so row-2 column names
-        # (date1 / hình ảnh / Tồn) are not lost to col_N — SOTA header-path concat.
+        # (the continuation labels) are not lost to col_N — SOTA header-path concat.
         lines = _premerge_split_headers(lines, _declared_labels)
 
         header: list[str] = []
