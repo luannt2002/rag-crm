@@ -273,6 +273,15 @@ DEFAULT_GENERATE_CONTEXT_TRUST_HINT_ENABLED: Final[bool] = True
 # Wrapper tag names (envelope only — bot owner's system_prompt defines behavior).
 DEFAULT_GENERATE_DOCS_TAG: Final[str] = "documents"
 DEFAULT_GENERATE_QUESTION_TAG: Final[str] = "question"
+# F5 dual-read close: when ON, the ingest-time VERBATIM original of a chunk
+# (exact table grid / formula LaTeX, stored read-only in chunk metadata) is
+# surfaced inside its context fence so the LLM sees exact numbers at answer
+# time. This is ingest data placed read-only in the data envelope — NOT an
+# app instruction and NOT an answer override (sacred#10). Default OFF: a
+# no-op when no verbatim is present, and A/B-gated before any default flip
+# (rule #0). Envelope tag is data-only; bot owner's system_prompt governs use.
+DEFAULT_GENERATE_SURFACE_VERBATIM_ENABLED: Final[bool] = False
+DEFAULT_GENERATE_VERBATIM_TAG: Final[str] = "verbatim"
 
 DEFAULT_RERANK_INTENT_WHITELIST_ENABLED: Final[bool] = True
 # Owner-override opaque strings; superset of classifier outputs (booking/yesno

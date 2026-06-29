@@ -37,6 +37,7 @@ from ragbot.orchestration.nodes.cascade_router_helper import apply_cascade_routi
 from ragbot.orchestration.state import GraphState
 from ragbot.shared.constants import (
     ACTION_CAPTURED_SLOTS_PLACEHOLDER,
+    NARRATE_METADATA_KEY_RAW_CHUNK,
     DEFAULT_ADAPTIVE_CONTEXT_ENABLED,
     DEFAULT_ADAPTIVE_CONTEXT_EXEMPT_INTENTS,
     DEFAULT_ADAPTIVE_CONTEXT_HIGH_SCORE,
@@ -47,7 +48,9 @@ from ragbot.shared.constants import (
     DEFAULT_GENERATE_CONTEXT_TRUST_HINT_ENABLED,
     DEFAULT_GENERATE_HISTORY_MAX_MSGS,
     DEFAULT_GENERATE_P95_SLA_MS,
+    DEFAULT_GENERATE_SURFACE_VERBATIM_ENABLED,
     DEFAULT_GENERATE_USE_STRUCTURED_OUTPUT,
+    DEFAULT_GENERATE_VERBATIM_TAG,
     DEFAULT_GROUNDING_INTENTS,
     DEFAULT_LANGUAGE,
     DEFAULT_LITM_REORDER_ENABLED,
@@ -88,6 +91,50 @@ except ImportError:
 
 
 _PRICE_CELL_RE = re.compile(r"^[\d.,]{4,}$")
+
+
+def _resolve_verbatim_fence(
+    chunk: dict,
+    chunk_meta: dict,
+    fenced_text: str,
+    *,
+    enabled: bool,
+    tag: str,
+) -> str:
+    """Resolve the read-only VERBATIM segment to append inside a chunk's
+    context fence (F5 dual-read close), or ``""`` when nothing should change.
+
+    The verbatim original (exact table grid / formula source) is stored at
+    ingest under ``Chunk.original_content`` and, for the narrate-then-embed
+    path, in chunk metadata ``raw_chunk``. Resolution precedence — first
+    non-empty wins:
+      1. ``chunk["original_content"]`` (entity field / compression-preserved)
+      2. ``metadata["original_content"]``
+      3. ``metadata[NARRATE_METADATA_KEY_RAW_CHUNK]`` (narrate storage)
+
+    Returns ``""`` (so the fence is byte-identical to its current form) when:
+      - the feature flag is off,
+      - no verbatim is present, or
+      - the verbatim equals the already-fenced text (no duplication).
+
+    Otherwise returns a leading-newline data-only segment
+    ``"\n<{tag}>…</{tag}>"``. This is ingest data surfaced READ-ONLY into the
+    data envelope — it carries no instruction text and never alters the LLM
+    answer (sacred-rule 10). Domain-neutral: SHAPE only, no brand/format
+    literal.
+    """
+    if not enabled:
+        return ""
+    verbatim = (
+        chunk.get("original_content")
+        or chunk_meta.get("original_content")
+        or chunk_meta.get(NARRATE_METADATA_KEY_RAW_CHUNK)
+        or ""
+    )
+    verbatim = verbatim if isinstance(verbatim, str) else ""
+    if not verbatim or verbatim == fenced_text:
+        return ""
+    return f"\n<{tag}>{verbatim}</{tag}>"
 
 
 def _extract_locked_prices(
@@ -544,6 +591,16 @@ async def generate(
                 "generate_context_trust_hint_enabled",
                 DEFAULT_GENERATE_CONTEXT_TRUST_HINT_ENABLED,
             ))
+            # F5 dual-read close: per-bot flag to surface the ingest-time
+            # VERBATIM original (exact table grid / formula source, stored
+            # read-only in chunk metadata) inside each context fence. Default
+            # OFF → no-op when absent; byte-identical happy-path. A/B before
+            # flipping default (rule #0). Read-only data, never an app rule.
+            _surface_verbatim = bool(_pcfg(
+                state,
+                "generate_surface_verbatim_enabled",
+                DEFAULT_GENERATE_SURFACE_VERBATIM_ENABLED,
+            ))
             # M14 — per-bot XML chunk wrap. New bots (created on/after
             # ``XML_WRAP_DEFAULT_ON_FROM_DATE``) get the explicit
             # ``<chunk id type section><content>…</content></chunk>``
@@ -563,6 +620,12 @@ async def generate(
                 context_type = "whole_document" if is_full_doc else "excerpt"
                 if not cid:
                     continue
+                # F5: read-only verbatim segment ("" → byte-identical fence).
+                _vfence = _resolve_verbatim_fence(
+                    c, chunk_meta, text,
+                    enabled=_surface_verbatim,
+                    tag=DEFAULT_GENERATE_VERBATIM_TAG,
+                )
                 if _xml_wrap:
                     # M14 mindset — chunk-as-atomic-unit. ``chunk_type``
                     # falls back to TEXT when retrieval has not yet
@@ -579,16 +642,16 @@ async def generate(
                     )
                     context_blocks.append(
                         f'<chunk id="{cid}" type="{_ctype}" section="{_section}">\n'
-                        f'<content>{text}</content>\n'
+                        f'<content>{text}{_vfence}</content>\n'
                         f'</chunk>'
                     )
                 elif _trust_hint:
                     context_blocks.append(
-                        f'<context source="{source_label}" chunk="{chunk_idx}" id="{cid}" trust="data_only" type="{context_type}">\n{text}\n</context>'
+                        f'<context source="{source_label}" chunk="{chunk_idx}" id="{cid}" trust="data_only" type="{context_type}">\n{text}{_vfence}\n</context>'
                     )
                 else:
                     context_blocks.append(
-                        f'<context source="{source_label}" chunk="{chunk_idx}" id="{cid}">\n{text}\n</context>'
+                        f'<context source="{source_label}" chunk="{chunk_idx}" id="{cid}">\n{text}{_vfence}\n</context>'
                     )
             context_str = "\n\n".join(context_blocks) if context_blocks else ""
 
