@@ -25,11 +25,14 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from ragbot.shared.constants import (
+    DEFAULT_LOCALE_STRUCTURE_LANG,
     DEFAULT_PRICE_BUCKETS_VND,
     DEFAULT_PRICE_MAX_VND,
     DEFAULT_PRICE_MIN_VND,
     DEFAULT_STATS_ATTR_MAX_CHARS,
     DEFAULT_STATS_ATTR_MAX_WORDS,
+    DEFAULT_STATS_CLAUSE_OPENER_FIRST_BY_LANG,
+    DEFAULT_STATS_DISCOURSE_OPENERS_BY_LANG,
 )
 from ragbot.shared.number_format import parse_money_vn as _canonical_parse_money
 from ragbot.shared.tabular_markdown import _is_pure_money
@@ -72,25 +75,41 @@ _STATS_TAG_LEAD: str = "<"
 _STATS_SECTION_LEAD_RE: re.Pattern[str] = re.compile(
     r"^([IVXLCDM]+\s*[/.)]|\w+\s+\d+\s*[:.])", re.IGNORECASE
 )
-_STATS_DISCOURSE_OPENERS: frozenset[str] = frozenset(
-    {"hiện tại", "hiện nay", "bây giờ", "tuy nhiên"}
-)
-_STATS_CLAUSE_OPENER_FIRST: frozenset[str] = frozenset(
-    {"khi", "nếu", "vì", "tuy", "do", "bởi"}
-)
 
 
-def _is_discourse_opener(label: str) -> bool:
+def _discourse_openers(lang: str = DEFAULT_LOCALE_STRUCTURE_LANG) -> frozenset[str]:
+    """Resolve the temporal-adverb opener set for *lang* (P0-3 locale pack).
+
+    Default locale (``vi``) returns the EXACT prior frozenset, so VN extraction
+    is byte-identical; an unknown locale resolves to the empty set (no VN leak).
+    """
+    return DEFAULT_STATS_DISCOURSE_OPENERS_BY_LANG.get(lang, frozenset())
+
+
+def _clause_opener_first(lang: str = DEFAULT_LOCALE_STRUCTURE_LANG) -> frozenset[str]:
+    """Resolve the clause-conjunction first-word set for *lang* (P0-3 locale pack).
+
+    Default locale (``vi``) returns the EXACT prior frozenset (byte-identical);
+    an unknown locale resolves to the empty set (no VN leak).
+    """
+    return DEFAULT_STATS_CLAUSE_OPENER_FIRST_BY_LANG.get(lang, frozenset())
+
+
+def _is_discourse_opener(
+    label: str, lang: str = DEFAULT_LOCALE_STRUCTURE_LANG
+) -> bool:
     """True when *label* IS a temporal adverb or STARTS with a clause conjunction.
 
     A catalog entity name never does; only a prose sentence mis-split into a row
-    does ("Hiện tại …", "Khi đến với …"). Pure VN grammar — domain-neutral.
+    does ("Hiện tại …", "Khi đến với …"). The opener word-sets are resolved
+    per-locale from the P0-3 locale packs (``lang`` defaults to ``vi`` →
+    byte-identical VN grammar). Domain-neutral.
     """
     low = label.lower().strip()
-    if low in _STATS_DISCOURSE_OPENERS:
+    if low in _discourse_openers(lang):
         return True
     parts = low.split()
-    return bool(parts) and parts[0] in _STATS_CLAUSE_OPENER_FIRST
+    return bool(parts) and parts[0] in _clause_opener_first(lang)
 
 
 def _is_delimited_list_cell(cell: str) -> bool:

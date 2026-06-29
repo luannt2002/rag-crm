@@ -15,11 +15,21 @@ import structlog
 
 from ragbot.shared.bootstrap_config import get_boot_config
 from ragbot.shared.constants import *  # noqa: F401,F403 — rule thresholds (curated __all__)
+from ragbot.shared.constants import (
+    DEFAULT_DOC_PROFILE_TOC_SCAN_LINES,
+    DEFAULT_DOTTED_LEADER_TOC_RE,
+)
 
 logger = structlog.get_logger(__name__)
 
 # Sentence-terminator chars — shared by CSV-shape + sentence-split heuristics.
 _SENTENCE_END_CHARS = (".", "!", "?")
+
+# Compiled structural Table-of-Contents dot-leader detector (P0-3): a title
+# followed by a run of leader dots and a trailing page number. Language-agnostic
+# (shape only) — complements the literal "mục lục" / "table of contents" markers
+# so a TOC page in any language is detectable. Pattern from shared/constants.
+_DOTTED_LEADER_TOC_RE = re.compile(DEFAULT_DOTTED_LEADER_TOC_RE)
 
 
 def _is_csv_format(text: str) -> bool:
@@ -274,9 +284,18 @@ def analyze_document(text: str) -> dict:
         "avg_text_length": avg_text_length,
         "mixed_content_score": mixed_score,
         "total_words": total_text_words,
+        # Literal markers FIRST (short-circuit) → a VN/EN doc that already
+        # carries "mục lục" / "table of contents" is byte-identical to prior
+        # behaviour. The STRUCTURAL dotted-leader scan only runs when no literal
+        # marker matched, so a TOC page in ANY language (no literal marker, just
+        # "Title .... 3" dot-leaders) is still detected (P0-3 multilang).
         "has_toc": any(
             "mục lục" in l.lower() or "table of contents" in l.lower()
-            for l in lines[:30]
+            for l in lines[:DEFAULT_DOC_PROFILE_TOC_SCAN_LINES]
+        )
+        or any(
+            _DOTTED_LEADER_TOC_RE.search(l)
+            for l in lines[:DEFAULT_DOC_PROFILE_TOC_SCAN_LINES]
         ),
         # CSV/table-format flag. When True and the document has no headings,
         # ``select_strategy`` picks ``table_csv`` so each row stays atomic.
@@ -342,9 +361,15 @@ def analyze_document_blocks(blocks: list[Any]) -> dict:
     # FULL key contract — otherwise the strategy selector KeyErrors / mis-routes
     # on the block path. Lines are reconstructed from every block's content.
     _block_lines = [ln for b in blocks for ln in b.content.split("\n")]
+    # Literal markers FIRST (short-circuit), then the STRUCTURAL dotted-leader
+    # scan — same contract as analyze_document() so the two has_toc sites never
+    # diverge (P0-3). VN happy-path byte-identical (literal branch wins first).
     has_toc = any(
         "mục lục" in ln.lower() or "table of contents" in ln.lower()
-        for ln in _block_lines[:30]
+        for ln in _block_lines[:DEFAULT_DOC_PROFILE_TOC_SCAN_LINES]
+    ) or any(
+        _DOTTED_LEADER_TOC_RE.search(ln)
+        for ln in _block_lines[:DEFAULT_DOC_PROFILE_TOC_SCAN_LINES]
     )
     vn_hierarchical_markers = sum(
         1 for ln in _block_lines if _VN_HEADING_DETECT_RE.match(ln.strip())

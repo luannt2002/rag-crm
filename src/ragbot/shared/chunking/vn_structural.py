@@ -17,6 +17,23 @@ from ragbot.shared.constants import (
 )
 
 
+def resolve_struct_markers(
+    lang: str = DEFAULT_STRUCTURAL_MARKERS_LANG,
+) -> tuple[str, ...]:
+    """Resolve the ordered structural-marker tuple for a locale (P0-3).
+
+    Looks ``lang`` up in ``DEFAULT_STRUCTURAL_MARKERS_BY_LANG`` and returns its
+    ordered ``(chapter, part, section, article[, ...])`` tuple. An unknown
+    locale resolves to the empty tuple (NO Vietnamese leak), matching the
+    JP-placeholder contract. The default ``lang`` is the platform default
+    (``vi``), so callers that omit a locale get the byte-identical Vietnamese
+    set — this is what keeps the module-level VN regexes unchanged.
+
+    Constants-only (no DB read): structural vocabulary on the chunk hot path.
+    """
+    return DEFAULT_STRUCTURAL_MARKERS_BY_LANG.get(lang, ())
+
+
 
 # ---------------------------------------------------------------------------
 # Document profiling + strategy selection
@@ -52,9 +69,13 @@ from ragbot.shared.constants import (
 # legal document languages, so it is keyed by tuple position, not by literal.
 
 # Default-language marker tuple, ordered: [chapter, part, section, article].
-_STRUCT_MARKERS: tuple[str, ...] = DEFAULT_STRUCTURAL_MARKERS_BY_LANG[
+# Resolved through the per-locale helper with the platform default locale, so
+# the module-level regexes below stay byte-identical to the prior VN literals
+# while the en/ja marker sets remain reachable per-call via
+# ``resolve_struct_markers(lang)`` (P0-3 multilang).
+_STRUCT_MARKERS: tuple[str, ...] = resolve_struct_markers(
     DEFAULT_STRUCTURAL_MARKERS_LANG
-]
+)
 
 
 def _alt(*markers: str) -> str:
@@ -306,6 +327,7 @@ def promote_vn_hierarchical_headings(text: str) -> str:
 
 
 __all__ = [
+    "resolve_struct_markers",
     "roman_to_arabic",
     "normalize_vn_section_numerals",
     "detect_vn_structural_anchor",

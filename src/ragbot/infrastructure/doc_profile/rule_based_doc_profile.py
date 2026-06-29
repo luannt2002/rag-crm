@@ -41,10 +41,12 @@ from ragbot.shared.chunking import _is_table_line
 from ragbot.shared.constants import (
     DEFAULT_CODE_FENCE_MARKER,
     DEFAULT_DOC_PROFILE_TOC_SCAN_LINES,
+    DEFAULT_DOTTED_LEADER_TOC_RE,
     DEFAULT_FORMULA_INLINE_RE,
     DEFAULT_IMAGE_MD_RE,
     DEFAULT_LANG_DETECT_FALLBACK,
     DEFAULT_LANG_DETECT_MIN_ALPHA_CHARS,
+    DEFAULT_LANG_SCRIPT_RANGES,
     DEFAULT_VN_DIACRITIC_RATIO,
     VN_DIACRITIC_CHARS,
 )
@@ -53,26 +55,58 @@ logger = structlog.get_logger(__name__)
 
 _FORMULA_RE: Final[re.Pattern[str]] = re.compile(DEFAULT_FORMULA_INLINE_RE)
 _IMAGE_RE: Final[re.Pattern[str]] = re.compile(DEFAULT_IMAGE_MD_RE)
+_DOTTED_LEADER_TOC_RE: Final[re.Pattern[str]] = re.compile(
+    DEFAULT_DOTTED_LEADER_TOC_RE
+)
 _VN_DIACRITIC_SET: Final[frozenset[str]] = frozenset(VN_DIACRITIC_CHARS)
 _TOC_MARKERS_LOWER: Final[tuple[str, ...]] = ("mục lục", "table of contents")
 _LANG_VI: Final[str] = "vi"
 
 
+def _detect_by_script_range(text: str) -> str | None:
+    """Classify a document by Unicode SCRIPT range (P0-3) — None when no hit.
+
+    Counts characters falling inside each language's unambiguous codepoint
+    range from ``DEFAULT_LANG_SCRIPT_RANGES`` (e.g. Japanese kana) and returns
+    the dominant script's language code. A language whose script never appears
+    (Latin / VN-diacritic text) scores zero and yields ``None`` so the caller
+    falls back to the diacritic-ratio classifier. Domain-neutral, no word-list.
+    """
+    if not text:
+        return None
+    counts: dict[str, int] = {}
+    for ch in text:
+        o = ord(ch)
+        for lang, ranges in DEFAULT_LANG_SCRIPT_RANGES.items():
+            if any(lo <= o <= hi for lo, hi in ranges):
+                counts[lang] = counts.get(lang, 0) + 1
+                break
+    if not counts:
+        return None
+    return max(counts, key=counts.get)  # type: ignore[arg-type]
+
+
 def _detect_language(text: str) -> str:
-    """Detect ``"vi"`` vs fallback by Vietnamese diacritic ratio.
+    """Detect a document's language by Unicode script-range, then VN diacritics.
 
-    Returns ``DEFAULT_LANG_DETECT_FALLBACK`` ("auto") when the document
-    has fewer than ``DEFAULT_LANG_DETECT_MIN_ALPHA_CHARS`` alphabetic
-    characters — short input is unreliable for any language detector.
+    Resolution order (P0-3 — no longer a VN-vs-auto binary):
+    1. ``DEFAULT_LANG_SCRIPT_RANGES`` script match (e.g. Japanese kana) wins
+       outright — a script range is unambiguous, so even a short snippet is
+       reliable.
+    2. Otherwise, when there are ≥ ``DEFAULT_LANG_DETECT_MIN_ALPHA_CHARS``
+       alphabetic chars, classify ``"vi"`` by the Vietnamese diacritic ratio
+       (byte-identical to the prior behaviour for Latin/VN text).
+    3. Fall back to ``DEFAULT_LANG_DETECT_FALLBACK`` ("auto") for short /
+       ambiguous input.
 
-    Otherwise compute (vn_diacritic_chars / alpha_chars) and classify
-    "vi" when the ratio crosses ``DEFAULT_VN_DIACRITIC_RATIO``. This
-    avoids pulling in ``langdetect`` for a single boolean classifier
-    while remaining accurate for the platform's primary language pair
-    (Vietnamese vs English-or-anything-else).
+    Avoids pulling in ``langdetect`` while extending coverage beyond the VN
+    pair. Domain-neutral, deterministic, no LLM.
     """
     if not text:
         return DEFAULT_LANG_DETECT_FALLBACK
+    by_script = _detect_by_script_range(text)
+    if by_script is not None:
+        return by_script
     alpha_chars = 0
     vn_chars = 0
     for ch in text.lower():
@@ -234,11 +268,15 @@ class RuleBasedDocumentProfileAnalyzer:
             (table_count + code_block_count) / total_blocks if total_blocks > 0 else 0.0
         )
 
-        # TOC scan — top N lines only (most TOCs sit at the head).
+        # TOC scan — top N lines only (most TOCs sit at the head). Literal
+        # markers FIRST (short-circuit → byte-identical for VN/EN docs that
+        # carry them), then the SAME structural dotted-leader detection used by
+        # analyze_document() so this profiler does not diverge from it (P0-3):
+        # a TOC page in any language ("Title .... 3") is detected by shape.
         head = lines[:DEFAULT_DOC_PROFILE_TOC_SCAN_LINES]
         has_toc = any(
             any(marker in ln.lower() for marker in _TOC_MARKERS_LOWER) for ln in head
-        )
+        ) or any(_DOTTED_LEADER_TOC_RE.search(ln) for ln in head)
 
         detected_language = _detect_language(text)
 
