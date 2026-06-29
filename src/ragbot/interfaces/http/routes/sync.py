@@ -298,14 +298,19 @@ async def sync_bot(req: SyncBotRequest, request: Request) -> dict:
             "top_p": default_top_p,
         }
 
-        # Get default model IDs
+        # Get default model IDs. ai_models.kind uses "llm" for chat/generation
+        # models (NOT "chat"); the prior 'chat' literal mismatched the schema so
+        # the canonical B2B /sync onboarding path left every new bot without an
+        # llm_primary binding → resolve_llm raised → first chat 500. Mirror the
+        # corrected auto-pick in bot_admin_routes. No LIMIT: a 2-row cap could
+        # return two llm rows and drop the embedding pick.
         model_id = None
         embedding_model_id = None
         result2 = await session.execute(
-            text("SELECT id, kind FROM ai_models WHERE enabled = true AND kind IN ('chat', 'embedding') LIMIT 2"),
+            text("SELECT id, kind FROM ai_models WHERE enabled = true AND kind IN ('llm', 'embedding')"),
         )
         for row in result2.fetchall():
-            if row[1] == "chat" and model_id is None:
+            if row[1] == "llm" and model_id is None:
                 model_id = row[0]
             elif row[1] == "embedding" and embedding_model_id is None:
                 embedding_model_id = row[0]
