@@ -112,7 +112,7 @@ class JsonbConversationState(ConversationStatePort):
                 if isinstance(value, str):
                     return json.loads(value) if value else {}
                 return {}
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001 — graceful degrade on ANY load error (test-pinned contract)
             logger.warning(
                 "conversation_state_load_failed",
                 conversation_id=str(conversation_id),
@@ -171,7 +171,7 @@ class JsonbConversationState(ConversationStatePort):
                         {"id": conversation_id, "s": json.dumps(clean, ensure_ascii=False)},
                     )
                 await session.commit()
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001 — best-effort state save must not break the turn
             logger.warning(
                 "conversation_state_save_failed",
                 conversation_id=str(conversation_id),

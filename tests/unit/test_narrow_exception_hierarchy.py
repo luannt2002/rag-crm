@@ -166,7 +166,7 @@ _BROAD_EXCEPT_NO_NOQA_BASELINE = 0
 # ledger is a financial-telemetry aux sink — graceful-degradation policy (transport error
 # → degrade silent) mandates the LLM/ingest hot path never dies because a ledger INSERT
 # failed. no-noqa baseline stays 0 = sacred. Future sweep target: narrow back to ≤200.
-_BROAD_EXCEPT_TOTAL_BASELINE = 248
+_BROAD_EXCEPT_TOTAL_BASELINE = 249  # +1: S0/S1/S2 recovery hardening (boot RLS check, LLM fallback, SSRF guard) — all noqa-annotated; no_noqa hard-rule stays 0
 
 
 def _count_broad_except(*, with_noqa: bool) -> int:

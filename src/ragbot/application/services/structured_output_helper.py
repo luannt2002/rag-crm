@@ -316,7 +316,7 @@ async def _emit_usage_sink(
         )
         if asyncio.iscoroutine(result):
             await result
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 — LLM output parse/repair fallback — degrade, never raise
         logger.debug("structured_output_usage_sink_failed", err=str(exc))
 
 
@@ -427,7 +427,7 @@ async def _safe_acompletion(
     """
     try:
         return await litellm_module.acompletion(**call_kwargs)
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 — LLM output parse/repair fallback — degrade, never raise
         logger.warning(
             "structured_output_provider_call_failed",
             schema=schema_name, provider=provider_code,

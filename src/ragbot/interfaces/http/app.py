@@ -298,7 +298,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     try:
         llm = container.llm()
         await llm.refresh_routing()
-    except Exception:
+    except Exception:  # noqa: BLE001 — boot/lifespan health-check must not crash app on aux failure
         logger.warning("llm_refresh_skipped", reason="ai_models table empty or DB unavailable")
 
     # Prime ModelRuntimeConfig L1 cache + BotRegistry cache in parallel.
@@ -307,7 +307,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
             resolver = container.model_resolver()
             loaded = await resolver.bootstrap_cache()
             logger.info("model_resolver_bootstrap", entries=loaded)
-        except Exception:
+        except Exception:  # noqa: BLE001 — boot/lifespan health-check must not crash app on aux failure
             logger.warning("model_resolver_bootstrap_skipped")
 
     async def _bootstrap_bot_registry() -> None:
@@ -315,7 +315,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
             registry = container.bot_registry_service()
             loaded = await registry.bootstrap_cache()
             logger.info("bot_registry_bootstrap_done", entries=loaded)
-        except Exception:
+        except Exception:  # noqa: BLE001 — boot/lifespan health-check must not crash app on aux failure
             logger.warning("bot_registry_bootstrap_skipped")
 
     async def _bootstrap_guardrail_rules() -> None:
@@ -357,7 +357,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
             await svc.ensure_owner_token(redis_client=redis)
             loaded = await svc.bootstrap_cache(redis)
             logger.info("api_tokens_bootstrap", entries=loaded)
-        except Exception:
+        except Exception:  # noqa: BLE001 — boot/lifespan health-check must not crash app on aux failure
             logger.warning("api_tokens_bootstrap_skipped")
 
     await asyncio.gather(
@@ -386,7 +386,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
                 db_value=_db_cors_raw,
                 note="system_config override takes effect only after restart",
             )
-    except Exception:
+    except Exception:  # noqa: BLE001 — boot/lifespan health-check must not crash app on aux failure
         logger.debug("cors_db_check_skipped")
 
     # Reranker preflight: fail-loud at startup when reranker is enabled but the
@@ -406,7 +406,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         )
         _rr_enabled = await _rr_svc.get("reranker_enabled", True)
         _rr_provider = await _rr_svc.get("reranker_provider", None)
-    except Exception:
+    except Exception:  # noqa: BLE001 — boot/lifespan health-check must not crash app on aux failure
         _rr_enabled = settings.reranker.enabled
     _check_reranker_preflight(
         enabled=bool(_rr_enabled),
@@ -460,15 +460,15 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
                 logger.warning("embedded_workers_teardown_failed", exc_info=True)
         try:
             await container.bus().close()
-        except Exception:
+        except Exception:  # noqa: BLE001 — boot/lifespan health-check must not crash app on aux failure
             pass
         try:
             await container.cache().close()
-        except Exception:
+        except Exception:  # noqa: BLE001 — boot/lifespan health-check must not crash app on aux failure
             pass
         try:
             await container.db_engine().dispose()
-        except Exception:
+        except Exception:  # noqa: BLE001 — boot/lifespan health-check must not crash app on aux failure
             pass
         logger.info("ragbot.shutdown_complete")
 

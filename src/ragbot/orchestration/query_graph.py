@@ -661,7 +661,7 @@ async def _run_grounding_check_background(
             _llm_complete_fn,
             threshold=threshold,
         )
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 — node-level recovery, degrade pipeline not crash turn
         logger.warning(
             "grounding_async_judge_error",
             error_type=type(exc).__name__,
@@ -1562,7 +1562,7 @@ def build_graph(
                         )
                 raw = await vector_store.hybrid_search(**_hs_kwargs)
                 return raw_embed, list(raw or [])
-        except Exception:
+        except Exception:  # noqa: BLE001 — node-level recovery, degrade pipeline not crash turn
             logger.warning("speculative_hybrid_search_failed", exc_info=True)
         return raw_embed, []
 
