@@ -1,3 +1,13 @@
+# ============================================================
+# DISABLED — UNUSED (commented-marker, NOT deleted)
+# ============================================================
+# The LLM/rule chunking-strategy SELECTOR (AdapChunk Tang-4 Port) has
+# ZERO runtime callers: ``chunking_strategy_provider`` is read by nothing;
+# strategy routing is done by the deterministic profile router
+# (shared/chunking/analyze.select_strategy + apply_cross_check).
+# WHY kept: reversible escape-hatch — remove this header to reactivate.
+# Policy: disabled-by-comment, physical removal deferred to operator.
+# ============================================================
 """AdapChunk strategy-resolver adapters (Port: ChunkingStrategyResolverPort).
 
 ``rule``  → deterministic weighted-scorer (default + degradation fallback).
