@@ -50,6 +50,12 @@ DEFAULT_CHUNK_FINGERPRINT_CHARS: Final[int] = 80
 # "significant" (worth checking it survived chunking). Below this a token is an
 # ordinal / row-index / size, not a value whose silent loss is a number-HALLU.
 DEFAULT_NUMERIC_COVERAGE_MIN_DIGITS: Final[int] = 4
+# Full char-coverage gate: a doc is lossless when coverage_ratio >= 1.0 - TOL.
+# Small slack absorbs benign whitespace/separator chars a chunker drops between blocks.
+DEFAULT_COVERAGE_TOL: Final[float] = 0.02
+# A normalized chunk shorter than this is ignored for locate-in-source (a 0/1-char
+# fragment carries no positional signal and would false-match everywhere). 0 = off.
+DEFAULT_MIN_LOCATABLE_CHARS: Final[int] = 2
 # Footer-below-table preservation (RAG-Anything M18). When a TABLE block is
 # immediately followed by a short non-heading TEXT block whose body is at
 # most this many characters, the two are merged into a single TABLE block
