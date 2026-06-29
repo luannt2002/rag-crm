@@ -40,6 +40,8 @@ from __future__ import annotations
 import re
 from typing import Final
 
+from ragbot.shared.constants import DEFAULT_NUMERIC_COVERAGE_MIN_DIGITS
+
 # ---------------------------------------------------------------------------
 # Suffix multipliers — diacritic-folded keys (matched case-insensitively).
 # ---------------------------------------------------------------------------
@@ -197,4 +199,44 @@ def parse_money_vn(
     return None
 
 
-__all__ = ["parse_money_vn"]
+# A "significant" number worth coverage-checking: a digit-group (optionally
+# grouped by '.'/',') . Bare 1-3 digit tokens (ordinals / STT 1,2,3 / sizes) are
+# excluded by the caller's ``min_digits`` floor so an index is not flagged.
+_SIGNIFICANT_NUMBER_RE: Final[re.Pattern[str]] = re.compile(r"\d[\d.,]*\d|\d")
+
+
+def find_dropped_numbers(
+    source: str,
+    chunks: list[str],
+    *,
+    min_digits: int = DEFAULT_NUMERIC_COVERAGE_MIN_DIGITS,
+) -> list[str]:
+    """Return source numeric tokens that appear in NO chunk — a silently-dropped
+    value (the "honest but blind" HALLU class: a chunker that loses a price/row
+    leaves Faithfulness at 1.0 while the number is simply gone).
+
+    Lossless-coverage signal, OBSERVE-only: literal-substring match (chunking must
+    never reformat a number, so a dropped token is a real gap), deterministic, no
+    LLM, domain/currency/language-neutral. Tokens with fewer than ``min_digits``
+    digits are ignored (ordinals / row indices / sizes are not values).
+
+    @return deduped list of dropped numeric tokens (empty = full numeric coverage).
+    """
+    if not source or not chunks:
+        return []
+    joined = "\n".join(chunks)
+    seen: set[str] = set()
+    missing: list[str] = []
+    for m in _SIGNIFICANT_NUMBER_RE.finditer(source):
+        tok = m.group(0)
+        if sum(c.isdigit() for c in tok) < min_digits:
+            continue
+        if tok in seen:
+            continue
+        seen.add(tok)
+        if tok not in joined:
+            missing.append(tok)
+    return missing
+
+
+__all__ = ["find_dropped_numbers", "parse_money_vn"]

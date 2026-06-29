@@ -46,6 +46,10 @@ DEFAULT_CHUNK_MAX_SIZE: Final[int] = 1024
 # resolution, O(1) cache build). Short enough to find chunks unchanged
 # by recursive overlap rewrites, long enough to disambiguate near-dupes.
 DEFAULT_CHUNK_FINGERPRINT_CHARS: Final[int] = 80
+# Lossless-coverage observe-gate: minimum digit-count for a source number to be
+# "significant" (worth checking it survived chunking). Below this a token is an
+# ordinal / row-index / size, not a value whose silent loss is a number-HALLU.
+DEFAULT_NUMERIC_COVERAGE_MIN_DIGITS: Final[int] = 4
 # Footer-below-table preservation (RAG-Anything M18). When a TABLE block is
 # immediately followed by a short non-heading TEXT block whose body is at
 # most this many characters, the two are merged into a single TABLE block

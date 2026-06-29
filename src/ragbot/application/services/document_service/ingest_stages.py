@@ -811,6 +811,23 @@ class _StageChunkMixin:
                 blocks_by_type=_block_type_histogram,
             )
 
+            # P0-2 lossless-coverage (OBSERVE-only): flag source numbers that no
+            # chunk carries — a silently-dropped value (price/row) is a number-HALLU
+            # even while Faithfulness reads 1.0 ("honest but blind"). Deterministic,
+            # no LLM, currency/language-neutral, NEVER raises (pure observability).
+            from ragbot.shared.number_format import find_dropped_numbers  # noqa: PLC0415 — local keeps hot-path import lean
+            _dropped_nums = find_dropped_numbers(ctx.content, chunks)
+            if _dropped_nums:
+                _u4_ctx.set_metadata(numbers_dropped=len(_dropped_nums))
+                logger.warning(
+                    "chunk_numeric_coverage_gap",
+                    doc_id=str(doc_id),
+                    record_bot_id=str(record_bot_id),
+                    strategy_used=_u4_strategy_used,
+                    dropped_count=len(_dropped_nums),
+                    sample=_dropped_nums[:5],
+                )
+
         # Progress checkpoint after U4 chunk: 20% done, chunks_total known.
         await _update_doc_progress(
             self._sf, record_tenant_id, doc_id,
