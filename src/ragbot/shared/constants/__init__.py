@@ -31,6 +31,7 @@ from ._22_conversation_state_memory import *  # noqa: F401,F403
 from ._23_crm_analytics_readlayer_ import *  # noqa: F401,F403
 from ._24_structural_markers_by_lang import *  # noqa: F401,F403
 from ._25_locale_structure_packs import *  # noqa: F401,F403
+from ._26_narrate_prompt_locale_pack import *  # noqa: F401,F403
 
 # Underscore-prefixed constants (import * skips these) — re-export explicitly
 from ._04_jwt_auth import _REFUSE_ANSWER_TYPES  # noqa: F401

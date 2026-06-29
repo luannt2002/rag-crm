@@ -33,16 +33,40 @@ import structlog
 
 from ragbot.application.dto.ai_specs import LLMSpec
 from ragbot.application.ports.llm_port import LLMMessage, LLMPort
+from ragbot.shared.constants import (
+    DEFAULT_NARRATE_PROMPT_LANG,
+    DEFAULT_NARRATE_PROMPT_TEMPLATES_BY_LANG,
+)
 from ragbot.shared.errors import CircuitBreakerOpen, LLMError, RetrievalError
 from ragbot.shared.types import BlockType, TenantId, TraceId
 
 logger = structlog.get_logger(__name__)
 
 
-# Block-type-specific user prompt scaffolds. The system instruction is
-# constant across block types — domain-neutral and declarative. Each
-# block prompt is short by design: we want the LLM to focus on the
-# CONTENT, not the wrapper text.
+# Block-type-specific user prompt scaffolds are sourced per-locale from
+# ``DEFAULT_NARRATE_PROMPT_TEMPLATES_BY_LANG`` (shared.constants). The wired
+# default locale (``DEFAULT_NARRATE_PROMPT_LANG`` = "vi") resolves to the
+# Vietnamese scaffolds byte-for-byte; a non-vi document locale resolves to the
+# language-agnostic ``"default"`` pack, which tells the model to describe in
+# the SOURCE language (no translation) — matching the system instruction's
+# "Preserve the source language exactly" rule below. The system instruction is
+# constant across block types and locales — domain-neutral and declarative.
+def _resolve_block_prompts(lang: str) -> dict[str, str]:
+    """Return the per-block prompt map for ``lang``.
+
+    Constants-only resolution (no DB read on the ingest hot path). An unknown
+    or empty locale falls back to the language-agnostic ``"default"`` pack
+    (describe in the source language) — never the Vietnamese literals.
+    """
+    key = (lang or "").strip().lower()
+    return DEFAULT_NARRATE_PROMPT_TEMPLATES_BY_LANG.get(
+        key, DEFAULT_NARRATE_PROMPT_TEMPLATES_BY_LANG["default"]
+    )
+
+
+# Module-level scaffolds for the wired default locale. Kept byte-identical to
+# the prior hardcoded Vietnamese values via the "vi" pack so importers / tests
+# referencing ``_BLOCK_PROMPTS`` stay stable and the wired VN prompt is unchanged.
 _NARRATE_SYSTEM_INSTRUCTION = (
     "You are a domain-agnostic content linearizer for a retrieval index. "
     "Given a non-prose block (table, formula, or image caption), produce "
@@ -55,22 +79,7 @@ _NARRATE_SYSTEM_INSTRUCTION = (
     "- Output only the description, no preamble, no markdown."
 )
 
-_BLOCK_PROMPTS: dict[str, str] = {
-    "TABLE": (
-        "Diễn giải bảng/dòng dữ liệu dưới đây thành 1-2 câu tiếng Việt tự nhiên, "
-        "nêu rõ các cột chính và nội dung dòng truyền tải. CHỈ trả về câu mô tả, "
-        "không markdown, không tiền tố:\n\n{content}"
-    ),
-    "FORMULA": (
-        "Diễn giải công thức/biểu thức LaTeX dưới đây thành 1-2 câu tiếng Việt "
-        "tự nhiên, gọi tên phép toán và các biến có ý nghĩa. CHỈ trả về câu "
-        "mô tả, không markdown, không tiền tố:\n\n{content}"
-    ),
-    "IMAGE": (
-        "Diễn giải nội dung hình ảnh / chú thích OCR dưới đây thành 1-2 câu "
-        "tiếng Việt tự nhiên. CHỈ trả về câu mô tả:\n\n{content}"
-    ),
-}
+_BLOCK_PROMPTS: dict[str, str] = _resolve_block_prompts(DEFAULT_NARRATE_PROMPT_LANG)
 
 
 class LLMNarrateGenerator:
@@ -92,11 +101,18 @@ class LLMNarrateGenerator:
         spec: LLMSpec,
         record_tenant_id: TenantId,
         trace_id: TraceId,
+        narrate_lang: str = DEFAULT_NARRATE_PROMPT_LANG,
     ) -> None:
         self._llm = llm
         self._spec = spec
         self._record_tenant_id = record_tenant_id
         self._trace_id = trace_id
+        # Per-instance prompt map keyed by the document/bot locale. Defaults to
+        # DEFAULT_NARRATE_PROMPT_LANG ("vi") so wiring that does not thread a
+        # locale keeps the VN prompt byte-identical; a non-vi locale selects
+        # the source-language-preserving "default" pack.
+        self._narrate_lang = (narrate_lang or DEFAULT_NARRATE_PROMPT_LANG)
+        self._block_prompts = _resolve_block_prompts(self._narrate_lang)
 
     @staticmethod
     def get_provider_name() -> str:
@@ -115,7 +131,7 @@ class LLMNarrateGenerator:
         if not content or not content.strip():
             return content
 
-        prompt_template = _BLOCK_PROMPTS.get(block_type)
+        prompt_template = self._block_prompts.get(block_type)
         if prompt_template is None:
             # Prose-like block types embed fine raw — skip the LLM hop.
             logger.debug(
