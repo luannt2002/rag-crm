@@ -18,6 +18,7 @@ from typing import Final
 
 from ragbot.application.dto.ai_specs import LLMSpec
 from ragbot.application.ports.llm_port import LLMMessage, LLMPort
+from ragbot.shared.constants import DEFAULT_VLM_CAPTION_PROMPT
 from ragbot.shared.types import TenantId, TraceId
 
 _PROVIDER: Final[str] = "vlm_image"
@@ -43,15 +44,6 @@ _MAGIC: Final[tuple[tuple[bytes, str], ...]] = (
     (b"GIF89a", "image/gif"),
 )
 
-# Domain-neutral caption instruction: mirror the source, forbid fabrication (HALLU=0).
-_CAPTION_PROMPT: Final[str] = (
-    "Mô tả chính xác toàn bộ nội dung hình ảnh dưới đây thành văn bản. Nếu ảnh chứa "
-    "bảng / danh sách / số liệu, liệt kê đầy đủ từng dòng đúng như trong ảnh. TUYỆT ĐỐI "
-    "KHÔNG bịa thông tin, con số hay giá trị không xuất hiện trong ảnh; nếu ảnh không có "
-    "dữ liệu, nói rõ là không có. Chỉ trả về phần mô tả."
-)
-
-
 def _detect_mime(content: bytes, file_ext: str) -> str:
     for magic, mime in _MAGIC:
         if content.startswith(magic):
@@ -74,7 +66,7 @@ class VlmImageParser:
         spec: LLMSpec,
         record_tenant_id: TenantId,
         trace_id: TraceId,
-        prompt: str = _CAPTION_PROMPT,
+        prompt: str = DEFAULT_VLM_CAPTION_PROMPT,
     ) -> None:
         if not getattr(spec, "supports_vision", False):
             raise ValueError(

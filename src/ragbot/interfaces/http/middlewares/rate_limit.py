@@ -38,6 +38,7 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 
 from ragbot.application.ports.rate_limiter_port import RateLimiterPort
+from ragbot.interfaces.http.middlewares.loadtest_bypass import is_loadtest_bypass
 from ragbot.shared.constants import (
     DEFAULT_RL_EMIT_HEADERS,
     DEFAULT_RL_FAIL_MODE,
@@ -153,6 +154,11 @@ class SlidingRateLimitMiddleware(BaseHTTPMiddleware):
         if key is None:
             # No auth context — pre-auth path is handled by IP limiter
             # (Agent E). Pass through.
+            return await call_next(request)
+
+        # Localhost-only loadtest bypass — operator-issued token short-
+        # circuits the per-token cap without disabling auth or UA denylist.
+        if is_loadtest_bypass(request):
             return await call_next(request)
 
         limiter = self._resolve_limiter(request)

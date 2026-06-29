@@ -134,6 +134,19 @@ DEFAULT_HYDE_PROVIDER: Final[str] = "null"
 # parser (a vision model captions the image into retrievable text). Model is locked
 # to a vision-capable binding (gpt-4.1-mini, supports_vision=true).
 DEFAULT_VLM_PROVIDER: Final[str] = "null"
+# Platform-default caption instruction sent to the vision model when the operator
+# has not set ``system_config.vlm_caption_prompt``. Domain-neutral (no industry /
+# brand / fixed user-language literal) and HALLU=0: mirror the image content,
+# forbid fabrication. Operator/owner can override via system_config without a
+# redeploy; this English default keeps the platform language-agnostic — the vision
+# model captions in the image's own language regardless.
+DEFAULT_VLM_CAPTION_PROMPT: Final[str] = (
+    "Transcribe the entire content of the image below into text, in the image's "
+    "own language. If it contains a table, list, or figures, reproduce every row "
+    "exactly as shown. Do NOT invent any information, number, or value that is not "
+    "present in the image; if the image has no data, say so explicitly. Return only "
+    "the transcription."
+)
 # Admin override 2026-05-12: HyDE is a utility task (not user-facing answer)
 # so the platform default uses gpt-4.1-mini — Haiku is banned by the
 # higher-tier admin policy regardless of cost savings.

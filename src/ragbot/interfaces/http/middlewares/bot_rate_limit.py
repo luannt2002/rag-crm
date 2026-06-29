@@ -68,6 +68,7 @@ from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoin
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 
+from ragbot.interfaces.http.middlewares.loadtest_bypass import is_loadtest_bypass
 from ragbot.shared.constants import (
     DEFAULT_RL_BOT_PER_MIN,
     DEFAULT_RL_UPLOAD_PER_MIN,
@@ -170,6 +171,11 @@ class BotRateLimitMiddleware(BaseHTTPMiddleware):
     ) -> Response:
         identity = _resolve_bot_identity(request)
         if identity is None:
+            return await call_next(request)
+
+        # Localhost-only loadtest bypass — operator-issued token short-
+        # circuits the per-bot cap without disabling auth or UA denylist.
+        if is_loadtest_bypass(request):
             return await call_next(request)
 
         redis_client = self._resolve_redis(request)

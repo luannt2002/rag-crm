@@ -72,6 +72,14 @@ DEFAULT_CALLBACK_TIMEOUT_S: Final[int] = 10
 DEFAULT_CALLBACK_MAX_RETRIES: Final[int] = 3
 # Base delay (seconds) for exponential backoff: attempt 0→1s, 1→2s, 2→4s.
 DEFAULT_CALLBACK_BACKOFF_BASE_S: Final[float] = 1.0
+# Deliver-time SSRF guard: re-resolve the callback host and reject
+# private/internal IPs (RFC1918, loopback, link-local, cloud metadata
+# 169.254.169.254) right before the POST. Setup-time validation alone is
+# insufficient — a DNS-rebinding attacker flips the record from a public
+# IP at validation to an internal IP at delivery. Secure-by-default ON;
+# operators opt out per deployment via system_config
+# (callback_ssrf_guard_enabled) when delivering inside a trusted VPC.
+DEFAULT_CALLBACK_SSRF_GUARD_ENABLED: Final[bool] = True
 
 DEFAULT_CACHE_STAMPEDE_LOCK_TIMEOUT_S: Final[int] = 5
 

@@ -23,11 +23,16 @@ def _spec(*, vision: bool) -> LLMSpec:
 
 
 class _FakeCfg:
-    def __init__(self, provider: str) -> None:
+    def __init__(self, provider: str, *, caption_prompt: str | None = None) -> None:
         self._p = provider
+        self._caption = caption_prompt
 
     async def get(self, key: str, default=None):  # noqa: ANN001
-        return self._p if key == "vlm_provider" else default
+        if key == "vlm_provider":
+            return self._p
+        if key == "vlm_caption_prompt" and self._caption is not None:
+            return self._caption
+        return default
 
 
 class _FakeContainer:
@@ -52,8 +57,12 @@ class _FakeContainer:
         return _R()
 
 
-def _patch_cfg(monkeypatch, provider: str) -> None:
-    monkeypatch.setattr(dw, "SystemConfigService", lambda **kw: _FakeCfg(provider))
+def _patch_cfg(monkeypatch, provider: str, *, caption_prompt: str | None = None) -> None:
+    monkeypatch.setattr(
+        dw,
+        "SystemConfigService",
+        lambda **kw: _FakeCfg(provider, caption_prompt=caption_prompt),
+    )
 
 
 @pytest.mark.asyncio
@@ -85,6 +94,34 @@ async def test_image_with_vision_model_builds_parser(monkeypatch) -> None:  # no
     )
     assert isinstance(out, VlmImageParser)
     assert out.get_provider_name() == "vlm_image"
+
+
+@pytest.mark.asyncio
+async def test_caption_prompt_from_config_threads_into_parser(monkeypatch) -> None:
+    # The operator-configured caption instruction (system_config.vlm_caption_prompt)
+    # is what the built parser will send to the vision model — not a hardcoded string.
+    custom = "Operator-owned domain-neutral caption instruction."
+    _patch_cfg(monkeypatch, "vlm_image", caption_prompt=custom)
+    out = await dw._try_build_vlm_image_parser(
+        _FakeContainer(provider="vlm_image", vision=True),
+        bot_id=uuid.uuid4(), tenant_id=uuid.uuid4(), trace_id="t", mime_type="image/png",
+    )
+    assert isinstance(out, VlmImageParser)
+    assert out._prompt == custom
+
+
+@pytest.mark.asyncio
+async def test_caption_prompt_falls_back_to_constant_default(monkeypatch) -> None:
+    # No system_config override -> the domain-neutral platform default constant.
+    from ragbot.shared.constants import DEFAULT_VLM_CAPTION_PROMPT
+
+    _patch_cfg(monkeypatch, "vlm_image")  # caption_prompt unset
+    out = await dw._try_build_vlm_image_parser(
+        _FakeContainer(provider="vlm_image", vision=True),
+        bot_id=uuid.uuid4(), tenant_id=uuid.uuid4(), trace_id="t", mime_type="image/png",
+    )
+    assert isinstance(out, VlmImageParser)
+    assert out._prompt == DEFAULT_VLM_CAPTION_PROMPT
 
 
 @pytest.mark.asyncio

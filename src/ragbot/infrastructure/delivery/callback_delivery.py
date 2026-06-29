@@ -11,9 +11,11 @@ from typing import Any
 import httpx
 import structlog
 
+from ragbot.shared.callback_validator import _is_url_safe
 from ragbot.shared.constants import (
     DEFAULT_CALLBACK_BACKOFF_BASE_S,
     DEFAULT_CALLBACK_MAX_RETRIES,
+    DEFAULT_CALLBACK_SSRF_GUARD_ENABLED,
     DEFAULT_CALLBACK_TIMEOUT_S,
 )
 
@@ -39,6 +41,7 @@ class CallbackDelivery:
         timeout_s: int = DEFAULT_CALLBACK_TIMEOUT_S,
         verify_ssl: bool = True,
         backoff_base_s: float = DEFAULT_CALLBACK_BACKOFF_BASE_S,
+        ssrf_guard_enabled: bool = DEFAULT_CALLBACK_SSRF_GUARD_ENABLED,
     ) -> None:
         self._callback_url = callback_url
         self._hmac_secret = hmac_secret
@@ -46,6 +49,10 @@ class CallbackDelivery:
         self._timeout_s = timeout_s
         self._verify_ssl = verify_ssl
         self._backoff_base_s = backoff_base_s
+        # Deliver-time SSRF guard — re-resolve the host and reject
+        # private/internal IPs right before the POST. Closes the
+        # DNS-rebinding window left open by setup-time-only validation.
+        self._ssrf_guard_enabled = ssrf_guard_enabled
         self._client: httpx.AsyncClient | None = None
         self._client_lock = asyncio.Lock()
 
@@ -79,6 +86,20 @@ class CallbackDelivery:
         If hmac_secret is provided, signs the payload with HMAC-SHA256 and
         attaches X-Ragbot-Signature / X-Ragbot-Timestamp headers.
         """
+        # Deliver-time SSRF guard — re-resolve the host NOW (not just at
+        # setup) so a DNS-rebinding flip to an internal IP between
+        # validation and delivery cannot reach RFC1918 / loopback /
+        # link-local / cloud-metadata (169.254.169.254) targets.
+        if self._ssrf_guard_enabled:
+            safe, reason = await _is_url_safe(self._callback_url)
+            if not safe:
+                logger.warning(
+                    "callback_ssrf_blocked_at_deliver",
+                    url=self._callback_url[:80],
+                    reason=reason,
+                )
+                return False
+
         body_bytes = _json.dumps(result, ensure_ascii=False).encode("utf-8")
 
         # Build headers — include HMAC signature if secret configured

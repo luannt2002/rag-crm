@@ -53,6 +53,7 @@ from ragbot.shared.constants import (
     DEFAULT_HTTP_TIMEOUT_S,
     DEFAULT_NARRATE_PROVIDER,
     DEFAULT_NARRATE_THEN_EMBED_ENABLED,
+    DEFAULT_VLM_CAPTION_PROMPT,
     DEFAULT_VLM_PROVIDER,
     SUBJECT_DOCUMENT_UPLOADED,
 )
@@ -195,12 +196,18 @@ async def _try_build_vlm_image_parser(
                 detail="vlm_provider enabled but resolved model lacks vision; OCR fallback",
             )
             return None
+        # Caption instruction is operator/owner-owned config (sacred #10: the
+        # application never hardcodes the prompt text). Domain-neutral default.
+        caption_prompt = str(
+            await _cfg.get("vlm_caption_prompt", DEFAULT_VLM_CAPTION_PROMPT)
+        )
         return build_parser(
             provider,
             llm=container.llm(),
             spec=spec,
             record_tenant_id=UUID(str(tenant_id)),
             trace_id=str(trace_id) if trace_id else "ingest",
+            prompt=caption_prompt,
         )
     except (AttributeError, ValueError, TypeError, KeyError) as exc:
         # Resolver / config / construction surfaces — degrade to OCR, never crash ingest.

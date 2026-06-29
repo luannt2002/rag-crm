@@ -56,6 +56,7 @@ from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoin
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 
+from ragbot.interfaces.http.middlewares.loadtest_bypass import is_loadtest_bypass
 from ragbot.shared.constants import (
     DEFAULT_SOURCE_RL_PER_MIN,
     DEFAULT_SOURCE_RL_WINDOW_S,
@@ -164,6 +165,11 @@ class SourceRateLimitMiddleware(BaseHTTPMiddleware):
         # 3. Tenant gate — pre-auth never reaches the source layer.
         tenant = _resolve_tenant(request)
         if tenant is None:
+            return await call_next(request)
+
+        # Localhost-only loadtest bypass — operator-issued token short-
+        # circuits the per-source cap without disabling auth or UA denylist.
+        if is_loadtest_bypass(request):
             return await call_next(request)
 
         # 4. DI gate — Redis client off the lifespan-bound container.
