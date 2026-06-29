@@ -46,7 +46,18 @@ def ask(jwt,q):
 
 def run_one(args):
     jwt,c=args; d=ask(jwt,c["q"])
-    return {**c,"bot_answer":d.get("answer") or "","chunks_used":d.get("chunks_used"),"top_score":d.get("top_score"),"error":d.get("error")}
+    # Log ĐỦ LUỒNG để agent đọc + chấm + debug (không chỉ câu trả lời):
+    return {**c,
+        "bot_answer": d.get("answer") or "",
+        "answer_type": d.get("answer_type"),
+        "chunks_used": d.get("chunks_used"),
+        "top_score": d.get("top_score"),
+        "sources": d.get("sources"),            # doc nào retrieve
+        "citations": d.get("citations"),        # chunk nào dùng
+        "debug": d.get("debug"),                # top_k, chunks_graded, scores, intent...
+        "tokens": d.get("tokens"),
+        "request_id": d.get("request_id"),      # → trace request_steps nếu cần debug sâu
+        "error": d.get("error")}
 
 def main():
     cases=parse_golden(); jwt=tok(); res=[None]*len(cases)
