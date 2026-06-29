@@ -156,6 +156,7 @@ class _StageStoreMixin:
         spec = await self._embedding_spec(
             record_bot_id=record_bot_id,
             record_tenant_id=record_tenant_id,
+            language=ctx.effective_language or None,
         )
         new_embeddings: dict[int, Any] = {}  # {chunk_index: embedding}
 

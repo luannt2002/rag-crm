@@ -24,6 +24,15 @@ DEFAULT_EMBEDDING_MODEL: Final[str] = "text-embedding-3-small"
 DEFAULT_JINA_EMBEDDING_MODEL: Final[str] = "jina_ai/jina-embeddings-v3"
 DEFAULT_EMBEDDING_TASK_QUERY: Final[str] = "retrieval.query"
 DEFAULT_EMBEDDING_TASK_PASSAGE: Final[str] = "retrieval.passage"
+# Multi-language embedding routing (F12). Maps a document language code to a
+# language-appropriate embedding model name, overriding the single resolved
+# model at ingest time. Empty default = no routing = single-model behaviour
+# (byte-identical). Operators populate the real map in
+# ``system_config.embedding_model_by_language`` (JSONB {lang_code: model_name}).
+# The mapped model MUST share the resolved spec's vector dimension — the
+# override swaps the model NAME only and keeps dimension/provider/task so the
+# chunk column stays consistent with the query path's vector space.
+DEFAULT_EMBEDDING_MODEL_BY_LANGUAGE: Final[dict[str, str]] = {}
 # Jina embeddings direct-HTTP adapter (OpenAI-shaped ``{data:[{embedding}]}``).
 # jina-embeddings-v3 = 1024-dim multilingual (Vietnamese in top-30 optimised
 # languages). Flip via ``system_config.embedding_provider="jina"``.

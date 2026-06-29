@@ -74,6 +74,7 @@ from ragbot.shared.constants import (
     DEFAULT_EMBED_INTER_BATCH_SLEEP_S,
     DEFAULT_EMBEDDING_COLUMN,
     DEFAULT_EMBEDDING_MAX_BATCH,
+    DEFAULT_EMBEDDING_MODEL_BY_LANGUAGE,
     DEFAULT_EMBEDDING_PASSAGE_PREFIX,
     DEFAULT_EMBEDDING_TASK_PASSAGE,
     DEFAULT_EMBEDDING_TEXT_STRATEGY,
@@ -322,6 +323,7 @@ class DocumentService(_IngestMixin):
         *,
         record_bot_id: uuid.UUID | None = None,
         record_tenant_id: uuid.UUID | None = None,
+        language: str | None = None,
     ) -> EmbeddingSpec:
         """Resolve EmbeddingSpec — per-bot binding > system_config > settings.
 
@@ -330,6 +332,12 @@ class DocumentService(_IngestMixin):
         per-bot ``bot_model_bindings`` row wins. Falls back to system_config
         on resolver failure (no binding, repo error) so bots without a
         binding row keep working.
+
+        ``language`` (F12): the document's effective language code. When the
+        operator configures ``system_config.embedding_model_by_language`` with
+        an entry for this language, the resolved model NAME is swapped to the
+        language-appropriate model (dimension/provider/task preserved). No map
+        / no entry / ``language is None`` leaves the spec byte-identical.
 
         @return: EmbeddingSpec carrying the embedding model details
         """
@@ -347,7 +355,7 @@ class DocumentService(_IngestMixin):
                 # default may carry a query-task spec.
                 if spec.task != DEFAULT_EMBEDDING_TASK_PASSAGE:
                     spec = spec.model_copy(update={"task": DEFAULT_EMBEDDING_TASK_PASSAGE})
-                return spec
+                return await self._apply_language_embedding_override(spec, language)
             except Exception as exc:  # noqa: BLE001 — resolver failure must fall back, not crash ingest
                 logger.warning(
                     "embedding_resolver_fallback_to_system_config",
@@ -367,7 +375,7 @@ class DocumentService(_IngestMixin):
             dimension = self._settings.embedding.dimension
             model_version = self._settings.embedding.model_version
 
-        return EmbeddingSpec(
+        spec = EmbeddingSpec(
             binding_id=uuid.uuid4(),
             model_name=model_name,
             provider="litellm",
@@ -376,6 +384,45 @@ class DocumentService(_IngestMixin):
             model_version=model_version,
             task=DEFAULT_EMBEDDING_TASK_PASSAGE,
         )
+        return await self._apply_language_embedding_override(spec, language)
+
+    async def _apply_language_embedding_override(
+        self,
+        spec: EmbeddingSpec,
+        language: str | None,
+    ) -> EmbeddingSpec:
+        """Swap the embedding model NAME for the doc language (F12).
+
+        Multi-language routing: a non-default-language document can resolve a
+        language-appropriate embedding model when the operator configures
+        ``system_config.embedding_model_by_language`` (JSONB {lang: model}).
+        The map is empty by default, so this method is a pure pass-through
+        (returns the identical spec object) on the single-model production
+        path — byte-identical to pre-F12 behaviour.
+
+        Only the model NAME is swapped; dimension/provider/task/model_version
+        are preserved so the chunk vector column stays aligned with the query
+        path's vector space. The operator owns mapping a dim-compatible model.
+        """
+        if not language or self._cfg is None:
+            return spec
+        lang_map = await self._cfg.get(
+            "embedding_model_by_language",
+            DEFAULT_EMBEDDING_MODEL_BY_LANGUAGE,
+        )
+        if not isinstance(lang_map, dict) or not lang_map:
+            return spec
+        mapped = lang_map.get(language)
+        if not mapped or not isinstance(mapped, str) or mapped == spec.model_name:
+            return spec
+        logger.info(
+            "embedding_model_language_override",
+            language=language,
+            from_model=spec.model_name,
+            to_model=mapped,
+            dimension=spec.dimension,
+        )
+        return spec.model_copy(update={"model_name": mapped})
 
     async def _embed_in_doc_batches(
         self,
