@@ -272,31 +272,61 @@ class ParsedEntity:
     aliases: str | None = None
 
 
-def _is_header_row(
-    cols: list[str], declared_labels: frozenset[str] | set[str] = frozenset()
-) -> bool:
-    """Heuristic: return True if this row looks like a column-label header.
+def _next_nonempty_is_separator(lines: list[str], idx: int) -> bool:
+    """True when the next non-empty line after ``idx`` is a separator (| --- |).
 
-    Rules:
-    1. At least one cell must exactly match a known header token (after accent
-       normalisation) OR a per-bot owner-declared column label (``declared_labels``,
-       already normalised). Exact-match avoids false positives like "Service A"
-       matching the "service" token; the declared set lets a FULLY-custom domain
-       (phone "Model/RAM/Pin", legal "Điều/Khoản") whose headers match no built-in
-       token still be recognised as a header so the owner's ``column_roles`` apply.
-    2. No cell may contain a parseable money value — real data rows have
-       prices; header rows have only column labels.
+    The structure-aware converter (``tabular_markdown``) emits a separator
+    directly UNDER every header it detects, so a row sitting above one IS the
+    header — trusted structurally, in any language/domain, with zero vocabulary.
+    This is the primary fix for the ``col_N`` CRUX (dual-oracle drift): the
+    extractor stops re-judging by a word-list and trusts the converter's signal.
+    """
+    for k in range(idx + 1, len(lines)):
+        if not lines[k].strip():
+            continue
+        return _is_separator_line(lines[k])
+    return False
+
+
+def _is_header_row(
+    cols: list[str],
+    declared_labels: frozenset[str] | set[str] = frozenset(),
+    *,
+    next_is_separator: bool = False,
+) -> bool:
+    """Return True if this row looks like a column-label header.
+
+    STRUCTURAL detection (THE ONE LAW — shape, not vocabulary):
+    1. No cell may contain a parseable value/money — a data row has values; a
+       header has only labels (value-contrast). [unchanged]
+    2. ``next_is_separator`` — a ≥2-cell row sitting directly above a ``| --- |``
+       separator IS the header, in ANY language / domain, with ZERO vocabulary.
+       A data row is never positioned above a separator, so this cannot
+       over-promote. This is the col_N fix for out-of-vocabulary headers in any
+       language (e.g. ``MARKS | CARGO DESCRIPTION``, Spanish ``Producto | Precio``).
+
+    Vocabulary (``_HEADER_EXACT_TOKENS``) and the per-bot ``declared_labels`` are
+    a positive HINT ONLY — they rescue a header that reaches the extractor with no
+    separator (e.g. hand-written markdown). They are NEVER the sole gate; lexical
+    gating was the col_N bug for every non-VN / non-VND header. The happy path
+    (known VN/EN vocab or owner-declared labels) stays byte-identical.
     """
     has_label_match = False
+    non_empty = 0
     for col in cols:
-        if not col:
+        if not col or not col.strip():
             continue
+        non_empty += 1
         if parse_money_vn(col) is not None:
-            # Data row (has a price cell) → not a header
+            # Data row (has a value/price cell) → not a header.
             return False
         normalised = _normalise(col.strip())
         if normalised in _HEADER_EXACT_TOKENS or normalised in declared_labels:
             has_label_match = True
+    # Structural floor: trust the converter's separator (zero-vocab, any language).
+    if next_is_separator and non_empty >= 2:  # noqa: PLR2004 — a header needs ≥2 label cells
+        return True
+    # Hint fallback: known vocab / owner-declared label (happy-path byte-identical).
     return has_label_match
 
 
@@ -892,7 +922,7 @@ def parse_table_chunks(
         stub_fill: str | None = None
         current_category: str | None = None
 
-        for line in lines:
+        for _li, line in enumerate(lines):
             stripped_line = line.strip()
             if not stripped_line:
                 continue
@@ -913,8 +943,12 @@ def parse_table_chunks(
             if not cols:
                 continue
 
-            # Detect header row (exact token / owner-declared label match, no prices)
-            if _is_header_row(cols, _declared_labels):
+            # Detect header row — STRUCTURAL (trust the | --- | separator the
+            # converter emits) with vocab/owner-declared labels as a fallback hint.
+            if _is_header_row(
+                cols, _declared_labels,
+                next_is_separator=_next_nonempty_is_separator(lines, _li),
+            ):
                 header = cols
                 roles = _column_roles(cols, custom_roles)
                 stub_fill = None  # new table → reset rowspan forward-fill
@@ -995,11 +1029,15 @@ def analyze_table_headers(
 
     for chunk in chunks:
         content: str = chunk.get("raw_chunk") or chunk.get("content", "") or ""
-        for line in content.splitlines():
+        _lines = content.splitlines()
+        for _li, line in enumerate(_lines):
             if _is_separator_line(line):
                 continue
             cols = _split_cols(line)
-            if not cols or not _is_header_row(cols, declared_labels):
+            if not cols or not _is_header_row(
+                cols, declared_labels,
+                next_is_separator=_next_nonempty_is_separator(_lines, _li),
+            ):
                 continue
             tables_seen += 1
             roles = _column_roles(cols, custom_roles)
