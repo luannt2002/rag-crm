@@ -37,6 +37,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from ragbot.infrastructure.db.engine import session_with_tenant
 from ragbot.shared.constants import (
     DEFAULT_STATS_INDEX_QUERY_LIMIT,
+    DEFAULT_STATS_NUMERIC_ATTRS_KEY,
     DEFAULT_STATS_REVERSE_MATCH_LIMIT,
     DEFAULT_STATS_REVERSE_MATCH_MIN_LEN,
     DEFAULT_STATS_REVERSE_MATCH_SHORT_FLOOR,
@@ -443,6 +444,98 @@ class StatsIndexRepository:
                 "price_primary": row[4],
                 "price_secondary": row[5],
                 "record_chunk_id": row[6],
+            }
+            for row in rows
+        ]
+
+    async def query_by_attribute_range(
+        self,
+        *,
+        record_bot_id: uuid.UUID,
+        label: str,
+        value_min: int | None,
+        value_max: int | None,
+        limit: int = DEFAULT_STATS_INDEX_QUERY_LIMIT,
+    ) -> list[dict]:
+        """SELECT entities by a LABELLED numeric attribute range — the attribute-
+        generic counterpart of ``query_by_price_range`` (F7).
+
+        The stats index is no longer price-centric: every numeric column is
+        persisted as a labelled numeric attribute under the reserved
+        ``DEFAULT_STATS_NUMERIC_ATTRS_KEY`` sub-map of ``attributes_json`` (a price,
+        a stock count, an area, a quantity). Price stays one DERIVED VIEW (the
+        dedicated columns are untouched); this method range-filters ANY of those
+        labelled numeric attributes — e.g. a stock-count range query filters
+        ``label="Tồn kho"`` regardless of currency/price.
+
+        Args:
+            record_bot_id: bot UUID — scopes the query (RLS + explicit).
+            label: the corpus header naming the numeric attribute (a sub-map key).
+                Blank → ``[]`` (no key to address), no DB call.
+            value_min: inclusive lower bound; None = no lower bound.
+            value_max: inclusive upper bound; None = no upper bound.
+            limit: max rows (capped at ``DEFAULT_STATS_INDEX_QUERY_LIMIT``).
+
+        The label is a BOUND param into the JSONB path (never interpolated), and the
+        extracted value is cast to NUMERIC so the range is numeric, not lexical. The
+        SELECT carries ``attributes_json`` so the synthetic-chunk renderer keeps
+        working. Live-doc JOIN + bot scope match every other read path — a deleted
+        catalog's rows never resurface. A bot with no matching labelled attribute
+        returns ``[]`` and the caller falls back to vector retrieve. Domain-neutral:
+        the label is the owner's corpus header, never a hardcoded field name.
+        """
+        attr_label = (label or "").strip()
+        if not attr_label:
+            return []
+        effective_limit = min(limit, DEFAULT_STATS_INDEX_QUERY_LIMIT)
+        params: dict[str, Any] = {
+            "bot_id": record_bot_id,
+            "attr_label": attr_label,
+            "limit": effective_limit,
+        }
+        # Numeric extract from the reserved sub-map, cast to NUMERIC for a real
+        # range compare. The sub-map key (the corpus header) is a bound param.
+        attr_expr = (
+            f"(dsi.attributes_json -> '{DEFAULT_STATS_NUMERIC_ATTRS_KEY}' "
+            "->> :attr_label)::numeric"
+        )
+        where_parts = [
+            "dsi.record_bot_id = :bot_id",
+            _DOC_LIVE_PREDICATE,
+            # Only rows that actually carry this labelled numeric attribute.
+            f"(dsi.attributes_json -> '{DEFAULT_STATS_NUMERIC_ATTRS_KEY}' "
+            "? :attr_label)",
+        ]
+        if value_min is not None:
+            where_parts.append(f"{attr_expr} >= :value_min")
+            params["value_min"] = value_min
+        if value_max is not None:
+            where_parts.append(f"{attr_expr} <= :value_max")
+            params["value_max"] = value_max
+        where_sql = " AND ".join(where_parts)
+        sql = (
+            "SELECT dsi.id, dsi.record_document_id, dsi.record_chunk_id, "
+            "dsi.entity_name, dsi.entity_category, dsi.price_primary, "
+            "dsi.price_secondary, dsi.attributes_json "
+            f"FROM document_service_index AS dsi {_DOC_LIVE_JOIN} "
+            f"WHERE {where_sql} "
+            f"ORDER BY {attr_expr} ASC NULLS LAST "
+            "LIMIT :limit"
+        )
+        async with self._sf() as session:
+            result = await session.execute(text(sql), params)
+            rows = result.fetchall()
+
+        return [
+            {
+                "id": row[0],
+                "record_document_id": row[1],
+                "record_chunk_id": row[2],
+                "entity_name": row[3],
+                "entity_category": row[4],
+                "price_primary": row[5],
+                "price_secondary": row[6],
+                "attributes_json": row[7],
             }
             for row in rows
         ]

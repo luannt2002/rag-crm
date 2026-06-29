@@ -33,6 +33,7 @@ from ragbot.shared.constants import (
     DEFAULT_STATS_ATTR_MAX_WORDS,
     DEFAULT_STATS_CLAUSE_OPENER_FIRST_BY_LANG,
     DEFAULT_STATS_DISCOURSE_OPENERS_BY_LANG,
+    DEFAULT_STATS_NUMERIC_ATTRS_KEY,
 )
 from ragbot.shared.number_format import parse_money_vn as _canonical_parse_money
 from ragbot.shared.tabular_markdown import _is_pure_money
@@ -567,6 +568,13 @@ def _extract_entity_from_row(
     price_secondary: int | None = None
     aliases: str | None = None
     attributes: dict[str, Any] = {}
+    # Attribute-generic numeric map: EVERY numeric column (a price, a stock count,
+    # an area, a quantity) is recorded here under its corpus header as an int, so a
+    # non-price numeric column is range-queryable as a labelled attribute. Price is
+    # one derived view of this map — the price_primary/secondary fields are kept
+    # unchanged for backward-compat. Written into attributes[NUMERIC_ATTRS_KEY] only
+    # when non-empty, so an unpriced row's attributes_json stays byte-identical.
+    numeric_attrs: dict[str, int] = {}
 
     name_idx = roles.get("name") if roles else None
     cat_idx = roles.get("category") if roles else None
@@ -622,6 +630,14 @@ def _extract_entity_from_row(
         if attr_cols is not None and idx in attr_cols:
             label = header[idx] if idx < len(header) else f"col_{idx}"
             attributes[label] = col
+            # Attribute-generic: an owner-declared ``attribute`` column that parses
+            # as a number (a stock/count/quantity the owner pinned OUT of the price
+            # role) is still a labelled NUMERIC attribute → record it so it can be
+            # range-queried by its header. The string value above is kept for
+            # display (render byte-identical); this only ADDS a numeric view.
+            _attr_num = parse_money_vn(col)
+            if _attr_num is not None:
+                numeric_attrs[label] = _attr_num
             continue
         if price_cols is not None and idx in price_cols:
             # KNOWN price column → parse even with extra words ("500k/buổi").
@@ -653,6 +669,12 @@ def _extract_entity_from_row(
             _hdr = header[idx].strip() if idx < len(header) and header[idx] else ""
             if _hdr and parse_money_vn(_hdr) is None:
                 attributes.setdefault(_hdr, money)
+                # Attribute-generic: the price IS one numeric attribute among many.
+                # Record it under its corpus header so price and any non-price
+                # numeric column live in the SAME labelled-numeric map — price is a
+                # derived view, no longer a privileged single domain. ``setdefault``
+                # keeps the first value for a repeated header.
+                numeric_attrs.setdefault(_hdr, money)
             continue
 
         # Non-money cell. The name comes from the NAME column (role-aware) or the
@@ -759,6 +781,13 @@ def _extract_entity_from_row(
     # which surfaced empty-named price rows as noise.
     if name is None:
         return None
+
+    # Commit the attribute-generic numeric map under its reserved key — only when
+    # non-empty, so a row with no labelled numeric column keeps a byte-identical
+    # attributes_json (the VN/default happy path that already surfaces price under
+    # its header is unaffected: the map is internal and the renderer skips it).
+    if numeric_attrs:
+        attributes[DEFAULT_STATS_NUMERIC_ATTRS_KEY] = numeric_attrs
 
     return ParsedEntity(
         name=name or "",

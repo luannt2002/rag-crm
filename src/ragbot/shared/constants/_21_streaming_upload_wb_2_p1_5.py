@@ -51,6 +51,16 @@ DEFAULT_STATS_ATTRS_MATCH_MIN_LEN: Final[int] = 5
 # Threshold below which a numeric token is ignored by the price extractor
 # (avoids treating article numbers like "Điều 12" → 12 as prices).
 DEFAULT_STATS_PRICE_MIN_DIGITS: Final[int] = 4
+# Reserved sub-key inside attributes_json holding the ATTRIBUTE-GENERIC numeric map:
+# every numeric column (a price, a stock count, an area, a quantity) is persisted as
+# a labelled numeric attribute {column_header: int_value} here, so the stats index is
+# not coupled to a single price domain — price is one DERIVED VIEW of this map, and a
+# non-price numeric column becomes range-queryable by its own corpus header. The
+# underscore prefix marks it INTERNAL (like chunk_index): the synthetic-chunk renderer
+# skips it (the individual values are already surfaced under their own header), so the
+# rendered context — and the LLM answer — stays byte-identical. Domain-neutral: the
+# labels are the corpus headers, never a hardcoded field name.
+DEFAULT_STATS_NUMERIC_ATTRS_KEY: Final[str] = "_numeric_attrs"
 # Price bucket boundaries (VND) used by aggregate_summary.
 # Bucket keys are generated from these thresholds at call-time so names
 # stay in sync with values. Override at runtime via system_config.

@@ -2263,7 +2263,10 @@ def build_graph(
                 _attrs = _e.get("attributes_json")
                 if isinstance(_attrs, dict):
                     for _k, _v in _attrs.items():
-                        if _k in ("chunk_index", "question", "variants"):
+                        if _k in (
+                            "chunk_index", "question", "variants",
+                            DEFAULT_STATS_NUMERIC_ATTRS_KEY,
+                        ):
                             continue
                         _vs = str(_v).strip()
                         if _is_field_like(_vs):
