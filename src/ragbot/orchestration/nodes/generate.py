@@ -93,6 +93,18 @@ except ImportError:
 _PRICE_CELL_RE = re.compile(r"^[\d.,]{4,}$")
 
 
+def _is_empty_answer(answer: str | None) -> bool:
+    """True when a success-path answer is blank (OBS-1 silent-failure signal).
+
+    The LLM completed (status=success) yet returned no usable content —
+    ``None``, empty, or whitespace-only. Pure decision function so the
+    observability branch in the node can be unit-tested without graph DI.
+    Detection ONLY — never used to author or substitute answer text
+    (sacred-rule #10).
+    """
+    return not (answer or "").strip()
+
+
 def _resolve_verbatim_fence(
     chunk: dict,
     chunk_meta: dict,
@@ -926,6 +938,26 @@ async def generate(
                 sla_ms=_generate_sla_ms,
                 completion_tokens=int(completion_tokens),
                 max_tokens_cap=int(_intent_max_tokens),
+            )
+
+        # OBS-1 — an EMPTY answer on the success path is a SILENT failure:
+        # the LLM completed (status=success) yet produced no content, so
+        # nothing distinguishes it from a real answer in the success metrics.
+        # Observability-only: emit a WARN + flag state for downstream
+        # status/telemetry. We NEVER substitute or author replacement text
+        # here (sacred-rule #10 — the application does not override the LLM
+        # answer); the empty answer is returned verbatim. ``chunks_used``
+        # separates a retrieval miss (0 chunks) from a generation failure
+        # (chunks present but answer empty).
+        if _is_empty_answer(answer):
+            state["_generate_empty_answer"] = True
+            logger.warning(
+                "generate_empty_answer",
+                request_id=str(state.get("request_id") or ""),
+                record_bot_id=str(state.get("record_bot_id") or ""),
+                intent=state.get("intent") or "",
+                completion_tokens=int(completion_tokens),
+                chunks_used=len(graded),
             )
 
         # Wave H Phase 1 — TTFT lands in ``request_steps.metadata_json``
