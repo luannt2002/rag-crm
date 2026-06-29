@@ -85,6 +85,7 @@ from ragbot.shared.constants import (
     DEFAULT_EMBEDDING_COLUMN,
     DEFAULT_EMBEDDING_DIM,
     DEFAULT_EMBEDDING_FALLBACK_VERSION,
+    DEFAULT_EMBEDDING_PROVIDER,
     DEFAULT_EMBEDDING_TASK_QUERY,
     DEFAULT_ENTITY_GROUNDING_ENABLED,
     DEFAULT_ENTITY_GROUNDING_MAX_ENTITIES,
@@ -894,6 +895,7 @@ async def retrieve(
             # Set embedding_column unconditionally so downstream readers
             # never see None (same guard as _prewarm_embedding_cache).
             st["embedding_column"] = DEFAULT_EMBEDDING_COLUMN
+            emb_provider = str(_pcfg(st, "embedding_provider", DEFAULT_EMBEDDING_PROVIDER) or DEFAULT_EMBEDDING_PROVIDER)
             emb_model = str(_pcfg(st, "embedding_model", "") or "") or "unknown"
             emb_dim = int(_pcfg(st, "embedding_dimension", DEFAULT_EMBEDDING_DIM) or DEFAULT_EMBEDDING_DIM)
             # Prefer single batch HTTP round-trip when the port supports it.
@@ -931,6 +933,7 @@ async def retrieve(
                                 if emb:
                                     await set_cached_embedding(
                                         redis_client, prefixed_q, emb,
+                                        provider=emb_provider,
                                         model=emb_model,
                                         dim=emb_dim or len(emb),
                                     )

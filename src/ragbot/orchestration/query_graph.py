@@ -248,6 +248,7 @@ from ragbot.shared.constants import (
     DEFAULT_EMBEDDING_COLUMN,
     DEFAULT_EMBEDDING_DIM,
     DEFAULT_EMBEDDING_FALLBACK_VERSION,
+    DEFAULT_EMBEDDING_PROVIDER,
     DEFAULT_EMBEDDING_TASK_QUERY,
     DEFAULT_ENTITY_GROUNDING_ENABLED,
     DEFAULT_ENTITY_GROUNDING_MAX_ENTITIES,
@@ -1254,11 +1255,12 @@ def build_graph(
         # Mirror _embed_query's prefix logic so cache keys collide on hit.
         query_prefix = str(_pcfg(state, "embedding_query_prefix", "") or "").strip('"')
         prefixed = [f"{query_prefix}{q}" if query_prefix else q for q in queries]
+        emb_provider = str(_pcfg(state, "embedding_provider", DEFAULT_EMBEDDING_PROVIDER) or DEFAULT_EMBEDDING_PROVIDER)
         emb_model = str(_pcfg(state, "embedding_model", "") or "") or "unknown"
         emb_dim = int(_pcfg(state, "embedding_dimension", DEFAULT_EMBEDDING_DIM) or DEFAULT_EMBEDDING_DIM)
         cold: list[tuple[int, str]] = []
         for idx, qp in enumerate(prefixed):
-            cached = await get_cached_embedding(redis_client, qp, model=emb_model, dim=emb_dim)
+            cached = await get_cached_embedding(redis_client, qp, provider=emb_provider, model=emb_model, dim=emb_dim)
             if not cached:
                 cold.append((idx, qp))
         if not cold:
@@ -1295,7 +1297,7 @@ def build_graph(
         for (idx, qp), emb in zip(cold, results):
             if emb:
                 await set_cached_embedding(
-                    redis_client, qp, emb, model=emb_model, dim=emb_dim or len(emb),
+                    redis_client, qp, emb, provider=emb_provider, model=emb_model, dim=emb_dim or len(emb),
                 )
 
     async def _embed_query(query_text: str, state: GraphState) -> list[float]:
@@ -1348,9 +1350,10 @@ def build_graph(
         if query_prefix:
             query_text = f"{query_prefix}{query_text}"
 
+        emb_provider = str(_pcfg(state, "embedding_provider", DEFAULT_EMBEDDING_PROVIDER) or DEFAULT_EMBEDDING_PROVIDER)
         emb_model = str(_pcfg(state, "embedding_model", "") or "") or "unknown"
         emb_dim = int(_pcfg(state, "embedding_dimension", DEFAULT_EMBEDDING_DIM) or DEFAULT_EMBEDDING_DIM)
-        cached = await get_cached_embedding(redis_client, query_text, model=emb_model, dim=emb_dim)
+        cached = await get_cached_embedding(redis_client, query_text, provider=emb_provider, model=emb_model, dim=emb_dim)
         if cached:
             logger.debug("embedding_cache_hit", query=query_text[:80])
             return cached
@@ -1388,7 +1391,7 @@ def build_graph(
                         record_tenant_id=state.get("record_tenant_id"),
                     )
                     if result:
-                        await set_cached_embedding(redis_client, query_text, result, model=emb_model, dim=emb_dim or len(result))
+                        await set_cached_embedding(redis_client, query_text, result, provider=emb_provider, model=emb_model, dim=emb_dim or len(result))
                     return result
                 if hasattr(embedder, "embed_batch"):
                     sig = inspect.signature(embedder.embed_batch)
@@ -1397,13 +1400,13 @@ def build_graph(
                         batch_result = await embedder.embed_batch([query_text])
                         result = batch_result[0] if batch_result else []
                         if result:
-                            await set_cached_embedding(redis_client, query_text, result, model=emb_model, dim=emb_dim or len(result))
+                            await set_cached_embedding(redis_client, query_text, result, provider=emb_provider, model=emb_model, dim=emb_dim or len(result))
                         return result
             if hasattr(embedder, "embed"):
                 batch_result = await embedder.embed([query_text])
                 result = batch_result[0] if batch_result else []
                 if result:
-                    await set_cached_embedding(redis_client, query_text, result, model=emb_model, dim=emb_dim or len(result))
+                    await set_cached_embedding(redis_client, query_text, result, provider=emb_provider, model=emb_model, dim=emb_dim or len(result))
                 return result
         except (TimeoutError, EmbeddingError, OSError, RuntimeError, ValueError, AttributeError) as _emb_exc:
             # Embed FAILED (≠ "no vector by design"): fail LOUD — flag the turn

@@ -56,8 +56,8 @@ def test_cache_key_sanitizes_model_separator() -> None:
     safe = _cache_key("text", model="provider:model name", dim=512)
     # The model segment must not contain a stray colon between sub-parts.
     body = safe[len("ragbot:emb:") :]
-    # Format: "<model>:<dim>:<hash>" — exactly two ":" separators.
-    assert body.count(":") == 2
+    # Format: "<provider>:<model>:<dim>:<hash>" — exactly three ":" separators.
+    assert body.count(":") == 3
 
 
 async def test_get_set_round_trip_returns_same_vector() -> None:
