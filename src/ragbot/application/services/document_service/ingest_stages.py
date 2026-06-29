@@ -168,6 +168,10 @@ class _IngestCtx:
     pc_hierarchy: list[dict] = field(default_factory=list)
     chunking_strategy: str = "recursive"
     chunking_confidence: float = 1.0
+    # Reconciled strategy actually used after all U4 overrides
+    # (whole_document / parent_child win over the auto-selected name).
+    # This is the value surfaced to IngestResult + the DocumentIngested event.
+    strategy_used: str = "recursive"
     is_whole_document: bool = False
     topic_signals: int = 0
     orphans_merged_count: int = 0
@@ -865,6 +869,9 @@ class _StageChunkMixin:
         ctx.parent_child_enabled = parent_child_enabled
         ctx.pc_hierarchy = pc_hierarchy
         ctx.chunking_strategy = _chunking_strategy
+        # Surface the reconciled strategy (post whole_document / parent_child
+        # override) as record-of-truth for IngestResult + DocumentIngested.
+        ctx.strategy_used = _u4_strategy_used
         ctx.chunking_confidence = _chunking_confidence
         ctx.is_whole_document = is_whole_document
         ctx.topic_signals = topic_signals

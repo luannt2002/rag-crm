@@ -26,6 +26,12 @@ DEFAULT_TABLE_CSV_MAX_CHUNK_CHARS: Final[int] = 1500
 # ``plan_limits.chunking_config.table_strategy`` or globally via
 # ``system_config.chunking_policy`` after re-ingest validation.
 DEFAULT_TABLE_STRATEGY: Final[str] = "table_csv"
+# Baseline strategy name recorded on the DocumentIngested event when the
+# ingest pipeline has not yet resolved a more specific one (and the safe
+# low-confidence fallback inside ``select_strategy``). Matches the
+# ``_IngestCtx.chunking_strategy`` field default — single source of truth
+# for "unknown/baseline strategy" so no caller inlines the literal.
+DEFAULT_INGEST_STRATEGY_NAME: Final[str] = "recursive"
 # Allowed table strategies — used by the policy resolver to reject typos.
 ALLOWED_TABLE_STRATEGIES: Final[frozenset[str]] = frozenset({
     "table_csv", "table_dual_index",

@@ -71,7 +71,36 @@ DocumentState = Literal[
     "INVALIDATED",
 ]
 
-ChunkingStrategyName = Literal["HDT", "SEMANTIC", "PROPOSITION", "HYBRID"]
+# Record-of-truth for the strategy a document was ACTUALLY chunked with.
+# Two vocabularies coexist by design:
+#   - AdapChunk taxonomy (uppercase): HDT / SEMANTIC / PROPOSITION / HYBRID —
+#     the block-pipeline emit names carried onto every Chunk.
+#   - Runtime selector names (lowercase): what ``select_strategy`` /
+#     ``apply_cross_check`` and the special ingest branches actually pick
+#     (recursive/semantic/hdt/hybrid/proposition + whole_document /
+#     parent_child / parser_preserve / table_csv / table_dual_index).
+# The ingest pipeline surfaces the runtime name verbatim so the
+# ``DocumentIngested`` event is a faithful record-of-truth rather than a
+# lossy bucket. This alias is a static type-hint only (no runtime
+# validation, no DB CHECK constraint), so widening it is backward-compatible.
+ChunkingStrategyName = Literal[
+    # AdapChunk block-pipeline taxonomy
+    "HDT",
+    "SEMANTIC",
+    "PROPOSITION",
+    "HYBRID",
+    # runtime selector / special-branch names
+    "recursive",
+    "semantic",
+    "hdt",
+    "hybrid",
+    "proposition",
+    "whole_document",
+    "parent_child",
+    "parser_preserve",
+    "table_csv",
+    "table_dual_index",
+]
 
 BlockType = Literal["HEADING", "TEXT", "TABLE", "FORMULA", "IMAGE", "CODE", "LIST"]
 

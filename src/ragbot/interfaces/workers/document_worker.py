@@ -620,7 +620,10 @@ async def _handle_document_uploaded_inner(payload: dict[str, Any], container: Co
                     document_id=document_id,
                     tool_name=tool_name,
                     chunk_count=result.chunks,
-                    strategy_used="SEMANTIC",
+                    # Record-of-truth: the strategy the document was actually
+                    # chunked with, surfaced from the ingest pipeline rather
+                    # than a hardcoded literal.
+                    strategy_used=result.strategy_used,
                     corpus_version=corpus_version,
                     embedding_model_version=EmbeddingModelVersion(
                         settings.embedding.model_version,

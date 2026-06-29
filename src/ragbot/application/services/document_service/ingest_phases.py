@@ -39,6 +39,7 @@ from ragbot.shared.chunking_policy import resolve_chunking_policy
 from ragbot.shared.markdown_normalizer import normalize_to_markdown
 from ragbot.shared.constants import (
     ALLOWED_EMBEDDING_COLUMNS,
+    DEFAULT_INGEST_STRATEGY_NAME,
     DEFAULT_MARKDOWN_NORMALIZE_ENABLED,
     DEFAULT_TABLE_STRATEGY,
     DEFAULT_ADAPCHUNK_BLOCK_PIPELINE_ENABLED,
@@ -275,6 +276,11 @@ class IngestResult:
     chunks_new: int = 0
     chunks_unchanged: int = 0
     chunks_deleted: int = 0
+    # Record-of-truth: the strategy this document was ACTUALLY chunked with
+    # (e.g. ``hdt`` / ``whole_document`` / ``parser_preserve``), surfaced from
+    # the U4 chunk stage so the DocumentIngested event stops hardcoding a
+    # literal. Default = baseline name from constants (no inline literal).
+    strategy_used: str = DEFAULT_INGEST_STRATEGY_NAME
 
 
 async def _update_doc_progress(

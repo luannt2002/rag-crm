@@ -604,4 +604,5 @@ class _StageFinalizeMixin:
             chunks_new=len(chunks_to_embed),
             chunks_unchanged=len(unchanged_indices),
             chunks_deleted=len(stale_indices),
+            strategy_used=ctx.strategy_used,
         )
