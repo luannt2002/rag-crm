@@ -28,9 +28,9 @@ from ragbot.shared.constants import (
 
 
 def test_apply_modality_boost_table_intent_table_chunk():
-    """``table_lookup`` × ``table`` → multiplier from constant."""
+    """``table_lookup`` × ``table`` → multiplier from constant (gate ON)."""
     chunk = {"chunk_id": "c1", "score": 0.5, "chunk_type": "table"}
-    new = apply_modality_boost(chunk, "table_lookup")
+    new = apply_modality_boost(chunk, "table_lookup", enabled=True)
     assert new == 0.5 * DEFAULT_MODALITY_BOOST_TABLE_LOOKUP
 
 
@@ -38,14 +38,14 @@ def test_apply_modality_boost_table_intent_text_chunk_identity():
     """``table_lookup`` × ``text`` is NOT in the boost map → identity
     multiplier so plain prose isn't artificially penalised."""
     chunk = {"chunk_id": "c1", "score": 0.5, "chunk_type": "text"}
-    new = apply_modality_boost(chunk, "table_lookup")
+    new = apply_modality_boost(chunk, "table_lookup", enabled=True)
     assert new == 0.5 * DEFAULT_MODALITY_BOOST_IDENTITY
 
 
 def test_apply_modality_boost_code_intent_code_chunk():
     """``code_lookup`` × ``code`` → code multiplier (stronger than table)."""
     chunk = {"chunk_id": "c1", "score": 0.4, "chunk_type": "code"}
-    new = apply_modality_boost(chunk, "code_lookup")
+    new = apply_modality_boost(chunk, "code_lookup", enabled=True)
     assert new == 0.4 * DEFAULT_MODALITY_BOOST_CODE_LOOKUP
 
 
@@ -53,14 +53,14 @@ def test_apply_modality_boost_unknown_intent_identity():
     """Unknown intent → identity multiplier so the helper degrades
     gracefully when the router emits a label outside the boost map."""
     chunk = {"chunk_id": "c1", "score": 0.6, "chunk_type": "table"}
-    new = apply_modality_boost(chunk, "weather_query")
+    new = apply_modality_boost(chunk, "weather_query", enabled=True)
     assert new == 0.6 * DEFAULT_MODALITY_BOOST_IDENTITY
 
 
 def test_apply_modality_boost_empty_intent_identity():
     """Empty intent (router pass-through) returns identity."""
     chunk = {"chunk_id": "c1", "score": 0.3, "chunk_type": "table"}
-    new = apply_modality_boost(chunk, "")
+    new = apply_modality_boost(chunk, "", enabled=True)
     assert new == 0.3
 
 
@@ -68,7 +68,7 @@ def test_apply_modality_boost_missing_score_zero():
     """Chunks with missing/None score collapse to 0.0 — boost stays
     harmless (any-multiplier × 0 = 0)."""
     chunk = {"chunk_id": "c1", "chunk_type": "table"}
-    new = apply_modality_boost(chunk, "table_lookup")
+    new = apply_modality_boost(chunk, "table_lookup", enabled=True)
     assert new == 0.0
 
 
@@ -77,21 +77,23 @@ def test_apply_modality_boost_with_overrides():
     leave unmatched entries on the default."""
     chunk = {"chunk_id": "c1", "score": 1.0, "chunk_type": "table"}
     overrides = {"table_lookup:table": 1.5}
-    new = apply_modality_boost(chunk, "table_lookup", boost_overrides=overrides)
+    new = apply_modality_boost(
+        chunk, "table_lookup", enabled=True, boost_overrides=overrides
+    )
     assert new == 1.5
 
 
 def test_apply_modality_boost_block_dataclass():
     """Helper works with Block dataclass (M11) — same call pattern."""
     b = Block(chunk_id="c1", content="x", type="table", metadata={"score": 0.5})
-    new = apply_modality_boost(b, "table_lookup")
+    new = apply_modality_boost(b, "table_lookup", enabled=True)
     assert new == 0.5 * DEFAULT_MODALITY_BOOST_TABLE_LOOKUP
 
 
 def test_apply_modality_boost_string_score_collapses():
     """Defensive: non-numeric score → 0.0 (never raises)."""
     chunk = {"chunk_id": "c1", "score": "not_a_number", "chunk_type": "table"}
-    new = apply_modality_boost(chunk, "table_lookup")
+    new = apply_modality_boost(chunk, "table_lookup", enabled=True)
     assert new == 0.0
 
 
@@ -99,21 +101,21 @@ def test_apply_modality_boost_list_lookup_table():
     """``list_lookup`` × ``table`` → same multiplier as table_lookup
     (both signals are "table-shaped answer wanted")."""
     chunk = {"chunk_id": "c1", "score": 0.5, "chunk_type": "table"}
-    new = apply_modality_boost(chunk, "list_lookup")
+    new = apply_modality_boost(chunk, "list_lookup", enabled=True)
     assert new == 0.5 * DEFAULT_MODALITY_BOOST_TABLE_LOOKUP
 
 
 def test_apply_modality_boost_how_to_code():
     """``how_to`` × ``code`` → code multiplier (tutorial-shaped intent)."""
     chunk = {"chunk_id": "c1", "score": 0.5, "chunk_type": "code"}
-    new = apply_modality_boost(chunk, "how_to")
+    new = apply_modality_boost(chunk, "how_to", enabled=True)
     assert new == 0.5 * DEFAULT_MODALITY_BOOST_CODE_LOOKUP
 
 
 def test_apply_modality_boost_table_row_alias():
     """``table_row`` chunk_type (Excel/CSV granular) gets table boost."""
     chunk = {"chunk_id": "c1", "score": 0.5, "chunk_type": "table_row"}
-    new = apply_modality_boost(chunk, "table_lookup")
+    new = apply_modality_boost(chunk, "table_lookup", enabled=True)
     assert new == 0.5 * DEFAULT_MODALITY_BOOST_TABLE_LOOKUP
 
 
@@ -121,7 +123,7 @@ def test_apply_modality_boost_chunk_type_fallback_to_type():
     """Legacy chunk dicts use ``type`` instead of ``chunk_type`` — fall
     back so retrieval-stage dicts still get boosted correctly."""
     chunk = {"chunk_id": "c1", "score": 0.5, "type": "table"}
-    new = apply_modality_boost(chunk, "table_lookup")
+    new = apply_modality_boost(chunk, "table_lookup", enabled=True)
     assert new == 0.5 * DEFAULT_MODALITY_BOOST_TABLE_LOOKUP
 
 
@@ -132,7 +134,7 @@ def test_boost_chunks_mutates_dict_scores():
         {"chunk_id": "c1", "score": 0.5, "chunk_type": "table"},
         {"chunk_id": "c2", "score": 0.5, "chunk_type": "text"},
     ]
-    out = boost_chunks(chunks, "table_lookup")
+    out = boost_chunks(chunks, "table_lookup", enabled=True)
     # Same list reference returned for fluent chaining.
     assert out is chunks
     # Table chunk boosted, text chunk unchanged.
@@ -146,11 +148,11 @@ def test_boost_chunks_preserves_order():
         {"chunk_id": f"c{i}", "score": 0.5, "chunk_type": "text"}
         for i in range(5)
     ]
-    out = boost_chunks(chunks, "table_lookup")
+    out = boost_chunks(chunks, "table_lookup", enabled=True)
     assert [c["chunk_id"] for c in out] == ["c0", "c1", "c2", "c3", "c4"]
 
 
 def test_boost_chunks_empty_list():
     """Empty input → empty output (no raises)."""
-    out = boost_chunks([], "table_lookup")
+    out = boost_chunks([], "table_lookup", enabled=True)
     assert out == []

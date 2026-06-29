@@ -24,14 +24,24 @@ fabricates a chunk — it can only re-order existing candidates.
 When does it run?
 -----------------
 Per-bot opt-in via ``bots.plan_limits.modality_rerank_enabled``. Default
-OFF. When enabled, the rerank node (or any caller of this helper)
-applies the boost map after the reranker returns and before MMR dedup.
+OFF. The gate is enforced HERE: both public helpers take an ``enabled``
+flag (default ``False``). When ``enabled`` is False the helpers are a
+no-op — :func:`apply_modality_boost` returns the chunk's raw score with
+no multiplier and :func:`boost_chunks` returns the input list untouched
+(byte-identical: no score is re-assigned, so a ``None`` / non-numeric /
+missing score is NOT coerced). The caller resolves the flag via
+``resolve_bot_limit(bot_cfg, "modality_rerank_enabled", ...)`` and passes
+it in, so the boost map below is only ever consulted behind the opt-in.
 
 The boost map shape
 -------------------
 Keys are ``"{intent}:{chunk_type}"`` strings; values are float
 multipliers. Identity (``1.0``) is returned for any pair not in the map.
-Bot owners can extend the map via ``plan_limits.modality_boost_overrides``
+The map is config-sourced: the caller passes ``boost_map=`` (resolved
+from ``system_config`` / per-bot config); when omitted it falls back to
+the in-module seed :data:`_DEFAULT_BOOST_MAP` — that English-intent seed
+is ONLY reachable when ``enabled`` is True. Bot owners extend or replace
+individual entries via ``plan_limits.modality_boost_overrides``
 (dict[str, float]).
 """
 
@@ -46,9 +56,13 @@ from ragbot.shared.constants import (
 )
 
 
-# Default boost map. Conservative — only the strongest intent ↔ type
-# correlations earn a non-identity multiplier. Mirrors RAG-Anything's
-# preset table for the same intent labels.
+# Seed boost map — ONLY consulted when the per-bot ``enabled`` gate is
+# True AND the caller did not pass an explicit ``boost_map``. The intent
+# labels here are an English-vocab seed; the caller is expected to source
+# the map from config so non-English deployments are not locked to it.
+# Conservative — only the strongest intent ↔ type correlations earn a
+# non-identity multiplier. Mirrors RAG-Anything's preset table for the
+# same intent labels.
 #
 # Rationale per row:
 #   table_lookup     → table       : tables are the canonical answer
@@ -78,9 +92,11 @@ def apply_modality_boost(
     chunk: Any,
     query_intent: str,
     *,
+    enabled: bool = False,
+    boost_map: dict[str, float] | None = None,
     boost_overrides: dict[str, float] | None = None,
 ) -> float:
-    """Return the boosted score for a single chunk.
+    """Return the (optionally boosted) score for a single chunk.
 
     Args:
         chunk: A chunk-shaped object — either a legacy ``dict`` (with
@@ -90,9 +106,17 @@ def apply_modality_boost(
         query_intent: The router's classified intent label
             (``"factoid"`` / ``"table_lookup"`` / ``"code_lookup"`` /
             ...). When empty or unknown the identity multiplier wins.
+        enabled: Per-bot opt-in gate (default ``False``). When False the
+            helper is a no-op — the chunk's raw score is returned with no
+            multiplier and the boost map is never consulted (byte-identical
+            default path). The caller resolves this from
+            ``plan_limits.modality_rerank_enabled``.
+        boost_map: Config-sourced ``"{intent}:{chunk_type}" -> multiplier``
+            map. When ``None`` falls back to the in-module English seed
+            :data:`_DEFAULT_BOOST_MAP`. Only consulted when ``enabled``.
         boost_overrides: Optional bot-owner override map. Keys must
             follow the ``"{intent}:{chunk_type}"`` shape. Merged on top
-            of :data:`_DEFAULT_BOOST_MAP` so partial overrides are
+            of the (config or seed) boost map so partial overrides are
             permitted.
 
     Returns:
@@ -109,6 +133,11 @@ def apply_modality_boost(
         * Missing or non-numeric ``score`` collapses to ``0.0``, so a
           boost of N×0 stays 0 — harmless.
     """
+    if not enabled:
+        # Gate OFF (default) — no re-weighting, byte-identical to the
+        # reranker output. The boost map is not consulted.
+        return _read_score(chunk)
+
     if not query_intent:
         # Identity path — no intent signal, no re-weighting.
         return _read_score(chunk) * DEFAULT_MODALITY_BOOST_IDENTITY
@@ -116,10 +145,11 @@ def apply_modality_boost(
     chunk_type = _read_chunk_type(chunk)
     key = f"{query_intent}:{chunk_type}"
 
-    # Merge default map with overrides — overrides win on collision.
-    multiplier: float = _DEFAULT_BOOST_MAP.get(
-        key, DEFAULT_MODALITY_BOOST_IDENTITY
-    )
+    # Config-sourced map wins; fall back to the in-module English seed.
+    active_map = boost_map if boost_map is not None else _DEFAULT_BOOST_MAP
+
+    # Merge active map with overrides — overrides win on collision.
+    multiplier: float = active_map.get(key, DEFAULT_MODALITY_BOOST_IDENTITY)
     if boost_overrides:
         multiplier = float(boost_overrides.get(key, multiplier))
 
@@ -131,9 +161,17 @@ def boost_chunks(
     chunks: list[Any],
     query_intent: str,
     *,
+    enabled: bool = False,
+    boost_map: dict[str, float] | None = None,
     boost_overrides: dict[str, float] | None = None,
 ) -> list[Any]:
     """Apply :func:`apply_modality_boost` to each chunk's ``score``.
+
+    When ``enabled`` is False (default) this is a no-op: the input list is
+    returned UNTOUCHED — no score is re-assigned, so chunk dicts / Blocks
+    are byte-identical to the reranker output. Only when ``enabled`` is
+    True does it write boosted scores back.
+
 
     Mutates a shallow copy — the input list is left intact so callers
     can safely keep a pre-boost reference for audit / telemetry. Each
@@ -150,9 +188,16 @@ def boost_chunks(
         The same list reference, with ``score`` updated in place where
         possible. Returned for fluent-chaining convenience.
     """
+    if not enabled:
+        # Gate OFF (default) — leave every chunk byte-identical.
+        return chunks
     for chunk in chunks:
         new_score = apply_modality_boost(
-            chunk, query_intent, boost_overrides=boost_overrides
+            chunk,
+            query_intent,
+            enabled=True,
+            boost_map=boost_map,
+            boost_overrides=boost_overrides,
         )
         _write_score(chunk, new_score)
     return chunks
