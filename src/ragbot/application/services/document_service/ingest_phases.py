@@ -223,7 +223,7 @@ async def _phase_d_step(
             return
         try:
             yield ctx
-        except BaseException as _body_exc:
+        except BaseException as _body_exc:  # noqa: BLE001 — async-CM body arm MUST route any base-class exception (incl. CancelledError/KeyboardInterrupt) through cm.__aexit__ then re-raise via _body_propagate; narrowing to Exception would drop BaseException propagation and break the documented re-raise contract
             # Propagate caller-raised exception into tracker.__aexit__
             # so it records the failure, but swallow any commit-side
             # error from the tracker itself.
