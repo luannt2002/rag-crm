@@ -967,6 +967,14 @@ class DocumentService(_IngestMixin):
             await session.execute(
                 text("DELETE FROM document_chunks WHERE record_document_id = :id"), {"id": doc_uuid},
             )
+            # ING-7: physically purge the pre-extracted stats-index entities for
+            # this doc. The serving queries already filter ``deleted_at IS NULL``
+            # (defence-in-depth), but reclaiming the rows here keeps the
+            # price/list/keyword routes from accumulating dead entities.
+            await session.execute(
+                text("DELETE FROM document_service_index WHERE record_document_id = :id"),
+                {"id": doc_uuid},
+            )
             await session.execute(
                 text("UPDATE documents SET deleted_at = now() WHERE id = :id"), {"id": doc_uuid},
             )
