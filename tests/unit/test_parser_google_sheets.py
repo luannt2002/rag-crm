@@ -31,11 +31,11 @@ def test_provider_name_stable() -> None:
 
 @pytest.mark.asyncio
 async def test_parse_csv_bytes_emits_structured_markdown() -> None:
-    """The sheet is converted to ONE structured-markdown document (AdapChunk L1).
+    """The sheet is converted to ATOMIC row-as-chunks (B2 AdapChunk L1).
 
-    A multi-table sheet keeps each sub-table under its own SECTION TITLE so the
-    downstream chunker/extractor can bind rows to their service. Here a single
-    table (header + 3 data rows) → one markdown table preserving every value.
+    A multi-table sheet keeps each sub-table under its own SECTION TITLE; each
+    DATA ROW becomes its own chunk carrying that section + the column header
+    (so a value binds to the right row/column, no cross-row packing).
     """
     csv_bytes = (
         b"Bang gia triet long\n"
@@ -47,15 +47,18 @@ async def test_parse_csv_bytes_emits_structured_markdown() -> None:
     parser = GoogleSheetsParser()
     chunks = await parser.parse(csv_bytes, file_name="bang_gia.csv")
 
-    assert isinstance(chunks, list) and len(chunks) == 1, "one structured-markdown doc"
-    md = chunks[0]["content"]
+    # Row-as-chunk: 3 data rows → ≥3 atomic chunks.
+    assert isinstance(chunks, list) and len(chunks) >= 3, "atomic row-as-chunk"
     assert chunks[0]["metadata"]["format"] == "markdown"
-    # Section title bound as a heading ABOVE the table (B3).
-    assert "## Bang gia triet long" in md
-    # Markdown table preserving the values + column semantics (B1/B2).
-    assert "| Mep |" in md and "899000" in md
-    assert "| Mat |" in md and "1499000" in md
-    assert "| Nach |" in md and "1199000" in md
+    md_all = "\n".join(c["content"] for c in chunks)
+    # Every value preserved across the row-chunks.
+    assert "899000" in md_all and "1499000" in md_all and "1199000" in md_all
+    # Each row chunk carries the section heading + the column header.
+    mep = next(c["content"] for c in chunks if "Mep" in c["content"])
+    assert "## Bang gia triet long" in mep, "section heading not bound into row chunk"
+    assert "Vung" in mep and "Gia" in mep, "column header not bound into row chunk"
+    # Atomic — Mep's chunk must not carry the other rows' regions/prices.
+    assert "Mat" not in mep and "Nach" not in mep, "cross-row packing in one chunk"
 
 
 @pytest.mark.asyncio

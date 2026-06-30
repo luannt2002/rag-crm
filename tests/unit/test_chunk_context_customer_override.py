@@ -24,10 +24,11 @@ async def test_topic_column_preserved_in_structured_markdown() -> None:
     parser = GoogleSheetsParser()
     chunks = await parser.parse(csv_bytes, file_name="bang_gia.csv")
 
-    assert len(chunks) == 1
-    md = chunks[0]["content"]
+    # Row-as-chunk (B2): 2 data rows → ≥2 atomic chunks.
+    assert len(chunks) >= 2
+    md = "\n".join(c["content"] for c in chunks)
     assert chunks[0]["metadata"]["format"] == "markdown"
-    # The Topic phrasing stays embedded in the table (still an embedding signal).
+    # The Topic phrasing stays embedded in the row chunk (still an embedding signal).
     assert "Bang gia triet long" in md
     assert "| Mep |" in md and "899000" in md
 

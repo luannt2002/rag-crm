@@ -85,8 +85,9 @@ async def test_csv_parser_consumes_real_csv_bytes() -> None:
         b"3,baz,300\n"
     )
     chunks = await parser.parse(csv_bytes, file_name="test.csv")
-    assert isinstance(chunks, list) and len(chunks) == 1
-    md = chunks[0]["content"]
+    # Row-as-chunk (B2): 3 data rows → ≥3 atomic chunks.
+    assert isinstance(chunks, list) and len(chunks) >= 3
+    md = "\n".join(c["content"] for c in chunks)
     assert chunks[0]["metadata"]["format"] == "markdown"
     assert "foo" in md and "bar" in md and "baz" in md
     assert "| foo |" in md  # markdown table row, values bound to columns
