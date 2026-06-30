@@ -351,6 +351,13 @@ async def add_document(bot_id: str, channel_type: str, req: AddDocumentRequest, 
                 "tool_name": req.title[:255],
             })
 
+            # mime_type reflects the EXPORT format ``fetch_content`` already used
+            # (``to_export_url``): a Sheet's ``raw_content`` is CSV → ``text/csv``
+            # so the ingest routes it to GoogleSheetsParser (row-as-chunk), NOT the
+            # HTML parser. A Doc is re-fetched + parsed structured by the worker, so
+            # a generic placeholder is fine. The old hardcoded ``text/html`` made
+            # EVERY uploaded sheet ingest as HTML (multi-row chunks → value mis-bind).
+            _upload_mime = "text/csv" if validation.doc_type == "sheets" else "text/html"
             # INSERT new doc state="DRAFT" with raw_content saved
             await session.execute(_sql_text("""
                 INSERT INTO documents (
@@ -360,7 +367,7 @@ async def add_document(bot_id: str, channel_type: str, req: AddDocumentRequest, 
                     metadata_json, content_chars, raw_content
                 ) VALUES (
                     :id, :tenant_id, :workspace_id, :bot_id,
-                    :source_url, :document_name, :tool_name, 'text/html',
+                    :source_url, :document_name, :tool_name, :mime_type,
                     'vi', 'DRAFT', 1, :content_hash, '{}',
                     CAST('{}' AS jsonb), :content_chars, :raw_content
                 )
@@ -372,6 +379,7 @@ async def add_document(bot_id: str, channel_type: str, req: AddDocumentRequest, 
                 "source_url": source_url,
                 "document_name": req.title,
                 "tool_name": req.title[:255],
+                "mime_type": _upload_mime,
                 "content_hash": content_hash,
                 "content_chars": _content_chars,
                 "raw_content": fetched,
