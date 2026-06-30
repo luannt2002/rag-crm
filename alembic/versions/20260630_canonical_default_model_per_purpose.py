@@ -40,7 +40,7 @@ from __future__ import annotations
 
 from alembic import op
 
-revision = "canonical_default_model_per_purpose_260630"
+revision = "canon_default_model_260630"
 down_revision = "seed_vlm_caption_prompt_260627"
 branch_labels = None
 depends_on = None

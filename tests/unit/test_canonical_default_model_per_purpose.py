@@ -2,7 +2,7 @@
 
 Two guards in this file:
 
-1. The alembic migration ``canonical_default_model_per_purpose_260630`` must
+1. The alembic migration ``canon_default_model_260630`` must
    (a) re-point every AUX system_config LLM key OFF the dead OpenAI models
    (gpt-4.1-mini / gpt-4.1-nano) ONTO the live answer-LLM (the value of
    ``llm_default_model``), and (b) disable the 3 dead OpenAI model rows
@@ -63,7 +63,7 @@ def test_migration_file_exists() -> None:
 def test_revision_chains_off_current_head() -> None:
     """Must chain off the verified current head seed_vlm_caption_prompt_260627."""
     src = _read()
-    assert 'revision = "canonical_default_model_per_purpose_260630"' in src
+    assert 'revision = "canon_default_model_260630"' in src
     assert 'down_revision = "seed_vlm_caption_prompt_260627"' in src
 
 
