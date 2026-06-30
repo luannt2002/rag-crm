@@ -3,7 +3,29 @@
 > Always-updated current state. Git history was reset on 2026-06-14 (fresh start);
 > commit-SHA anchors no longer apply — this file is the source of truth.
 
-## Session 2026-06-25 (f) — Domain-neutral fairness program: 2/3 betrayals closed + enforcement  ⟵ LATEST
+## Session 2026-06-30 (g) — Config-default-drift root-cause + 4-agent fix + anti-fabricate retrieval  ⟵ LATEST
+
+> **Trigger** (user, debugging marathon): bot mới tạo trên UI bị hỏng (upload 409, chat 503) + by-spec giá bịa số. "fix done all, multi-agent mỗi vấn đề, realtime no-restart, control tốt."
+>
+> **Root cause (5-flow workflow audit + adversarial verify)**: 4 nguồn "default model" đá nhau — `system_config` SSoT (zembed-1 / openai-claude / zerank-2, live) vs bot-create seeder "first-enabled ai_models heap-scan" (NO ORDER BY) vs `DEFAULT_EMBEDDING_MODEL` constant (text-embedding-3-small, dead) vs settings. Sau provider-swap 26/6, alembic update SSoT + re-bind bot CŨ nhưng KHÔNG disable dead OpenAI rows (enabled=true) → seeder vớ model chết → mọi bot MỚI born-broken (embed 404 / chat 401). Cascade: embed fail → orphan doc 0-chunk → re-upload 409.
+>
+> **Shipped — base (2 commit) + 4 multi-agent (Opus worktree, TDD) + alembic**:
+> - **`07a4e94`** Stage-1 B-ROLEBLIND (price-ask + no-price entity → fall-through hybrid, anti-fabricate) + Stage-2a B-FMA (`query_by_name_keyword` search `attributes_json` → spec reaches priced row). by-spec giá+SL giờ ĐÚNG (684k / 214, was bịa).
+> - **`00c964d`** seeder reads `system_config` (not arbitrary first-enabled) + FE `meta.tokens` defensive guard.
+> - **P1 `2deb2f4` + alembic `canon_default_model_260630`**: disable 3 dead OpenAI models + re-point 7 aux LLM keys → live → **đúng 1 enabled/kind** (embedding=zembed-1, llm=openai/claude). Seeder ORDER BY deterministic.
+> - **P2 `ff402eb`**: resolver fallback to `system_config` SSoT (LLM + rerank + embed, kind-matched, Port+DI `SystemConfigReaderPort`) → binding-less bot follows SSoT REALTIME (Redis TTL ≤300s, no redeploy) + cross-kind embed guard. Per-bot binding still priority.
+> - **P3 `af51050`**: ingest embed-abort → soft-delete doc (`deleted_at`) → re-upload no longer 409.
+> - **P4 `c8317d5`**: `external_call_failed` structured log (LLM router + embedder non-2xx: status/body/model/provider).
+>
+> **Verify (live, post-restart)**: tạo bot mới → auto zembed-1 + openai/claude ✅ · by-spec 155/80R13 → 684.000đ / 214 lốp ✅ · 1 canonical/kind + 0 aux-key-on-dead ✅ · 4 bot re-bound đúng. Tests: 38 (4-fix) + 8 (P1) + 70 (Stage-1/2a/i18n) pass.
+>
+> **Known**: innocom answer-LLM (`ai.innocom.co`) chập chờn 503 = provider-side, KHÔNG phải code (cache-miss query thỉnh thoảng fail; cache-hit OK). Realtime swap = TTL-bound (≤300s); instant cần cache-invalidate on admin-update (follow-up). Header-detect cho bảng col_N cột-rỗng (Stage-2b) còn pending — nhưng by-spec qua attributes giờ đọc đúng cả SL.
+>
+> **Anchor**: `389deb0` (10 commit over `b45cadf`).
+
+---
+
+## Session 2026-06-25 (f) — Domain-neutral fairness program: 2/3 betrayals closed + enforcement
 
 > **Trigger** (user, binding): "chuẩn mindset expert — KHÔNG support riêng lẻ 1 bot / 1 lĩnh vực, 100% công bằng mọi bot, code real không đụng gì support riêng."
 >
