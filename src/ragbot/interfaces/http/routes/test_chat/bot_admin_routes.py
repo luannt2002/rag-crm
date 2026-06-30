@@ -231,7 +231,11 @@ async def create_bot(req: CreateBotRequest, request: Request) -> dict:
         result = await session.execute(
             text(
                 "SELECT id, name, kind FROM ai_models "
-                "WHERE enabled = true AND kind IN ('llm', 'embedding')"
+                "WHERE enabled = true AND kind IN ('llm', 'embedding') "
+                # Deterministic last-resort: ``_first_of_kind`` keeps the FIRST row
+                # seen per kind, so the scan must be ordered — heap order is not
+                # reproducible across DB clones / VACUUM. Oldest-enabled wins.
+                "ORDER BY created_at ASC"
             ),
         )
         model_id = embedding_model_id = None
