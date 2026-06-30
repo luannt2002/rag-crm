@@ -155,7 +155,11 @@ function addMsg(role, content, meta) {
     const m = document.createElement('div');
     m.className = 'meta';
     const d = meta.debug || {};
-    m.innerHTML = `<span>Chunks: ${meta.chunks_used}</span><span>Score: ${(d.score_avg||meta.top_score||0).toFixed(3)} avg (${(d.score_min||0).toFixed(3)}~${(d.score_max||0).toFixed(3)})</span><span>History: ${d.history_messages||0} msgs</span><span>Tokens: ${meta.tokens.prompt} in / ${meta.tokens.completion} out</span><span>Cost: $${(meta.cost_usd||0).toFixed(6)}</span><span>${meta.duration_ms||0}ms</span>`;
+    // Defensive: an error / 503 response carries no ``tokens`` (and may lack
+    // chunks_used) — guard every field so a failed turn renders its meta strip
+    // instead of throwing ``meta.tokens is undefined`` and killing the handler.
+    const tk = meta.tokens || {};
+    m.innerHTML = `<span>Chunks: ${meta.chunks_used ?? 0}</span><span>Score: ${(d.score_avg||meta.top_score||0).toFixed(3)} avg (${(d.score_min||0).toFixed(3)}~${(d.score_max||0).toFixed(3)})</span><span>History: ${d.history_messages||0} msgs</span><span>Tokens: ${tk.prompt||0} in / ${tk.completion||0} out</span><span>Cost: $${(meta.cost_usd||0).toFixed(6)}</span><span>${meta.duration_ms||0}ms</span>`;
     div.appendChild(m);
 
     // Build chunk_id → full content map (từ debug=full payload)

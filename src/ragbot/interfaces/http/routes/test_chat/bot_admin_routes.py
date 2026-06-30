@@ -211,21 +211,50 @@ async def create_bot(req: CreateBotRequest, request: Request) -> dict:
                 previous_uuid=str(existing_db[0]),
             )
 
-    # Get default models. ai_models.kind uses "llm" for chat/generation
-    # models (NOT "chat"); the prior literal mismatched the schema and
-    # left newly-created bots without an LLM binding, which made the
-    # resolver fall back through every purpose and 500 on first chat.
+    # Default model bindings for a new bot MUST come from the platform's single
+    # source of truth — ``system_config.embedding_model`` + ``llm_default_model``
+    # (the SAME canonical defaults the runtime resolver falls back to) — NOT an
+    # arbitrary "first enabled" scan of ai_models. The old scan was
+    # non-deterministic (several models can be enabled at once) and, after a
+    # provider swap, silently picked the DEAD OpenAI defaults (gpt-4.1-mini /
+    # text-embedding-3-small) while system_config already pointed at the live
+    # models — so every newly-created bot was born with broken bindings
+    # (embed 404 / chat 401). Resolve the configured default NAME to its
+    # ai_models row; fall back to first-enabled-of-kind ONLY when the configured
+    # default is missing/disabled (defensive + logged). Domain-neutral: model
+    # names come from config, never hard-coded here.
+    _cfg = _sys_config(request)
+    _emb_default = str(await _cfg.get("embedding_model", "") or "").strip().strip('"')
+    _llm_default = str(await _cfg.get("llm_default_model", "") or "").strip().strip('"')
     sf = _sf(request)
     async with sf() as session:
         result = await session.execute(
-            text("SELECT id, kind FROM ai_models WHERE enabled = true AND kind IN ('llm', 'embedding')"),
+            text(
+                "SELECT id, name, kind FROM ai_models "
+                "WHERE enabled = true AND kind IN ('llm', 'embedding')"
+            ),
         )
         model_id = embedding_model_id = None
+        _first_of_kind: dict[str, object] = {}
         for row in result.fetchall():
-            if row[1] == "llm" and model_id is None:
-                model_id = row[0]
-            elif row[1] == "embedding" and embedding_model_id is None:
-                embedding_model_id = row[0]
+            _mid, _name, _kind = row[0], row[1], row[2]
+            _first_of_kind.setdefault(_kind, _mid)
+            if _kind == "embedding" and _name == _emb_default:
+                embedding_model_id = _mid
+            elif _kind == "llm" and _name == _llm_default:
+                model_id = _mid
+        if embedding_model_id is None:
+            embedding_model_id = _first_of_kind.get("embedding")
+            logger.warning(
+                "bot_create_embedding_default_unresolved",
+                configured=_emb_default, fallback="first_enabled",
+            )
+        if model_id is None:
+            model_id = _first_of_kind.get("llm")
+            logger.warning(
+                "bot_create_llm_default_unresolved",
+                configured=_llm_default, fallback="first_enabled",
+            )
 
     cfg_svc = _sys_config(request)
     default_temp = await cfg_svc.get_float("llm_default_temperature", 0.3)
