@@ -182,6 +182,10 @@ class SyncDocumentItem(BaseModel):
     content: str = Field(min_length=1, description="Text content (already parsed)")
     url: str | None = None
     source_type: str | None = None
+    # When set (e.g. ``text/csv``), ``content`` is treated as RAW bytes and
+    # routed through the parser registry (GoogleSheetsParser → row-as-chunk),
+    # not as pre-parsed text. Absent → legacy text passthrough (backward-compat).
+    mime_type: str | None = None
 
 
 class SyncDocumentsRequest(BaseModel):
@@ -547,6 +551,11 @@ async def sync_documents(req: SyncDocumentsRequest, request: Request) -> dict:
     doc_results: list[dict[str, Any]] = []
 
     for doc_item in req.documents:
+        # When a mime_type is declared, hand the content to the parser registry
+        # as raw bytes so tabular sources (text/csv → GoogleSheetsParser) get
+        # row-as-chunk structure. Absent → legacy pre-parsed-text passthrough.
+        _mime = (doc_item.mime_type or "").strip()
+        _raw = doc_item.content.encode("utf-8") if _mime else None
         result = await doc_svc.ingest(
             record_bot_id=bot_uuid,
             title=doc_item.title,
@@ -554,6 +563,9 @@ async def sync_documents(req: SyncDocumentsRequest, request: Request) -> dict:
             source_url=doc_item.url or "",
             source_type=doc_item.source_type or "sync",
             record_tenant_id=record_tenant_uuid,
+            raw_bytes=_raw,
+            mime_type=_mime or "text/plain",
+            file_name=doc_item.title,
         )
         total_chunks += result.chunks
         doc_results.append({
