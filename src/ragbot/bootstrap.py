@@ -808,6 +808,9 @@ class Container(containers.DeclarativeContainer):
         vector_store=vector_store,
         uow_factory=uow_factory,
         clock=clock,
+        # ING-7: without this the stats-index purge in the use-case is dead —
+        # deleted entities keep serving until the 300s corpus-version TTL.
+        stats_index_repo=stats_index_repo,
     )
     rechunk_document_uc = providers.Factory(
         RechunkDocumentUseCase,

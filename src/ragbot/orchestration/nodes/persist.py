@@ -34,6 +34,12 @@ from ragbot.shared.constants import (
 
 logger = structlog.get_logger(__name__)
 
+# Strong references to in-flight fire-and-forget cache-write tasks. ``asyncio``
+# only holds a WEAK reference to a bare ``create_task`` result, so without this
+# set the GC can collect the task mid-write → the semantic-cache entry is
+# silently lost (hit-rate leak). Each task removes itself on completion.
+_BG_CACHE_TASKS: set[asyncio.Task[None]] = set()
+
 
 async def persist(
     state: GraphState,
@@ -194,7 +200,7 @@ async def persist(
                 }
                 for c in _graded[:8]
             )
-            asyncio.create_task(
+            _cache_task = asyncio.create_task(
                 _bg_cache_write(
                     query=_query,
                     answer=state["answer"],
@@ -212,6 +218,9 @@ async def persist(
                 ),
                 name="persist_cache_write",
             )
+            # Hold a strong ref until the write finishes (anti-GC-drop).
+            _BG_CACHE_TASKS.add(_cache_task)
+            _cache_task.add_done_callback(_BG_CACHE_TASKS.discard)
 
         graded = state.get("graded_chunks") or []
         # Terminal trace event fires for every request regardless of outcome.

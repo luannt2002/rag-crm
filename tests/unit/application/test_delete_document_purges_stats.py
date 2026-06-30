@@ -99,3 +99,24 @@ async def test_stats_purge_failure_does_not_abort_delete() -> None:
     # Must not raise.
     result = await uc.execute(_cmd())
     assert result.deleted_chunks == 7
+
+
+def test_bootstrap_wires_stats_index_repo_into_delete_uc() -> None:
+    """ING-7 wiring pin — the DeleteDocumentUseCase factory in bootstrap MUST
+    pass ``stats_index_repo`` (the Singleton exists), else the purge above is
+    dead in production: the use-case sees ``stats_index_repo=None`` and the
+    stats index keeps serving deleted entities until the 300s TTL.
+    """
+    import inspect
+
+    from ragbot import bootstrap
+
+    src = inspect.getsource(bootstrap)
+    # Locate the FACTORY block (not the import line) and assert it injects the repo.
+    idx = src.find("delete_document_uc = providers.Factory")
+    assert idx != -1, "delete_document_uc factory not found in bootstrap"
+    block = src[idx : idx + 600]
+    assert "stats_index_repo=stats_index_repo" in block, (
+        "bootstrap delete_document_uc factory must inject stats_index_repo "
+        "(ING-7: purge is dead without it)"
+    )
