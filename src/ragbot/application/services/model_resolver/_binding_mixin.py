@@ -357,3 +357,30 @@ class BindingMixin:
         if out >= 1.0:
             return "mid"
         return "cheap"
+
+    # ── Specs built from a bare (model, provider) — no per-bot binding ──
+    # The system_config platform-default fallback path: a bot WITHOUT a
+    # binding row resolves these from the SSoT model NAME. Generation params
+    # use the spec DTO defaults (no binding row to read temperature/top_p
+    # from); a bot wanting custom params seeds its own binding (custom >
+    # shared). ``binding_id`` is a synthetic uuid4 — there is no real
+    # ``bot_model_bindings`` row behind a platform-default resolution.
+
+    def _llm_spec_from_model(self, m: ModelRow, p: ProviderRow) -> LLMSpec:
+        return LLMSpec(
+            binding_id=uuid4(),
+            model_name=format_litellm_model(m.name, p),
+            provider=p.code,
+            fallback_chain=[],
+            cost_tier=self._cost_tier(m),
+            variant=None,
+            extra_params={},
+        )
+
+    @staticmethod
+    def _reranker_spec_from_model(m: ModelRow, p: ProviderRow) -> RerankerSpec:
+        return RerankerSpec(
+            binding_id=uuid4(),
+            model_name=m.name,
+            provider=p.code,
+        )
