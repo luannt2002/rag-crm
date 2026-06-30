@@ -16,6 +16,9 @@ from typing import TYPE_CHECKING
 
 import structlog
 
+from ragbot.infrastructure.embedding_text.field_selective_strategy import (
+    FieldSelectiveStrategy,
+)
 from ragbot.infrastructure.embedding_text.null_embedding_text_strategy import (
     NullEmbeddingTextStrategy,
 )
@@ -33,6 +36,7 @@ logger = structlog.get_logger(__name__)
 _REGISTRY: dict[str, type] = {
     "prefix_plus_raw": PrefixPlusRawStrategy,
     "raw_only": RawOnlyStrategy,
+    "field_selective": FieldSelectiveStrategy,
     "null": NullEmbeddingTextStrategy,
 }
 

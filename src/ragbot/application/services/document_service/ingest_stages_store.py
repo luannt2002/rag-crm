@@ -53,6 +53,8 @@ from ragbot.shared.constants import (
     DEFAULT_ENRICH_ROW_GATE_ENABLED,
     DEFAULT_ENRICHED_PREFIX_PERSIST,
     EMBEDDING_TEXT_STRATEGY_AUTO,
+    EMBEDDING_TEXT_STRATEGY_FIELD_SELECTIVE,
+    ROW_PRESERVE_CHUNK_STRATEGY,
     STRUCTURAL_CHUNK_STRATEGIES,
     DEFAULT_STRUCTURED_REF_EXTRACTION_ENABLED,
     DEFAULT_ENRICHMENT_MAX_CONCURRENCY,
@@ -220,11 +222,17 @@ class _StageStoreMixin:
             # not dilute exact-anchor lookup; prose/table/FAQ embed
             # prefix_plus_raw so situated context aids semantic match.
             if embed_text_strategy_name == EMBEDDING_TEXT_STRATEGY_AUTO:
-                embed_text_strategy_name = (
-                    "raw_only"
-                    if _chunking_strategy in STRUCTURAL_CHUNK_STRATEGIES
-                    else "prefix_plus_raw"
-                )
+                if _chunking_strategy in STRUCTURAL_CHUNK_STRATEGIES:
+                    embed_text_strategy_name = "raw_only"
+                elif _chunking_strategy == ROW_PRESERVE_CHUNK_STRATEGY:
+                    # Row-as-chunk tables (Excel / Google-Sheets): a cell may be a
+                    # huge keyword/alias list that swamps the dense vector → strip
+                    # such flood cells from the embed text. BM25 (content_segmented)
+                    # keeps them searchable; the dense vector becomes discriminative.
+                    # Shape-based + per-chunk → byte-identical when no flood cell.
+                    embed_text_strategy_name = EMBEDDING_TEXT_STRATEGY_FIELD_SELECTIVE
+                else:
+                    embed_text_strategy_name = "prefix_plus_raw"
             embed_text_strategy = build_embedding_text_strategy(
                 embed_text_strategy_name,
             )

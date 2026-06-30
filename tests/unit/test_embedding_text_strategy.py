@@ -71,10 +71,11 @@ def test_list_providers_sorted_and_complete() -> None:
     providers = list_providers()
     assert "prefix_plus_raw" in providers
     assert "raw_only" in providers
+    assert "field_selective" in providers
     assert "null" in providers
     assert providers == sorted(providers), "list_providers must return sorted"
     # Pin the count so a drive-by addition is a deliberate test update.
-    assert len(providers) == 3
+    assert len(providers) == 4
 
 
 # --------------------------------------------------------------------------- #

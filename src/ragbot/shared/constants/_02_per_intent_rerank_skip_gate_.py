@@ -114,6 +114,25 @@ EMBEDDING_TEXT_STRATEGY_AUTO: Final[str] = "auto"
 # (raw_only). Everything else benefits from the contextual prefix.
 STRUCTURAL_CHUNK_STRATEGIES: Final[frozenset[str]] = frozenset({"hdt", "hybrid"})
 
+# "field_selective" embedding-text strategy — DOMAIN-NEUTRAL. For a row-as-chunk
+# table (Excel / Google-Sheets, ``parser_preserve``) a single cell can be a huge
+# keyword/alias LIST (dozens of format variations) that swamps the dense vector
+# (e.g. 87% of the row's tokens) → the embedding stops discriminating the
+# product → spec-based retrieval misses. This strategy DROPS such "flood" cells
+# from the text the dense encoder sees (the full row still lives in
+# ``content`` for the LLM and in ``content_segmented`` for BM25, so the aliases
+# stay searchable — only the dense vector is cleaned). Detection is SHAPE-based
+# (a cell with many short separator-delimited tokens), never column-name or
+# bot-identity, so any table in any domain benefits with no per-bot config.
+EMBEDDING_TEXT_STRATEGY_FIELD_SELECTIVE: Final[str] = "field_selective"
+# Chunk strategy name for parser-preserved row-as-chunk tables (Excel/Sheets).
+ROW_PRESERVE_CHUNK_STRATEGY: Final[str] = "parser_preserve"
+# A cell is a keyword/alias "flood" when it splits into ≥ N separator-delimited
+# non-empty tokens AND is ≥ M chars long. 12 parts is well above the comma count
+# of normal prose; 120 chars guards against short legitimate lists.
+DEFAULT_EMBED_FLOOD_CELL_MIN_PARTS: Final[int] = 12
+DEFAULT_EMBED_FLOOD_CELL_MIN_CHARS: Final[int] = 120
+
 # --- Article-number metadata extraction (Vietnamese legal corpus) -----------
 # Ingest scans each chunk for structured references (Điều / Chương / Khoản /
 # Mục / Phụ lục) using language-agnostic regex (Latin + Roman numerals). The
