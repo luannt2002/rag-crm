@@ -42,7 +42,13 @@ from ragbot.application.ports.ai_config_port import (
 )
 from ragbot.application.ports.cache_port import CachePort
 from ragbot.application.ports.secrets_port import SecretsPort
+from ragbot.application.ports.system_config_reader_port import (
+    SystemConfigReaderPort,
+)
 from ragbot.shared.constants import (
+    AI_MODEL_KIND_EMBEDDING,
+    AI_MODEL_KIND_LLM,
+    AI_MODEL_KIND_RERANKER,
     CACHE_KEY_MODEL_RESOLVER,
     DEFAULT_CASCADE_T_HIGH,
     DEFAULT_CASCADE_T_LOW,
@@ -61,6 +67,9 @@ from ragbot.shared.constants import (
     DEFAULT_PROVIDER_TIMEOUT_MS,
     DEFAULT_RERANK_TOP_N,
     DEFAULT_RERANKER_EMBEDDING_DIM,
+    SYSTEM_CONFIG_KEY_EMBEDDING_MODEL,
+    SYSTEM_CONFIG_KEY_LLM_DEFAULT_MODEL,
+    SYSTEM_CONFIG_KEY_RERANKER_MODEL,
 )
 from ragbot.shared.errors import InvariantViolation
 from ragbot.shared.types import (
@@ -95,6 +104,7 @@ class ModelResolverService(CacheMixin, BindingMixin):
         *,
         cache_ttl_s: int = DEFAULT_MODEL_RESOLVER_CACHE_TTL,
         secrets_port: SecretsPort | None = None,
+        system_config: SystemConfigReaderPort | None = None,
         l1_ttl_s: int = DEFAULT_MODEL_RESOLVER_L1_TTL_S,
         l2_ttl_s: int = DEFAULT_MODEL_RESOLVER_L2_TTL_S,
         l1_max_size: int = DEFAULT_MODEL_RESOLVER_L1_MAX_SIZE,
@@ -107,11 +117,67 @@ class ModelResolverService(CacheMixin, BindingMixin):
         self._mem: dict[str, _CachedBindings] = {}
         # Runtime-config: L1 LRU + L2 Redis.
         self._secrets = secrets_port
+        # Read-only system_config SSoT (Redis-cached, ~5-min TTL). When a bot
+        # has no per-bot binding for a purpose the resolver reads the realtime
+        # platform-default model NAME here instead of raising — honouring the
+        # ``per-bot binding → system_config + ai_models → NullObject`` chain.
+        # ``None`` keeps the legacy raise-on-no-binding behaviour (tests /
+        # callers that don't wire the reader).
+        self._sysconfig = system_config
         self._l1_ttl = l1_ttl_s
         self._l2_ttl = l2_ttl_s
         self._l1_max = l1_max_size
         self._l1: OrderedDict[str, tuple[ModelRuntimeConfig, float]] = OrderedDict()
         self._last_bootstrap_at: datetime | None = None
+
+    async def _system_config_default_model(
+        self,
+        *,
+        config_key: str,
+        kind: str,
+    ) -> tuple[ModelRow, ProviderRow] | None:
+        """Resolve the platform-default ``(ModelRow, ProviderRow)`` for ``kind``.
+
+        Reads the model NAME from ``system_config[config_key]`` (Redis-cached
+        SSoT — realtime within the system_config TTL) then resolves the
+        matching ENABLED ``ai_models`` row of the required ``kind`` plus its
+        provider. The ``kind`` filter is the cross-kind guard: an
+        ``embedding`` fallback can NEVER pick an LLM row (provider 404).
+
+        Returns ``None`` (NullObject — caller raises) when the reader is not
+        wired, the config value is empty, or no enabled model of that kind
+        carries the configured name. The model NAME is read fresh on every
+        call, so an operator ``UPDATE system_config`` takes effect on the
+        next resolve within the Redis TTL — the resolved spec is NOT pinned
+        in the resolver's own (longer-TTL) binding cache.
+        """
+        if self._sysconfig is None:
+            return None
+        raw_name = await self._sysconfig.get(config_key, None)
+        model_name = str(raw_name).strip() if raw_name else ""
+        if not model_name:
+            return None
+        # Enabled models of the required kind only — never cross-kind.
+        models = await self._repo.list_models(kind=kind, enabled_only=True)
+        model = next((m for m in models if m.name == model_name), None)
+        if model is None:
+            logger.warning(
+                "system_config_default_model_missing",
+                config_key=config_key,
+                kind=kind,
+                model_name=model_name,
+            )
+            return None
+        provider = await self._repo.get_provider(model.provider_id)
+        if provider is None:
+            logger.warning(
+                "system_config_default_provider_missing",
+                config_key=config_key,
+                model_name=model_name,
+                provider_id=str(model.provider_id),
+            )
+            return None
+        return model, provider
 
     async def resolve_llm(
         self,
@@ -135,6 +201,25 @@ class ModelResolverService(CacheMixin, BindingMixin):
             cached = await self._get_cached(record_tenant_id=record_tenant_id, record_bot_id=record_bot_id, purpose=purpose)
             bindings = sorted(cached.bindings, key=lambda b: b.rank)
         if not bindings:
+            # No per-bot binding for ANY LLM purpose → follow the realtime
+            # platform default in system_config (Redis-cached SSoT). Updating
+            # ``system_config.llm_default_model`` swaps the answer model for
+            # every binding-less bot with no app restart. Only the rank-0
+            # primary is resolvable this way (no fallback chain); higher
+            # ``iter`` still raises (no shared-default failover configured).
+            fallback = await self._system_config_default_model(
+                config_key=SYSTEM_CONFIG_KEY_LLM_DEFAULT_MODEL,
+                kind=AI_MODEL_KIND_LLM,
+            )
+            if fallback is not None and iter == 0:
+                model, provider = fallback
+                logger.info(
+                    "llm_resolved_from_system_config_default",
+                    record_bot_id=str(record_bot_id),
+                    model_name=model.name,
+                    provider=provider.code,
+                )
+                return self._llm_spec_from_model(model, provider)
             raise InvariantViolation(
                 f"No LLM binding found for bot {record_bot_id} purpose={purpose}",
             )
@@ -163,6 +248,24 @@ class ModelResolverService(CacheMixin, BindingMixin):
             purpose=BindingPurpose.RERANK.value,
         )
         if not cached.bindings:
+            # No per-bot binding → follow the realtime platform default in
+            # system_config (Redis-cached SSoT). Mirrors the LLM + embedding
+            # fallback and ``reranker_resolver._lookup_platform_default``.
+            # Updating ``system_config.reranker_model`` swaps the reranker for
+            # every binding-less bot with no app restart.
+            fallback = await self._system_config_default_model(
+                config_key=SYSTEM_CONFIG_KEY_RERANKER_MODEL,
+                kind=AI_MODEL_KIND_RERANKER,
+            )
+            if fallback is not None:
+                model, provider = fallback
+                logger.info(
+                    "reranker_resolved_from_system_config_default",
+                    record_bot_id=str(record_bot_id),
+                    model_name=model.name,
+                    provider=provider.code,
+                )
+                return self._reranker_spec_from_model(model, provider)
             raise InvariantViolation(f"No reranker binding for bot {record_bot_id}")
         b = cached.bindings[0]
         m = cached.models_by_id[str(b.model_id)]
@@ -348,9 +451,52 @@ class ModelResolverService(CacheMixin, BindingMixin):
             record_bot_id=record_bot_id,  # type: ignore[arg-type]
             purpose=purpose,
         )
-        # Fallback: nếu không có binding cho purpose cụ thể → dùng llm_primary.
-        # Per-bot opt-out is implicit: not seeding the cheap-purpose row keeps
-        # the bot on PRIMARY automatically (no flag toggle needed).
+        # Cross-kind guard: ``embedding`` / ``rerank`` are NOT LLM purposes —
+        # they MUST NEVER fall back to ``llm_primary`` (that would hand an LLM
+        # model to the embedder/reranker → provider 404). When a bot has no
+        # binding for these, follow the realtime kind-matched platform default
+        # in system_config (``embedding_model`` / ``reranker_model``).
+        _kind_default_key = {
+            BindingPurpose.EMBEDDING.value: (
+                SYSTEM_CONFIG_KEY_EMBEDDING_MODEL,
+                AI_MODEL_KIND_EMBEDDING,
+            ),
+            BindingPurpose.RERANK.value: (
+                SYSTEM_CONFIG_KEY_RERANKER_MODEL,
+                AI_MODEL_KIND_RERANKER,
+            ),
+        }.get(purpose)
+
+        if not bindings and _kind_default_key is not None:
+            config_key, kind = _kind_default_key
+            fallback = await self._system_config_default_model(
+                config_key=config_key, kind=kind,
+            )
+            if fallback is None:
+                raise InvariantViolation(
+                    f"No {purpose} binding for tenant={record_tenant_id} "
+                    f"bot={record_bot_id} and no system_config default",
+                )
+            model, provider = fallback
+            logger.info(
+                "runtime_resolved_from_system_config_default",
+                record_bot_id=str(record_bot_id),
+                purpose=purpose,
+                model_name=model.name,
+                provider=provider.code,
+            )
+            cfg = await self._build_runtime(
+                binding=None, model=model, provider=provider, purpose=purpose,
+            )
+            # NOT L1-cached: a kind-default resolution must reflect a
+            # system_config flip within the Redis TTL — the model NAME is read
+            # fresh each call (the binding-less path is cold by design).
+            return cfg
+
+        # LLM cost-routing fallback: a missing cheap-purpose row (e.g.
+        # ``llm_factoid``) transparently reuses ``llm_primary`` (custom >
+        # shared, per-bot opt-out by not seeding the row). ``llm_primary``
+        # itself has no further binding fallback here.
         if not bindings and purpose != DEFAULT_LLM_PURPOSE_PRIMARY:
             bindings = await self._repo.list_bindings(
                 record_tenant_id=record_tenant_id,  # type: ignore[arg-type]
@@ -358,8 +504,26 @@ class ModelResolverService(CacheMixin, BindingMixin):
                 purpose=DEFAULT_LLM_PURPOSE_PRIMARY,
             )
         if not bindings:
-            raise InvariantViolation(
-                f"No binding for tenant={record_tenant_id} bot={record_bot_id} purpose={purpose}",
+            # Last resort for an LLM purpose with no per-bot binding at all →
+            # realtime system_config.llm_default_model (kind-matched to LLM).
+            fallback = await self._system_config_default_model(
+                config_key=SYSTEM_CONFIG_KEY_LLM_DEFAULT_MODEL,
+                kind=AI_MODEL_KIND_LLM,
+            )
+            if fallback is None:
+                raise InvariantViolation(
+                    f"No binding for tenant={record_tenant_id} bot={record_bot_id} purpose={purpose}",
+                )
+            model, provider = fallback
+            logger.info(
+                "runtime_resolved_from_system_config_default",
+                record_bot_id=str(record_bot_id),
+                purpose=purpose,
+                model_name=model.name,
+                provider=provider.code,
+            )
+            return await self._build_runtime(
+                binding=None, model=model, provider=provider, purpose=purpose,
             )
         primary = sorted(bindings, key=lambda b: b.rank)[0]
         model = await self._repo.get_model(primary.model_id)

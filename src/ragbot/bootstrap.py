@@ -534,6 +534,12 @@ class Container(containers.DeclarativeContainer):
         cache=cache,
         clock=clock,
         secrets_port=secrets_port,
+        # Read-only system_config SSoT (Redis-cached) so a bot WITHOUT a
+        # per-bot binding follows the realtime platform-default model. An
+        # operator ``UPDATE system_config`` (llm_default_model /
+        # reranker_model / embedding_model) then swaps the model for every
+        # binding-less bot with no app restart.
+        system_config=system_config_service,
     )
     # --- Per-tenant rate limit + monthly token meter ----------------------
     metrics_port = providers.Singleton(PrometheusMetricsAdapter)

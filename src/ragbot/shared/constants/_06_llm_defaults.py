@@ -49,6 +49,25 @@ DEFAULT_LLM_PURPOSE_INTENT_UNDERSTAND: Final[str] = "llm_intent_understand"
 # purpose, so it never breaks resolution.
 DEFAULT_LLM_PURPOSE_ENRICHMENT: Final[str] = "enrichment"
 
+# --- system_config platform-default model KEYS ---------------------
+# Row KEYS in the ``system_config`` table (Redis-cached SSoT) carrying the
+# platform-default model NAME for each kind. When a bot has NO per-bot
+# ``bot_model_bindings`` row for a purpose, ``ModelResolverService`` reads
+# the relevant key here and resolves the matching enabled ``ai_models`` row,
+# honouring the ``per-bot binding → system_config + ai_models → NullObject``
+# fallback chain. These are config-row identifiers (like column names), not
+# behaviour values — an operator ``UPDATE system_config`` swaps the model for
+# every binding-less bot within the Redis TTL, no app restart.
+SYSTEM_CONFIG_KEY_LLM_DEFAULT_MODEL: Final[str] = "llm_default_model"
+SYSTEM_CONFIG_KEY_RERANKER_MODEL: Final[str] = "reranker_model"
+SYSTEM_CONFIG_KEY_EMBEDDING_MODEL: Final[str] = "embedding_model"
+# Model KIND values stored in ``ai_models.kind`` — used to filter the
+# enabled-model lookup so the platform-default resolution NEVER returns a
+# cross-kind row (e.g. an LLM handed to the embedder → provider 404).
+AI_MODEL_KIND_LLM: Final[str] = "llm"
+AI_MODEL_KIND_EMBEDDING: Final[str] = "embedding"
+AI_MODEL_KIND_RERANKER: Final[str] = "reranker"
+
 # Intent → cost-aware purpose mapping. Intents NOT listed here keep PRIMARY.
 # Bot owner can disable cost-routing entirely by NOT seeding the cheap
 # purpose binding rows — resolver falls back to PRIMARY automatically.
