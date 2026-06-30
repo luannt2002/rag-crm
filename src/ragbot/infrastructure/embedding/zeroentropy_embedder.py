@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import asyncio
 import os
+import time
 from typing import Any
 
 import httpx
@@ -43,6 +44,7 @@ from ragbot.shared.constants import (
     DEFAULT_EMBEDDER_MAX_CONCURRENT,
     DEFAULT_EMBEDDING_MAX_BATCH,
     DEFAULT_EMBEDDING_TIMEOUT_S,
+    DEFAULT_EXTERNAL_CALL_ERROR_SNIPPET_CHARS,
     DEFAULT_RETRY_INITIAL_MS,
     DEFAULT_RETRY_MAX_ATTEMPTS,
     DEFAULT_RETRY_MAX_MS,
@@ -216,6 +218,7 @@ class ZeroEntropyEmbedder(EmbeddingPort):
                 _itype: str = input_type,
                 _key: str = key,
             ) -> list[list[float]]:
+                _t0 = time.monotonic()
                 async with asyncio.timeout(self._timeout_s):
                     resp = await client.post(
                         self._api_url,
@@ -228,6 +231,22 @@ class ZeroEntropyEmbedder(EmbeddingPort):
                         headers={"Authorization": f"Bearer {_key}"},
                     )
                     if resp.status_code != 200:
+                        # Observability first — emit the canonical event with the
+                        # provider's actual status + body snippet BEFORE deciding
+                        # whether the status is retryable. Without this, a 4xx
+                        # surfaces only as a string-wrapped ExternalServiceError
+                        # and a retryable status that exhausts retries loses its
+                        # original status/body entirely. Pure logging: the raise
+                        # below is unchanged.
+                        logger.warning(
+                            "external_call_failed",
+                            integration=self._PURPOSE,
+                            provider=self._PROVIDER_CODE,
+                            model=_model,
+                            status_code=resp.status_code,
+                            error=resp.text[:DEFAULT_EXTERNAL_CALL_ERROR_SNIPPET_CHARS],
+                            duration_ms=int((time.monotonic() - _t0) * 1000),
+                        )
                         if resp.status_code in _RETRYABLE_HTTP_STATUS:
                             raise httpx.HTTPStatusError(
                                 f"retryable HTTP {resp.status_code}: {resp.text[:200]}",

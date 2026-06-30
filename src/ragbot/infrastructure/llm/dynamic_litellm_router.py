@@ -53,6 +53,7 @@ from ragbot.shared.constants import (
     DEFAULT_DETERMINISTIC_LLM_PURPOSES,
     DEFAULT_DETERMINISTIC_TEMPERATURE,
     DEFAULT_DYNAMIC_ROUTER_REFRESH_INTERVAL_S,
+    DEFAULT_EXTERNAL_CALL_ERROR_SNIPPET_CHARS,
     DEFAULT_LLM_FAILOVER_ENABLED,
     DEFAULT_PROVIDER_BACKGROUND_MAX_CONCURRENT,
     DEFAULT_PROVIDER_MAX_CONCURRENT,
@@ -150,6 +151,51 @@ _RATE_LIMIT_EXCEPTIONS: tuple[type[BaseException], ...] = (
 def _is_rate_limit(exc: BaseException) -> bool:
     """True iff ``exc`` is a provider rate-limit (429) — flow-control, not outage."""
     return isinstance(exc, _RATE_LIMIT_EXCEPTIONS)
+
+
+def _external_error_status(exc: BaseException) -> int | None:
+    """Best-effort HTTP status code off a LiteLLM / httpx exception.
+
+    LiteLLM provider exceptions (``RateLimitError``, ``AuthenticationError``,
+    ``ServiceUnavailableError``, ``InternalServerError`` …) carry a
+    ``status_code`` attribute; an underlying ``httpx`` error exposes it on its
+    ``response``. ``None`` when neither is present (e.g. a raw connection
+    error) — the event still logs, just without a numeric code.
+    """
+    code = getattr(exc, "status_code", None)
+    if code is None:
+        resp = getattr(exc, "response", None)
+        code = getattr(resp, "status_code", None)
+    if isinstance(code, int):
+        return code
+    return None
+
+
+def _log_external_call_failed(
+    *,
+    integration: str,
+    provider: str | None,
+    model: str | None,
+    exc: BaseException,
+    duration_ms: int,
+) -> None:
+    """Emit the canonical ``external_call_failed`` observability event.
+
+    Shared shape across the LLM / embed / rerank integrations so an operator
+    can grep one event name and always see status + provider + model + a
+    bounded error-body snippet + latency. Pure observability — the caller still
+    owns the raise/return decision; this never swallows or alters control flow.
+    """
+    logger.warning(
+        "external_call_failed",
+        integration=integration,
+        provider=provider or "unknown",
+        model=model or "unknown",
+        status_code=_external_error_status(exc),
+        error=str(exc)[:DEFAULT_EXTERNAL_CALL_ERROR_SNIPPET_CHARS],
+        error_type=type(exc).__name__,
+        duration_ms=duration_ms,
+    )
 
 
 def _is_anthropic_model(litellm_name: str | None, provider_code: str | None) -> bool:
@@ -685,6 +731,7 @@ class DynamicLiteLLMRouter(LLMPort):
             raise LLMError(
                 f"LLM provider {cfg.provider.code} circuit breaker OPEN — fast-fail",
             )
+        t0 = time.monotonic()
         try:
             async with sem:
                 resp = await retry_with_backoff(
@@ -699,6 +746,17 @@ class DynamicLiteLLMRouter(LLMPort):
             breaker.record_success()
             self._emit_cb_state(cfg.provider.code, breaker)
         except _RETRYABLE_LLM_EXCEPTIONS as exc:
+            # Observability first — surface the provider's actual reason (status +
+            # body snippet + model) so an operator can see WHY the call failed
+            # instead of only the mapped LLMError. Pure logging: no control-flow
+            # change, the raise below is unchanged.
+            _log_external_call_failed(
+                integration="llm",
+                provider=provider_code,
+                model=cfg.litellm_name,
+                exc=exc,
+                duration_ms=int((time.monotonic() - t0) * 1000),
+            )
             # 429 = throttle, not outage → leave the breaker untouched (pacing,
             # not provider health). Only real outages count toward the trip.
             if not _is_rate_limit(exc):
@@ -706,7 +764,14 @@ class DynamicLiteLLMRouter(LLMPort):
                 self._emit_cb_state(cfg.provider.code, breaker)
             # Retries exhausted — surface as LLMError so callers map to 503.
             raise LLMError(f"LLM provider {cfg.provider.code} failed after retries: {exc}") from exc
-        except Exception:  # noqa: BLE001 — circuit breaker must record ANY provider failure type then reraise unchanged; narrowing risks hiding new litellm/openai/anthropic exception classes.
+        except Exception as exc:  # noqa: BLE001 — circuit breaker must record ANY provider failure type then reraise unchanged; narrowing risks hiding new litellm/openai/anthropic exception classes.
+            _log_external_call_failed(
+                integration="llm",
+                provider=provider_code,
+                model=cfg.litellm_name,
+                exc=exc,
+                duration_ms=int((time.monotonic() - t0) * 1000),
+            )
             breaker.record_failure()
             self._emit_cb_state(cfg.provider.code, breaker)
             raise
@@ -1070,6 +1135,13 @@ class DynamicLiteLLMRouter(LLMPort):
             breaker.record_success()
             self._emit_cb_state(provider_code, breaker)
         except _RETRYABLE_LLM_EXCEPTIONS as exc:
+            _log_external_call_failed(
+                integration="llm",
+                provider=provider_code,
+                model=kwargs.get("model") or getattr(spec, "model_name", None),
+                exc=exc,
+                duration_ms=int((time.monotonic() - t0) * 1000),
+            )
             # 429 = throttle, not outage → don't let an ingest enrichment burst
             # (nano) OPEN the shared provider breaker and starve the answer model.
             if not _is_rate_limit(exc):
@@ -1077,6 +1149,13 @@ class DynamicLiteLLMRouter(LLMPort):
                 self._emit_cb_state(provider_code, breaker)
             raise LLMError(f"litellm call failed after retries: {exc}") from exc
         except Exception as exc:  # noqa: BLE001
+            _log_external_call_failed(
+                integration="llm",
+                provider=provider_code,
+                model=kwargs.get("model") or getattr(spec, "model_name", None),
+                exc=exc,
+                duration_ms=int((time.monotonic() - t0) * 1000),
+            )
             breaker.record_failure()
             self._emit_cb_state(provider_code, breaker)
             raise LLMError(f"litellm call failed: {exc}") from exc

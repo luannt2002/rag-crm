@@ -16,6 +16,13 @@ DEFAULT_DB_BOOTSTRAP_CONNECT_TIMEOUT_S: Final[int] = 3
 # so the list path never needs the plaintext key (ADR-W1-KEY).
 API_KEY_FINGERPRINT_HEX_LEN: Final[int] = 12
 
+# Max chars of an external-call error body / exception message carried in the
+# ``external_call_failed`` observability event (embed / LLM / rerank). Bounded
+# so a giant upstream HTML error page or traceback cannot flood the log line,
+# yet long enough to carry the provider's actual reason string. Operators tune
+# via system_config when a provider's error bodies are routinely longer.
+DEFAULT_EXTERNAL_CALL_ERROR_SNIPPET_CHARS: Final[int] = 300
+
 # --- /health/models thresholds ----------------------------------------------
 DEFAULT_HEALTH_MODELS_PROBE_TIMEOUT_S: Final[int] = 10
 # Above this latency the provider is reported "degraded" even on success.
