@@ -150,6 +150,38 @@ async def test_replace_documents_for_bot_invalidates_corpus_version(
 
 
 @pytest.mark.asyncio
+async def test_replace_documents_for_bot_purges_chunks(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Re-sync MUST hard-delete the replaced docs' chunks.
+
+    The re-ingest re-uses the SAME document_id (``uq_doc_tool`` ON CONFLICT
+    resurrects the soft-deleted row) and the ingest dedup SELECT's
+    ``deleted_at IS NULL`` filter makes ``is_reindex=False`` → the store stage
+    does a pure INSERT. Without an explicit chunk purge here the OLD chunks
+    survive alongside the NEW ones (duplication — observed xe 97→319). There
+    is NO FK cascade on ``document_chunks`` deletion.
+    """
+    bot_uuid = uuid4()
+    tenant_uuid = uuid4()
+    session = _FakeSession()
+    svc = _make_service(_corpus_mock())
+    _patch_swt(monkeypatch, session)
+
+    await svc.replace_documents_for_bot(
+        bot_uuid,
+        source_urls=["https://example.test/a"],
+        record_tenant_id=tenant_uuid,
+    )
+
+    sqls = " ".join(s.lower() for s, _ in session.executes)
+    assert "delete from document_chunks" in sqls, (
+        "replace_documents_for_bot must purge chunks of the replaced docs "
+        "(anti-duplication); executed SQL: " + sqls
+    )
+
+
+@pytest.mark.asyncio
 async def test_none_corpus_service_is_noop(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

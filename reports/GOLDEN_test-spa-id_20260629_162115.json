@@ -1,0 +1,703 @@
+{
+ "bot": "test-spa-id",
+ "pct": 90,
+ "total": "45/50",
+ "results": [
+  {
+   "cat": "Thông tin cơ bản về Spa",
+   "q": "Địa chỉ của Dr. Medispa ở đâu?",
+   "exp": "Spa nằm tại Số 102 Vũ Trọng Phụng, Thanh Xuân, Hà Nội",
+   "facts": [],
+   "overlap": 1.0,
+   "pass": true,
+   "chk": 4,
+   "sc": 0.930053,
+   "ans": "Em gửi chị địa chỉ Dr. Medispa ạ: Số 102 Vũ Trọng Phụng, Thanh Xuân, Hà Nội (chị đi thang bộ lên tầng 2 nhé ạ).",
+   "err": null
+  },
+  {
+   "cat": "Thông tin cơ bản về Spa",
+   "q": "Slogan của spa là gì?",
+   "exp": "Slogan là \"Nơi sắc đẹp thăng hoa\"",
+   "facts": [],
+   "overlap": 0.5,
+   "pass": true,
+   "chk": 2,
+   "sc": 0.271406,
+   "ans": "Dạ, em chưa có thông tin về slogan chính thức của Dr. Medispa ạ. Anh/chị muốn em tư vấn về dịch vụ chăm sóc da, trị mụn, hay trẻ hóa da không ạ?",
+   "err": null
+  },
+  {
+   "cat": "Thông tin cơ bản về Spa",
+   "q": "Số Hotline liên hệ của spa là số nào?",
+   "exp": "Hotline là 0926.559.268",
+   "facts": [
+    "559.268",
+    "0926.559.268"
+   ],
+   "overlap": 1.0,
+   "pass": true,
+   "chk": 3,
+   "sc": 0.713511,
+   "ans": "Số hotline của Dr. Medispa là 0926.559.268 ạ.",
+   "err": null
+  },
+  {
+   "cat": "Thông tin cơ bản về Spa",
+   "q": "Giờ mở cửa của spa như thế nào?",
+   "exp": "Spa mở cửa từ 9h-21h, từ thứ 2 đến chủ nhật hàng tuần",
+   "facts": [],
+   "overlap": 0.5,
+   "pass": true,
+   "chk": 3,
+   "sc": 0.793106,
+   "ans": "Dr. Medispa mở cửa từ 9h đến 21h, từ thứ Hai đến Chủ Nhật ạ.",
+   "err": null
+  },
+  {
+   "cat": "Thông tin cơ bản về Spa",
+   "q": "Spa có trang Fanpage và Tiktok không?",
+   "exp": "Có, Fanpage và Tiktok đều tên là \"Dr. Medispa\", trong đó Fanpage có li",
+   "facts": [
+    "https://www.facebook.com/Dr.Medispa.vn"
+   ],
+   "overlap": 0.62,
+   "pass": true,
+   "chk": 3,
+   "sc": 0.151228,
+   "ans": "Dạ, em chưa thấy thông tin về Fanpage hoặc TikTok của Dr. Medispa trong danh mục bên em ạ. Anh/chị muốn em tư vấn về dịch vụ chăm sóc da, trị mụn, hay trẻ hóa d",
+   "err": null
+  },
+  {
+   "cat": "Dịch vụ Chăm sóc da Công nghệ ",
+   "q": "Giá lẻ của dịch vụ Chăm sóc da chuyên sâu là bao nhiêu?",
+   "exp": "Giá lẻ là 700.000 VNĐ",
+   "facts": [
+    "700.000",
+    "VNĐ"
+   ],
+   "overlap": 1.0,
+   "pass": true,
+   "chk": 1,
+   "sc": 1.0,
+   "ans": "Dạ, dịch vụ Chăm sóc da chuyên sâu giá 700.000đ/ buổi ạ. Anh/chị muốn đặt lịch trải nghiệm không ạ?",
+   "err": null
+  },
+  {
+   "cat": "Dịch vụ Chăm sóc da Công nghệ ",
+   "q": "Dịch vụ Meso căng bóng trẻ hóa có giá buổi lẻ là bao nhiêu?",
+   "exp": "Giá là 3.000.000 VNĐ",
+   "facts": [
+    "3.000.000",
+    "VNĐ"
+   ],
+   "overlap": 1.0,
+   "pass": true,
+   "chk": 1,
+   "sc": 1.0,
+   "ans": "Dạ, giá buổi lẻ dịch vụ Meso căng bóng trẻ hóa là 3.000.000đ ạ. Anh/chị muốn đặt lịch trải nghiệm không ạ?",
+   "err": null
+  },
+  {
+   "cat": "Dịch vụ Chăm sóc da Công nghệ ",
+   "q": "Gói Buffet CNC 6 triệu bao gồm những dịch vụ nào?",
+   "exp": "Bao gồm các dịch vụ như: CSD chuyên sâu, Trị mụn chuyên sâu, CSD cấp o",
+   "facts": [
+    "CSD",
+    "IPL"
+   ],
+   "overlap": 1.0,
+   "pass": true,
+   "chk": 2,
+   "sc": 0.943348,
+   "ans": "Gói Buffet CNC 6 triệu bao gồm các dịch vụ sau:  \n- Chăm sóc da chuyên sâu  \n- Trị mụn chuyên sâu  \n- Chăm sóc da cấp ô xi tươi  \n- Chăm sóc da thải độc da  \n- ",
+   "err": null
+  },
+  {
+   "cat": "Dịch vụ Chăm sóc da Công nghệ ",
+   "q": "Gói Buffet CNC 7 triệu khác gì gói 6 triệu?",
+   "exp": "Gói 7 triệu bao gồm tất cả dịch vụ của gói 6 triệu cộng thêm: Peel điề",
+   "facts": [],
+   "overlap": 0.87,
+   "pass": true,
+   "chk": 2,
+   "sc": 0.903567,
+   "ans": "Gói Buffet CNC 7 triệu bao gồm tất cả dịch vụ trong gói 6 triệu, thêm 2 dịch vụ mới là **peel điều trị mụn chuyên sâu** và **Vikim Medic (Nano màng sinh học)** ",
+   "err": null
+  },
+  {
+   "cat": "Dịch vụ Chăm sóc da Công nghệ ",
+   "q": "Gói Buffet CNC 10 triệu bao gồm thêm những dịch vụ cao cấp nào?",
+   "exp": "Bao gồm tất cả dịch vụ của gói 7 triệu cộng thêm: Peel trẻ hóa xóa nhă",
+   "facts": [],
+   "overlap": 0.92,
+   "pass": true,
+   "chk": 2,
+   "sc": 0.862653,
+   "ans": "Gói Buffet CNC 10 triệu bao gồm tất cả dịch vụ trong gói 7 triệu, thêm 3 dịch vụ cao cấp:  \n- Peel trẻ hóa xóa nhăn Ribo  \n- Nano collagen trẻ hóa da  \n- Meso c",
+   "err": null
+  },
+  {
+   "cat": "Dịch vụ Chăm sóc da Công nghệ ",
+   "q": "Mỗi gói Buffet được sử dụng tối đa bao nhiêu buổi?",
+   "exp": "Mỗi gói được sử dụng tối đa 10 buổi",
+   "facts": [
+    "10 buổi"
+   ],
+   "overlap": 1.0,
+   "pass": true,
+   "chk": 2,
+   "sc": 0.899121,
+   "ans": "Mỗi gói Buffet CNC được sử dụng tối đa 10 buổi ạ.  \nAnh/chị muốn đặt lịch trải nghiệm gói nào không ạ?",
+   "err": null
+  },
+  {
+   "cat": "Dịch vụ Chăm sóc da Công nghệ ",
+   "q": "Thời gian sử dụng của một gói Buffet là bao lâu?",
+   "exp": "Thời gian sử dụng trong vòng 3 tháng kể từ ngày đầu tiên sử dụng dịch ",
+   "facts": [
+    "3 tháng"
+   ],
+   "overlap": 0.89,
+   "pass": true,
+   "chk": 2,
+   "sc": 0.889682,
+   "ans": "Thời gian sử dụng của một gói Buffet CNC là 3 tháng kể từ ngày đầu tiên sử dụng dịch vụ ạ.",
+   "err": null
+  },
+  {
+   "cat": "Dịch vụ Chăm sóc da Công nghệ ",
+   "q": "Khách hàng có bị giới hạn số lần sử dụng một dịch vụ trong gói Buffet không?",
+   "exp": "Không, khách hàng được lựa chọn đa dịch vụ và không giới hạn số lần sử",
+   "facts": [
+    "10 buổi"
+   ],
+   "overlap": 0.6,
+   "pass": true,
+   "chk": 2,
+   "sc": 0.893309,
+   "ans": "Dạ, khách hàng không bị giới hạn số lần sử dụng mỗi dịch vụ trong gói Buffet ạ.  \nAnh/chị muốn em tư vấn chọn gói phù hợp để trải nghiệm không ạ?",
+   "err": null
+  },
+  {
+   "cat": "Dịch vụ Chăm sóc da Công nghệ ",
+   "q": "Spa có phác đồ điều trị riêng cho từng khách không?",
+   "exp": "Có, spa cá nhân hóa phác đồ điều trị theo từng khách hàng",
+   "facts": [],
+   "overlap": 0.83,
+   "pass": true,
+   "chk": 2,
+   "sc": 0.905723,
+   "ans": "Dạ, Dr. Medispa có phác đồ điều trị riêng cho từng khách hàng ạ. Mỗi khách sẽ được soi da, phân tích 17 chỉ số bằng công nghệ AI để lên phác đồ phù hợp với tình",
+   "err": null
+  },
+  {
+   "cat": "Dịch vụ Chăm sóc da Công nghệ ",
+   "q": "Dịch vụ CSD Nâng cơ 7 điểm vàng giá bao nhiêu?",
+   "exp": "Giá lẻ là 800.000 VNĐ",
+   "facts": [
+    "800.000",
+    "VNĐ"
+   ],
+   "overlap": 1.0,
+   "pass": true,
+   "chk": 12,
+   "sc": 0.908877,
+   "ans": "Dạ, dịch vụ CSD Nâng cơ 7 điểm vàng có giá lẻ là 800.000 VNĐ/buổi.  \nHiện bên em có gói ưu đãi:  \n- Gói 6 triệu: có dịch vụ này  \n- Gói 7 triệu: có dịch vụ này ",
+   "err": null
+  },
+  {
+   "cat": "Các dịch vụ nổi bật",
+   "q": "Dịch vụ trẻ hóa da Ultherapy sử dụng công nghệ gì?",
+   "exp": "Sử dụng năng lượng sóng siêu âm hội tụ vi điểm (MFU) tác động vào lớp ",
+   "facts": [
+    "MFU",
+    "SMAS"
+   ],
+   "overlap": 0.75,
+   "pass": true,
+   "chk": 2,
+   "sc": 0.927574,
+   "ans": "Dịch vụ trẻ hóa da Ultherapy sử dụng công nghệ sóng siêu âm hội tụ vi điểm (MFU) tác động chính xác vào lớp cân cơ SMAS ạ.",
+   "err": null
+  },
+  {
+   "cat": "Các dịch vụ nổi bật",
+   "q": "Giá gốc và giá khuyến mãi của Ultherapy là bao nhiêu?",
+   "exp": "Giá gốc là 20.000.000 VNĐ/buổi, đang giảm còn 8.000.000 VNĐ/buổi",
+   "facts": [
+    "20.000.000",
+    "8.000.000",
+    "VNĐ"
+   ],
+   "overlap": 0.5,
+   "pass": true,
+   "chk": 1,
+   "sc": 1.0,
+   "ans": "Dạ, dịch vụ CSD Nâng cơ 7 điểm vàng có giá gốc là 800.000 VNĐ/buổi, hiện đang có chương trình ưu đãi với giá chỉ từ 600.000 VNĐ/buổi.  \nAnh/chị muốn em tư vấn c",
+   "err": null
+  },
+  {
+   "cat": "Các dịch vụ nổi bật",
+   "q": "Có ưu đãi gì khi mua Ultherapy full-face không?",
+   "exp": "Khi mua 2 buổi Ultherapy full-face sẽ được tặng 1 buổi Ultherapy cổ",
+   "facts": [
+    "2 buổi",
+    "1 buổi"
+   ],
+   "overlap": 0.62,
+   "pass": true,
+   "chk": 1,
+   "sc": 1.0,
+   "ans": "Dạ, hiện tại bên em chưa có thông tin về ưu đãi gói Ultherapy full-face ạ. Anh/chị vui lòng liên hệ hotline để được tư vấn chi tiết hơn ạ.",
+   "err": null
+  },
+  {
+   "cat": "Các dịch vụ nổi bật",
+   "q": "Giá trải nghiệm lần đầu cho dịch vụ Căng bóng da tráng gương kim cương là bao nhiêu?",
+   "exp": "Giá trải nghiệm cho khách hàng lần đầu là 249.000 VNĐ (giá gốc 1.600.0",
+   "facts": [
+    "249.000",
+    "1.600.000",
+    "VNĐ"
+   ],
+   "overlap": 0.33,
+   "pass": false,
+   "chk": 1,
+   "sc": 1.0,
+   "ans": "Dạ, dịch vụ Căng bóng da tráng gương kim cương có giá trải nghiệm lần đầu là 1.500.000 VNĐ ạ.  \nAnh/chị muốn em tư vấn đặt lịch trải nghiệm ngay hôm nay không ạ",
+   "err": null
+  },
+  {
+   "cat": "Các dịch vụ nổi bật",
+   "q": "Dịch vụ Nâng cơ trẻ hóa Dr. Medi có tác dụng gì?",
+   "exp": "Giúp nâng cơ, săn chắc, đều màu da và cải thiện tình trạng chảy xệ, gi",
+   "facts": [],
+   "overlap": 0.91,
+   "pass": true,
+   "chk": 4,
+   "sc": 0.942676,
+   "ans": "Dạ, dịch vụ Nâng cơ trẻ hóa Dr. Medi giúp nâng cơ, săn chắc da, cải thiện tình trạng chảy xệ, làm đều màu da và mang lại vẻ ngoài tươi tắn, rạng rỡ, trẻ trung t",
+   "err": null
+  },
+  {
+   "cat": "Các dịch vụ nổi bật",
+   "q": "Combo 10 buổi Nâng cơ trẻ hóa Dr. Medi giá bao nhiêu?",
+   "exp": "Giá khuyến mãi là 8.000.000 VNĐ (giá gốc 15.000.000 VNĐ)",
+   "facts": [
+    "8.000.000",
+    "15.000.000",
+    "VNĐ"
+   ],
+   "overlap": 0.0,
+   "pass": false,
+   "chk": 1,
+   "sc": 1.0,
+   "ans": "Dạ, combo 10 buổi CSD Nâng cơ 7 điểm vàng có giá 7.000.000 VNĐ ạ.  \nAnh/chị muốn em hỗ trợ đặt lịch trải nghiệm ngay hôm nay không ạ?",
+   "err": null
+  },
+  {
+   "cat": "Các dịch vụ nổi bật",
+   "q": "Quy trình Căng bóng da tráng gương kim cương gồm bao nhiêu bước?",
+   "exp": "Quy trình độc quyền gồm hơn 20 bước chăm sóc",
+   "facts": [
+    "20 bước"
+   ],
+   "overlap": 1.0,
+   "pass": true,
+   "chk": 6,
+   "sc": 0.75722,
+   "ans": "Dạ, quy trình Căng bóng da tráng gương kim cương tại Dr. Medispa gồm **20 bước chăm sóc độc quyền** trong 1 buổi điều trị, bao gồm:  \n- Tẩy trang, rửa mặt, tẩy ",
+   "err": null
+  },
+  {
+   "cat": "Các dịch vụ nổi bật",
+   "q": "Ưu điểm của trẻ hóa da Ultherapy so với phẫu thuật là gì?",
+   "exp": "Mang lại hiệu quả trẻ hóa lâu dài mà không cần phẫu thuật hay nghỉ dưỡ",
+   "facts": [],
+   "overlap": 0.86,
+   "pass": true,
+   "chk": 4,
+   "sc": 0.850369,
+   "ans": "Dạ, ưu điểm của Ultherapy so với phẫu thuật trẻ hóa da là:  \n- Không xâm lấn, không cần phẫu thuật, không cần nghỉ dưỡng  \n- An toàn, không đau, không để lại sẹ",
+   "err": null
+  },
+  {
+   "cat": "Dưỡng sinh, Massage & Gội đầu",
+   "q": "Massage cổ vai gáy 60 phút và 90 phút có giá lần lượt là bao nhiêu?",
+   "exp": "60 phút giá 400.000 VNĐ và 90 phút giá 500.000 VNĐ",
+   "facts": [
+    "400.000",
+    "500.000",
+    "VNĐ",
+    "60 phút",
+    "90 phút"
+   ],
+   "overlap": 1.0,
+   "pass": true,
+   "chk": 1,
+   "sc": 1.0,
+   "ans": "Dạ, massage cổ vai gáy 60 phút giá 400.000 đ, 90 phút giá 500.000 đ ạ.  \nAnh/chị muốn em tư vấn đặt lịch trải nghiệm không ạ?",
+   "err": null
+  },
+  {
+   "cat": "Dưỡng sinh, Massage & Gội đầu",
+   "q": "Dịch vụ \"Ấm nóng cổ tử cung & thải độc bi\" kéo dài bao lâu và giá bao nhiêu?",
+   "exp": "Kéo dài 120 phút với giá 3.000.000 VNĐ",
+   "facts": [
+    "3.000.000",
+    "VNĐ",
+    "120 phút"
+   ],
+   "overlap": 1.0,
+   "pass": true,
+   "chk": 1,
+   "sc": 1.0,
+   "ans": "Dạ, dịch vụ \"Ấm nóng cổ tử cung & thải độc bi\" kéo dài **120 phút**, giá là **3.000.000 VNĐ** ạ.  \nAnh/chị muốn em hỗ trợ đặt lịch trải nghiệm ngay hôm nay khôn",
+   "err": null
+  },
+  {
+   "cat": "Dưỡng sinh, Massage & Gội đầu",
+   "q": "Giá gội đầu dưỡng sinh 60 phút là bao nhiêu?",
+   "exp": "Giá là 350.000 VNĐ",
+   "facts": [
+    "350.000",
+    "VNĐ"
+   ],
+   "overlap": 1.0,
+   "pass": true,
+   "chk": 1,
+   "sc": 1.0,
+   "ans": "Dạ, dịch vụ gội đầu dưỡng sinh 60 phút có giá **350.000 VNĐ** ạ.  \nAnh/chị muốn em hỗ trợ đặt lịch trải nghiệm ngay hôm nay không ạ?",
+   "err": null
+  },
+  {
+   "cat": "Dưỡng sinh, Massage & Gội đầu",
+   "q": "Mua bao nhiêu buổi gội đầu thì được tặng thêm 5 buổi?",
+   "exp": "Mua 30 buổi sẽ được tặng thêm 5 buổi",
+   "facts": [
+    "30 buổi",
+    "5 buổi"
+   ],
+   "overlap": 1.0,
+   "pass": true,
+   "chk": 2,
+   "sc": 0.872695,
+   "ans": "Dạ, khi mua 30 buổi gội đầu, khách sẽ được tặng thêm 5 buổi ạ.  \nAnh/chị muốn em hỗ trợ đặt lịch trải nghiệm dịch vụ gội đầu dưỡng sinh với giá ưu đãi 99k/buổi ",
+   "err": null
+  },
+  {
+   "cat": "Dưỡng sinh, Massage & Gội đầu",
+   "q": "Spa có những loại dầu gội nào cho dịch vụ gội đầu thư giãn?",
+   "exp": "Có dầu thường, dầu cặp và dầu cặp cao cấp Weilaiya",
+   "facts": [],
+   "overlap": 1.0,
+   "pass": true,
+   "chk": 1,
+   "sc": 1.0,
+   "ans": "Dạ, bên em có các loại dầu gội cho dịch vụ gội đầu thư giãn như sau:  \n- Dầu thường: 60.000 đ  \n- Dầu cặp: 120.000 đ  \n- Dầu cặp Weilaiya: 150.000 đ  \n\nAnh/chị ",
+   "err": null
+  },
+  {
+   "cat": "Dưỡng sinh, Massage & Gội đầu",
+   "q": "Dịch vụ Thải độc đầu thực hiện trong bao lâu?",
+   "exp": "Thực hiện trong 90 phút",
+   "facts": [
+    "90 phút"
+   ],
+   "overlap": 1.0,
+   "pass": true,
+   "chk": 5,
+   "sc": 0.815703,
+   "ans": "Dạ, dịch vụ Thải độc đầu được thực hiện trong **90 phút** ạ.  \nAnh/chị muốn em hỗ trợ đặt lịch trải nghiệm dịch vụ này không ạ?",
+   "err": null
+  },
+  {
+   "cat": "Dưỡng sinh, Massage & Gội đầu",
+   "q": "Tẩy da chết body và ủ trắng body 60 phút giá bao nhiêu?",
+   "exp": "Giá là 550.000 VNĐ",
+   "facts": [
+    "550.000",
+    "VNĐ"
+   ],
+   "overlap": 0.0,
+   "pass": false,
+   "chk": 1,
+   "sc": 1.0,
+   "ans": "Dạ, dịch vụ \"Tẩy da chết & ủ trắng body\" 60 phút có giá **450.000 VNĐ** ạ.  \nAnh/chị muốn em hỗ trợ đặt lịch trải nghiệm ngay hôm nay không ạ?",
+   "err": null
+  },
+  {
+   "cat": "Triệt lông",
+   "q": "Spa sử dụng công nghệ triệt lông gì?",
+   "exp": "Sử dụng công nghệ Diode Laser hiện đại, an toàn và chuẩn y khoa",
+   "facts": [],
+   "overlap": 0.78,
+   "pass": true,
+   "chk": 5,
+   "sc": 0.909907,
+   "ans": "Dạ, spa sử dụng công nghệ **Diode Laser lạnh hiện đại của Hàn Quốc** cho dịch vụ triệt lông, an toàn, không đau, không bỏng rát, hiệu quả rõ rệt chỉ sau 3-5 buổ",
+   "err": null
+  },
+  {
+   "cat": "Triệt lông",
+   "q": "Giá trải nghiệm triệt lông 1 vùng cho khách hàng mới là bao nhiêu?",
+   "exp": "Chỉ từ 49.000 VNĐ/lần",
+   "facts": [
+    "49.000",
+    "VNĐ"
+   ],
+   "overlap": 0.0,
+   "pass": true,
+   "chk": 1,
+   "sc": 1.0,
+   "ans": "Dạ, giá trải nghiệm triệt lông 1 vùng cho khách hàng mới là:  \n- Mép: 129.000 đ  \n- Mặt: 249.000 đ  \n- Nách: 199.000 đ  \n- 1/2 tay: 349.000 đ  \n- Cả tay: 499.00",
+   "err": null
+  },
+  {
+   "cat": "Triệt lông",
+   "q": "Combo 10 buổi triệt lông toàn thân giá bao nhiêu?",
+   "exp": "Giá là 11.999.000 VNĐ",
+   "facts": [
+    "11.999.000",
+    "VNĐ"
+   ],
+   "overlap": 1.0,
+   "pass": true,
+   "chk": 1,
+   "sc": 1.0,
+   "ans": "Dạ, gói combo 10 buổi triệt lông toàn thân có giá **11.999.000 VNĐ** ạ.  \nAnh/chị muốn em hỗ trợ đặt lịch trải nghiệm ngay hôm nay không ạ?",
+   "err": null
+  },
+  {
+   "cat": "Triệt lông",
+   "q": "Mua combo 10 buổi triệt lông có ưu đãi gì thêm không?",
+   "exp": "Sẽ được tặng thêm 5 buổi và được bảo hành 2 năm",
+   "facts": [
+    "5 buổi",
+    "2 năm"
+   ],
+   "overlap": 1.0,
+   "pass": true,
+   "chk": 5,
+   "sc": 0.912934,
+   "ans": "Dạ, khi mua combo 10 buổi triệt lông tại Dr. Medispa, khách sẽ được:\n- **Tặng thêm 5 buổi** (tổng cộng 15 buổi sử dụng)\n- **Bảo hành 2 năm** cho vùng triệt đã l",
+   "err": null
+  },
+  {
+   "cat": "Triệt lông",
+   "q": "Giá lẻ 1 buổi triệt lông vùng Bikini là bao nhiêu?",
+   "exp": "Giá là 499.000 VNĐ",
+   "facts": [
+    "499.000",
+    "VNĐ"
+   ],
+   "overlap": 0.0,
+   "pass": false,
+   "chk": 1,
+   "sc": 1.0,
+   "ans": "Dạ, hiện tại em chưa có thông tin về giá dịch vụ triệt lông vùng Bikini trong danh mục bên em ạ. Anh/chị vui lòng liên hệ hotline để được tư vấn cụ thể hơn ạ.",
+   "err": null
+  },
+  {
+   "cat": "Triệt lông",
+   "q": "Triệt lông tại spa có đau không?",
+   "exp": "Không, công nghệ Diode Laser lạnh giúp triệt lông không đau, không bỏn",
+   "facts": [],
+   "overlap": 0.89,
+   "pass": true,
+   "chk": 3,
+   "sc": 0.840573,
+   "ans": "Dạ, triệt lông tại Dr. Medispa sử dụng công nghệ Diode Laser lạnh hiện đại, không đau, không bỏng rát, an toàn và hiệu quả rõ rệt chỉ sau 3–5 buổi ạ.  \nAnh/chị ",
+   "err": null
+  },
+  {
+   "cat": "Triệt lông",
+   "q": "Sau bao nhiêu buổi thì thấy hiệu quả triệt lông rõ rệt?",
+   "exp": "Hiệu quả rõ rệt sau từ 3-5 buổi",
+   "facts": [
+    "5 buổi"
+   ],
+   "overlap": 1.0,
+   "pass": true,
+   "chk": 3,
+   "sc": 0.747911,
+   "ans": "Dạ, với công nghệ Diode Laser lạnh tại Dr. Medispa, khách thường thấy hiệu quả rõ rệt chỉ sau **3–5 buổi triệt lông vùng Bikini** ạ.  \nHiệu quả giảm lông bền lâ",
+   "err": null
+  },
+  {
+   "cat": "Triệt lông",
+   "q": "Giá combo 10 buổi vùng Nách là bao nhiêu?",
+   "exp": "Giá là 1.199.000 VNĐ",
+   "facts": [
+    "1.199.000",
+    "VNĐ"
+   ],
+   "overlap": 1.0,
+   "pass": true,
+   "chk": 1,
+   "sc": 1.0,
+   "ans": "Combo 10 buổi triệt lông vùng nách tại Dr. Medispa giá **1.199.000đ** (tiết kiệm 791.000đ so với mua lẻ).  \nAnh/chị muốn em hỗ trợ đặt lịch trải nghiệm không ạ?",
+   "err": null
+  },
+  {
+   "cat": "Triệt lông",
+   "q": "Triệt lông vùng Mép giá buổi lẻ là bao nhiêu?",
+   "exp": "Giá là 129.000 VNĐ",
+   "facts": [
+    "129.000",
+    "VNĐ"
+   ],
+   "overlap": 1.0,
+   "pass": true,
+   "chk": 1,
+   "sc": 1.0,
+   "ans": "Dạ, giá dịch vụ triệt lông vùng mép tại Dr. Medispa là **129.000đ** ạ.  \nAnh/chị muốn em hỗ trợ đặt lịch trải nghiệm ngay hôm nay không ạ?",
+   "err": null
+  },
+  {
+   "cat": "Triệt lông",
+   "q": "Triệt râu cho nam combo 10 buổi giá bao nhiêu?",
+   "exp": "Giá là 1.499.000 VNĐ",
+   "facts": [
+    "1.499.000",
+    "VNĐ"
+   ],
+   "overlap": 0.0,
+   "pass": false,
+   "chk": 1,
+   "sc": 1.0,
+   "ans": "Combo 10 buổi triệt lông vùng nách cho nam tại Dr. Medispa giá **1.990.000đ** (tiết kiệm 1.000.000đ so với mua lẻ), đang có ưu đãi **mua 10 tặng 1 buổi** ạ.  \nA",
+   "err": null
+  },
+  {
+   "cat": "Quy trình tư vấn & Chăm sóc kh",
+   "q": "Nhân viên phải xưng hô với khách hàng như thế nào?",
+   "exp": "Nhân viên xưng là \"em\" và gọi khách hàng là \"anh/chị\"",
+   "facts": [],
+   "overlap": 1.0,
+   "pass": true,
+   "chk": 4,
+   "sc": 0.793106,
+   "ans": "Dạ, nhân viên sẽ xưng hô với khách hàng bằng \"em\" (với nhân viên) và \"anh/chị\" (với khách hàng) ạ.  \nVí dụ: \"Dạ, chị vui lòng cho em xin thông tin để em hỗ trợ ",
+   "err": null
+  },
+  {
+   "cat": "Quy trình tư vấn & Chăm sóc kh",
+   "q": "Giá trải nghiệm CSD chuyên sâu cho khách mới là bao nhiêu?",
+   "exp": "Ưu đãi chỉ 199.000 VNĐ/buổi (giá gốc 700.000 VNĐ)",
+   "facts": [
+    "199.000",
+    "700.000",
+    "VNĐ"
+   ],
+   "overlap": 0.33,
+   "pass": true,
+   "chk": 1,
+   "sc": 1.0,
+   "ans": "Dạ, giá trải nghiệm dịch vụ CSD Chuyên sâu tại Dr. Medispa cho khách mới là **700.000đ** ạ.  \nAnh/chị muốn em hỗ trợ đặt lịch trải nghiệm ngay hôm nay không ạ?",
+   "err": null
+  },
+  {
+   "cat": "Quy trình tư vấn & Chăm sóc kh",
+   "q": "Quy trình Chăm sóc da chuyên sâu gồm bao nhiêu bước?",
+   "exp": "Gồm 10 bước chuẩn y khoa, bao gồm cả massage vai gáy cuối liệu trình",
+   "facts": [
+    "10 bước"
+   ],
+   "overlap": 0.75,
+   "pass": true,
+   "chk": 19,
+   "sc": 0.90025,
+   "ans": "Quy trình chăm sóc da chuyên sâu tại Dr. Medispa gồm **10 bước chuẩn y khoa**:  \ntẩy trang, rửa mặt, tẩy da chết, hút dầu mụn, lấy nhân mụn chuẩn y khoa, massag",
+   "err": null
+  },
+  {
+   "cat": "Quy trình tư vấn & Chăm sóc kh",
+   "q": "Dịch vụ Hydra Ballet dành cho đối tượng nào và sử dụng mỹ phẩm gì?",
+   "exp": "Dành cho da khô, sử dụng dược mỹ phẩm Pháp PAYOT kết hợp massage Gym B",
+   "facts": [
+    "PAYOT",
+    "42 bước"
+   ],
+   "overlap": 1.0,
+   "pass": true,
+   "chk": 2,
+   "sc": 0.896831,
+   "ans": "Dạ, dịch vụ Hydra Ballet tại Dr. Medispa dành cho da khô, sử dụng dược mỹ phẩm Pháp PAYOT kết hợp kỹ thuật massage Gym Beauté® 42 bước độc quyền ạ.  \nAnh/chị mu",
+   "err": null
+  },
+  {
+   "cat": "Quy trình tư vấn & Chăm sóc kh",
+   "q": "Dịch vụ Detox Ballet có tác dụng gì?",
+   "exp": "Dành cho da dầu mụn/nhạy cảm, giúp thanh lọc, giảm viêm, cân bằng bã n",
+   "facts": [],
+   "overlap": 0.9,
+   "pass": true,
+   "chk": 4,
+   "sc": 0.882103,
+   "ans": "Dạ, dịch vụ Detox Ballet tại Dr. Medispa dành cho da dầu, mụn và da nhạy cảm, giúp kích hoạt hệ bạch huyết, giảm ứ trệ & viêm, cân bằng tuyến bã nhờn, làm sạch ",
+   "err": null
+  },
+  {
+   "cat": "Quy trình tư vấn & Chăm sóc kh",
+   "q": "Khi khách đến spa sẽ được kiểm tra da như thế nào?",
+   "exp": "Khách sẽ được soi da bằng công nghệ AI phân tích 17 chỉ số và tư vấn p",
+   "facts": [],
+   "overlap": 1.0,
+   "pass": true,
+   "chk": 1,
+   "sc": 0.838891,
+   "ans": "Khi khách đến spa, sẽ được soi da và phân tích 17 chỉ số da bằng công nghệ AI để hiểu rõ tình trạng da hiện tại, từ đó lên phác đồ điều trị riêng phù hợp ạ.  \nA",
+   "err": null
+  },
+  {
+   "cat": "Quy trình tư vấn & Chăm sóc kh",
+   "q": "Để chốt lịch hẹn, nhân viên cần xin khách những thông tin gì?",
+   "exp": "Cần xin Họ tên, Số điện thoại, và Thời gian (Giờ - Ngày) khách có thể ",
+   "facts": [],
+   "overlap": 1.0,
+   "pass": true,
+   "chk": 4,
+   "sc": 0.960834,
+   "ans": "Để chốt lịch hẹn, nhân viên cần xin khách thông tin:  \n- Họ và tên  \n- Số điện thoại (10–11 số, bắt đầu bằng 0)  \n- Thời gian (giờ và ngày cụ thể)  \n- Tên dịch ",
+   "err": null
+  },
+  {
+   "cat": "Quy trình tư vấn & Chăm sóc kh",
+   "q": "Nếu khách hỏi địa chỉ, nhân viên cần lưu ý khách điều gì về lối đi?",
+   "exp": "Cần lưu ý khách đi thang bộ lên tầng 2",
+   "facts": [],
+   "overlap": 1.0,
+   "pass": true,
+   "chk": 1,
+   "sc": 0.433981,
+   "ans": "Dạ, khách đi thang bộ lên tầng 2 ạ. Em gửi chị địa chỉ: Số 102 Vũ Trọng Phụng, Thanh Xuân, Hà Nội. Chị nhớ đi thang bộ lên tầng 2 nhé ạ!",
+   "err": null
+  },
+  {
+   "cat": "Quy trình tư vấn & Chăm sóc kh",
+   "q": "Trước lịch hẹn bao lâu nhân viên cần nhắn tin nhắc lịch cho khách?",
+   "exp": "Trước lịch hẹn 1 tiếng",
+   "facts": [],
+   "overlap": 1.0,
+   "pass": true,
+   "chk": 4,
+   "sc": 0.827605,
+   "ans": "Trước lịch hẹn 1 tiếng, nhân viên sẽ nhắn tin nhắc khách ạ.",
+   "err": null
+  },
+  {
+   "cat": "Quy trình tư vấn & Chăm sóc kh",
+   "q": "Nếu khách inbox nhưng không trả lời tư vấn, sau bao lâu nhân viên phải nhắn tin lại?",
+   "exp": "Sau 1 tiếng nhân viên sẽ chủ động nhắn tin lại để remind và hỗ trợ",
+   "facts": [],
+   "overlap": 0.83,
+   "pass": true,
+   "chk": 2,
+   "sc": 0.813816,
+   "ans": "Nếu khách inbox nhưng không trả lời, sau 1 tiếng nhân viên sẽ chủ động nhắn tin nhắc lại ạ.",
+   "err": null
+  }
+ ]
+}

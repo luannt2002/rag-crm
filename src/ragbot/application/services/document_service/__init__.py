@@ -877,21 +877,20 @@ class DocumentService(_IngestMixin):
         replaces only documents whose ``source_url`` is in the incoming
         payload. Existing docs not referenced in this batch are preserved.
 
-        Implementation: SOFT-delete (``deleted_at = now()``) so chunks
-        and embeddings remain in the table for forensic / rollback. The
-        subsequent :meth:`ingest` call inserts a new row + new chunks
-        (the WHERE clause on the dedup query filters
-        ``deleted_at IS NULL`` so the soft-deleted row will not be
-        re-used as ``existing_doc_id``).
+        Implementation: HARD-delete the matched docs' ``document_chunks``
+        (no FK cascade exists), then SOFT-delete the document rows
+        (``deleted_at = now()``) for forensic / rollback. The subsequent
+        :meth:`ingest` re-uses the same document_id (``uq_doc_tool`` ON
+        CONFLICT) and re-inserts fresh chunks — purging here is what keeps
+        the re-ingest from leaving stale chunks behind (duplication).
 
         @param record_bot_id: UUID of the owning bot
         @param source_urls: list of source URLs from the incoming sync
             payload — only docs matching one of these URLs will be
             soft-deleted. Empty/None URLs are skipped (cannot dedup).
         @param record_tenant_id: tenant binding for RLS
-        @return: (chunks_affected, documents_soft_deleted) — chunks
-            counter is always 0 because chunks remain (cascade soft-
-            delete is implicit via the FK to documents.deleted_at).
+        @return: (chunks_purged, documents_soft_deleted) — chunks_purged
+            is the count of stale chunks hard-deleted for the replaced docs.
         """
         # Filter empty source URLs — cannot dedup without an identity
         clean_urls = [u for u in source_urls if u]
@@ -906,6 +905,24 @@ class DocumentService(_IngestMixin):
         async with session_with_tenant(
             self._sf, record_tenant_id=record_tenant_id,
         ) as session:
+            # PURGE the chunks of the docs being replaced FIRST. The subsequent
+            # re-ingest re-uses the SAME document_id (``uq_doc_tool`` ON CONFLICT
+            # resurrects the soft-deleted row) and the ingest dedup SELECT's
+            # ``deleted_at IS NULL`` filter makes ``is_reindex=False`` → the store
+            # stage does a pure INSERT of the new chunks. There is NO FK cascade
+            # on ``document_chunks`` — without this explicit purge the OLD chunks
+            # survive alongside the NEW ones (duplication).
+            cd = await session.execute(
+                text("""DELETE FROM document_chunks
+                        WHERE record_document_id IN (
+                            SELECT id FROM documents
+                            WHERE record_bot_id = :bid
+                              AND source_url = ANY(:urls)
+                              AND deleted_at IS NULL
+                        )"""),
+                {"bid": record_bot_id, "urls": clean_urls},
+            )
+            chunks_purged = cd.rowcount or 0
             # Soft-delete docs with overlapping source_url (UPSERT replace)
             r = await session.execute(
                 text("""UPDATE documents
@@ -928,10 +945,11 @@ class DocumentService(_IngestMixin):
                 "replace_documents_for_bot",
                 record_bot_id=str(record_bot_id),
                 docs_replaced=r.rowcount or 0,
+                chunks_purged=chunks_purged,
                 urls_count=len(clean_urls),
                 semantic_cache_purged=rc.rowcount or 0,
             )
-            return (0, r.rowcount or 0)
+            return (chunks_purged, r.rowcount or 0)
 
     async def delete_all_for_bot(
         self,
