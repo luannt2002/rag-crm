@@ -447,12 +447,22 @@ class _StageStoreMixin:
                         error=str(exc),
                         error_type=type(exc).__name__,
                     )
-                    # Mark document as failed so re-ingest / admin tooling can find it.
+                    # Mark failed AND soft-delete: the doc row was committed
+                    # early (before chunks) so it carries content_hash, but
+                    # ingest aborts here before any chunk is stored. Leaving it
+                    # live (deleted_at NULL) makes the content-hash dedup
+                    # (ingest_core: WHERE ... AND deleted_at IS NULL) bounce the
+                    # re-upload of the same file with HTTP 409 after a transient
+                    # embed failure. Soft-deleting frees re-upload while keeping
+                    # the row (state='failed') for admin recovery/forensics.
                     async with session_with_tenant(
                         self._sf, record_tenant_id=record_tenant_id,
                     ) as session:
                         await session.execute(
-                            text("UPDATE documents SET state = 'failed' WHERE id = :id"),
+                            text(
+                                "UPDATE documents SET state = 'failed', "
+                                "deleted_at = now() WHERE id = :id"
+                            ),
                             {"id": doc_id},
                         )
                         await session.commit()
@@ -477,11 +487,18 @@ class _StageStoreMixin:
                     expected=len(_chunks_needing_embed),
                     got=len(embed_results),
                 )
+                # Same abort-before-chunks-stored path as the embed-exception
+                # branch above: soft-delete so the 0-chunk orphan does not
+                # block re-upload via the content-hash dedup, while keeping the
+                # row (state='failed') for admin recovery.
                 async with session_with_tenant(
                     self._sf, record_tenant_id=record_tenant_id,
                 ) as session:
                     await session.execute(
-                        text("UPDATE documents SET state = 'failed' WHERE id = :id"),
+                        text(
+                            "UPDATE documents SET state = 'failed', "
+                            "deleted_at = now() WHERE id = :id"
+                        ),
                         {"id": doc_id},
                     )
                     await session.commit()
