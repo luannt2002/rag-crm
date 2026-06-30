@@ -124,6 +124,11 @@ class RoutingSignals:
     list_count_signals: tuple[str, ...] = ()
     list_category_signals: tuple[str, ...] = ()
     price_factoid_guards: tuple[str, ...] = ()
+    # Price NOUNS (folded) — the bare word a user uses for "price" ("gia",
+    # "tien"; "price", "cost"). Distinct from price_ask_signals (adjacent
+    # phrases) so a SPLIT ask ("giá lốp X bao nhiêu") is still recognised as a
+    # price question. Word-boundary matched. Empty → locale has no price word.
+    price_word_signals: tuple[str, ...] = ()
     # Regex SOURCE strings (compiled by the consumer). ``measure_unit_re``
     # guards the "bao nhiêu <unit>" measure-factoid carve-out; the two intent
     # regex tuples drive the Layer-1 heuristic classifier (label → source).
@@ -235,6 +240,7 @@ _VI_ROUTING_SIGNALS = RoutingSignals(
         "gia the nao", "gia la bao nhieu", "bao tien", "het bao nhieu",
         "tinh tien", "how much", "price of", "what is the price",
     ),
+    price_word_signals=("gia", "tien"),
     price_structural_anchors=(
         "dieu ", "khoan ", "chuong ", "diem ", "muc ", "thong tu",
         "nghi dinh",
@@ -328,6 +334,7 @@ _EN_ROUTING_SIGNALS = RoutingSignals(
         "how much", "price of", "what is the price", "what's the price",
         "cost of", "how much does", "how much is",
     ),
+    price_word_signals=("price", "cost"),
     price_structural_anchors=(
         "article ", "clause ", "section ", "chapter ", "point ",
         "circular ", "decree ",
@@ -674,6 +681,7 @@ _ROUTING_TUPLE_FIELDS: tuple[str, ...] = (
     "above_tokens", "superlative_max_tokens", "superlative_min_tokens",
     "price_ask_signals", "price_structural_anchors", "price_strip_phrases",
     "list_count_signals", "list_category_signals", "price_factoid_guards",
+    "price_word_signals",
 )
 
 

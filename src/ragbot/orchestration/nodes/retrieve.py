@@ -70,6 +70,7 @@ from ragbot.shared.chunking import (
 from ragbot.shared.embedding_cache import set_cached_embedding
 from ragbot.shared.errors import InvariantViolation
 from ragbot.shared.query_range_parser import (
+    is_price_ask_query,
     parse_code_query as _parse_code_query,
     parse_list_query as _parse_list_query,
     parse_price_of_entity_query as _parse_price_of_entity_query,
@@ -295,6 +296,14 @@ async def retrieve(
                 _stats_limit = int(
                     _pcfg(state, "stats_index_limit", DEFAULT_STATS_INDEX_LIMIT)
                 )
+                # Anti-fabricate gate input: does the user ask for a price? A
+                # price-ask that resolves only to price-LESS rows must fall
+                # through to hybrid rather than answer authoritatively from a
+                # row with no price (see _do_stats_lookup B-ROLEBLIND). Shape-
+                # only via the locale price-ask signal — no vocab, no per-bot.
+                _expect_price = is_price_ask_query(
+                    _raw_query, signals=_routing_signals
+                )
                 _race_enabled = bool(
                     _pcfg(
                         state,
@@ -430,6 +439,7 @@ async def retrieve(
                             state,
                             range_filter=_range_filter,
                             stats_limit=_stats_limit,
+                            expect_price=_expect_price,
                         )
                     )
                     _vector_task: asyncio.Task[list[dict] | None] = (
@@ -548,6 +558,7 @@ async def retrieve(
                         state,
                         range_filter=_range_filter,
                         stats_limit=_stats_limit,
+                        expect_price=_expect_price,
                     )
                     # 2026-05-28 — fall-through when stats_index returns 0
                     # linked_chunks. Production trace 7fed03f9 showed

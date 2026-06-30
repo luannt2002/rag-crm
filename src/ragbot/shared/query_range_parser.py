@@ -412,6 +412,31 @@ def parse_price_of_entity_query(
     )
 
 
+def is_price_ask_query(
+    query: str, *, signals: RoutingSignals | None = None
+) -> bool:
+    """True when *query* asks for a PRICE (a "<entity> giá bao nhiêu" shape).
+
+    Shape-only — keyed on the locale ``price_ask_signals`` set, never on a
+    brand/service literal. Used to gate the stats point-lookup: a price-ask that
+    resolves only to price-LESS rows must fall through to hybrid rather than
+    answer authoritatively from a row carrying no price (anti-fabrication at the
+    retrieval tier — the application never edits the answer).
+    """
+    if not query or not query.strip():
+        return False
+    sig = _resolve_signals(signals)
+    folded = _ascii_fold(query)
+    # Adjacent price-ask phrase ("X giá bao nhiêu" → "gia bao nhieu") …
+    if any(s in folded for s in sig.price_ask_signals):
+        return True
+    # … or a bare price NOUN anywhere (handles a SPLIT ask where the entity
+    # sits between the price word and the quantity word: "giá lốp X bao nhiêu").
+    # Word-boundary so "gia" does not fire inside "giao"/"giay".
+    words = set(re.findall(r"\w+", folded))
+    return any(w in words for w in getattr(sig, "price_word_signals", ()))
+
+
 # Spec/product-code detector. A code is an alphanumeric run joined by / . - —
 # a shape no natural-language word takes (195/65R15, 2-R17, A1.B2, a SKU). The
 # pattern is operator-overridable via system_config 'code_query_pattern'; the

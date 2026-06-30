@@ -36,6 +36,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from ragbot.infrastructure.db.engine import session_with_tenant
 from ragbot.shared.constants import (
+    DEFAULT_STATS_ATTRS_MATCH_MIN_LEN,
     DEFAULT_STATS_INDEX_QUERY_LIMIT,
     DEFAULT_STATS_REVERSE_MATCH_LIMIT,
     DEFAULT_STATS_REVERSE_MATCH_MIN_LEN,
@@ -421,7 +422,7 @@ class StatsIndexRepository:
         sql = (
             "SELECT dsi.id, dsi.record_document_id, dsi.entity_name, "
             "dsi.entity_category, dsi.price_primary, dsi.price_secondary, "
-            "dsi.record_chunk_id "
+            "dsi.record_chunk_id, dsi.attributes_json "
             f"FROM document_service_index AS dsi {_DOC_LIVE_JOIN} "
             f"WHERE dsi.record_bot_id = :bot_id AND {_DOC_LIVE_PREDICATE} "
             "ORDER BY dsi.created_at ASC "
@@ -443,6 +444,7 @@ class StatsIndexRepository:
                 "price_primary": row[4],
                 "price_secondary": row[5],
                 "record_chunk_id": row[6],
+                "attributes_json": row[7],
             }
             for row in rows
         ]
@@ -503,11 +505,26 @@ class StatsIndexRepository:
 
         or_clauses: list[str] = []
         for i, v in enumerate(variants):
-            or_clauses.append(
+            _clause = (
                 f"unaccent(entity_name) ILIKE unaccent(:kw{i}) "
                 f"OR unaccent(entity_category) ILIKE unaccent(:kw{i}) "
                 f"OR {_fold('entity_name')} LIKE '%' || {_fold(f':kwn{i}')} || '%'"
             )
+            # B-FMA: a long, specific keyword (a spec / SKU / full product name)
+            # frequently lives ONLY in a non-name attribute cell — the alias /
+            # notation flood, the descriptive name — while ``entity_name`` holds a
+            # terse internal code. Search ``attributes_json`` too so a spec query
+            # reaches the PRICED row; the existing ``ORDER BY price IS NOT NULL
+            # DESC`` then prefers it over a price-less notation sibling. Gated by
+            # keyword length so a short generic token can't match every row's
+            # attribute blob. Shape-only, domain-neutral — searches the JSONB
+            # TEXT, never a named/owner column.
+            if len(v) >= DEFAULT_STATS_ATTRS_MATCH_MIN_LEN:
+                _clause += (
+                    f" OR unaccent(dsi.attributes_json::text) "
+                    f"ILIKE unaccent(:kw{i})"
+                )
+            or_clauses.append(_clause)
             params[f"kw{i}"] = f"%{v}%"
             params[f"kwn{i}"] = v
         where_match = " OR ".join(f"({c})" for c in or_clauses)

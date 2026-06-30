@@ -551,3 +551,81 @@ def test_stats_index_receives_record_bot_id_for_tenant_isolation() -> None:
 
     call_kwargs = stats_repo.query_by_price_range.call_args.kwargs
     assert call_kwargs["record_bot_id"] == bot_uuid
+
+
+# ---------------------------------------------------------------------------
+# 11. B-ROLEBLIND — a price-ask that resolves only to price-LESS entities must
+#     fall through to hybrid (anti-fabricate, retrieval-tier). A NULL-price row
+#     handed to the LLM as an authoritative score=1.0 record made it invent a
+#     price (live: "giá lốp 195/65R15" → fabricated number that is 0× in corpus).
+# ---------------------------------------------------------------------------
+
+
+def test_price_ask_null_price_entity_falls_through_not_stats() -> None:
+    """A price-ask point lookup whose ONLY matched entity carries no price must
+    NOT short-circuit to a stats synthetic chunk (spec + date, no price → the
+    LLM fabricates the missing price). It must fall through to hybrid so the
+    priced sibling chunk can be retrieved. Reproduces the live FM-B HALLU."""
+    null_price = [{
+        "entity_name": "195/65R15 91H CITYTRAXX G/P",
+        "price_primary": None, "price_secondary": None,
+        "record_chunk_id": str(uuid4()), "record_document_id": str(uuid4()),
+        "attributes_json": {"col_2": "28-thg 11"},
+    }]
+    stats_repo = MagicMock()
+    stats_repo.query_by_name_keyword = AsyncMock(return_value=null_price)
+    stats_repo.list_all_entities = AsyncMock(return_value=[])
+    doc_repo = MagicMock()
+    doc_repo.find_chunks_by_document_ids = AsyncMock(return_value=[])
+    doc_repo.find_chunks_by_ids = AsyncMock(return_value=[])
+    doc_repo.fetch_summaries_by_bot = AsyncMock(return_value=[])
+
+    tracker = _RecordingStepTracker()
+    state = _base_state(tracker, intent="factoid")
+    state["query"] = "giá lốp 195/65R15 bao nhiêu"
+    state["original_query"] = "giá lốp 195/65R15 bao nhiêu"
+    compiled = _build_compiled(stats_index_repo=stats_repo, doc_repo=doc_repo)
+
+    result = _invoke_retrieve(compiled, state)
+
+    # The price-ask code lookup WAS attempted (interception fired) …
+    stats_repo.query_by_name_keyword.assert_called_once()
+    # … but a price-LESS hit must NOT win the route → no authoritative answer.
+    assert result.get("retrieve_mode") != "stats_index"
+    retrieved = result.get("retrieved_chunks") or []
+    assert not [c for c in retrieved if c.get("source") == "stats_index"], (
+        "a price-less entity must not become an authoritative stats answer"
+    )
+
+
+def test_price_ask_priced_entity_still_uses_stats() -> None:
+    """Control / no-regression: a price-ask that resolves to a PRICED entity
+    keeps the stats short-circuit — by-code price lookups must not regress."""
+    priced = [{
+        "entity_name": "2-R15 195/65 LPD",
+        "price_primary": 972_000, "price_secondary": None,
+        "record_chunk_id": str(uuid4()), "record_document_id": str(uuid4()),
+        "attributes_json": {},
+    }]
+    stats_repo = MagicMock()
+    stats_repo.query_by_name_keyword = AsyncMock(return_value=priced)
+    stats_repo.list_all_entities = AsyncMock(return_value=[])
+    doc_repo = MagicMock()
+    doc_repo.find_chunks_by_document_ids = AsyncMock(return_value=[])
+    doc_repo.find_chunks_by_ids = AsyncMock(return_value=[])
+    doc_repo.fetch_summaries_by_bot = AsyncMock(return_value=[])
+
+    tracker = _RecordingStepTracker()
+    state = _base_state(tracker, intent="factoid")
+    state["query"] = "giá mã 2-R15 195/65 LPD bao nhiêu"
+    state["original_query"] = "giá mã 2-R15 195/65 LPD bao nhiêu"
+    compiled = _build_compiled(stats_index_repo=stats_repo, doc_repo=doc_repo)
+
+    result = _invoke_retrieve(compiled, state)
+
+    stats_repo.query_by_name_keyword.assert_called_once()
+    assert result.get("retrieve_mode") == "stats_index"
+    retrieved = result.get("retrieved_chunks") or []
+    assert [c for c in retrieved if c.get("source") == "stats_index"], (
+        "a priced entity must still produce the authoritative stats chunk"
+    )

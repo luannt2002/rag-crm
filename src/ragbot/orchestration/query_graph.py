@@ -2104,6 +2104,7 @@ def build_graph(
         *,
         range_filter: Any,
         stats_limit: int,
+        expect_price: bool = False,
     ) -> dict | None:
         """Run stats-index SQL query + linked-chunk fetch.
 
@@ -2129,7 +2130,7 @@ def build_graph(
                     synonyms=_resolve_stats_keyword_synonyms(state, _stats_kw),
                     limit=stats_limit,
                 )
-                if not entities:
+                if not entities and not expect_price:
                     # "liệt kê tất cả / có những <generic category> nào" — the
                     # category word ("lốp", "dịch vụ") names the WHOLE corpus,
                     # not a value inside any entity NAME, so the keyword ILIKE
@@ -2157,6 +2158,25 @@ def build_graph(
                     limit=stats_limit,
                 )
             if not entities:
+                return None
+            # B-ROLEBLIND (anti-fabricate, retrieval-tier): a price-ask point
+            # lookup that resolved only to price-LESS rows must NOT be answered
+            # authoritatively from the structured index — the synthetic chunk
+            # would carry the spec/name + other fields but no price, and the LLM
+            # then fabricates the missing number. Return None so retrieve falls
+            # through to hybrid (which ranks the priced sibling chunk). Shape-
+            # gated on the price-ask signal + price-field presence: no vocab, no
+            # per-bot branch. Only the keyword point-lookup is gated — range /
+            # superlative / list keep their own semantics.
+            if (
+                expect_price
+                and _operation == "keyword"
+                and not any(
+                    e.get("price_primary") is not None
+                    or e.get("price_secondary") is not None
+                    for e in entities
+                )
+            ):
                 return None
             chunk_ids = [
                 e["record_chunk_id"]
