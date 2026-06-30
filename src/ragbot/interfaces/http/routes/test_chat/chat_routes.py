@@ -459,7 +459,7 @@ async def test_chat(req: TestChatRequest, request: Request) -> dict:
     initial_state["bypass_cache"] = req.bypass_cache
 
     answer = ""
-    from ragbot.shared.errors import ExternalServiceError  # noqa: PLC0415
+    from ragbot.shared.errors import ExternalServiceError, LLMError  # noqa: PLC0415
     from ragbot.application.ports.guardrail_port import GuardrailBlocked  # noqa: PLC0415
 
     llm_error = None
@@ -499,6 +499,21 @@ async def test_chat(req: TestChatRequest, request: Request) -> dict:
         llm_error = f"{type(exc).__name__}: {exc}"
         logger.warning(
             "test_chat_external_service_unavailable",
+            error=llm_error,
+            error_type=type(exc).__name__,
+            exc_info=True,
+        )
+    except LLMError as exc:
+        # B4 — the LLM provider failed after retries (e.g. innocom 5xx on a
+        # heavy "liệt kê" query). This is TRANSIENT infra, not a pipeline bug:
+        # map it to a retryable 503 (like ExternalServiceError) instead of a
+        # 500. It IS an LLM failure, so the LLM circuit still counts it (so the
+        # breaker can open if the provider keeps failing).
+        _llm_circuit.record_failure()
+        _svc_unavailable = True
+        llm_error = f"{type(exc).__name__}: {exc}"
+        logger.warning(
+            "test_chat_llm_provider_unavailable",
             error=llm_error,
             error_type=type(exc).__name__,
             exc_info=True,
@@ -673,7 +688,7 @@ async def test_chat(req: TestChatRequest, request: Request) -> dict:
 
     if llm_error:
         if _svc_unavailable:
-            raise HTTPException(status_code=503, detail="Embedding/rerank service temporarily unavailable. Retry shortly.")
+            raise HTTPException(status_code=503, detail="Upstream model service temporarily unavailable. Retry shortly.")
         raise HTTPException(status_code=500, detail="RAG pipeline failed. Check server logs.")
 
     response: dict[str, Any] = {
