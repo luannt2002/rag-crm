@@ -34,6 +34,9 @@ class _Host(_StageFinalizeMixin):
     def __init__(self, stats_repo: object) -> None:
         self._sf = MagicMock()
         self._stats_index_repo = stats_repo
+        # ADR-0006: _stage_finalize reads self._bot_repo for owner column_roles;
+        # None → inference-only (no per-bot overrides in this unit).
+        self._bot_repo = None
         # Skip the GraphRAG background task and use config defaults.
         self._cfg = SimpleNamespace(
             get_bool=AsyncMock(return_value=True),  # graph_rag_lazy_mode → skip
