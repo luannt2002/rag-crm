@@ -124,6 +124,54 @@ from ragbot.application.services.narrate_dispatch import (
 
 logger = structlog.get_logger(__name__)
 
+# Parsers that emit one atomic chunk per row (structure preserved). When such a
+# parser has run, whole-doc collapse and orphan-merge are both suppressed so the
+# row-atomic shape (and its header binding) survives to the stats extractor +
+# row-level retrieval. Purpose-named, domain-neutral.
+_ROW_PRESERVE_PROVIDERS: frozenset[str] = frozenset({"excel_openpyxl", "google_sheets"})
+
+
+def _parser_row_shaped(parser_row_chunks: list[dict] | None) -> bool:
+    """True when the parser emitted row-shaped chunks (excel / google_sheets).
+
+    Read from the first chunk's ``metadata.parser`` stamp — the authoritative
+    signal that the source is a per-row table, independent of the parsed markdown's
+    surface form.
+    """
+    if not parser_row_chunks:
+        return False
+    _meta = parser_row_chunks[0].get("metadata") or {}
+    return str(_meta.get("parser") or "").strip() in _ROW_PRESERVE_PROVIDERS
+
+
+def _should_store_whole_doc(
+    content: str,
+    *,
+    enabled: bool,
+    threshold_chars: int,
+    max_topic_signals: int,
+    parser_is_row_shaped: bool,
+) -> bool:
+    """Whole-document single-chunk decision (Task 3.3).
+
+    A small single-topic doc is stored as ONE chunk to preserve full context —
+    BUT never when a row-shaped parser (google_sheets / excel) already emitted
+    one-chunk-per-row. Collapsing those back into a single chunk destroys the
+    atomic-row structure the stats-index extractor + row-level retrieval depend
+    on: the per-row header binding is lost and every column falls back to
+    ``col_N`` (live xe-bot bug 2026-07-01, a 3077-char sheet < the 4000-char
+    threshold). ``_is_csv_format`` alone can't guard this — it inspects the
+    parsed pipe-markdown, which no longer carries commas, so a small sheet slips
+    through. The parser's row-shaped stamp is the authoritative signal.
+    """
+    if not enabled or parser_is_row_shaped:
+        return False
+    return (
+        len(content) < threshold_chars
+        and not _is_csv_format(content)
+        and _count_topic_signals(content) <= max_topic_signals
+    )
+
 
 @dataclass
 class _IngestCtx:
@@ -379,11 +427,16 @@ class _StageChunkMixin:
         else:
             max_topic_signals = DEFAULT_WHOLE_DOC_MAX_TOPIC_SIGNALS
         topic_signals = _count_topic_signals(content)
-        is_whole_document = (
-            whole_doc_enabled
-            and len(content) < whole_doc_threshold
-            and not _is_csv_format(content)
-            and topic_signals <= max_topic_signals
+        # Authoritative row-shape signal (excel / google_sheets): whole-doc collapse
+        # must yield to a parser that already emitted one-chunk-per-row, else the
+        # atomic-row structure (+ header binding) is lost → col_N in the stats index.
+        _parser_is_row_shaped = _parser_row_shaped(parser_row_chunks)
+        is_whole_document = _should_store_whole_doc(
+            content,
+            enabled=whole_doc_enabled,
+            threshold_chars=whole_doc_threshold,
+            max_topic_signals=max_topic_signals,
+            parser_is_row_shaped=_parser_is_row_shaped,
         )
 
         # ── Parent-child chunking config ──
@@ -705,15 +758,8 @@ class _StageChunkMixin:
             # the parser intent is row-per-chunk (excel, google_sheets). For
             # markdown / plain-text parsers, "1 chunk = whole document"
             # bypassed smart_chunk and produced a single 74KB chunk for a
-            # 98KB legal corpus, which broke retrieval recall. Detect the
-            # parser via metadata stamp and re-route to smart_chunk when
-            # the chunk is markdown/text.
-            _row_preserve_providers = {"excel_openpyxl", "google_sheets"}
-            _parser_is_row_shaped = False
-            if parser_row_chunks:
-                _first_meta = parser_row_chunks[0].get("metadata") or {}
-                _parser_tag = str(_first_meta.get("parser") or "").strip()
-                _parser_is_row_shaped = _parser_tag in _row_preserve_providers
+            # 98KB legal corpus, which broke retrieval recall. ``_parser_is_row_shaped``
+            # was resolved once at the whole-doc gate above (same metadata stamp).
             if parser_row_chunks and _parser_is_row_shaped:
                 raw_chunks = [
                     c["content"] for c in parser_row_chunks if c.get("content")
