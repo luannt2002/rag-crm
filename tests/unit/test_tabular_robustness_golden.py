@@ -1,6 +1,6 @@
 """[Phase 1 — L1 brittleness] Golden acceptance oracle for messy real-world
 spreadsheets. Feeds each variation through the REAL pipeline
-(rows_to_structured_markdown → _split_md_to_row_chunks → parse_table_chunks) and
+(rows_to_structured_markdown → split_markdown_to_row_chunks → parse_table_chunks) and
 asserts structure is recovered (real name, header-labeled attrs, no dropped rows,
 forward-filled category) instead of silently degrading to col_N / code-as-name /
 row-loss. Form-only / domain-neutral — locks "sửa format là lỗi" so it never
@@ -8,14 +8,16 @@ recurs silently.
 """
 from __future__ import annotations
 
-from ragbot.infrastructure.parser.google_sheets_parser import _split_md_to_row_chunks
 from ragbot.shared.document_stats import parse_table_chunks
-from ragbot.shared.tabular_markdown import rows_to_structured_markdown
+from ragbot.shared.tabular_markdown import (
+    rows_to_structured_markdown,
+    split_markdown_to_row_chunks,
+)
 
 
 def _entities(rows: list[list[str]]):
     md = rows_to_structured_markdown(rows)
-    chunks = [{"content": c, "raw_chunk": c} for c in _split_md_to_row_chunks(md)]
+    chunks = [{"content": c, "raw_chunk": c} for c in split_markdown_to_row_chunks(md)]
     return parse_table_chunks(chunks)
 
 

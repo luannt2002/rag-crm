@@ -349,4 +349,51 @@ def rows_to_structured_markdown(rows: list[list[str]]) -> str:  # noqa: PLR0915 
     return re.sub(r"\n{3,}", "\n\n", text).strip() + "\n"
 
 
-__all__ = ["rows_to_structured_markdown"]
+def _is_separator_row(s: str) -> bool:
+    """A markdown table separator row: ``| --- | --- |`` (only dashes/colons)."""
+    cells = [c.strip() for c in s.strip().strip("|").split("|")]
+    return bool(cells) and all(bool(c) and set(c) <= {"-", ":"} for c in cells)
+
+
+def split_markdown_to_row_chunks(markdown: str) -> list[str]:
+    """Split section-bound structured markdown into ATOMIC per-row chunks.
+
+    Each emitted chunk = the nearest ``## section`` heading + the table header
+    + its separator + EXACTLY ONE data row, so every data row carries its own
+    column labels and section context. The LLM therefore never sees two rows
+    packed in one chunk → no cross-row value mis-binding (the bot reading the
+    stock/price/date of a neighbouring row). A header with no data rows emits
+    nothing (no orphan header-only chunk). Non-table prose lines become their
+    own chunk under the current section. Domain-neutral — shape only, no
+    vocabulary. Shared by every tabular parser (google_sheets, excel) so
+    row-as-chunk is uniform across formats.
+    """
+    out: list[str] = []
+    section = ""
+    header = ""
+    sep = ""
+    for raw in markdown.splitlines():
+        s = raw.strip()
+        if not s:
+            header = ""  # blank line closes the current table
+            sep = ""
+            continue
+        if s.startswith("##"):
+            section = s
+            header = ""
+            sep = ""
+            continue
+        if s.startswith("|"):
+            if _is_separator_row(s):
+                sep = raw
+                continue
+            if not header:
+                header = raw  # first pipe row of a table = its header
+                continue
+            out.append("\n".join(p for p in (section, header, sep, raw) if p.strip()))
+            continue
+        out.append("\n".join(p for p in (section, s) if p.strip()))
+    return out
+
+
+__all__ = ["rows_to_structured_markdown", "split_markdown_to_row_chunks"]

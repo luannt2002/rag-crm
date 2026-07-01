@@ -19,7 +19,10 @@ from io import BytesIO
 
 import structlog
 
-from ragbot.shared.tabular_markdown import rows_to_structured_markdown
+from ragbot.shared.tabular_markdown import (
+    rows_to_structured_markdown,
+    split_markdown_to_row_chunks,
+)
 
 logger = structlog.get_logger(__name__)
 
@@ -103,17 +106,20 @@ class ExcelOpenpyxlParser:
             markdown_chars=len(markdown),
             section_headings=heading_lines,
         )
-        return [
-            {
-                "content": markdown,
-                "metadata": {
-                    "file_name": file_name,
-                    "parser": self.get_provider_name(),
-                    "format": "markdown",
-                    "section_headings": heading_lines,
-                },
-            }
-        ]
+        # ROW-AS-CHUNK parity with GoogleSheetsParser: split the section-bound
+        # markdown into one atomic chunk per data row (header + section bound in),
+        # so a large workbook is not embedded as one Lost-in-the-Middle blob and
+        # the chunker never packs two rows together (cross-row value mis-bind).
+        # Fallback to the whole doc if the split yields nothing (never drop
+        # content). Stats extraction is unaffected — it re-reads the raw rows.
+        row_chunks = split_markdown_to_row_chunks(markdown) or [markdown]
+        base_meta = {
+            "file_name": file_name,
+            "parser": self.get_provider_name(),
+            "format": "markdown",
+            "section_headings": heading_lines,
+        }
+        return [{"content": c, "metadata": dict(base_meta)} for c in row_chunks]
 
 
 __all__ = ["ExcelOpenpyxlParser"]

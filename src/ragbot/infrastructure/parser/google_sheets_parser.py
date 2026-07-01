@@ -20,7 +20,10 @@ import io
 
 import structlog
 
-from ragbot.shared.tabular_markdown import rows_to_structured_markdown
+from ragbot.shared.tabular_markdown import (
+    rows_to_structured_markdown,
+    split_markdown_to_row_chunks,
+)
 
 logger = structlog.get_logger(__name__)
 
@@ -39,52 +42,6 @@ def _decode_csv(content: bytes) -> str:
         return content.decode("utf-8")
     except UnicodeDecodeError:
         return content.decode("latin-1", errors="replace")
-
-
-def _is_separator_row(s: str) -> bool:
-    """A markdown table separator row: ``| --- | --- |`` (only dashes/colons)."""
-    cells = [c.strip() for c in s.strip().strip("|").split("|")]
-    return bool(cells) and all(bool(c) and set(c) <= {"-", ":"} for c in cells)
-
-
-def _split_md_to_row_chunks(markdown: str) -> list[str]:
-    """Split section-bound structured markdown into ATOMIC per-row chunks.
-
-    Each emitted chunk = the nearest ``## section`` heading + the table header
-    + its separator + EXACTLY ONE data row, so every data row carries its own
-    column labels and section context. The LLM therefore never sees two rows
-    packed in one chunk → no cross-row value mis-binding (the bot reading the
-    stock/price/date of a neighbouring row). A header with no data rows emits
-    nothing (no orphan header-only chunk). Non-table prose lines become their
-    own chunk under the current section. Domain-neutral — shape only, no
-    vocabulary.
-    """
-    out: list[str] = []
-    section = ""
-    header = ""
-    sep = ""
-    for raw in markdown.splitlines():
-        s = raw.strip()
-        if not s:
-            header = ""  # blank line closes the current table
-            sep = ""
-            continue
-        if s.startswith("##"):
-            section = s
-            header = ""
-            sep = ""
-            continue
-        if s.startswith("|"):
-            if _is_separator_row(s):
-                sep = raw
-                continue
-            if not header:
-                header = raw  # first pipe row of a table = its header
-                continue
-            out.append("\n".join(p for p in (section, header, sep, raw) if p.strip()))
-            continue
-        out.append("\n".join(p for p in (section, s) if p.strip()))
-    return out
 
 
 class GoogleSheetsParser:
@@ -144,7 +101,7 @@ class GoogleSheetsParser:
         # pack several rows together → the LLM mis-bound a value to the wrong
         # row. Fallback to the whole doc if the split yields nothing (never
         # drop content). Stats extraction is unaffected — it runs on raw rows.
-        row_chunks = _split_md_to_row_chunks(markdown) or [markdown]
+        row_chunks = split_markdown_to_row_chunks(markdown) or [markdown]
         base_meta = {
             "sheet_name": file_name,
             "file_name": file_name,

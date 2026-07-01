@@ -80,16 +80,19 @@ async def test_excel_openpyxl_parses_3row_sheet() -> None:
     parser = ExcelOpenpyxlParser()
     chunks = await parser.parse(raw, file_name="sample.xlsx")
 
-    # One structured-markdown document (AdapChunk L1), not one chunk per row.
-    assert len(chunks) == 1
-    md = chunks[0]["content"]
+    # ROW-AS-CHUNK parity with Google Sheets: 3 data rows → 3 atomic chunks,
+    # each carrying the header + exactly one row (no Lost-in-the-Middle blob,
+    # no cross-row packing).
+    assert len(chunks) == 3
     assert chunks[0]["metadata"]["format"] == "markdown"
     assert chunks[0]["metadata"]["parser"] == "excel_openpyxl"
-    # Markdown table preserving header + every row's values (B1/B2).
-    assert "| item | price | unit |" in md
-    assert "| alpha | 10 | vnd |" in md
-    assert "| beta | 20 | vnd |" in md
-    assert "| gamma | 30 | vnd |" in md
+    joined = "\n".join(c["content"] for c in chunks)
+    # Every row present, each with the header repeated in its own chunk.
+    for c in chunks:
+        assert "| item | price | unit |" in c["content"]
+    assert "| alpha | 10 | vnd |" in joined
+    assert "| beta | 20 | vnd |" in joined
+    assert "| gamma | 30 | vnd |" in joined
 
 
 def test_registry_default_is_null() -> None:
