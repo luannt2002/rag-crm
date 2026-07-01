@@ -24,7 +24,10 @@ from __future__ import annotations
 
 import re
 
-from ragbot.shared.constants import DEFAULT_TABLE_LABEL_MAX_CHARS
+from ragbot.shared.constants import (
+    DEFAULT_TABLE_GAP_ROWS,
+    DEFAULT_TABLE_LABEL_MAX_CHARS,
+)
 from ragbot.shared.number_format import parse_money_vn
 
 # A cell that is "label-like": short, not a long sentence. Tunable via length
@@ -138,8 +141,79 @@ def _md_escape(cell: str) -> str:
     return cell.replace("|", "\\|").replace("\n", " ").strip()
 
 
+def _normalize_rows(rows: list[list[str]]) -> list[list[str]]:
+    """L1 structure-recovery pre-pass — form-only, domain-neutral, no vocabulary.
+
+    A raw spreadsheet is messy in shape-invariant ways that silently break the converter:
+    - stray blank rows (a spacer after the header / between data rows) close the table
+      → the following rows go headerless → ``col_N`` / product-code-as-name / row-loss;
+    - a huge blank tail (Excel used-range) creates phantom boundaries;
+    - merged-cell group labels leave continuation rows with an empty stub column.
+
+    This pass fixes all three by SHAPE only: trim the blank head/tail (used-range),
+    skip a blank run shorter than ``DEFAULT_TABLE_GAP_ROWS`` (a spacer) but keep ONE
+    blank row for a longer run (a real table boundary the converter closes on), and
+    forward-fill the LEADING contiguous sparse columns (rowspan / merged group label)
+    — stopping at the first non-sparse leading column so a middle optional column is
+    never over-filled.
+    """
+    def _blank(r: list[str]) -> bool:
+        return not any((c or "").strip() for c in r)
+
+    src = [list(r) for r in rows]
+    while src and _blank(src[0]):
+        src.pop(0)
+    while src and _blank(src[-1]):
+        src.pop()
+    if not src:
+        return []
+
+    collapsed: list[list[str]] = []
+    run = 0
+    for r in src:
+        if _blank(r):
+            run += 1
+            continue
+        if run >= DEFAULT_TABLE_GAP_ROWS and collapsed:
+            collapsed.append([])  # real gap → keep one blank = table boundary
+        run = 0
+        collapsed.append(list(r))
+
+    # Forward-fill leading contiguous sparse columns (merged-cell / rowspan group
+    # label). ``break`` at the first non-sparse leading column: a merged label is
+    # the leftmost stub, so a fully-populated column (or a middle optional column)
+    # is never over-filled.
+    n_data = sum(1 for r in collapsed if r)
+    width = max((len(r) for r in collapsed if r), default=0)
+    for col in range(width):
+        filled = sum(
+            1 for r in collapsed if r and col < len(r) and (r[col] or "").strip()
+        )
+        if not 0 < filled < n_data:
+            break
+        last = ""
+        for r in collapsed:
+            if not r:  # boundary resets the fill
+                last = ""
+                continue
+            # Only seed/fill from DATA rows (carry a money value). A header row —
+            # incl. the empty-lead 2nd row of a stacked header — has no money, so it
+            # is never filled; that keeps _is_header_continuation intact (else the
+            # merged header collapses back to col_N).
+            if not _has_money(r):
+                continue
+            if col < len(r) and (r[col] or "").strip():
+                last = r[col]
+            elif last:
+                while len(r) <= col:
+                    r.append("")
+                r[col] = last
+    return collapsed
+
+
 def rows_to_structured_markdown(rows: list[list[str]]) -> str:  # noqa: PLR0915 — one linear state machine; splitting the row classifier hurts readability
     """Convert raw spreadsheet rows into section-bound structured markdown."""
+    rows = _normalize_rows(rows)  # L1 structure-recovery: skip-blank/gap-K + forward-fill
     out: list[str] = []
     header: list[str] | None = None
     table_open = False

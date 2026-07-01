@@ -30,6 +30,11 @@ CUSTOMER_CONTEXT_COLUMN_NAMES: Final[tuple[str, ...]] = (
 # converter. A section title may run up to 2× this (long heading lookahead).
 DEFAULT_TABLE_LABEL_MAX_CHARS: Final[int] = 40
 
+# L1 structure-recovery: a run of >= this many consecutive fully-blank rows is a real
+# TABLE BOUNDARY; a shorter run is a stray spacer that must be skipped so it does not
+# close the table (which would strand the following data rows headerless → col_N).
+DEFAULT_TABLE_GAP_ROWS: Final[int] = 2
+
 # --- Sysprompt validator (Stream G) -----------------------------------------
 # 10-item pre-deploy check thresholds + heuristic vocabularies. Single SSoT
 # so owner-facing tooling cannot drift from runtime constraints.
