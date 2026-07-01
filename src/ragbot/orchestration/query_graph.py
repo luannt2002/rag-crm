@@ -2068,6 +2068,18 @@ def build_graph(
         (``rewritten_query`` vs ``_mq_queries``); concurrency only — no LLM
         output is mutated.
         """
+        # Exact spec-code lookup ("giá 155/80R13 bao nhiêu", "khi nào về 2-R17"):
+        # neither rewrite NOR paraphrase fanout helps — the product/spec CODE is
+        # the exact retrieval key, so both LLM calls are pure waste (and each one
+        # loads the upstream model service → 503 under concurrency). Skip both;
+        # the original query passes through to retrieve unchanged and the stats
+        # route resolves it. Same gate as ``_run_multi_query_expansion``.
+        # Measured -0.67s (rewrite) on top of the fanout saving, answer unchanged.
+        # Domain-neutral — code-token shape (a letter is required, so a legal
+        # "Điều 34" digit-only anchor never matches).
+        if parse_code_query(state.get("query") or "") is not None:
+            state["fanout_bypassed"] = True
+            return {}
         flag = bool(
             _pcfg(state, "pipeline_parallel_rewrite_mq_enabled",
                   DEFAULT_PIPELINE_PARALLEL_REWRITE_MQ_ENABLED)

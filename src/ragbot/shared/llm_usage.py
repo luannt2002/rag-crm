@@ -13,7 +13,62 @@ plain dict, depending on provider. The cached-token count lives on
 
 from __future__ import annotations
 
+import functools
 from typing import Any
+
+
+@functools.lru_cache(maxsize=1)
+def _token_encoder() -> Any:
+    """Lazily build a provider-agnostic BPE encoder (tiktoken cl100k_base).
+
+    Returns None when tiktoken is unavailable so callers degrade to no-estimate.
+    """
+    try:
+        import tiktoken  # noqa: PLC0415 — optional dep, lazy
+
+        return tiktoken.get_encoding("cl100k_base")
+    except Exception:  # noqa: BLE001 — tokenizer is optional; no-estimate fallback
+        return None
+
+
+def _text_of(content: Any) -> str:
+    """Best-effort text of a chat ``message["content"]`` (str or multimodal list)."""
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        return " ".join(
+            str(p.get("text", "")) if isinstance(p, dict) else str(p)
+            for p in content
+        )
+    return "" if content is None else str(content)
+
+
+def estimate_tokens_fallback(
+    messages: Any,
+    completion_text: str,
+    prompt_tokens: int,
+    completion_tokens: int,
+) -> tuple[int, int]:
+    """Fill a MISSING (zero) token count with a local tiktoken estimate.
+
+    Some upstream proxies (e.g. the innocom gateway) omit the ``usage`` block, so
+    the provider returns 0 tokens and cost logs as $0 — unmeasurable. This
+    estimates the count locally from the prompt messages + completion text. It is
+    an ESTIMATE (a generic BPE, not the model's exact tokenizer — ~±5-15% for
+    non-OpenAI models) that turns "always $0" into a usable cost-audit figure. A
+    REAL provider count is never overwritten (only a 0 is filled).
+    """
+    if prompt_tokens > 0 and completion_tokens > 0:
+        return prompt_tokens, completion_tokens
+    enc = _token_encoder()
+    if enc is None:
+        return prompt_tokens, completion_tokens
+    if prompt_tokens == 0 and messages:
+        prompt_text = "\n".join(_text_of(m.get("content")) for m in messages)
+        prompt_tokens = len(enc.encode(prompt_text))
+    if completion_tokens == 0 and completion_text:
+        completion_tokens = len(enc.encode(completion_text))
+    return prompt_tokens, completion_tokens
 
 
 def _uget(obj: Any, attr: str, default: int) -> int:
@@ -52,4 +107,4 @@ def extract_usage_from_response(resp: Any) -> tuple[int, int, int]:
     return prompt, completion, cached
 
 
-__all__ = ["extract_usage_from_response"]
+__all__ = ["estimate_tokens_fallback", "extract_usage_from_response"]

@@ -269,7 +269,10 @@ def _apply_anthropic_cache_control(
 # layer can read token counts without importing this infra module
 # (hexagonal boundary; see Issue #7 in deep-dive report). Re-exported
 # here to preserve the historical public surface.
-from ragbot.shared.llm_usage import extract_usage_from_response  # noqa: E402
+from ragbot.shared.llm_usage import (  # noqa: E402
+    estimate_tokens_fallback,
+    extract_usage_from_response,
+)
 
 
 def compute_cost_usd(
@@ -783,6 +786,15 @@ class DynamicLiteLLMRouter(LLMPort):
 
         # Single extraction path (sync + stream + structured share helper).
         prompt_tokens, completion_tokens, cached_tokens = extract_usage_from_response(resp)
+        # Cost-metering fallback: the innocom gateway (and some proxies) omit the
+        # ``usage`` block, so both counts return 0 → cost logs $0 (unmeasurable).
+        # Estimate the missing count locally (tiktoken) from the prompt + answer
+        # text so the cost audit has a usable figure. Never overwrites a real
+        # provider count (only fills a 0).
+        if prompt_tokens == 0 or completion_tokens == 0:
+            prompt_tokens, completion_tokens = estimate_tokens_fallback(
+                messages, text, prompt_tokens, completion_tokens,
+            )
 
         # Observability — provider-side prompt-cache hit ratio.
         if cached_tokens > 0 and prompt_cache_hits_total is not None:
