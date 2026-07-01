@@ -1169,13 +1169,23 @@ async def retrieve(
             isinstance(_preset_mq, list)
             and len([q for q in _preset_mq if isinstance(q, str) and q.strip()]) > 1
         )
+        # Exact spec-code lookup ("giá 155/80R13 bao nhiêu", "khi nào về 2-R17"):
+        # the product/spec CODE is the strongest possible signal, so paraphrase
+        # fanout adds no recall — it only spends an extra LLM call per turn (and
+        # under concurrency those calls make the upstream model service 503).
+        # Measured A/B (5×): fanout OFF here is -1.1s/turn with the answer
+        # UNCHANGED (5/5 correct both ways). Domain-neutral: keyed on the
+        # universal code-token shape (``_parse_code_query`` requires a letter, so
+        # a legal "Điều 34" digit-only anchor never matches).
+        _exact_code_lookup = _parse_code_query(query_text) is not None
         # Bypass fanout when sub_queries already exist (decompose succeeded)
-        # OR pre-computed paraphrases already exist (preset MQ from upstream).
-        # When neither is present, the LLM-paraphrase fanout branch must run —
-        # this is the path that produced 0 fires in Case B "Điều 38 và 3"
-        # before the gate was inverted (decompose soft-failed → bypass blocked
-        # fanout → retrieve ran once with raw query → missed Điều 3).
-        _fanout_bypassed = decompose_active or _has_preset_mq
+        # OR pre-computed paraphrases already exist (preset MQ from upstream)
+        # OR the query is an exact spec-code lookup.
+        # When none apply, the LLM-paraphrase fanout branch must run — this is the
+        # path that produced 0 fires in Case B "Điều 38 và 3" before the gate was
+        # inverted (decompose soft-failed → bypass blocked fanout → retrieve ran
+        # once with raw query → missed Điều 3).
+        _fanout_bypassed = decompose_active or _has_preset_mq or _exact_code_lookup
         if _fanout_bypassed:
             state["fanout_bypassed"] = True
         if (

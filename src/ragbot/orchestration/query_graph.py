@@ -107,6 +107,7 @@ from ragbot.shared.chunking import (
     detect_vn_structural_anchor,
 )
 from ragbot.shared.embedding_cache import get_cached_embedding, set_cached_embedding
+from ragbot.shared.query_range_parser import parse_code_query
 from ragbot.shared.errors import (
     AuditEmitError,
     EmbeddingError,
@@ -1854,6 +1855,16 @@ def build_graph(
             state, "multi_query_min_tokens", DEFAULT_MULTI_QUERY_MIN_TOKENS,
         ))
         if len(query_text.split()) < _mq_min_tokens:
+            return []
+        # Exact spec-code lookup ("giá 155/80R13 bao nhiêu", "khi nào về 2-R17"):
+        # the product/spec CODE is the strongest retrieval signal, so paraphrase
+        # fanout adds no recall — only an extra LLM call/turn that makes the
+        # upstream model service 503 under concurrency. Measured A/B (5×):
+        # -1.1s/turn with the answer UNCHANGED. Domain-neutral — keyed on the
+        # universal code-token shape (parse_code_query requires a LETTER, so a
+        # legal "Điều 34" digit-only anchor never matches).
+        if parse_code_query(query_text) is not None:
+            state["fanout_bypassed"] = True
             return []
 
         # Wave M3.7-P2 — accumulate per-paraphrase LLM cost into one
