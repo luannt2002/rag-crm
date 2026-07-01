@@ -76,6 +76,7 @@ async def list_bots(request: Request, limit: int | None = None) -> dict:
             BotModel.id,
             BotModel.bot_id,
             BotModel.channel_type,
+            BotModel.workspace_id,
             BotModel.bot_name,
             BotModel.record_tenant_id,
             BotModel.system_prompt,
@@ -116,6 +117,7 @@ async def list_bots(request: Request, limit: int | None = None) -> dict:
                 "id": str(r["id"]),
                 "bot_id": r["bot_id"],
                 "channel_type": r["channel_type"],
+                "workspace_id": r["workspace_id"],
                 "bot_name": r["bot_name"],
                 "record_tenant_id": (
                     str(r["record_tenant_id"]) if r["record_tenant_id"] else None

@@ -1190,7 +1190,9 @@ async def test_chat_clear(req: TestChatClearRequest, request: Request) -> dict:
     @param req: {bot_id, channel_type}
     @return: {ok, deleted_messages, deleted_logs}
     """
-    bot_uuid = await _find_bot_uuid(request, req.bot_id, req.channel_type)
+    bot_uuid = await _find_bot_uuid(
+        request, req.bot_id, req.channel_type, workspace_id=req.workspace_id,
+    )
     sf = _sf(request)
     async with sf() as session:
         # Xóa chat_histories theo room (bot_id + channel_type + connect_id)

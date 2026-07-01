@@ -122,7 +122,7 @@ async function init() {
   document.getElementById('botMeta').textContent = BOT_ID + ' / ' + CHANNEL;
   // botConfig MUST load first — DELETE /chat needs tenant_id from it.
   await loadBotInfo();
-  await RagbotAPI.del('/chat', { bot_id: BOT_ID, channel_type: CHANNEL, tenant_id: (botConfig && botConfig.tenant_id) || undefined });
+  await RagbotAPI.del('/chat', { bot_id: BOT_ID, channel_type: CHANNEL, workspace_id: (botConfig && botConfig.workspace_id) || undefined, tenant_id: (botConfig && botConfig.tenant_id) || undefined });
   addMsg('system', 'Bắt đầu cuộc trò chuyện mới');
   loadDocuments();
 }
@@ -282,7 +282,7 @@ async function sendMsg() {
   addMsg('user', q);
   showTyping();
 
-  const res = await RagbotAPI.post('/chat', { bot_id: BOT_ID, channel_type: CHANNEL, tenant_id: (botConfig && botConfig.tenant_id) || undefined, question: q, debug: 'full' });
+  const res = await RagbotAPI.post('/chat', { bot_id: BOT_ID, channel_type: CHANNEL, workspace_id: (botConfig && botConfig.workspace_id) || undefined, tenant_id: (botConfig && botConfig.tenant_id) || undefined, question: q, debug: 'full' });
   hideTyping();
   if (res.ok) {
     addMsg('bot', res.data.answer, res.data);
@@ -304,7 +304,7 @@ async function sendMsg() {
 
 async function clearChat() {
   if (!confirm('Xóa sạch lịch sử chat + dữ liệu thống kê?')) return;
-  const res = await RagbotAPI.del('/chat', { bot_id: BOT_ID, channel_type: CHANNEL, tenant_id: (botConfig && botConfig.tenant_id) || undefined });
+  const res = await RagbotAPI.del('/chat', { bot_id: BOT_ID, channel_type: CHANNEL, workspace_id: (botConfig && botConfig.workspace_id) || undefined, tenant_id: (botConfig && botConfig.tenant_id) || undefined });
   document.getElementById('chatMessages').innerHTML = '';
   const d = res.data || {};
   addMsg('system', `Đã xóa ${d.deleted_messages || 0} tin nhắn và ${d.deleted_logs || 0} bản ghi thống kê`);
