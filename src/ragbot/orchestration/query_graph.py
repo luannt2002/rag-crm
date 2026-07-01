@@ -278,6 +278,88 @@ from ragbot.shared.i18n import LanguagePack, get_pack, language_pack_from_dict
 _CITATION_RE = re.compile(r"\[chunk:([0-9a-f\-]+)\]", re.IGNORECASE)
 
 
+def _absorb_fragment_attrs(anchor: dict, frag: dict) -> None:
+    """Copy a fragment's unique labelled attributes into the anchor (anchor wins
+    on conflict; internal / synonym / col_N keys skipped)."""
+    a_aj = anchor.get("attributes_json")
+    a_aj = dict(a_aj) if isinstance(a_aj, dict) else {}
+    f_aj = frag.get("attributes_json")
+    f_aj = f_aj if isinstance(f_aj, dict) else {}
+    for k, v in f_aj.items():
+        ks = str(k)
+        if ks in ("chunk_index", "question", "variants", "image") or ks.startswith("col_"):
+            continue
+        if ks not in a_aj and str(v).strip():
+            a_aj[ks] = v
+    anchor["attributes_json"] = a_aj
+
+
+def _reconcile_cross_doc(entities: list[dict]) -> list[dict]:
+    """Merge cross-doc price-LESS fragments INTO the priced anchor of the same
+    physical product (Phase-4 MULTIDOC-B-FRAG).
+
+    One product is split across sheets: name + arrival-date in a catalog sheet,
+    price + stock in a price sheet whose row carries a comma-separated alias cell
+    (``question``) of every spec spelling. A combined "giá + tồn + ngày về" query
+    then can't gather the fields — the LLM deflects or fabricates. Group by the
+    spec DIGIT-KEY (digits only, ≥5 to avoid a 18/40 sub-token collision) — robust
+    to the ZR18-vs-R18 spelling drift the raw names carry. Absorb each matched
+    price-less fragment's unique labelled fields into the anchor and drop it, so a
+    single complete record surfaces. Conservative: only a price-LESS row folds
+    into a PRICED anchor — two priced anchors are NEVER merged (no silent price
+    conflict). Domain-neutral: digit-shape only, no brand/spec literal. A no-op
+    for a corpus without priced+alias anchors (returns the list unchanged).
+    """
+    def _digkey(s: Any) -> str:
+        return re.sub(r"[^0-9]", "", str(s or ""))
+
+    def _alias_keys(e: dict) -> set[str]:
+        aj = e.get("attributes_json")
+        q = (aj.get("question") if isinstance(aj, dict) else "") or ""
+        keys: set[str] = set()
+        for tok in str(q).split(","):
+            d = _digkey(tok)
+            if len(d) >= 5:
+                keys.add(d)
+        return keys
+
+    def _spec_key(e: dict) -> str | None:
+        rf = parse_code_query(str(e.get("entity_name") or ""))
+        d = _digkey(rf.keyword if rf else e.get("entity_name"))
+        return d if len(d) >= 5 else None
+
+    anchors: list[tuple[dict, set[str]]] = []
+    for e in entities:
+        price = e.get("price_primary")
+        if price is None:
+            price = e.get("price_secondary")
+        if price is None:
+            continue
+        aks = _alias_keys(e)
+        if aks:
+            anchors.append((e, aks))
+    if not anchors:
+        return entities
+
+    anchor_ids = {id(a) for a, _ in anchors}
+    absorbed: set[int] = set()
+    for e in entities:
+        if id(e) in anchor_ids:
+            continue
+        # A priced fragment is NEVER folded (avoids a silent price conflict).
+        if e.get("price_primary") is not None or e.get("price_secondary") is not None:
+            continue
+        dk = _spec_key(e)
+        if not dk:
+            continue
+        for a, aks in anchors:
+            if dk in aks:
+                _absorb_fragment_attrs(a, e)
+                absorbed.add(id(e))
+                break
+    return [e for e in entities if id(e) not in absorbed]
+
+
 async def retry_hybrid_with_original(
     vector_store: Any,
     original_query: str,
@@ -2290,6 +2372,13 @@ def build_graph(
                 return bool(v) and len(v) <= DEFAULT_STATS_ATTR_MAX_CHARS \
                     and len(v.split()) <= DEFAULT_STATS_ATTR_MAX_WORDS
 
+            # Phase-4 cross-doc reconcile: fold price-LESS fragments of the same
+            # product into their priced anchor (alias digit-key match) so a
+            # combined "giá + tồn + ngày về" query sees one complete record
+            # instead of 3 partial ones (the split-sheet HALLU). No-op for a
+            # corpus without priced+alias anchors. Per-bot opt-out.
+            if bool(_pcfg(state, "cross_doc_reconcile_enabled", True)):
+                entities = _reconcile_cross_doc(entities)
             _seen: set[tuple[str, int]] = set()
             _rows: list[str] = []
             for _e in entities:
