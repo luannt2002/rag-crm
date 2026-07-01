@@ -2119,6 +2119,39 @@ def build_graph(
         """
         try:
             _operation = getattr(range_filter, "operation", "")
+            if _operation == "count":
+                # B-AGG: a "có bao nhiêu <keyword>" question must return a COUNT
+                # NUMBER, not the priced-row dump (the keyword branch below) —
+                # dumping 100+ priced rows lets the LLM miscount or leak a price
+                # as the answer. Real COUNT(*) is cap-honest (a len(rows) count
+                # silently undercounts a catalog above stats_limit).
+                _cnt_kw = getattr(range_filter, "keyword", "") or ""
+                _total = await stats_index_repo.count_by_name_keyword(
+                    record_bot_id=state["record_bot_id"],
+                    keyword=_cnt_kw,
+                    synonyms=_resolve_stats_keyword_synonyms(state, _cnt_kw),
+                )
+                if _total <= 0:
+                    return None
+                # Grounded COUNT fact: a computed number over corpus rows, no
+                # per-row price. Labeled "count" (a structural aggregate label,
+                # peer to the "price:"/"category:" field labels used below) so
+                # the LLM states a count and never reads it as a price. Not an
+                # app-inject — this is retrieved DATA (an aggregate), not answer
+                # text or an instruction (QG #10).
+                _cnt_body = f"{_cnt_kw} — count: {_total}"
+                return {
+                    "entities": [],
+                    "linked_chunks": [{
+                        "content": _cnt_body,
+                        "text": _cnt_body,
+                        "chunk_id": DEFAULT_STATS_SYNTHETIC_CHUNK_ID,
+                        "document_name": "",
+                        "score": 1.0,
+                        "source": "stats_index",
+                    }],
+                    "range_filter": range_filter,
+                }
             if _operation == "keyword":
                 # List/category ("liệt kê dịch vụ X" / "tư vấn về X"): return
                 # EVERY record whose name/category matches the keyword, so the

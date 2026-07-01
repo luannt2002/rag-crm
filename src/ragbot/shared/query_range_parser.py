@@ -352,7 +352,11 @@ def parse_list_query(
         return None
     return RangeFilter(
         price_min=None, price_max=None, price_column="any",
-        operation="keyword", confidence=0.8, keyword=kw,
+        # A genuine count question ("có bao nhiêu X") carries operation="count"
+        # so the dispatcher runs a COUNT aggregate; a pure list/category hit
+        # stays "keyword" (enumerate the matching rows). B-AGG.
+        operation="count" if has_count else "keyword",
+        confidence=0.8, keyword=kw,
     )
 
 

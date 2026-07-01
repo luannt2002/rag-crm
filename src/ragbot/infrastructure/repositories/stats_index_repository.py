@@ -403,6 +403,66 @@ class StatsIndexRepository:
             row = result.fetchone()
             return int(row[0]) if row else 0
 
+    async def count_by_name_keyword(
+        self,
+        *,
+        record_bot_id: uuid.UUID,
+        keyword: str,
+        synonyms: list[str] | None = None,
+    ) -> int:
+        """COUNT entities whose name/category/attributes match *keyword*.
+
+        Returns the exact ``COUNT(*)`` of the forward name/category/attribute
+        match set (same ``unaccent`` + B-FMA attribute reach as
+        ``query_by_name_keyword``), so a "có bao nhiêu <keyword>" answer is
+        exact even beyond the row LIMIT cap — a ``len(rows)`` count silently
+        UNDERCOUNTS a catalog larger than the cap (B-AGG cap-honesty). The
+        notation-fold refinement (used by the row fetch to rank a priced
+        sibling) is a ranking detail that does not change name/brand/attribute
+        count cardinality, so it is intentionally omitted here. Scoped by
+        ``record_bot_id`` (RLS + explicit). Each variant is a BOUND param.
+        Returns 0 when the keyword is empty or unmatched.
+        """
+        kw = (keyword or "").strip()
+        if not kw:
+            return 0
+        _seen: set[str] = set()
+        variants: list[str] = []
+        for term in [kw, *(synonyms or [])]:
+            t = (term or "").strip()
+            if t and t.lower() not in _seen:
+                _seen.add(t.lower())
+                variants.append(t)
+        params: dict[str, Any] = {"bot_id": record_bot_id}
+        or_clauses: list[str] = []
+        for i, v in enumerate(variants):
+            _clause = (
+                f"unaccent(entity_name) ILIKE unaccent(:kw{i}) "
+                f"OR unaccent(entity_category) ILIKE unaccent(:kw{i})"
+            )
+            # B-FMA: a long/specific keyword often lives only in a non-name
+            # attribute cell; search the JSONB text too so the count matches
+            # the same rows the list would. Length-gated (short generic tokens
+            # can't match every blob). Shape-only, domain-neutral.
+            if len(v) >= DEFAULT_STATS_ATTRS_MATCH_MIN_LEN:
+                _clause += (
+                    f" OR unaccent(dsi.attributes_json::text) "
+                    f"ILIKE unaccent(:kw{i})"
+                )
+            or_clauses.append(_clause)
+            params[f"kw{i}"] = f"%{v}%"
+        where_match = " OR ".join(f"({c})" for c in or_clauses)
+        sql = (
+            "SELECT COUNT(*) FROM document_service_index AS dsi "
+            f"{_DOC_LIVE_JOIN} "
+            f"WHERE dsi.record_bot_id = :bot_id AND {_DOC_LIVE_PREDICATE} "
+            f"AND ({where_match})"
+        )
+        async with self._sf() as session:
+            result = await session.execute(text(sql), params)
+            row = result.fetchone()
+            return int(row[0]) if row else 0
+
     async def list_all_entities(
         self,
         *,
