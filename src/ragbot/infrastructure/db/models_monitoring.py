@@ -107,6 +107,14 @@ class RequestLogModel(Base):
     answer_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
     refusal_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
 
+    # ----- Verify (OPT-IN plaintext) --------------------------------------
+    # Raw question/answer, populated ONLY when the platform opts in via
+    # ``settings.request_log_store_plaintext``. NULL by default — the repository
+    # gates the write, so the Privacy-2.B "hash only" posture holds unless a
+    # tenant explicitly enables the verify/QA review flow.
+    question_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    answer_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+
     # ----- Routing / model ------------------------------------------------
     record_model_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
     model_name: Mapped[str | None] = mapped_column(String(128), nullable=True)

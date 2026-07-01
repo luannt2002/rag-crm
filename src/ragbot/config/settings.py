@@ -122,6 +122,11 @@ class AppSettings(BaseSettings):
     # opt-in when they want to scale workers independently via systemd
     # template / K8s deployments).
     embed_workers_enabled: bool = True
+    # Verify/QA review: persist raw question + answer text on request_logs.
+    # Default OFF (Privacy 2.B — hash-only). Opt-in per deployment via
+    # ``APP_REQUEST_LOG_STORE_PLAINTEXT=true`` to enable per-request Q&A review
+    # alongside cost / citations / is_correct.
+    request_log_store_plaintext: bool = False
 
     model_config = SettingsConfigDict(env_prefix="APP_", env_file=".env", env_file_encoding="utf-8", extra="ignore")
 

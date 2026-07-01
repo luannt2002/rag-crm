@@ -492,6 +492,7 @@ class Container(containers.DeclarativeContainer):
     )
     request_log_repo = providers.Factory(
         RequestLogRepository, session_factory=session_factory,
+        store_plaintext=settings.provided.app.request_log_store_plaintext,
     )
     audit_repo = providers.Factory(
         AuditRepository, session_factory=session_factory,

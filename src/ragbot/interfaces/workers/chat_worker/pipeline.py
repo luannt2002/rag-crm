@@ -308,6 +308,7 @@ async def _handle_chat_received_body(
             message_id=external_message_id,
             trace_id=str(trace_id),
             question_hash=question_hash,
+            question_text=question_text,
             context_namespace=f"tenant:{record_tenant_id}:bot:{record_bot_id}:conv:{conv_id}",
             channel_type=payload.get("channel_type"),
         ),

@@ -353,7 +353,8 @@ async def test_chat(req: TestChatRequest, request: Request) -> dict:
     try:
         await request_log_repo.create_request_log(
             request_id=request_id, record_tenant_id=tenant_id, connect_id=connect_id,
-            question_hash=question_hash, message_id=message_id,
+            question_hash=question_hash, question_text=req.question,
+            message_id=message_id,
             record_bot_id=bot_cfg.id, channel_type=req.channel_type,
             workspace_id=workspace_slug,
             trace_id=f"test-{request_id}",
@@ -603,6 +604,7 @@ async def test_chat(req: TestChatRequest, request: Request) -> dict:
             await request_log_repo.finalize_request_log(
                 request_id, record_tenant_id=tenant_id,
                 answer_hash=content_hash_required(answer) if answer else None,
+                answer_text=answer or None,
                 model_name=model_used,
                 prompt_tokens=int(tokens.get("prompt", 0)),
                 completion_tokens=int(tokens.get("completion", 0)),
@@ -854,7 +856,8 @@ async def test_chat_stream(req: TestChatRequest, request: Request) -> StreamingR
             request_id=request_id, record_tenant_id=tenant_id,
             workspace_id=workspace_slug,
             connect_id=connect_id,
-            question_hash=question_hash, message_id=message_id,
+            question_hash=question_hash, question_text=req.question,
+            message_id=message_id,
             record_bot_id=bot_cfg.id, channel_type=req.channel_type,
             trace_id=f"test-stream-{request_id}",
         )
@@ -976,6 +979,7 @@ async def test_chat_stream(req: TestChatRequest, request: Request) -> StreamingR
             await request_log_repo.finalize_request_log(
                 request_id, record_tenant_id=tenant_id,
                 answer_hash=content_hash_required(answer) if answer else None,
+                answer_text=answer or None,
                 model_name=model_used,
                 prompt_tokens=int(tokens.get("prompt", 0)),
                 completion_tokens=int(tokens.get("completion", 0)),

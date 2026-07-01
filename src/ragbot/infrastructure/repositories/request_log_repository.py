@@ -23,11 +23,21 @@ from ragbot.shared.types import TenantId, WorkspaceId
 class RequestLogRepository:
     """Persist + query request_logs / request_steps."""
 
-    def __init__(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
+    def __init__(
+        self,
+        session_factory: async_sessionmaker[AsyncSession],
+        *,
+        store_plaintext: bool = False,
+    ) -> None:
         """Khởi tạo repository với session factory.
         @param session_factory: async session maker của SQLAlchemy
+        @param store_plaintext: when True, persist raw question/answer text on
+            request_logs (verify flow). Default False keeps the Privacy-2.B
+            hash-only posture; callers may always pass the plaintext and the repo
+            drops it unless this is enabled.
         """
         self._sf = session_factory
+        self._store_plaintext = store_plaintext
 
     @staticmethod
     def _ensure(record_tenant_id: TenantId | None) -> TenantId:
@@ -54,6 +64,7 @@ class RequestLogRepository:
         trace_id: str = "",
         started_at: datetime | None = None,
         channel_type: str | None = None,
+        question_text: str | None = None,
         **_kwargs: Any,
     ) -> UUID:
         """Tạo request_log row — raw question không lưu, chỉ hash.
@@ -78,6 +89,7 @@ class RequestLogRepository:
                 message_id=message_id,
                 trace_id=trace_id,
                 question_hash=question_hash,
+                question_text=question_text if self._store_plaintext else None,
                 started_at=started_at or datetime.now(tz=timezone.utc),
                 status="running",
             )
@@ -91,6 +103,7 @@ class RequestLogRepository:
         *,
         record_tenant_id: TenantId,
         answer_hash: str | None = None,
+        answer_text: str | None = None,
         refusal_reason: str | None = None,
         record_model_id: UUID | None = None,
         model_name: str | None = None,
@@ -123,6 +136,8 @@ class RequestLogRepository:
                 )
             duration_ms = int((finished - row.started_at).total_seconds() * 1000)
             row.answer_hash = answer_hash
+            if self._store_plaintext:
+                row.answer_text = answer_text
             row.refusal_reason = refusal_reason
             row.record_model_id = record_model_id
             row.model_name = model_name

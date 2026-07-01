@@ -230,6 +230,7 @@ async def _persist_and_callback(
     await request_log_repo.finalize_request_log(
         request_id, record_tenant_id=record_tenant_id,
         answer_hash=content_hash_required(answer_text) if answer_text else None,
+        answer_text=answer_text or None,
         model_name=chosen_model,
         routing_reason=routing_reason,
         prompt_tokens=prompt_tokens,
