@@ -164,21 +164,24 @@ from ragbot.application.services.document_service.ingest_core import _IngestMixi
 _CONTENT_TABLES: Final[tuple[str, ...]] = ("document_chunks", "document_service_index")
 
 
-async def _purge_content_tables(session: Any, doc_ids: list[uuid.UUID]) -> int:
-    """Hard-purge every content-state table for *doc_ids*.
+async def _purge_content_tables(session: Any, *, doc_filter: str, params: dict[str, Any]) -> int:
+    """Hard-purge every content-state table for the documents matching *doc_filter*.
 
-    Returns rows removed from ``document_chunks`` (logging parity). No-op on an empty
-    id list. Table names come from the fixed ``_CONTENT_TABLES`` whitelist — never
-    user input, so the interpolated name is injection-safe.
+    ``doc_filter`` is a SQL predicate on the ``documents`` table supplied by the caller
+    from a FIXED template (values are bound in *params*), so purge runs as ONE atomic
+    ``DELETE … WHERE record_document_id IN (SELECT id FROM documents WHERE <filter>)``
+    per table — no resolve round-trip, correct even when nothing matches. Table names
+    come from the fixed ``_CONTENT_TABLES`` whitelist (never user input → injection-safe).
+    Returns rows removed from ``document_chunks`` (logging parity).
     """
-    if not doc_ids:
-        return 0
-    ids = list(doc_ids)
     chunks = 0
     for tbl in _CONTENT_TABLES:
         r = await session.execute(
-            text(f"DELETE FROM {tbl} WHERE record_document_id = ANY(:ids)"),
-            {"ids": ids},
+            text(
+                f"DELETE FROM {tbl} WHERE record_document_id IN "
+                f"(SELECT id FROM documents WHERE {doc_filter})"
+            ),
+            params,
         )
         if tbl == "document_chunks":
             chunks = r.rowcount or 0
@@ -946,18 +949,14 @@ class DocumentService(_IngestMixin):
             # stage does a pure INSERT of the new chunks. There is NO FK cascade
             # on ``document_chunks`` — without this explicit purge the OLD chunks
             # survive alongside the NEW ones (duplication).
-            _rows = await session.execute(
-                text("""SELECT id FROM documents
-                        WHERE record_bot_id = :bid
-                          AND source_url = ANY(:urls)
-                          AND deleted_at IS NULL"""),
-                {"bid": record_bot_id, "urls": clean_urls},
-            )
-            _doc_ids = [row[0] for row in _rows.fetchall()]
             # Purge ALL content-state tables (chunks + service_index) via the single
             # source of truth — the re-ingest path used to purge chunks only, leaving
             # stale ``document_service_index`` col_N rows.
-            chunks_purged = await _purge_content_tables(session, _doc_ids)
+            chunks_purged = await _purge_content_tables(
+                session,
+                doc_filter="record_bot_id = :bid AND source_url = ANY(:urls) AND deleted_at IS NULL",
+                params={"bid": record_bot_id, "urls": clean_urls},
+            )
             # Soft-delete docs with overlapping source_url (UPSERT replace)
             r = await session.execute(
                 text("""UPDATE documents
@@ -1002,14 +1001,11 @@ class DocumentService(_IngestMixin):
         async with session_with_tenant(
             self._sf, record_tenant_id=record_tenant_id,
         ) as session:
-            _rows = await session.execute(
-                text("SELECT id FROM documents WHERE record_bot_id = :bid"),
-                {"bid": record_bot_id},
-            )
-            _doc_ids = [row[0] for row in _rows.fetchall()]
             # Purge ALL content-state tables (chunks + service_index) — this bot-wide
             # path also used to forget document_service_index.
-            chunks_deleted = await _purge_content_tables(session, _doc_ids)
+            chunks_deleted = await _purge_content_tables(
+                session, doc_filter="record_bot_id = :bid", params={"bid": record_bot_id},
+            )
             r2 = await session.execute(
                 text("DELETE FROM documents WHERE record_bot_id = :bid"),
                 {"bid": record_bot_id},
@@ -1067,7 +1063,9 @@ class DocumentService(_IngestMixin):
             # Purge ALL content-state tables (chunks + service_index) via the single
             # source of truth (ING-7: reclaim pre-extracted stats-index entities too,
             # so price/list/keyword routes don't accumulate dead entities).
-            await _purge_content_tables(session, [doc_uuid])
+            await _purge_content_tables(
+                session, doc_filter="id = :id", params={"id": doc_uuid},
+            )
             await session.execute(
                 text("UPDATE documents SET deleted_at = now() WHERE id = :id"), {"id": doc_uuid},
             )

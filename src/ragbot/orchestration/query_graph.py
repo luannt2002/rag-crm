@@ -2119,13 +2119,20 @@ def build_graph(
         """
         try:
             _operation = getattr(range_filter, "operation", "")
-            if _operation == "count":
-                # B-AGG: a "có bao nhiêu <keyword>" question must return a COUNT
-                # NUMBER, not the priced-row dump (the keyword branch below) —
-                # dumping 100+ priced rows lets the LLM miscount or leak a price
-                # as the answer. Real COUNT(*) is cap-honest (a len(rows) count
-                # silently undercounts a catalog above stats_limit).
-                _cnt_kw = getattr(range_filter, "keyword", "") or ""
+            _cnt_kw = getattr(range_filter, "keyword", "") or ""
+            # B-AGG: a PURE keyword-count ("có bao nhiêu <keyword>", NO price range)
+            # returns a COUNT NUMBER, not the priced-row dump (dumping 100+ priced
+            # rows lets the LLM miscount / leak a price). A range+count ("dưới 2tr có
+            # bao nhiêu") keeps the existing range handling so the count stays within
+            # the bound (count_by_price_range wiring is Phase 3); a no-keyword count
+            # also falls through. Real COUNT(*) is cap-honest (a len(rows) count
+            # silently undercounts a catalog above stats_limit).
+            if (
+                _operation == "count"
+                and _cnt_kw
+                and getattr(range_filter, "price_min", None) is None
+                and getattr(range_filter, "price_max", None) is None
+            ):
                 _total = await stats_index_repo.count_by_name_keyword(
                     record_bot_id=state["record_bot_id"],
                     keyword=_cnt_kw,

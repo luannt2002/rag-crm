@@ -27,25 +27,21 @@ class _CaptureSession:
 
 def test_purge_covers_chunks_AND_service_index() -> None:
     s = _CaptureSession()
-    asyncio.run(_purge_content_tables(s, [uuid4()]))
+    asyncio.run(_purge_content_tables(s, doc_filter="id = :id", params={"id": uuid4()}))
     joined = " ".join(s.sql)
     assert "DELETE FROM document_chunks" in joined, "must purge chunks"
     assert "DELETE FROM document_service_index" in joined, (
         "must purge stats-index too — the re-ingest bug that left stale col_N rows"
     )
+    # One atomic statement per table via the caller's doc filter (no resolve round-trip).
+    assert "SELECT id FROM documents WHERE id = :id" in joined
 
 
 def test_purge_never_touches_audit_or_cost() -> None:
     s = _CaptureSession()
-    asyncio.run(_purge_content_tables(s, [uuid4()]))
+    asyncio.run(_purge_content_tables(s, doc_filter="id = :id", params={"id": uuid4()}))
     joined = " ".join(s.sql).lower()
     for forbidden in ("audit_log", "request_logs", "request_steps"):
         assert forbidden not in joined, (
             f"content purge must NEVER delete {forbidden} (append-only forensic)"
         )
-
-
-def test_purge_noop_on_empty_doc_ids() -> None:
-    s = _CaptureSession()
-    asyncio.run(_purge_content_tables(s, []))
-    assert s.sql == [], "no docs → no DELETE fired"
