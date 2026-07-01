@@ -290,7 +290,20 @@ async def retrieve(
                         _struct_ref = {"_structural_anchor": True}
                 except re.error:
                     pass
-            if _range_filter is not None and not _struct_ref and _range_filter.confidence >= float(
+            # Multi-spec decompose guard: a comparison ("so sánh A và B") is
+            # decomposed upstream into ≥2 sub_queries. The stats point-lookup
+            # parses only the FIRST spec code (``_parse_code_query`` uses
+            # re.search → first match), returns one score-1.0 synthetic chunk,
+            # and short-circuits the whole retrieve — so the 2nd spec is never
+            # fetched and the comparison answers "no info for B". When decompose
+            # is active, skip the single-entity stats route and let the
+            # multi-query fan-out retrieve every sub_query. Domain-neutral —
+            # keys on sub_query count, not intent/bot.
+            _decompose_active = len([
+                s for s in (state.get("sub_queries") or [])
+                if isinstance(s, str) and s.strip()
+            ]) >= 2
+            if _range_filter is not None and not _struct_ref and not _decompose_active and _range_filter.confidence >= float(
                 _pcfg(state, "range_query_min_confidence", RANGE_QUERY_MIN_CONFIDENCE)
             ):
                 _stats_limit = int(

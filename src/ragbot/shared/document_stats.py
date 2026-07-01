@@ -242,6 +242,30 @@ def _is_col_n_placeholder(cell: str) -> bool:
     return bool(_COL_N_PLACEHOLDER_RE.match(cell.strip()))
 
 
+def _is_noise_entity(entity: ParsedEntity) -> bool:
+    """True for a pure-noise entity: no price and its ONLY structured content is
+    ``col_N`` placeholder attributes.
+
+    Prose that is not a catalog (a legal sentence comma-split, a document
+    letterhead pipe-row) parses into an entity carrying a name but NO price and
+    only ``col_N`` attribute keys. Such a row adds nothing answerable, yet its
+    synthetic stats chunk (hard-coded score 1.0) can dominate real prose
+    retrieval on a text/QA bot and leak ``col_1:`` into the answer. Drop it.
+    Domain-neutral, shape-only: a real catalog row keeps a price OR a
+    non-``col_N`` labelled attribute, so it is never dropped; a clean named
+    entity with no ``col_N`` attribute is never dropped either.
+    """
+    if entity.price_primary is not None or entity.price_secondary is not None:
+        return False
+    attrs = entity.attributes or {}
+    has_col_n = any(_is_col_n_placeholder(str(k)) for k in attrs)
+    has_real_label = any(
+        str(k) != "chunk_index" and not _is_col_n_placeholder(str(k))
+        for k in attrs
+    )
+    return has_col_n and not has_real_label
+
+
 def _normalise(text: str) -> str:
     """Lower-case + accent-strip for header token matching.
 
@@ -1040,7 +1064,7 @@ def parse_table_chunks(
             entity = _extract_entity_from_row(
                 cols, header, chunk_idx, forced_category, roles
             )
-            if entity is not None:
+            if entity is not None and not _is_noise_entity(entity):
                 entities.append(entity)
 
     return entities
