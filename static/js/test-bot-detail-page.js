@@ -120,11 +120,24 @@ document.getElementById('tabBar').addEventListener('click', (e) => {
 // === INIT ===
 async function init() {
   document.getElementById('botMeta').textContent = BOT_ID + ' / ' + CHANNEL;
-  // botConfig MUST load first — DELETE /chat needs tenant_id from it.
   await loadBotInfo();
-  await RagbotAPI.del('/chat', { bot_id: BOT_ID, channel_type: CHANNEL, workspace_id: (botConfig && botConfig.workspace_id) || undefined, tenant_id: (botConfig && botConfig.tenant_id) || undefined });
-  addMsg('system', 'Bắt đầu cuộc trò chuyện mới');
+  // F5 must RESTORE the room, not wipe it — load prior Q+A from the server
+  // (GET /chat/history, same DEFAULT_CONNECT_ID room the POST /chat writes to).
+  // Clearing history is now ONLY the explicit "Xóa chat" button (clearChat()).
+  await loadHistory();
   loadDocuments();
+}
+
+async function loadHistory() {
+  const area = document.getElementById('chatMessages');
+  if (area) area.innerHTML = '';
+  const res = await RagbotAPI.get('/chat/history', { bot_id: BOT_ID, channel_type: CHANNEL });
+  const msgs = (res.ok && res.data && res.data.messages) || [];
+  if (!msgs.length) {
+    addMsg('system', 'Bắt đầu cuộc trò chuyện mới');
+    return;
+  }
+  msgs.forEach(function (m) { addMsg(m.role, m.content); });
 }
 
 async function loadBotInfo() {
