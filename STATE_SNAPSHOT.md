@@ -3,7 +3,27 @@
 > Always-updated current state. Git history was reset on 2026-06-14 (fresh start);
 > commit-SHA anchors no longer apply — this file is the source of truth.
 
-## Session 2026-06-30 (g) — Config-default-drift root-cause + 4-agent fix + anti-fabricate retrieval  ⟵ LATEST
+## Session 2026-07-01 — Tabular-ingest brittleness (col_N) + multi-turn analytical HALLU: 3-layer fix, ALL LIVE-VERIFIED  ⟵ LATEST
+
+> **Trigger** (user, xe/tire bot): "có bao nhiêu loại Landspider" + "155/80R13 còn bao nhiêu" trả sai/bịa. Đào sâu → tabular ingest brittle ("sửa format 1 cái là lỗi"), col_N tràn stats-index, giá bịa. Mandate: "duyệt là chạy code done all → test lại 1 lần" + "làm hết".
+>
+> **Root cause (3 layer, evidence-driven)**: (1) L1 structure-recovery — CSV→markdown converter đóng bảng khi gặp dòng trống / mất header / tách nhầm quoted variant-cell → col_N + giá bịa `1558013` (từ tyre-size digits). (2) small-sheet whole-doc collapse — `is_whole_document` (threshold 4000 > sheet 3077-char) override parser row-chunks → mất header binding → col_N. (3) multi-turn analytical HALLU — LLM tự bịa biến thể "155/80R13 H/P 725.000đ/187" (synthetic chunk CHỈ có G/P thật — pure list-pressure fabrication).
+>
+> **Shipped (8 commit over c1e96b9, TDD, sacred-compliant)**:
+> - **`0fd0c2c`+`aa53d7b`** P0 purge SSoT `_purge_content_tables` (chunks + service_index, subquery) — xóa doc+chunk, GIỮ token/cost/audit (append-only).
+> - **`949a3a4`** P1a B-AGG count dispatch (COUNT(*) grounded).
+> - **`d9877aa`** P1 `_normalize_rows` (skip-blank + gap-K + forward-fill money-gated + trim used-range).
+> - **`7e8dd38`** P1 wire DOCX tables qua canonical converter.
+> - **`de89da8`** P2 `_should_store_whole_doc` gated on row-shaped parser stamp (excel/google_sheets) — whole-doc KHÔNG collapse row-chunks.
+> - **`4840da5`** P3 alembic `seed_anti_variant_260701` — domain-neutral `# ANTI-INVENT-VARIANT` default rule (ADR-W1-S10 append, sacred #7/#10). LLM tự kiểm, app KHÔNG override.
+>
+> **Live-verify (real Google-Sheet CSV re-sync qua API `/sync/documents`, sacred #7)**: col_N **216 → 1** (còn 1 = address row trong HTML Doc, benign); giá bịa `1558013` → **684000 thật**; pipe-leak 0; dup 0; **audit_log append-only 46→49**. Query: "155/80R13 còn bao nhiêu"→214 (was stale 26) · "giá"→684.000đ (was bịa) · count→137. **HALLU=0** trên 4 conversation probe (mọi "how many types" chỉ trả biến thể THẬT, corpus-verified 747000/208, 900000/283). 149 unit test green (0 regression); pin 5/5.
+>
+> **Deferred (honest)**: Fix A condense count-intent (multi-turn "how many types" narrow về spec đang bàn = defensible, KHÔNG phải HALLU — hot-path cần load-test, defer). Phase 1 remainder (kreuzberg wire + fail-loud DTO). Phase 2 L2 AdapChunk, Phase 4 cross-doc, Phase 5 robustness. Roadmap: `plans/20260701-ragbot-completion/` + `LIVE_VERIFY_20260701.md`.
+>
+> **Anchor**: `4840da5` (pushed origin/fix-260623-ingest-expert).
+
+## Session 2026-06-30 (g) — Config-default-drift root-cause + 4-agent fix + anti-fabricate retrieval
 
 > **Trigger** (user, debugging marathon): bot mới tạo trên UI bị hỏng (upload 409, chat 503) + by-spec giá bịa số. "fix done all, multi-agent mỗi vấn đề, realtime no-restart, control tốt."
 >
