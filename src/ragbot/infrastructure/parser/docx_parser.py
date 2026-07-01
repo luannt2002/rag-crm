@@ -14,6 +14,7 @@ from zipfile import BadZipFile
 import structlog
 
 from ragbot.shared.constants import DEFAULT_DOCX_MAX_BYTES
+from ragbot.shared.tabular_markdown import rows_to_structured_markdown
 
 logger = structlog.get_logger(__name__)
 
@@ -106,17 +107,14 @@ class DocxParser:
                 level = _heading_level(para.style.name if para.style else "")
                 parts.append(f"{'#' * level} {text}" if level else text)
             elif child.tag == qn("w:tbl"):
+                # Route the raw cell matrix through the canonical converter instead
+                # of hardcoding rows[0]=header — inherits multi-row-header merge,
+                # section detection, blank-row/merged-cell recovery + column labels.
                 table = Table(child, doc)
-                rows = [
-                    "| " + " | ".join(c.text.strip().replace("|", "\\|") for c in row.cells) + " |"
-                    for row in table.rows
-                ]
-                if not rows:
-                    continue
-                n_cols = len(table.rows[0].cells)
-                sep = "| " + " | ".join(["---"] * n_cols) + " |"
-                tail = ("\n" + "\n".join(rows[1:])) if len(rows) > 1 else ""
-                parts.append(rows[0] + "\n" + sep + tail)
+                cell_rows = [[c.text.strip() for c in row.cells] for row in table.rows]
+                md = rows_to_structured_markdown(cell_rows)
+                if md.strip():
+                    parts.append(md)
 
         markdown = "\n\n".join(parts).strip()
         if not markdown:
