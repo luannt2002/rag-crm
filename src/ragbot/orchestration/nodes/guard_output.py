@@ -37,6 +37,7 @@ from ragbot.shared.constants import (
     DEFAULT_GROUNDING_INTENTS,
     DEFAULT_GUARDRAIL_LEAK_MIN_MATCH_COUNT,
     DEFAULT_GUARDRAIL_LEAK_SHINGLE_SIZE,
+    DEFAULT_STATS_ROUTE_SKIP_GROUNDING,
     DEFAULT_SYSPROMPT_LEAK_SKIP_INTENTS,
     DEFAULT_SYSPROMPT_LEAK_SKIP_STATS_ROUTE,
     DEFAULT_GUARDRAIL_OOS_SIMILARITY_THRESHOLD,
@@ -96,13 +97,17 @@ async def guard_output(
         _current_intent = state.get("intent") or ""
         _grounding_eligible = _current_intent in _grounding_intents
         # Stats/aggregation route answers come from the authoritative structured
-        # index (exact price/quantity/date SQL), not fuzzy retrieval — the LLM
-        # relays those rows and the answer often REFORMATS them ("còn 338 cái"
-        # vs chunk "quantity: 338"), which the fuzzy grounding judge mislabels
-        # unsupported and FALSE-BLOCKS a correct answer. Skip grounding when the
-        # route is a stats lookup (HALLU traps never reach it — they return 0
-        # rows → vector path → grounding still applies). Per-bot overridable.
-        if str(state.get("retrieve_mode") or "").startswith("stats"):
+        # index (exact price/quantity/date SQL). Skipping grounding on them
+        # reformats-friendly BUT let a HALLU breach through once (a stock number
+        # leaked from history cited on a stats answer, git 062d6fa). So grounding
+        # STAYS ON for stats by default (DEFAULT_STATS_ROUTE_SKIP_GROUNDING=False,
+        # HALLU-safe); a bot that hits the reformat false-block can opt out via
+        # plan_limits.stats_route_skip_grounding. Restored 2026-07-03 (audit
+        # L2-2/L2-3): commit 3097755 had reverted this to an UNCONDITIONAL skip.
+        _stats_skip_grounding = bool(
+            _pcfg(state, "stats_route_skip_grounding", DEFAULT_STATS_ROUTE_SKIP_GROUNDING)
+        )
+        if _stats_skip_grounding and str(state.get("retrieve_mode") or "").startswith("stats"):
             _grounding_eligible = False
         _grounding_check_skipped = bool(
             _grounding_enabled and not _grounding_eligible
