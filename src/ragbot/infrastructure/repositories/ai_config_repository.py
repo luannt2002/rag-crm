@@ -661,7 +661,7 @@ class SqlAlchemyAIConfigRepository(AIConfigRepositoryPort):
             from sqlalchemy import text
             await session.execute(
                 text(
-                    "INSERT INTO ragbot.ai_keys "
+                    "INSERT INTO ai_keys "
                     "(id, record_provider_id, api_key_encrypted, fingerprint, status, is_default, created_at, updated_at) "
                     "VALUES (:id, :provider_id, :api_key_encrypted, :fingerprint, 'active', :is_default, :now, :now)"
                 ),
@@ -686,7 +686,7 @@ class SqlAlchemyAIConfigRepository(AIConfigRepositoryPort):
                     "SELECT id, record_provider_id, api_key_encrypted, fingerprint, status, "
                     "is_default, last_health_check_at, last_health_status, last_used_at, "
                     "rotated_at, rotated_by_user_id, created_at, updated_at "
-                    "FROM ragbot.ai_keys WHERE id = :id"
+                    "FROM ai_keys WHERE id = :id"
                 ),
                 {"id": key_id},
             )).mappings().first()
@@ -705,7 +705,7 @@ class SqlAlchemyAIConfigRepository(AIConfigRepositoryPort):
                     "SELECT id, record_provider_id, fingerprint, status, is_default, "
                     "last_health_check_at, last_health_status, last_used_at, "
                     "rotated_at, created_at "
-                    "FROM ragbot.ai_keys "
+                    "FROM ai_keys "
                     "WHERE record_provider_id = :pid "
                     "ORDER BY created_at DESC"
                 ),
@@ -728,7 +728,7 @@ class SqlAlchemyAIConfigRepository(AIConfigRepositoryPort):
             from sqlalchemy import text
             await session.execute(
                 text(
-                    "UPDATE ragbot.ai_keys "
+                    "UPDATE ai_keys "
                     "SET last_health_check_at = :now, last_health_status = :hs, updated_at = :now "
                     "WHERE id = :id"
                 ),
@@ -744,7 +744,7 @@ class SqlAlchemyAIConfigRepository(AIConfigRepositoryPort):
             from sqlalchemy import text
             await session.execute(
                 text(
-                    "UPDATE ragbot.ai_keys "
+                    "UPDATE ai_keys "
                     "SET status = 'rotated_out', is_default = false, "
                     "rotated_at = :now, updated_at = :now "
                     "WHERE id = :id"

@@ -203,5 +203,26 @@ class GraphState(TypedDict, total=False):
     # Absent on the normal vector-retrieve path (None / missing key).
     stats_entities: list[dict]
 
+    # ─── S1 fix (audit 2026-07-03) — keys formerly USED cross-node but NOT
+    # declared here, so langgraph 1.2.4's reducer dropped them, silently killing
+    # the feature. Declaring restores the hand-off. Each is written in one node /
+    # the initial input and read in another. Guarded by
+    # tests/unit/test_audit_pass2_repro.py::TestS1StateKeyDrop + the AST pin test.
+    bot_extra_output_tokens_per_response: int  # input → generate (paid output cap)
+    bot_created_at: Any                        # input → xml-wrap date-default resolver
+    raw_user_message: str                      # input → generate (slot extraction)
+    rerank_score_mode: str                     # rerank → grade (absolute vs relative floor)
+    _total_graph_iterations: int               # grade → reflect routing (loop cap)
+    crag_skip_retry: bool                       # grade → grade routing (fast-path)
+    _corpus_version: str                        # check_cache → persist (cache-key memo)
+    embedding_column: str                       # cache/embed → semantic-cache preflight
+    retrieval_degraded: bool                    # retrieve → answer path (HALLU-safety flag)
+    embed_degraded: bool                        # embed → answer path (HALLU-safety flag)
+    # node-return observability keys (surfaced to final state / persist)
+    cache_hit: bool                             # check_cache → routing / final state
+    chunks_used: int                            # generate → persist (answer provenance)
+    crag_skip_reason: str                       # grade → observability
+    grade_timeout_fallback: bool                # grade → observability
+
 
 __all__ = ["GraphState"]

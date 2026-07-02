@@ -19,11 +19,23 @@ from __future__ import annotations
 from collections.abc import Callable, Iterable
 from typing import Any, NamedTuple
 
-from fastapi.routing import (
-    APIRoute,
-    _EffectiveRouteContext,
-    _IncludedRouter,
-)
+from fastapi.routing import APIRoute
+
+# FastAPI >=0.137 exposes lazy-composition wrappers ``_IncludedRouter`` /
+# ``_EffectiveRouteContext``; older versions (this venv: 0.135.3) copy leaf
+# APIRoutes directly into the parent router, so those wrappers do not exist.
+# Feature-detect: import them when present, else fall back to a never-matching
+# sentinel so the isinstance branches below simply skip (the plain-APIRoute
+# branch then handles every route). Audit O1/RC2 fix — un-breaks 3 collection
+# errors without dropping the tests.
+try:  # pragma: no cover - version-dependent
+    from fastapi.routing import _EffectiveRouteContext, _IncludedRouter  # type: ignore
+except ImportError:  # pragma: no cover
+    class _EffectiveRouteContext:  # type: ignore  # never-matching sentinel
+        ...
+
+    class _IncludedRouter:  # type: ignore  # never-matching sentinel
+        ...
 
 
 class LeafRoute(NamedTuple):

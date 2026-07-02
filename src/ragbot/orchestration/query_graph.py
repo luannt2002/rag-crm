@@ -273,7 +273,30 @@ from ragbot.shared.i18n import LanguagePack, get_pack, language_pack_from_dict
 # CRAG grade vocabulary + pure chunk/grade filters live in retrieval_filter
 # (strangler Phase 2). Re-exported here so existing call sites + test imports
 # (`from ragbot.orchestration.query_graph import _cliff_detect_filter`) are
-# unchanged.
+# unchanged. RESTORED 2026-07-03 (audit F2): commit 24f2451 deleted this block but
+# left the comment, breaking 5 pin-test files at collection. Guarded by
+# tests/unit/test_audit_pass2_repro.py::TestF2ReExportBreak.
+from ragbot.orchestration.retrieval_filter import (  # noqa: E402
+    CRAG_GRADE_AMBIGUOUS,
+    CRAG_GRADE_IRRELEVANT,
+    CRAG_GRADE_RELEVANT,
+    _CRAG_VALID_GRADES,
+    _autocut,
+    _cliff_detect_filter,
+    _is_retrieval_adequate,
+    _remap_grade_for_intent,
+    _rerank_threshold_gate,
+)
+from ragbot.orchestration.query_graph_helpers import (  # noqa: E402
+    parse_decomposed_sub_queries,
+)
+
+# Re-export surface (keeps the names importable + silences unused-import lint).
+_RETRIEVAL_FILTER_REEXPORTS = (
+    CRAG_GRADE_AMBIGUOUS, CRAG_GRADE_IRRELEVANT, CRAG_GRADE_RELEVANT,
+    _CRAG_VALID_GRADES, _autocut, _cliff_detect_filter, _is_retrieval_adequate,
+    _remap_grade_for_intent, _rerank_threshold_gate, parse_decomposed_sub_queries,
+)
 
 _CITATION_RE = re.compile(r"\[chunk:([0-9a-f\-]+)\]", re.IGNORECASE)
 

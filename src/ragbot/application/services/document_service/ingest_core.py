@@ -799,7 +799,7 @@ class _IngestMixin(
                         self._sf, record_tenant_id=record_tenant_id,
                     ) as session:
                         inserted = await kg_service.store_triples(
-                            bot_id=bot_uuid,
+                            record_bot_id=bot_uuid,  # audit L2-4: was bot_id= → TypeError → triples discarded
                             triples=triples,
                             session=session,
                             source_chunk_id=source_chunk_id,

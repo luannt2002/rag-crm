@@ -57,8 +57,10 @@ class IngestDocumentUseCase:
         # with a constant version slot.
         idem_key = for_ingest_document(
             record_tenant_id=str(cmd.record_tenant_id),
+            record_bot_id=str(cmd.record_bot_id),  # audit SEC-4: scope key per-bot (was tenant+url only)
             source_url=str(cmd.source_url),
             corpus_version=0,
+            workspace_id=str(getattr(cmd, "workspace_id", "") or ""),
         )
         tool_name = slugify(cmd.document_name)[:255]
 

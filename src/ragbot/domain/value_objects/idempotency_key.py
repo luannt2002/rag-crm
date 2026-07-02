@@ -40,13 +40,23 @@ def for_chat_message(
 def for_ingest_document(
     *,
     record_tenant_id: UUID,
+    record_bot_id: UUID,
     source_url: str,
     corpus_version: int,
+    workspace_id: str = "",
 ) -> IdempotencyKey:
-    """Idempotency key for a document ingestion job."""
+    """Idempotency key for a document ingestion job.
+
+    Audit SEC-4 (2026-07-03): ``record_bot_id`` (+ ``workspace_id``) added to the
+    key parts. Without the bot, a second bot in the same tenant ingesting the same
+    ``source_url`` within the 24h TTL collided and was silently swallowed —
+    ``for_chat_message`` already scoped by bot, this mirrors it. 4-key identity.
+    """
     return build_idempotency_key(
         "ingest",
         str(record_tenant_id),
+        workspace_id or "system",
+        str(record_bot_id),
         source_url,
         str(corpus_version),
     )

@@ -58,7 +58,7 @@ async def graph_retrieve(
         async with session_factory() as session:
             triples = await kg_service.query_graph(
                 query=query_text,
-                bot_id=record_bot_id,
+                record_bot_id=record_bot_id,  # audit L2-4: was bot_id= → TypeError → graph query always 0
                 session=session,
                 max_hops=max_hops,
             )
