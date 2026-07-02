@@ -951,7 +951,7 @@ def build_graph(
             )
             # No LLM = cannot answer; fail-loud so upstream surfaces it.
             raise
-        provider_code = getattr(getattr(cfg, "provider", None), "name", "unknown")
+        provider_code = getattr(getattr(cfg, "provider", None), "code", "unknown")
         model_id = getattr(cfg, "litellm_name", "unknown")
         # Per-feature cost-audit label (alembic 0094). Subsystem prefix
         # ``query.`` distinguishes orchestration LLM calls from ingest /
@@ -2663,7 +2663,7 @@ def build_graph(
                     or getattr(_cfg, "model_name", None)
                     or "unknown"
                 )
-                _provider = getattr(getattr(_cfg, "provider", None), "name", "unknown")
+                _provider = getattr(getattr(_cfg, "provider", None), "code", "unknown")
                 _ctx.set_metadata(
                     model_id=str(_model),
                     provider=str(_provider),
