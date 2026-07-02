@@ -235,10 +235,20 @@ class KreuzbergParser(OCRPort):
         # Local import — preserves registry fail-soft path when dep missing.
         import kreuzberg  # type: ignore[import-not-found]
 
-        extract_bytes = getattr(kreuzberg, "extract_bytes", None)
+        # Audit I2: this method runs in a THREAD executor (sync context), so it
+        # must call the SYNC variant. kreuzberg>=4.9's ``extract_bytes`` is a
+        # COROUTINE — calling it here returned an un-awaited coroutine whose
+        # ``.elements`` is None → 0 blocks for EVERY document that reached this
+        # fallback (images, .doc/.xls, unknown formats → DLQ). Prefer
+        # ``extract_bytes_sync``; fall back to ``extract_bytes`` only for old
+        # (<4.9) versions where it was itself synchronous.
+        extract_bytes = (
+            getattr(kreuzberg, "extract_bytes_sync", None)
+            or getattr(kreuzberg, "extract_bytes", None)
+        )
         if extract_bytes is None:  # pragma: no cover — defensive against vendor rename
             raise ImportError(
-                "kreuzberg.extract_bytes not found; "
+                "kreuzberg.extract_bytes_sync not found; "
                 "kreuzberg>=4.0 required.",
             )
 
@@ -313,6 +323,32 @@ class KreuzbergParser(OCRPort):
                     },
                 ),
             )
+
+        # Audit I2 (layer 2): kreuzberg 4.9.7 populates ``.elements`` only for
+        # layout/OCR extraction. A plain text-layer extraction returns
+        # elements=None but a populated ``.content`` — without this fallback a
+        # content-bearing document still yielded 0 blocks → "empty document text"
+        # → DLQ. Build blocks from the recovered markdown so extraction NEVER
+        # silently drops to zero when text was actually extracted (fail-loud floor).
+        if not blocks:
+            content_text = (getattr(result, "content", None) or "").strip()
+            for para in content_text.split("\n\n"):
+                para = para.strip()
+                if not para:
+                    continue
+                is_heading = para.lstrip().startswith("#")
+                if is_heading:
+                    active_heading = para.lstrip("# ").strip()
+                blocks.append(
+                    Block(
+                        type="HEADING" if is_heading else "TEXT",
+                        content=para,
+                        is_atomic=False,
+                        context_before="" if is_heading else active_heading,
+                        page_number=None,
+                        ocr_metadata={"kreuzberg_label": "content_fallback"},
+                    ),
+                )
 
         page_count = (
             len(pages)

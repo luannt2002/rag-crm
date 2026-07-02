@@ -686,24 +686,17 @@ class _IngestMixin(
                 )
             )
             if _diff_flag:
-                _diff_cost_rate = float(
-                    await self._cfg.get(
-                        "embed_cost_usd_per_1m_tokens",
-                        DEFAULT_EMBED_COST_USD_PER_1M_TOKENS,
-                    )
-                )
-                _diff_result = _diff_reingest_compute(
-                    enriched_chunks,
-                    new_chunk_hashes,
-                    existing_hashes,
-                    cost_per_1m_tokens=_diff_cost_rate,
-                )
-                _diff_reingest_log_event(
-                    _diff_result,
-                    enabled=True,
+                # Audit I17: the diff-reingest telemetry helpers
+                # (_diff_reingest_compute / _diff_reingest_log_event) were never
+                # implemented (shared/diff_reingest.py is a commented-out shell), so
+                # calling them raised NameError AFTER the doc row was committed —
+                # flipping this flag stranded the document. Degrade to a one-line
+                # warning instead of a crash until the feature actually lands. This
+                # telemetry is T2 observability only; ingest correctness is unaffected.
+                logger.warning(
+                    "diff_reingest_telemetry_not_implemented",
                     record_bot_id=str(record_bot_id),
                     record_document_id=str(doc_id),
-                    cost_per_1m_tokens=_diff_cost_rate,
                 )
 
         ctx.new_chunk_hashes = new_chunk_hashes
