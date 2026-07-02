@@ -87,6 +87,7 @@ class ParentExpandStage4Retriever:
                         FROM document_chunks dc
                         JOIN documents d ON d.id = dc.record_document_id
                         WHERE dc.id = ANY(:ids) AND d.record_bot_id = :rbid
+                          AND d.deleted_at IS NULL
                         """
                     ),
                     {"ids": unique_parent_ids, "rbid": record_bot_id},

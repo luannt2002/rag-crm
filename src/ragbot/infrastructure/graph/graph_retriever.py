@@ -69,7 +69,7 @@ async def graph_retrieve(
 
         # Build context chunks from triples for merging into retrieved_chunks
         graph_chunks: list[dict] = []
-        for triple in triples:
+        for _i, triple in enumerate(triples):
             # Synthesize a text representation of the triple
             text_repr = (
                 f"{triple['subject']} {triple['relation']} {triple['object']}"
@@ -80,7 +80,11 @@ async def graph_retrieve(
                 "text": text_repr,
                 "score": 0.5,  # neutral score — let reranker decide relevance
                 "document_name": source_doc,
-                "chunk_id": None,
+                # Audit Q18: a synthetic non-null id — generate() drops chunks with a
+                # falsy chunk_id from the <documents> block, so chunk_id=None meant
+                # graph triples never reached the prompt (mirrors the stats route's
+                # synthetic sentinel id).
+                "chunk_id": f"graph_synthetic_{_i}",
                 "document_id": None,
                 "chunk_index": "",
                 "source": "graph_rag",

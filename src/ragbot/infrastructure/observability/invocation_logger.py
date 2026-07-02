@@ -241,9 +241,22 @@ class InvocationLogger:
                     "cached": stmt.excluded.cached,
                 },
             )
-            async with self._sf() as session:
-                await session.execute(stmt)
-                await session.commit()
+            # Audit O4: the LLM answer has ALREADY succeeded by the time we get
+            # here — a DB blip on this best-effort audit INSERT must NOT propagate
+            # (it would discard a successful turn AND leak the tracing span, which
+            # closes below). Observability is an aux sink; degrade, never break the
+            # money path (matches the Prometheus emit + span-close guards).
+            try:
+                async with self._sf() as session:
+                    await session.execute(stmt)
+                    await session.commit()
+            except Exception as _exc:  # noqa: BLE001 — aux audit sink; DB failure must not kill a successful LLM turn
+                logger.warning(
+                    "model_invocation_audit_insert_failed",
+                    invocation_id=str(invocation_id),
+                    error=str(_exc),
+                    error_type=type(_exc).__name__,
+                )
 
             # --- Prometheus emit (low cardinality labels only) -----------
             try:
