@@ -62,9 +62,6 @@ class TestS1StateKeyDrop:
 #   is silently dead for that corpus (canary 25/25 shape).
 #   pass2-L1-ingest.md / pass2-X S3.1 ; document_stats.py:156 vocab-gated header.
 # ──────────────────────────────────────────────────────────────────────────
-@pytest.mark.xfail(strict=True, reason="Phase-3 fix (shape-only header fallback + "
-                   "Decimal price); currently RED = the S3 happy-case gap. Remove "
-                   "the mark when the fix lands so it becomes a hard guard.")
 class TestS3HappyCaseBox:
     def test_out_of_vocab_csv_still_extracts_entities(self) -> None:
         from ragbot.shared.document_stats import parse_table_chunks
@@ -82,6 +79,9 @@ class TestS3HappyCaseBox:
             "not to zero (S3 fix)."
         )
 
+    @pytest.mark.xfail(strict=True, reason="Phase-3 remaining: date-shaped 8-digit "
+                       "integer guard (ambiguous vs a real ~31M price); deferred to "
+                       "avoid false-rejecting legitimate prices without a load-test.")
     def test_date_like_integer_is_not_read_as_a_price(self) -> None:
         from ragbot.shared.number_format import parse_money_vn
         # 31.12.2026 flattened by an upstream parser → 31122026 sits under the

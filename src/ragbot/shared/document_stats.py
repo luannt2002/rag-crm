@@ -387,6 +387,47 @@ def _is_header_row(
     return has_label_match
 
 
+def _is_shape_header(lines: list[str], li: int, cols: list[str]) -> bool:
+    """SHAPE-ONLY header rescue (audit I5/S3): promote a headerless first row when
+    the block is unmistakably TABULAR by FORM — no vocabulary, no separator.
+
+    Fires only when ALL hold (tight gate so prose never over-promotes):
+      * ``cols`` has ≥2 non-empty cells and EVERY cell is label-shaped — no money,
+        no pure-number, no bullet/discourse lead (a value cell ⇒ it is a data row);
+      * ≥2 FOLLOWING non-empty rows split into the SAME column count and are not
+        prose (a consistent ≥2-row grid is the signal a comma-split sentence lacks).
+    Turns the out-of-vocab / non-vi-en / synonym-header table from 0 entities
+    (col_N → noise-drop) into best-effort positional entities. Domain-neutral.
+    """
+    non_empty = [c.strip() for c in cols if c and c.strip()]
+    if len(non_empty) < 2:  # noqa: PLR2004 — a header needs ≥2 label cells
+        return False
+    for c in non_empty:
+        if parse_money_vn(c) is not None:
+            return False  # a value/price cell → this is a data row, not a header
+        _norm_digits = c.replace(".", "").replace(",", "").replace(" ", "")
+        if _norm_digits.isdigit():
+            return False  # pure number → value, not a label
+        if c[:1] in _STATS_BULLET_LEADS or _is_discourse_opener(c):
+            return False  # prose / bullet lead
+    ncol = len(cols)
+    data_rows = 0
+    for j in range(li + 1, len(lines)):
+        ln = lines[j]
+        if not ln.strip() or _is_separator_line(ln):
+            continue
+        nxt = _split_cols(ln)
+        if not nxt:
+            continue
+        if len(nxt) == ncol and not _is_prose_row(nxt):
+            data_rows += 1
+            if data_rows >= 2:  # noqa: PLR2004 — ≥2 consistent grid rows = tabular
+                return True
+        else:
+            break  # column count broke → not a consistent grid
+    return False
+
+
 def _is_separator_line(line: str) -> bool:
     """Return True when the line is a Markdown/ASCII separator row.
 
@@ -1019,7 +1060,7 @@ def parse_table_chunks(
             if _is_header_row(
                 cols, _declared_labels,
                 next_is_separator=_next_nonempty_is_separator(lines, _li),
-            ):
+            ) or (not header and _is_shape_header(lines, _li, cols)):
                 header = cols
                 roles = _column_roles(cols, custom_roles)
                 stub_fill = None  # new table → reset rowspan forward-fill
