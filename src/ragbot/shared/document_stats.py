@@ -442,27 +442,6 @@ def _split_cols(line: str) -> list[str]:
     return [c.strip() for c in row]
 
 
-def _header_has_price_token(header: list[str], idx: int) -> bool:
-    """True when the column HEADER at *idx* itself carries a price token.
-
-    Used to let a role-UNBOUND but price-headed column still parse as a price:
-    ``"Giá Combo 10 buổi"`` normalises to ``gia combo 10 buoi`` — it carries BOTH a
-    name token (``combo``) and a price token (``gia``), so the role resolver TIES
-    name⊥price and binds NO role; without this signal the money fallback would be the
-    only thing surfacing it as ``price_secondary``. Meanwhile a money-shaped but
-    NON-price column under an existing price column (``"SL tồn"`` stock, a date
-    integer) has no price token, so it is NOT read as a price (the Q13-class guard).
-    Reuses the same ``_PRICE_COL_TOKENS`` + scoring as the role resolver — no new
-    vocabulary, domain-neutral.
-    """
-    if idx >= len(header) or not header[idx]:
-        return False
-    token = _normalise(header[idx].strip())
-    if not token:
-        return False
-    return _role_match_score(token, set(token.split()), _PRICE_COL_TOKENS) > 0
-
-
 def _role_match_score(token: str, words: set[str], role_tokens: frozenset[str]) -> int:
     """Affinity of a normalised header ``token`` to a role's token set.
 
@@ -685,30 +664,11 @@ def _extract_entity_from_row(
         if price_cols is not None and idx in price_cols:
             # KNOWN price column → parse even with extra words ("500k/buổi").
             money = parse_money_vn(col)
-        elif _is_pure_money(col) and (
-            price_cols is None
-            or len(cols) != len(header)
-            or _header_has_price_token(header, idx)
-        ):
-            # UNKNOWN column but a PURE-money cell → a price in THREE cases:
-            #   (a) NO explicit price column exists anywhere ("| Tên | 500000 |") →
-            #       the lone money column IS the price (positional fallback), OR
-            #   (b) the row is RAGGED (its cell count ≠ the header's) so header[idx] is
-            #       NOT a reliable label for this cell — a data row that dropped the
-            #       leading empty column ("Lốp …,1200000" under ",Tên hàng,Giá") must
-            #       still surface its price, OR
-            #   (c) a price column DOES exist AND THIS column's own header carries a
-            #       price token ("Giá Combo 10 buổi" ties name⊥price in the role
-            #       resolver → binds no role, yet is clearly a 2nd price).
-            # When a price column exists, the row is ALIGNED, and this column's header
-            # has NO price token, a second money-shaped column is a stock/quantity/
-            # date-integer ("SL tồn: 40400", "Ngày: 20241224"), NOT a price — folding
-            # it into price_primary/secondary was the Q13-class field-map bug (a stock
-            # count read as the entity price, or the real price demoted to
-            # price_secondary). Such a column falls through to a labelled attribute
-            # below. The pure-money gate still keeps a NAME that merely contains a money
-            # phrase ("Gói 6 triệu") from being read as a value. Domain-neutral: reuses
-            # the role resolver's own _PRICE_COL_TOKENS, no new header vocabulary.
+        elif _is_pure_money(col):
+            # UNKNOWN column but a PURE-money cell → still a price (a 2nd price column
+            # whose header is out-of-vocab would otherwise drop to a string attribute
+            # and never reach price_secondary). The pure-money gate keeps a NAME that
+            # merely contains a money phrase ("Gói 6 triệu") from being read as a value.
             money = parse_money_vn(col)
         else:
             money = None
