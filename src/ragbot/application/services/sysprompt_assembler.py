@@ -58,15 +58,30 @@ _RULES_PROMPT_KEY = "sysprompt_default_rules"
 # JSONB field under ``bots.plan_limits`` listing rule IDs to strip.
 _DISABLED_KEY = "sysprompt_rules_disabled"
 
-# Pattern matching one rule block — "NN. ⭐ RULE_NAME" header through end
-# of block (next rule header OR end of text). Used to strip disabled rules.
-# DOTALL so the body captures multiline text; non-greedy to stop at next
-# rule. The header pattern itself is the boundary so we don't consume into
-# the NEXT rule.
+# Pattern matching one rule block through the end of the block (next rule
+# header OR end of text). Used to strip disabled rules. Two header shapes are
+# recognised because the seeded default rules use the markdown form:
+#   * markdown  — ``# ANTI-FABRICATE`` / ``# CHỐNG BỊA DỮ LIỆU`` (the LIVE seed
+#     format, alembic 20260627/20260701) → captured as ``hname``.
+#   * legacy    — ``15. ⭐ SYNTHESIS_COMPLETE`` (numbered) → ``num`` + ``name``.
+# Matching ONLY the legacy shape was the GEN-F6 bug: real ``# HEADER`` rules
+# never matched, so ``sysprompt_rules_disabled`` was a silent no-op (breaking the
+# sacred-exception per-bot opt-out condition). DOTALL so the body captures
+# multiline text; non-greedy + a look-ahead on EITHER header shape (or end of
+# text) as the boundary so a block never consumes into the next rule.
 _RULE_BLOCK_RE = re.compile(
-    r"\n\n(?P<num>\d+)\.\s*⭐\s*(?P<name>[A-Z_]+).*?(?=\n\n\d+\.\s*⭐|\Z)",
+    r"\n\n(?:(?P<num>\d+)\.\s*⭐\s*(?P<name>[A-Z_]+)|#\s*(?P<hname>[^\n]+))"
+    r".*?(?=\n\n(?:\d+\.\s*⭐|#\s)|\Z)",
     re.DOTALL,
 )
+
+
+def _norm_rule_name(text: str) -> str:
+    """Fold a rule name/header to a comparison key: lower-case, drop spaces /
+    hyphens / underscores. So ``"ANTI-FABRICATE"``, ``"anti fabricate"`` and
+    ``"anti_fabricate"`` all match the ``# ANTI-FABRICATE`` block header the
+    owner sees in ``GET /admin/bots/{id}/effective-prompt``."""
+    return re.sub(r"[\s_\-]+", "", text.strip().lower())
 
 
 class SysPromptAssembler:
@@ -161,11 +176,13 @@ class SysPromptAssembler:
     def _extract_disabled_rules(bot: Any) -> list[str]:
         """Pull ``plan_limits[sysprompt_rules_disabled]`` list of rule IDs.
 
-        Accepts forms:
-        - ["rule_17", "rule_19"]
-        - [17, 19]
-        - ["17", "19"]
-        Normalises to canonical lowercased ``rule_NN`` form.
+        Accepts BOTH addressing schemes (the seeded default rules are named,
+        legacy rules are numbered):
+        - numbered — ``["rule_17", "rule_19"]``, ``[17, 19]``, ``["17"]``
+        - named    — ``["ANTI-FABRICATE", "anti_pad_list"]`` (matches the
+          ``# HEADER`` the owner sees in the effective prompt)
+        Returns the raw non-empty string tokens; ``_strip_rules`` classifies
+        each into a numeric-match or name-match key.
         """
         if bot is None:
             return []
@@ -181,34 +198,46 @@ class SysPromptAssembler:
         for item in raw:
             if item is None:
                 continue
-            s = str(item).strip().lower()
-            if not s:
-                continue
-            # Accept "17", "rule_17", "Rule 17", "rule17"
-            digits = "".join(c for c in s if c.isdigit())
-            if digits:
-                out.append(f"rule_{digits}")
+            s = str(item).strip()
+            if s:
+                out.append(s)
         return out
 
     @staticmethod
     def _strip_rules(rules_text: str, disabled_ids: list[str]) -> str:
-        """Strip rule blocks whose number matches any disabled rule.
+        """Strip rule blocks whose number OR name matches a disabled entry.
 
-        Each rule block starts with ``"NN. ⭐ RULE_NAME"`` (matching
-        ``_RULE_BLOCK_RE``). Disabled IDs are normalised ``rule_NN``;
-        we extract the number and compare against each matched block's
-        captured ``num`` group.
+        Each block starts with either ``"NN. ⭐ RULE_NAME"`` (legacy numbered)
+        or ``"# RULE_NAME"`` (the seeded markdown form) — both captured by
+        ``_RULE_BLOCK_RE``. A disabled entry that carries digits and no other
+        letters (``"17"``, ``"rule_17"``) matches by the block's ``num`` group;
+        any other entry matches by folded NAME against the block's ``name`` /
+        ``hname`` header (so a ``# HEADER`` default rule is actually strippable —
+        the GEN-F6 fix).
         """
-        disabled_nums = set()
+        disabled_nums: set[str] = set()
+        disabled_names: set[str] = set()
         for rid in disabled_ids:
             digits = "".join(c for c in rid if c.isdigit())
-            if digits:
+            # "rule_17"/"17" → pure numeric addressing; anything with its own
+            # alphabetic identity (beyond a "rule" prefix) → name addressing.
+            residual_letters = re.sub(r"[^a-z]", "", rid.lower()).replace("rule", "")
+            if digits and not residual_letters:
                 disabled_nums.add(digits)
-        if not disabled_nums:
+            else:
+                disabled_names.add(_norm_rule_name(rid))
+        if not disabled_nums and not disabled_names:
             return rules_text
 
         def _maybe_strip(m: re.Match) -> str:
-            return "" if m.group("num") in disabled_nums else m.group(0)
+            gd = m.groupdict()
+            num = gd.get("num")
+            if num and num in disabled_nums:
+                return ""
+            name = gd.get("name") or gd.get("hname")
+            if name and disabled_names and _norm_rule_name(name) in disabled_names:
+                return ""
+            return m.group(0)
 
         return _RULE_BLOCK_RE.sub(_maybe_strip, rules_text)
 
