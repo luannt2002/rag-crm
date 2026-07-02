@@ -966,6 +966,12 @@ class DynamicLiteLLMRouter(LLMPort):
         prompt_total = 0
         completion_total = 0
         cached_total = 0
+        # OBS-F6 — accumulate the yielded answer text so the post-stream cost
+        # fallback can tiktoken-estimate completion tokens when the provider omits
+        # the ``usage`` chunk (the innocom gateway). Cheap list append; joined once
+        # at the end ONLY when the estimate is actually needed (a real usage payload
+        # skips it). Mirrors the sync path, which already holds the full answer text.
+        answer_parts: list[str] = []
         finish_reason: str | None = None
         try:
             async for chunk in stream:
@@ -975,6 +981,7 @@ class DynamicLiteLLMRouter(LLMPort):
                     delta = None
                 if delta:
                     tokens_yielded += 1
+                    answer_parts.append(delta)
                     yield delta
                 # ``finish_reason`` lives on the choice, not on usage. Capture
                 # it whenever a chunk surfaces one so the post-stream sink can
@@ -1028,6 +1035,17 @@ class DynamicLiteLLMRouter(LLMPort):
                 ).inc(cached_total)
             except Exception:  # noqa: BLE001
                 pass
+
+        # OBS-F6 — cost-metering fallback (parity with the sync path): the
+        # innocom gateway (and some proxies) omit the streaming ``usage`` chunk,
+        # so both totals stay 0 → streamed generation logs $0 (unmeasurable — the
+        # HOTTEST call path). Estimate the missing count locally (tiktoken) from the
+        # prompt messages + the accumulated answer text so the cost audit has a
+        # usable figure. Never overwrites a REAL provider count (only fills a 0).
+        if prompt_total == 0 or completion_total == 0:
+            prompt_total, completion_total = estimate_tokens_fallback(
+                messages, "".join(answer_parts), prompt_total, completion_total,
+            )
 
         # P33 — single meter increment after stream completes. Tolerated
         # zero-totals (provider didn't expose usage) keeps month bucket
