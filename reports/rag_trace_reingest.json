@@ -1,0 +1,461 @@
+{
+  "bot_id": "chinh-sach-xe",
+  "scenario": "tests/scenarios/chinh-sach-xe-qa20_scenario.json",
+  "n": 19,
+  "records": [
+    {
+      "id": "q08",
+      "flow": "product_info",
+      "question": "Lốp Landspider xuất xứ ở đâu?",
+      "expect": "Thái Lan",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 20,
+      "chunks_to_llm": 2,
+      "chunks_graded_pass": 2,
+      "score_max": 0.3494,
+      "answer": "Lốp Landspider xuất xứ từ Thái Lan ạ.  \nNếu anh cần thông tin về quy cách, giá, hoặc tình trạng còn hàng, em có thể tra giúp ngay ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 0.349355,
+          "content": "CHÍNH SÁCH BẢO HÀNH LỐP XE\n\nÁp dụng cho thương hiệu Landspider (Thailand) và Rovelo (Vietnam)\n\nCông ty TNHH Lốp Nam Phát\n\nĐịa chỉ: Kho Hải Ngân, Ngõ 3 Đê Đại Hà, Xóm 10, Yên Mỹ, Thanh Trì, Hà Nội\n\nHotline/Zalo: 0988 771 310"
+        },
+        {
+          "score": 0.268941,
+          "content": "Tài liệu: xe-1. Đoạn giữa (phần 42/205).\n\n| Kho lốp LANDSPIDER | 2-R13 155/80 LPD | Lốp xe LANDSPIDER 155/80R13 79T CITYTRAXX G/P | 26 | https://drive.google.com/drive/u/1/folders/12ataSHws-NzWS7492uVEq5OqdB7PD7sx | https://vn1.co/uploads/8e368c8d1fbd9f79c04e2ba12864aa59.jpg | https://vn1.co/uploads/edcf3d459e207dea0651aa321a404d41.jpg | https://vn1.co/uploads/66ccd1fddd6e3e3e06965fb923ca97a8.jpg |\n| | Kho lốp LANDSPIDER | 2-R16 LT235/85 LPD | Lốp xe LANDSPIDER LT235/85R16 120/116S WILDTRAXX A/T"
+        }
+      ],
+      "error": null
+    },
+    {
+      "id": "q09",
+      "flow": "company_info",
+      "question": "Cho mình xin thông tin công ty để chuyển khoản",
+      "expect": "Quang Minh",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 20,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 0.4428,
+      "answer": "Dạ, em gửi anh thông tin công ty để chuyển khoản ạ:\n\n- **Tên công ty**: Công ty TNHH Lốp Nam Phát  \n- **Địa chỉ**: Kho Hải Ngân, Ngõ 3 Đê Đại Hà, Xóm 10, Yên Mỹ, Thanh Trì, Hà Nội  \n- **Hotline/Zalo**: 0988 771 310  \n\nAnh vui lòng kiểm tra kỹ thông tin để chuyển khoản chính xác ạ. Nếu cần thêm hỗ trợ, anh cứ nói em nhé!",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 0.442829,
+          "content": "CHÍNH SÁCH BẢO HÀNH LỐP XE\n\nÁp dụng cho thương hiệu Landspider (Thailand) và Rovelo (Vietnam)\n\nCông ty TNHH Lốp Nam Phát\n\nĐịa chỉ: Kho Hải Ngân, Ngõ 3 Đê Đại Hà, Xóm 10, Yên Mỹ, Thanh Trì, Hà Nội\n\nHotline/Zalo: 0988 771 310"
+        }
+      ],
+      "error": null
+    },
+    {
+      "id": "q10",
+      "flow": "comparison",
+      "question": "Nên chọn Landspider hay Rovelo?",
+      "expect": null,
+      "intent": "comparison",
+      "rewritten": "so sánh Landspider và Rovelo",
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 20,
+      "chunks_to_llm": 2,
+      "chunks_graded_pass": 2,
+      "score_max": 0.2968,
+      "answer": "Dạ, em so sánh Landspider và Rovelo như sau để anh/chị dễ lựa chọn:\n\n---\n\n### ✅ **Landspider (Thái Lan)**\n- **Ưu điểm**:  \n  - Chất lượng ổn định, độ bền cao, phù hợp với đường thành phố, cao tốc và đường dài.  \n  - Dòng **CITYTRAXX** (G/P, H/P, H/T) – êm, tiết kiệm nhiên liệu, chạy tốt trên đường nhựa.  \n  - Dòng **WILDTRAXX A/T** và **ROVERTRAXX X/T** – độ bám tốt trên địa hình hỗn hợp, off-road nhẹ.  \n  - Bảo hành **5 năm** hoặc đến khi gai còn ≥ 1.6mm (tùy điều kiện nào đến trước).\n\n- **Phù hợp với**: Xe du lịch, xe SUV, chạy đường dài, đường xấu, hoặc thường xuyên đi xa.\n\n---\n\n### ✅ **Rovelo (Việt Nam)**\n- **Ưu điểm**:  \n  - Sản xuất trong nước, giá tốt, bảo hành rõ ràng.  \n  - Dòng **RHP-A68**, **RCM-X+**, **INSTINCT**, **Road Quest A/T** – độ bám đường ướt tốt, êm, giảm rung, phù hợp với đường thành phố và đường cao tốc.  \n  - Bảo hành **5 năm** hoặc đến khi gai còn ≥ 1.6mm (tùy điều kiện nào đến trước).\n\n- **Phù hợp với**: Xe gia đình, chạy trong thành phố, đường đô thị, hoặc muốn tiết kiệm chi phí bảo dưỡng.\n\n---\n\n### 🔍 **So sánh nhanh:**\n| Tiêu chí | Landspider | Rovelo |\n|--------|------------|--------|\n| Xuất xứ | Thái Lan | Việt Nam |\n| Độ bền | Cao, phù hợp đường dài | Tốt, ổn định |\n| Độ bám | Tốt trên đường ướt và địa hình hỗn hợp | Tốt, đặc biệt trên",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 0.296817,
+          "content": "[I. Phạm vi áp dụng]\n- Áp dụng cho tất cả các sản phẩm lốp xe du lịch (PCR) Landspider và Rovelo có số seri hợp lệ.\n\n- Bảo hành các lỗi do chất lượng vật liệu hoặc quy trình sản xuất trong điều kiện sử dụng bình thường.\n\n- Hiệu lực bảo hành: 05 năm kể từ ngày sản xuất hoặc đến khi gai còn ≥ 1.6mm (tùy điều kiện nào đến trước)."
+        },
+        {
+          "score": 0.232589,
+          "content": "CHÍNH SÁCH BẢO HÀNH LỐP XE\n\nÁp dụng cho thương hiệu Landspider (Thailand) và Rovelo (Vietnam)\n\nCông ty TNHH Lốp Nam Phát\n\nĐịa chỉ: Kho Hải Ngân, Ngõ 3 Đê Đại Hà, Xóm 10, Yên Mỹ, Thanh Trì, Hà Nội\n\nHotline/Zalo: 0988 771 310"
+        }
+      ],
+      "error": null
+    },
+    {
+      "id": "q11",
+      "flow": "oos_trap",
+      "question": "Lốp Bridgestone giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 20,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 0.2337,
+      "answer": "Dạ bên em hiện phân phối Landspider và Rovelo, chưa có hãng Bridgestone ạ. Anh/chị cho em quy cách lốp, em gợi ý loại tương đương đang có nhé.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 0.233706,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 70/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 225/45R18, 225 45 18, 225 45R18, 225/45/18, 225-45-18, 225-45R18, 2254518, 225/45-18, 225/45:18, 225:45/18, 225/45 R18, 225 /45 R18, 225.45r18, Landspider 225/45R18, Landspider 225 45 18, Landspider 225 45R18, Landspider 225/45/18, Land 225/45R18, Land 225 45 18, Land 225 45R18, Land 225/45/18, 225/45R18 H/P, 225/45R18 HP, 225/45R18 H-P"
+        }
+      ],
+      "error": null
+    },
+    {
+      "id": "q12",
+      "flow": "product_feature",
+      "question": "Lốp Davanti DX640 có đặc điểm gì?",
+      "expect": "DX640",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 20,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 0.5277,
+      "answer": "Lốp Davanti DX640 (235/45ZR19 99W XL) có các đặc điểm sau:\n\n- **Kích thước**: 235/45ZR19  \n- **Tải trọng & tốc độ**: 99W (tải trọng 730kg, tốc độ tối đa 270km/h)  \n- **Loại lốp**: Cao cấp, phù hợp với xe thể thao, xe hạng sang  \n- **Thiết kế gai**: Cải tiến độ bám đường tốt, giảm ồn, tăng độ ổn định khi chạy tốc độ cao  \n- **Chất liệu**: Cấu trúc lốp bền, chịu lực tốt, chống mài mòn cao  \n- **Tình trạng hàng**: Hiện còn **345 chiếc**  \n- **Giá**: 1.998.000đ/lốp  \n\nAnh/chị cần em tư vấn thêm về kích cỡ khác hoặc đặt hàng không ạ?",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 0.527706,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 181/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 235/45R19, 235 45 19, 235 45R19, 235/45/19, 235-45-19, 235-45R19, 2354519, 235/45-19, 235/45:19, 235:45/19, 235/45 R19, 235 /45 R19, 235.45r19, Davanti 235/45R19, Davanti 235 45 19, Davanti 235 45R19, Davanti 235/45/19, DVT 235/45R19, DVT235/45R19, DVT 235 45 19, DVT235 45 19, DVT 235 45R19, DVT235 45R19, DVT 235/45/19, DVT235/45/19, 2"
+        }
+      ],
+      "error": null
+    },
+    {
+      "id": "q13",
+      "flow": "price_lookup",
+      "question": "Lốp Landspider size 225/45R17 giá bao nhiêu?",
+      "expect": "225/45R17",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "answer": "Lốp Landspider 225/45ZR17 H/P giá 1.242.000đ/lốp, hiện còn 507 lốp ạ.  \nAnh muốn đặt hàng không ạ? Nếu có, em cần tên, số điện thoại, số lượng và quy cách lốp để chốt đơn ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R17 225/45 RVL: 1170000 | price: 1170000 | answer: ROVELO 225/45R17 AS01 | quantity: 4 | productname: Lốp Rovelo 225/45R17 INSTINCT-AS01\n2-ZR17 225/45 LPD: 1242000 | date1: 26 | image: https://drive.google.com/drive/folders/1p3S_Skhfi3Xv5ww6E2kRNluFGJWtNRcr?usp=drive_link | price: 1242000 | answer: LANDSPIDER 225/45ZR17 H/P | quantity: 507 | productname: Lốp xe LANDSPIDER 225/45ZR17 94WXL CITYTRAXX H/P"
+        }
+      ],
+      "error": null
+    },
+    {
+      "id": "q15",
+      "flow": "oos_trap",
+      "question": "Thời tiết Hà Nội hôm nay thế nào?",
+      "expect": null,
+      "intent": "out_of_scope",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 20,
+      "chunks_to_llm": 2,
+      "chunks_graded_pass": 2,
+      "score_max": 0.0547,
+      "answer": "Dạ em là trợ lý tư vấn lốp xe của Nam Phát, chuyên lốp Landspider và Rovelo ạ. Hiện em chưa có thông tin về thời tiết Hà Nội hôm nay, anh/chị vui lòng kiểm tra qua ứng dụng thời tiết để được cập nhật chính xác nhất nhé! Nếu cần tư vấn lốp xe phù hợp với điều kiện thời tiết, em sẵn sàng hỗ trợ ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 0.054681,
+          "content": "[VI. Hỗ trợ dịch vụ]\n- Hotline/Zalo: 0988 771 310\n\n- Địa chỉ: Kho Hải Ngân, Ngõ 3 Đê Đại Hà, Xóm 10, Yên Mỹ, Thanh Trì, Hà Nội\n\n- Đội ngũ kỹ thuật Nam Phát sẵn sàng hỗ trợ tư vấn kiểm tra tình trạng lốp và hướng dẫn bảo dưỡng để kéo dài tuổi thọ sản phẩm."
+        },
+        {
+          "score": 0.054681,
+          "content": "| MARKS | CARGO DESCRIPTION | |\n\n| GR | LANDSPIDER BRAND TYRES | NGÀY VỀ |\n\n| | 185/55R16 83V CITYTRAXX G/P | 28-thg 11 |\n\n| | 195/65R15 91H CITYTRAXX G/P | 28-thg 11 |\n\n| | 215/70R16 100H CITYTRAXX H/T | 28-thg 11 |\n\n| | 225/45ZR18 95WXL CITYTRAXX H/P | 28-thg 11 |\n\n| | 225/45ZR19 96WXL CITYTRAXX H/P | 28-thg 11 |\n\n| | 225/50ZR18 99WXL CITYTRAXX H/P | 28-thg 11 |\n\n| | 225/55ZR18 102WXL CITYTRAXX H/P | 28-thg 11 |\n\n| | 225/60R18 100H CITYTRAXX H/T | 28-thg 11 |\n\n| | 225/70R16 107HXL CITYTRAXX H/"
+        }
+      ],
+      "error": null
+    },
+    {
+      "id": "q16",
+      "flow": "price_inventory",
+      "question": "Lốp Landspider 185/60R15 giá bao nhiêu và còn bao nhiêu chiếc?",
+      "expect": "810.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 20,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 0.6399,
+      "answer": "Lốp Landspider 185/60R15 G/P giá **810.000đ/lốp**, hiện còn **1.350 chiếc** ạ.  \nAnh cần em hỗ trợ đặt hàng không ạ?",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 0.639916,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 16/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 185/60R15, 185 60 15, 185 60R15, 185/60/15, 185-60-15, 185-60R15, 1856015, 185/60-15, Landspider 185/60R15, Landspider 185 60 15, Landspider 185 60R15, Landspider 185/60/15, Land 185/60R15, Land 185 60 15, Land 185 60R15, Land 185/60/15, 185/60R15 G/P, 185/60R15 GP, 185/60R15 G-P, 185 60 15 G/P, 185 60 15 GP, 185 60 15 G-P, 185 60R15 G/"
+        }
+      ],
+      "error": null
+    },
+    {
+      "id": "q17",
+      "flow": "inventory",
+      "question": "Lốp Landspider 175/70R14 còn hàng không?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "answer": "Dạ lốp Landspider 175/70R14 CITYTRAXX G/P hiện đang hết hàng ạ.  \nLốp Rovelo 175/70R14 A68 còn 295 lốp, giá 729.000đ/lốp ạ. Anh/chị có muốn đặt không ạ?",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R14 175/70 LPD: 792000 | price: 792000 | answer: LANDSPIDER 175/70R14 G/P | quantity: 0 | productname: Lốp xe LANDSPIDER 175/70R14 84H CITYTRAXX G/P\n2-R14 175/70 RVL: 729000 | image: https://drive.google.com/drive/folders/14bx6640XPkwG8nJVu62d7BySNM2nUloJ?usp=drive_link | price: 729000 | answer: ROVELO 175/70R14 A68 | quantity: 295 | productname: Lốp Rovelo 175/70R14 RHP-A68"
+        }
+      ],
+      "error": null
+    },
+    {
+      "id": "q18",
+      "flow": "price_lookup",
+      "question": "Lốp Davanti DX640 215/60R17 giá bao nhiêu?",
+      "expect": "1.485.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "answer": "Lốp DAVANTI 215/60R17 DX640 giá 1.485.000đ/lốp, hiện còn 196 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R17 215/60 DVT: 1485000 | date1: 26 | image: https://drive.google.com/drive/folders/1LyZyZvRtehbhzUMdoM1-G_2jz-7ztcg_?usp=drive_link | price: 1485000 | answer: DAVANTI 215/60R17 DX640 | quantity: 196 | productname: Lốp xe DAVANTI 215/60R17 96H DX640"
+        }
+      ],
+      "error": null
+    },
+    {
+      "id": "q19",
+      "flow": "price_lookup",
+      "question": "Rovelo 215/60R16 giá bao nhiêu?",
+      "expect": "1.152.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "answer": "Lốp Rovelo 215/60R16 INSTINCT-AS01 giá 1.152.000đ/lốp, hiện còn 9 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R16 215/60 LPD: 1233000 | date1: 26 | image: https://drive.google.com/drive/folders/1P-rIONTT_KPSeOVZRT_L1edMEz2F5ODE?usp=drive_link | price: 1233000 | answer: LANDSPIDER 215/60R16 G/P | quantity: 185 | productname: Lốp xe LANDSPIDER 215/60R16 95V CITYTRAXX G/P | : 28-thg 11\n2-R16 215/60RT RVL: 1152000 | price: 1152000 | answer: ROVELO 215/60R16 AS01 | quantity: 9 | productname: Lốp Rovelo 215/60R16 INSTINCT-AS01"
+        }
+      ],
+      "error": null
+    },
+    {
+      "id": "q20",
+      "flow": "missing_data",
+      "question": "Lốp Neoterra 195/65R16 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 20,
+      "chunks_to_llm": 3,
+      "chunks_graded_pass": 3,
+      "score_max": 0.6675,
+      "answer": "Lốp Neoterra 195/65R16 92H giá **1.250.000đ/lốp**, hiện còn **26 lốp** trong kho ạ.  \nAnh/chị muốn đặt mua không ạ? Nếu có, em sẽ giúp chốt đơn ngay nhé.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 0.667495,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 177/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 195/65R16, 195 65 16, 195 65R16, 195/65/16, 195-65-16, 195-65R16, 1956516, 195/65-16, 195/65:16, 195:65/16, 195/65 R16, 195 /65 R16, 195.65r16, Neoterra 195/65R16, Neoterra 195 65 16, Neoterra 195 65R16, Neoterra 195/65/16, NEO 195/65R16, NEO195/65R16, NEO 195 65 16, NEO195 65 16, NEO 195 65R16, NEO195 65R16, NEO 195/65/16, NEO195/65/1"
+        },
+        {
+          "score": 0.265271,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 164/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 195/75R16C, 195 75 16C, 195 75R16C, 195/75/16C, 195-75-16C, 195-75R16C, 1957516C, 195/75-16C, 195/75:16C, 195:75/16C, 195/75 R16C, 195 /75 R16C, 195.75r16C, 195/75R16, 195/75/16, 195-75-16, 1957516, Rovelo 195/75R16C, Rovelo 195 75 16C, Rovelo 195 75R16C, Rovelo 195/75/16C, RVL 195/75R16C, RVL195/75R16C, RVL 195 75 16C, RVL195 75 16C, "
+        },
+        {
+          "score": 0.260427,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 33/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 215/65R16, 215 65 16, 215 65R16, 215/65/16, 215-65-16, 215-65R16, 2156516, 215/65-16, 215/65:16, 215:65/16, 215/65 R16, 215 /65 R16, 215.65r16, Landspider 215/65R16, Landspider 215 65 16, Landspider 215 65R16, Landspider 215/65/16, Land 215/65R16, Land 215 65 16, Land 215 65R16, Land 215/65/16, 215/65R16 G/P, 215/65R16 GP, 215/65R16 G-P"
+        }
+      ],
+      "error": null
+    },
+    {
+      "id": "q21",
+      "flow": "recommendation",
+      "question": "Tôi cần mua lốp cho xe Vios, tư vấn giúp mình",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 20,
+      "chunks_to_llm": 2,
+      "chunks_graded_pass": 2,
+      "score_max": 0.5031,
+      "answer": "Dạ, xe Vios thường dùng 2 cỡ lốp phổ biến là **185/65R15** và **205/55R16**, tùy đời xe.  \nDưới đây là 2 lựa chọn phù hợp nhất cho xe Vios, hiện còn hàng và có giá tốt ạ:\n\n---\n\n### ✅ **1. Lốp Landspider 205/55R16 91V G/P (CITYTRAXX G/P)**  \n- **Giá**: 1.044.000đ/lốp  \n- **Tồn kho**: 734 lốp (còn nhiều, đủ dùng)  \n- **Đặc điểm**:  \n  - Phù hợp với Vios đời mới (2018 trở lên), độ bám tốt, êm, giảm tiếng ồn.  \n  - Gai lốp sâu, chịu được đường xấu, tiết kiệm nhiên liệu.  \n  - Dùng cho đường thành phố, đi xa cũng ổn định.\n\n> 📅 **Hàng về**: 26-thg 11 (nếu cần bổ sung tồn)\n\n---\n\n### ✅ **2. Lốp Davanti 185/65R15 88H XL DX640**  \n- **Giá**: 900.000đ/lốp  \n- **Tồn kho**: 510 lốp (còn nhiều)  \n- **Đặc điểm**:  \n  - Dành cho Vios đời cũ (2010–2017), độ bền cao, tiết kiệm nhiên liệu.  \n  - Gai lốp sâu, bám đường tốt, phù hợp với đường thành phố và quốc lộ.\n\n> 📅 **Hàng về**: 28-thg 11 (nếu cần bổ sung)\n\n---\n\nAnh/chị đang dùng cỡ nào ạ?  \nNếu anh/chị cần thay 4 lốp, em có thể tư vấn combo tiết kiệm hơn, hoặc hỗ trợ",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 0.503125,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 183/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 255/50R19, 255 50 19, 255 50R19, 255/50/19, 255-50-19, 255-50R19, 2555019, 255/50-19, 255/50:19, 255:50/19, 255/50 R19, 255 /50 R19, 255.50r19, Davanti 255/50R19, Davanti 255 50 19, Davanti 255 50R19, Davanti 255/50/19, DVT 255/50R19, DVT255/50R19, DVT 255 50 19, DVT255 50 19, DVT 255 50R19, DVT255 50R19, DVT 255/50/19, DVT255/50/19, 2"
+        },
+        {
+          "score": 0.444758,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 28/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 205/55R16, 205 55 16, 205 55R16, 205/55/16, 205-55-16, 205-55R16, 2055516, 205/55-16, Landspider 205/55R16, Landspider 205 55 16, Landspider 205 55R16, Landspider 205/55/16, Land 205/55R16, Land 205 55 16, Land 205 55R16, Land 205/55/16, 205/55R16 G/P, 205/55R16 GP, 205/55R16 G-P, 205 55 16 G/P, 205 55 16 GP, 205 55 16 G-P, 205 55R16 G/"
+        }
+      ],
+      "error": null
+    },
+    {
+      "id": "q22",
+      "flow": "price_lookup",
+      "question": "Lốp Davanti 275/40ZR21 giá bao nhiêu?",
+      "expect": "3.240.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "answer": "Lốp DAVANTI 275/40ZR21 DX640 giá 3.240.000đ/lốp, hiện còn 251 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-ZR21 275/40 DVT: 3240000 | date1: 26 | image: https://drive.google.com/drive/folders/1VXRvv2Ii08sKO-UqLF-sbRTbUtB1HtyB?usp=drive_link | price: 3240000 | answer: DAVANTI 275/40ZR21 DX640 | quantity: 251 | productname: Lốp xe DAVANTI 275/40ZR21 107Y XL DX640"
+        }
+      ],
+      "error": null
+    },
+    {
+      "id": "q23",
+      "flow": "price_inventory",
+      "question": "Lốp Landspider 245/70R17 giá bao nhiêu và còn bao nhiêu chiếc?",
+      "expect": "2.322.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 20,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 0.6542,
+      "answer": "Lốp Landspider 245/70R17 110H CITYTRAXX H/T giá 2.322.000đ/lốp, hiện còn 1 chiếc ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 0.654188,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 64/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 245/70R17, 245 70 17, 245 70R17, 245/70/17, 245-70-17, 245-70R17, 2457017, 245/70-17, 245/70:17, 245:70/17, 245/70 R17, 245 /70 R17, 245.70r17, Landspider 245/70R17, Landspider 245 70 17, Landspider 245 70R17, Landspider 245/70/17, Land 245/70R17, Land 245 70 17, Land 245 70R17, Land 245/70/17, 245/70R17 H/T, 245/70R17 HT, 245/70R17 H-T"
+        }
+      ],
+      "error": null
+    },
+    {
+      "id": "q24",
+      "flow": "price_lookup",
+      "question": "Lốp Landspider size 285/70R17 giá bao nhiêu?",
+      "expect": "3.123.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "answer": "Lốp Landspider LT285/70R17 A/T giá **3.123.000đ/lốp**, hiện còn **12 lốp** trong kho ạ.  \nAnh/chị cần em hỗ trợ đặt hàng không ạ?",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R17 285/70 LPD AT: 3123000 | date1: 26 | image: https://drive.google.com/drive/folders/1E9F4aUOu1xfO5pPwtwJvZ_YI9POluSU7?usp=drive_link | price: 3123000 | answer: LANDSPIDER LT285/70R17 A/T | quantity: 12 | productname: Lốp xe LANDSPIDER LT285/70R17 121/118S WILDTRAXX A/T"
+        }
+      ],
+      "error": null
+    },
+    {
+      "id": "q25",
+      "flow": "oos_trap",
+      "question": "Lốp Michelin Pilot Sport 5 size 245/40R18 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "answer": "Dạ bên em hiện phân phối Landspider và Rovelo, chưa có hãng Michelin ạ.  \n\nTuy nhiên, anh có thể tham khảo lốp **Landspider 245/40ZR18 H/P** – loại tương đương về kích thước và hiệu suất, hiện còn hàng với giá **1.656.000đ/lốp** ạ.  \n\nLốp còn **36 chiếc**, giao trong ngày nếu đặt sớm. Anh muốn em hỗ trợ đặt hàng không ạ?",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-ZR18 245/40 LPD: 1656000 | date1: 26 | image: https://drive.google.com/drive/folders/1nPU29Lq4BkGqIU5FnFVeRP1PmLQ6mI8Y?usp=drive_link | price: 1656000 | answer: LANDSPIDER 245/40ZR18 H/P | quantity: 36 | productname: Lốp xe LANDSPIDER 245/40ZR18 97WXL CITYTRAXX H/P"
+        }
+      ],
+      "error": null
+    },
+    {
+      "id": "q26",
+      "flow": "inventory",
+      "question": "Lốp Landspider 175/70R14 84H còn hàng không?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "answer": "Dạ lốp Landspider 175/70R14 84H CITYTRAXX G/P hiện đang hết hàng ạ.  \nAnh/chị có muốn em gợi ý loại tương đương của Rovelo đang còn hàng không ạ?",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R14 175/70 LPD: 792000 | price: 792000 | answer: LANDSPIDER 175/70R14 G/P | quantity: 0 | productname: Lốp xe LANDSPIDER 175/70R14 84H CITYTRAXX G/P\n2-R14 175/70 RVL: 729000 | image: https://drive.google.com/drive/folders/14bx6640XPkwG8nJVu62d7BySNM2nUloJ?usp=drive_link | price: 729000 | answer: ROVELO 175/70R14 A68 | quantity: 295 | productname: Lốp Rovelo 175/70R14 RHP-A68"
+        }
+      ],
+      "error": null
+    },
+    {
+      "id": "q27",
+      "flow": "comparison",
+      "question": "So sánh giá Landspider 205/65R16 và 235/40R18",
+      "expect": "1.602.000",
+      "intent": "comparison",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 20,
+      "chunks_to_llm": 4,
+      "chunks_graded_pass": 4,
+      "score_max": 0.4877,
+      "answer": "Dạ, em đã tra thông tin về hai quy cách lốp Landspider như sau:\n\n- **Landspider 205/65R16 G/P**:  \n  Giá: 1.170.000đ/lốp, hiện còn 187 lốp ạ.\n\n- **Landspider 235/40ZR18 H/P**:  \n  Giá: 1.602.000đ/lốp, hiện còn 26 lốp ạ.\n\n👉 Như vậy, lốp **235/40ZR18** có giá cao hơn **205/65R16** khoảng **432.000đ/lốp**.\n\nNếu anh/chị cần đặt hàng hoặc muốn so sánh thêm về độ mòn, tải trọng, hoặc tình trạng hàng, em sẵn sàng hỗ trợ ạ!",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 0.487698,
+          "content": "Tài liệu: xe-1. Đoạn giữa (phần 89/205).\n\n| Kho lốp LANDSPIDER | 2-R13 155/80 LPD | Lốp xe LANDSPIDER 155/80R13 79T CITYTRAXX G/P | 26 | https://drive.google.com/drive/u/1/folders/12ataSHws-NzWS7492uVEq5OqdB7PD7sx | https://vn1.co/uploads/8e368c8d1fbd9f79c04e2ba12864aa59.jpg | https://vn1.co/uploads/edcf3d459e207dea0651aa321a404d41.jpg | https://vn1.co/uploads/66ccd1fddd6e3e3e06965fb923ca97a8.jpg |\n| | Kho lốp LANDSPIDER | 2-ZR18 235/40 LPD | Lốp xe LANDSPIDER 235/40ZR18 95WXL CITYTRAXX H/P | 26"
+        },
+        {
+          "score": 0.345812,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 82/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 255/40R18, 255 40 18, 255 40R18, 255/40/18, 255-40-18, 255-40R18, 2554018, 255/40-18, 255/40:18, 255:40/18, 255/40 R18, 255 /40 R18, 255.40r18, Landspider 255/40R18, Landspider 255 40 18, Landspider 255 40R18, Landspider 255/40/18, Land 255/40R18, Land 255 40 18, Land 255 40R18, Land 255/40/18, 255/40R18 H/P, 255/40R18 HP, 255/40R18 H-P"
+        },
+        {
+          "score": 0.34088,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 79/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 235/65R18, 235 65 18, 235 65R18, 235/65/18, 235-65-18, 235-65R18, 2356518, 235/65-18, 235/65:18, 235:65/18, 235/65 R18, 235 /65 R18, 235.65r18, Landspider 235/65R18, Landspider 235 65 18, Landspider 235 65R18, Landspider 235/65/18, Land 235/65R18, Land 235 65 18, Land 235 65R18, Land 235/65/18, 235/65R18 H/T, 235/65R18 HT, 235/65R18 H-T"
+        },
+        {
+          "score": 0.316074,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 30/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 205/65R16, 205 65 16, 205 65R16, 205/65/16, 205-65-16, 205-65R16, 2056516, 205/65-16, Landspider 205/65R16, Landspider 205 65 16, Landspider 205 65R16, Landspider 205/65/16, Land 205/65R16, Land 205 65 16, Land 205 65R16, Land 205/65/16, 205/65R16 G/P, 205/65R16 GP, 205/65R16 G-P, 205 65 16 G/P, 205 65 16 GP, 205 65 16 G-P, 205 65R16 G/"
+        }
+      ],
+      "error": null
+    }
+  ]
+}

@@ -1,0 +1,944 @@
+{
+  "bot_id": "chinh-sach-xe",
+  "scenario": "/tmp/claude-0/-var-www-html-ragbot/e9b02298-b28c-48b7-9bfe-11eef21508ba/scratchpad/probe_primacy.json",
+  "repeat": 15,
+  "corpus_version": {
+    "record_bot_id": "c6e1fc56-d070-439d-99a6-c8b4964b4d2d",
+    "chunks": 401,
+    "max_updated_at": "2026-07-03 13:52:56.449438+07",
+    "content_md5": "055392ff733943f9635cc9321f5227ea"
+  },
+  "n": 30,
+  "records": [
+    {
+      "id": "P-10",
+      "flow": "primacy_first_row",
+      "question": "Lốp Rovelo 225/45R17 giá bao nhiêu?",
+      "expect": "1.170.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "answer": "Lốp Rovelo 225/45R17 INSTINCT-AS01 giá 1.170.000đ/lốp, hiện còn 4 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R17 225/45 RVL: 1170000 | price: 1170000 | answer: ROVELO 225/45R17 AS01 | quantity: 4 | productname: Lốp Rovelo 225/45R17 INSTINCT-AS01\n2-ZR17 225/45 LPD: 1242000 | date1: 26 | image: https://drive.google.com/drive/folders/1p3S_Skhfi3Xv5ww6E2kRNluFGJWtNRcr?usp=drive_link | price: 1242000 | answer: LANDSPIDER 225/45ZR17 H/P | quantity: 507 | productname: Lốp xe LANDSPIDER 225/45ZR17 94WXL CITYTRAXX H/P"
+        }
+      ],
+      "error": null,
+      "iteration": 1,
+      "verdicts": [
+        {
+          "token": "1.170.000",
+          "value": 1170000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-10",
+      "flow": "primacy_first_row",
+      "question": "Lốp Rovelo 225/45R17 giá bao nhiêu?",
+      "expect": "1.170.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "answer": "Lốp Rovelo 225/45R17 INSTINCT-AS01 giá 1.170.000đ/lốp, hiện còn 4 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R17 225/45 RVL: 1170000 | price: 1170000 | answer: ROVELO 225/45R17 AS01 | quantity: 4 | productname: Lốp Rovelo 225/45R17 INSTINCT-AS01\n2-ZR17 225/45 LPD: 1242000 | date1: 26 | image: https://drive.google.com/drive/folders/1p3S_Skhfi3Xv5ww6E2kRNluFGJWtNRcr?usp=drive_link | price: 1242000 | answer: LANDSPIDER 225/45ZR17 H/P | quantity: 507 | productname: Lốp xe LANDSPIDER 225/45ZR17 94WXL CITYTRAXX H/P"
+        }
+      ],
+      "error": null,
+      "iteration": 2,
+      "verdicts": [
+        {
+          "token": "1.170.000",
+          "value": 1170000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-10",
+      "flow": "primacy_first_row",
+      "question": "Lốp Rovelo 225/45R17 giá bao nhiêu?",
+      "expect": "1.170.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "answer": "Lốp Rovelo 225/45R17 INSTINCT-AS01 giá 1.170.000đ/lốp, hiện còn 4 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R17 225/45 RVL: 1170000 | price: 1170000 | answer: ROVELO 225/45R17 AS01 | quantity: 4 | productname: Lốp Rovelo 225/45R17 INSTINCT-AS01\n2-ZR17 225/45 LPD: 1242000 | date1: 26 | image: https://drive.google.com/drive/folders/1p3S_Skhfi3Xv5ww6E2kRNluFGJWtNRcr?usp=drive_link | price: 1242000 | answer: LANDSPIDER 225/45ZR17 H/P | quantity: 507 | productname: Lốp xe LANDSPIDER 225/45ZR17 94WXL CITYTRAXX H/P"
+        }
+      ],
+      "error": null,
+      "iteration": 3,
+      "verdicts": [
+        {
+          "token": "1.170.000",
+          "value": 1170000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-10",
+      "flow": "primacy_first_row",
+      "question": "Lốp Rovelo 225/45R17 giá bao nhiêu?",
+      "expect": "1.170.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "answer": "Lốp Rovelo 225/45R17 INSTINCT-AS01 giá 1.170.000đ/lốp, hiện còn 4 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R17 225/45 RVL: 1170000 | price: 1170000 | answer: ROVELO 225/45R17 AS01 | quantity: 4 | productname: Lốp Rovelo 225/45R17 INSTINCT-AS01\n2-ZR17 225/45 LPD: 1242000 | date1: 26 | image: https://drive.google.com/drive/folders/1p3S_Skhfi3Xv5ww6E2kRNluFGJWtNRcr?usp=drive_link | price: 1242000 | answer: LANDSPIDER 225/45ZR17 H/P | quantity: 507 | productname: Lốp xe LANDSPIDER 225/45ZR17 94WXL CITYTRAXX H/P"
+        }
+      ],
+      "error": null,
+      "iteration": 4,
+      "verdicts": [
+        {
+          "token": "1.170.000",
+          "value": 1170000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-10",
+      "flow": "primacy_first_row",
+      "question": "Lốp Rovelo 225/45R17 giá bao nhiêu?",
+      "expect": "1.170.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "answer": "Lốp Rovelo 225/45R17 INSTINCT-AS01 giá 1.170.000đ/lốp, hiện còn 4 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R17 225/45 RVL: 1170000 | price: 1170000 | answer: ROVELO 225/45R17 AS01 | quantity: 4 | productname: Lốp Rovelo 225/45R17 INSTINCT-AS01\n2-ZR17 225/45 LPD: 1242000 | date1: 26 | image: https://drive.google.com/drive/folders/1p3S_Skhfi3Xv5ww6E2kRNluFGJWtNRcr?usp=drive_link | price: 1242000 | answer: LANDSPIDER 225/45ZR17 H/P | quantity: 507 | productname: Lốp xe LANDSPIDER 225/45ZR17 94WXL CITYTRAXX H/P"
+        }
+      ],
+      "error": null,
+      "iteration": 5,
+      "verdicts": [
+        {
+          "token": "1.170.000",
+          "value": 1170000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-10",
+      "flow": "primacy_first_row",
+      "question": "Lốp Rovelo 225/45R17 giá bao nhiêu?",
+      "expect": "1.170.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "answer": "Lốp Rovelo 225/45R17 INSTINCT-AS01 giá 1.170.000đ/lốp, hiện còn 4 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R17 225/45 RVL: 1170000 | price: 1170000 | answer: ROVELO 225/45R17 AS01 | quantity: 4 | productname: Lốp Rovelo 225/45R17 INSTINCT-AS01\n2-ZR17 225/45 LPD: 1242000 | date1: 26 | image: https://drive.google.com/drive/folders/1p3S_Skhfi3Xv5ww6E2kRNluFGJWtNRcr?usp=drive_link | price: 1242000 | answer: LANDSPIDER 225/45ZR17 H/P | quantity: 507 | productname: Lốp xe LANDSPIDER 225/45ZR17 94WXL CITYTRAXX H/P"
+        }
+      ],
+      "error": null,
+      "iteration": 6,
+      "verdicts": [
+        {
+          "token": "1.170.000",
+          "value": 1170000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-10",
+      "flow": "primacy_first_row",
+      "question": "Lốp Rovelo 225/45R17 giá bao nhiêu?",
+      "expect": "1.170.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "answer": "Lốp Rovelo 225/45R17 INSTINCT-AS01 giá 1.170.000đ/lốp, hiện còn 4 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R17 225/45 RVL: 1170000 | price: 1170000 | answer: ROVELO 225/45R17 AS01 | quantity: 4 | productname: Lốp Rovelo 225/45R17 INSTINCT-AS01\n2-ZR17 225/45 LPD: 1242000 | date1: 26 | image: https://drive.google.com/drive/folders/1p3S_Skhfi3Xv5ww6E2kRNluFGJWtNRcr?usp=drive_link | price: 1242000 | answer: LANDSPIDER 225/45ZR17 H/P | quantity: 507 | productname: Lốp xe LANDSPIDER 225/45ZR17 94WXL CITYTRAXX H/P"
+        }
+      ],
+      "error": null,
+      "iteration": 7,
+      "verdicts": [
+        {
+          "token": "1.170.000",
+          "value": 1170000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-10",
+      "flow": "primacy_first_row",
+      "question": "Lốp Rovelo 225/45R17 giá bao nhiêu?",
+      "expect": "1.170.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "answer": "Lốp Rovelo 225/45R17 INSTINCT-AS01 giá 1.170.000đ/lốp, hiện còn 4 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R17 225/45 RVL: 1170000 | price: 1170000 | answer: ROVELO 225/45R17 AS01 | quantity: 4 | productname: Lốp Rovelo 225/45R17 INSTINCT-AS01\n2-ZR17 225/45 LPD: 1242000 | date1: 26 | image: https://drive.google.com/drive/folders/1p3S_Skhfi3Xv5ww6E2kRNluFGJWtNRcr?usp=drive_link | price: 1242000 | answer: LANDSPIDER 225/45ZR17 H/P | quantity: 507 | productname: Lốp xe LANDSPIDER 225/45ZR17 94WXL CITYTRAXX H/P"
+        }
+      ],
+      "error": null,
+      "iteration": 8,
+      "verdicts": [
+        {
+          "token": "1.170.000",
+          "value": 1170000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-10",
+      "flow": "primacy_first_row",
+      "question": "Lốp Rovelo 225/45R17 giá bao nhiêu?",
+      "expect": "1.170.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "answer": "Lốp Rovelo 225/45R17 INSTINCT-AS01 giá 1.170.000đ/lốp, hiện còn 4 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R17 225/45 RVL: 1170000 | price: 1170000 | answer: ROVELO 225/45R17 AS01 | quantity: 4 | productname: Lốp Rovelo 225/45R17 INSTINCT-AS01\n2-ZR17 225/45 LPD: 1242000 | date1: 26 | image: https://drive.google.com/drive/folders/1p3S_Skhfi3Xv5ww6E2kRNluFGJWtNRcr?usp=drive_link | price: 1242000 | answer: LANDSPIDER 225/45ZR17 H/P | quantity: 507 | productname: Lốp xe LANDSPIDER 225/45ZR17 94WXL CITYTRAXX H/P"
+        }
+      ],
+      "error": null,
+      "iteration": 9,
+      "verdicts": [
+        {
+          "token": "1.170.000",
+          "value": 1170000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-10",
+      "flow": "primacy_first_row",
+      "question": "Lốp Rovelo 225/45R17 giá bao nhiêu?",
+      "expect": "1.170.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "answer": "Lốp Rovelo 225/45R17 INSTINCT-AS01 giá 1.170.000đ/lốp, hiện còn 4 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R17 225/45 RVL: 1170000 | price: 1170000 | answer: ROVELO 225/45R17 AS01 | quantity: 4 | productname: Lốp Rovelo 225/45R17 INSTINCT-AS01\n2-ZR17 225/45 LPD: 1242000 | date1: 26 | image: https://drive.google.com/drive/folders/1p3S_Skhfi3Xv5ww6E2kRNluFGJWtNRcr?usp=drive_link | price: 1242000 | answer: LANDSPIDER 225/45ZR17 H/P | quantity: 507 | productname: Lốp xe LANDSPIDER 225/45ZR17 94WXL CITYTRAXX H/P"
+        }
+      ],
+      "error": null,
+      "iteration": 10,
+      "verdicts": [
+        {
+          "token": "1.170.000",
+          "value": 1170000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-10",
+      "flow": "primacy_first_row",
+      "question": "Lốp Rovelo 225/45R17 giá bao nhiêu?",
+      "expect": "1.170.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "answer": "Lốp Rovelo 225/45R17 INSTINCT-AS01 giá 1.170.000đ/lốp, hiện còn 4 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R17 225/45 RVL: 1170000 | price: 1170000 | answer: ROVELO 225/45R17 AS01 | quantity: 4 | productname: Lốp Rovelo 225/45R17 INSTINCT-AS01\n2-ZR17 225/45 LPD: 1242000 | date1: 26 | image: https://drive.google.com/drive/folders/1p3S_Skhfi3Xv5ww6E2kRNluFGJWtNRcr?usp=drive_link | price: 1242000 | answer: LANDSPIDER 225/45ZR17 H/P | quantity: 507 | productname: Lốp xe LANDSPIDER 225/45ZR17 94WXL CITYTRAXX H/P"
+        }
+      ],
+      "error": null,
+      "iteration": 11,
+      "verdicts": [
+        {
+          "token": "1.170.000",
+          "value": 1170000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-10",
+      "flow": "primacy_first_row",
+      "question": "Lốp Rovelo 225/45R17 giá bao nhiêu?",
+      "expect": "1.170.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "answer": "Lốp Rovelo 225/45R17 INSTINCT-AS01 giá 1.170.000đ/lốp, hiện còn 4 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R17 225/45 RVL: 1170000 | price: 1170000 | answer: ROVELO 225/45R17 AS01 | quantity: 4 | productname: Lốp Rovelo 225/45R17 INSTINCT-AS01\n2-ZR17 225/45 LPD: 1242000 | date1: 26 | image: https://drive.google.com/drive/folders/1p3S_Skhfi3Xv5ww6E2kRNluFGJWtNRcr?usp=drive_link | price: 1242000 | answer: LANDSPIDER 225/45ZR17 H/P | quantity: 507 | productname: Lốp xe LANDSPIDER 225/45ZR17 94WXL CITYTRAXX H/P"
+        }
+      ],
+      "error": null,
+      "iteration": 12,
+      "verdicts": [
+        {
+          "token": "1.170.000",
+          "value": 1170000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-10",
+      "flow": "primacy_first_row",
+      "question": "Lốp Rovelo 225/45R17 giá bao nhiêu?",
+      "expect": "1.170.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "answer": "Lốp Rovelo 225/45R17 INSTINCT-AS01 giá 1.170.000đ/lốp, hiện còn 4 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R17 225/45 RVL: 1170000 | price: 1170000 | answer: ROVELO 225/45R17 AS01 | quantity: 4 | productname: Lốp Rovelo 225/45R17 INSTINCT-AS01\n2-ZR17 225/45 LPD: 1242000 | date1: 26 | image: https://drive.google.com/drive/folders/1p3S_Skhfi3Xv5ww6E2kRNluFGJWtNRcr?usp=drive_link | price: 1242000 | answer: LANDSPIDER 225/45ZR17 H/P | quantity: 507 | productname: Lốp xe LANDSPIDER 225/45ZR17 94WXL CITYTRAXX H/P"
+        }
+      ],
+      "error": null,
+      "iteration": 13,
+      "verdicts": [
+        {
+          "token": "1.170.000",
+          "value": 1170000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-10",
+      "flow": "primacy_first_row",
+      "question": "Lốp Rovelo 225/45R17 giá bao nhiêu?",
+      "expect": "1.170.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "answer": "Lốp Rovelo 225/45R17 INSTINCT-AS01 giá 1.170.000đ/lốp, hiện còn 4 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R17 225/45 RVL: 1170000 | price: 1170000 | answer: ROVELO 225/45R17 AS01 | quantity: 4 | productname: Lốp Rovelo 225/45R17 INSTINCT-AS01\n2-ZR17 225/45 LPD: 1242000 | date1: 26 | image: https://drive.google.com/drive/folders/1p3S_Skhfi3Xv5ww6E2kRNluFGJWtNRcr?usp=drive_link | price: 1242000 | answer: LANDSPIDER 225/45ZR17 H/P | quantity: 507 | productname: Lốp xe LANDSPIDER 225/45ZR17 94WXL CITYTRAXX H/P"
+        }
+      ],
+      "error": null,
+      "iteration": 14,
+      "verdicts": [
+        {
+          "token": "1.170.000",
+          "value": 1170000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-10",
+      "flow": "primacy_first_row",
+      "question": "Lốp Rovelo 225/45R17 giá bao nhiêu?",
+      "expect": "1.170.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "answer": "Lốp Rovelo 225/45R17 INSTINCT-AS01 giá 1.170.000đ/lốp, hiện còn 4 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R17 225/45 RVL: 1170000 | price: 1170000 | answer: ROVELO 225/45R17 AS01 | quantity: 4 | productname: Lốp Rovelo 225/45R17 INSTINCT-AS01\n2-ZR17 225/45 LPD: 1242000 | date1: 26 | image: https://drive.google.com/drive/folders/1p3S_Skhfi3Xv5ww6E2kRNluFGJWtNRcr?usp=drive_link | price: 1242000 | answer: LANDSPIDER 225/45ZR17 H/P | quantity: 507 | productname: Lốp xe LANDSPIDER 225/45ZR17 94WXL CITYTRAXX H/P"
+        }
+      ],
+      "error": null,
+      "iteration": 15,
+      "verdicts": [
+        {
+          "token": "1.170.000",
+          "value": 1170000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-11",
+      "flow": "primacy_recheck_p07",
+      "question": "Lốp Landspider size 225/45R17 giá bao nhiêu?",
+      "expect": "1.242.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "answer": "Dạ, lốp Landspider 225/45R17 hiện đang có giá **1.170.000đ/lốp**, còn **4 lốp** ạ.  \nAnh/chị muốn đặt hàng không ạ?",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R17 225/45 RVL: 1170000 | price: 1170000 | answer: ROVELO 225/45R17 AS01 | quantity: 4 | productname: Lốp Rovelo 225/45R17 INSTINCT-AS01\n2-ZR17 225/45 LPD: 1242000 | date1: 26 | image: https://drive.google.com/drive/folders/1p3S_Skhfi3Xv5ww6E2kRNluFGJWtNRcr?usp=drive_link | price: 1242000 | answer: LANDSPIDER 225/45ZR17 H/P | quantity: 507 | productname: Lốp xe LANDSPIDER 225/45ZR17 94WXL CITYTRAXX H/P"
+        }
+      ],
+      "error": null,
+      "iteration": 1,
+      "verdicts": [
+        {
+          "token": "1.170.000",
+          "value": 1170000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-11",
+      "flow": "primacy_recheck_p07",
+      "question": "Lốp Landspider size 225/45R17 giá bao nhiêu?",
+      "expect": "1.242.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "answer": "Dạ, lốp Landspider 225/45ZR17 H/P giá 1.242.000đ/lốp, hiện còn 507 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R17 225/45 RVL: 1170000 | price: 1170000 | answer: ROVELO 225/45R17 AS01 | quantity: 4 | productname: Lốp Rovelo 225/45R17 INSTINCT-AS01\n2-ZR17 225/45 LPD: 1242000 | date1: 26 | image: https://drive.google.com/drive/folders/1p3S_Skhfi3Xv5ww6E2kRNluFGJWtNRcr?usp=drive_link | price: 1242000 | answer: LANDSPIDER 225/45ZR17 H/P | quantity: 507 | productname: Lốp xe LANDSPIDER 225/45ZR17 94WXL CITYTRAXX H/P"
+        }
+      ],
+      "error": null,
+      "iteration": 2,
+      "verdicts": [
+        {
+          "token": "1.242.000",
+          "value": 1242000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-11",
+      "flow": "primacy_recheck_p07",
+      "question": "Lốp Landspider size 225/45R17 giá bao nhiêu?",
+      "expect": "1.242.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "answer": "Dạ, lốp Landspider 225/45ZR17 H/P giá 1.242.000đ/lốp, hiện còn 507 lốp ạ.  \nAnh/chị cần em hỗ trợ đặt hàng không ạ?",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R17 225/45 RVL: 1170000 | price: 1170000 | answer: ROVELO 225/45R17 AS01 | quantity: 4 | productname: Lốp Rovelo 225/45R17 INSTINCT-AS01\n2-ZR17 225/45 LPD: 1242000 | date1: 26 | image: https://drive.google.com/drive/folders/1p3S_Skhfi3Xv5ww6E2kRNluFGJWtNRcr?usp=drive_link | price: 1242000 | answer: LANDSPIDER 225/45ZR17 H/P | quantity: 507 | productname: Lốp xe LANDSPIDER 225/45ZR17 94WXL CITYTRAXX H/P"
+        }
+      ],
+      "error": null,
+      "iteration": 3,
+      "verdicts": [
+        {
+          "token": "1.242.000",
+          "value": 1242000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-11",
+      "flow": "primacy_recheck_p07",
+      "question": "Lốp Landspider size 225/45R17 giá bao nhiêu?",
+      "expect": "1.242.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "answer": "Dạ, lốp Landspider 225/45R17 hiện đang có giá **1.170.000đ/lốp**, còn **4 lốp** ạ.  \nAnh/chị muốn đặt hàng không ạ?",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R17 225/45 RVL: 1170000 | price: 1170000 | answer: ROVELO 225/45R17 AS01 | quantity: 4 | productname: Lốp Rovelo 225/45R17 INSTINCT-AS01\n2-ZR17 225/45 LPD: 1242000 | date1: 26 | image: https://drive.google.com/drive/folders/1p3S_Skhfi3Xv5ww6E2kRNluFGJWtNRcr?usp=drive_link | price: 1242000 | answer: LANDSPIDER 225/45ZR17 H/P | quantity: 507 | productname: Lốp xe LANDSPIDER 225/45ZR17 94WXL CITYTRAXX H/P"
+        }
+      ],
+      "error": null,
+      "iteration": 4,
+      "verdicts": [
+        {
+          "token": "1.170.000",
+          "value": 1170000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-11",
+      "flow": "primacy_recheck_p07",
+      "question": "Lốp Landspider size 225/45R17 giá bao nhiêu?",
+      "expect": "1.242.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "answer": "Dạ, lốp Landspider 225/45ZR17 H/P giá 1.242.000đ/lốp, hiện còn 507 lốp ạ.  \nAnh/chị cần em hỗ trợ đặt hàng không ạ?",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R17 225/45 RVL: 1170000 | price: 1170000 | answer: ROVELO 225/45R17 AS01 | quantity: 4 | productname: Lốp Rovelo 225/45R17 INSTINCT-AS01\n2-ZR17 225/45 LPD: 1242000 | date1: 26 | image: https://drive.google.com/drive/folders/1p3S_Skhfi3Xv5ww6E2kRNluFGJWtNRcr?usp=drive_link | price: 1242000 | answer: LANDSPIDER 225/45ZR17 H/P | quantity: 507 | productname: Lốp xe LANDSPIDER 225/45ZR17 94WXL CITYTRAXX H/P"
+        }
+      ],
+      "error": null,
+      "iteration": 5,
+      "verdicts": [
+        {
+          "token": "1.242.000",
+          "value": 1242000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-11",
+      "flow": "primacy_recheck_p07",
+      "question": "Lốp Landspider size 225/45R17 giá bao nhiêu?",
+      "expect": "1.242.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "answer": "Dạ, lốp Landspider 225/45ZR17 H/P giá 1.242.000đ/lốp, hiện còn 507 lốp ạ.  \nAnh/chị cần em hỗ trợ đặt đơn không ạ?",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R17 225/45 RVL: 1170000 | price: 1170000 | answer: ROVELO 225/45R17 AS01 | quantity: 4 | productname: Lốp Rovelo 225/45R17 INSTINCT-AS01\n2-ZR17 225/45 LPD: 1242000 | date1: 26 | image: https://drive.google.com/drive/folders/1p3S_Skhfi3Xv5ww6E2kRNluFGJWtNRcr?usp=drive_link | price: 1242000 | answer: LANDSPIDER 225/45ZR17 H/P | quantity: 507 | productname: Lốp xe LANDSPIDER 225/45ZR17 94WXL CITYTRAXX H/P"
+        }
+      ],
+      "error": null,
+      "iteration": 6,
+      "verdicts": [
+        {
+          "token": "1.242.000",
+          "value": 1242000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-11",
+      "flow": "primacy_recheck_p07",
+      "question": "Lốp Landspider size 225/45R17 giá bao nhiêu?",
+      "expect": "1.242.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "answer": "Dạ, lốp Landspider 225/45ZR17 H/P giá 1.242.000đ/lốp, hiện còn 507 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R17 225/45 RVL: 1170000 | price: 1170000 | answer: ROVELO 225/45R17 AS01 | quantity: 4 | productname: Lốp Rovelo 225/45R17 INSTINCT-AS01\n2-ZR17 225/45 LPD: 1242000 | date1: 26 | image: https://drive.google.com/drive/folders/1p3S_Skhfi3Xv5ww6E2kRNluFGJWtNRcr?usp=drive_link | price: 1242000 | answer: LANDSPIDER 225/45ZR17 H/P | quantity: 507 | productname: Lốp xe LANDSPIDER 225/45ZR17 94WXL CITYTRAXX H/P"
+        }
+      ],
+      "error": null,
+      "iteration": 7,
+      "verdicts": [
+        {
+          "token": "1.242.000",
+          "value": 1242000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-11",
+      "flow": "primacy_recheck_p07",
+      "question": "Lốp Landspider size 225/45R17 giá bao nhiêu?",
+      "expect": "1.242.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "answer": "Dạ, lốp Landspider 225/45ZR17 H/P giá 1.242.000đ/lốp, hiện còn 507 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R17 225/45 RVL: 1170000 | price: 1170000 | answer: ROVELO 225/45R17 AS01 | quantity: 4 | productname: Lốp Rovelo 225/45R17 INSTINCT-AS01\n2-ZR17 225/45 LPD: 1242000 | date1: 26 | image: https://drive.google.com/drive/folders/1p3S_Skhfi3Xv5ww6E2kRNluFGJWtNRcr?usp=drive_link | price: 1242000 | answer: LANDSPIDER 225/45ZR17 H/P | quantity: 507 | productname: Lốp xe LANDSPIDER 225/45ZR17 94WXL CITYTRAXX H/P"
+        }
+      ],
+      "error": null,
+      "iteration": 8,
+      "verdicts": [
+        {
+          "token": "1.242.000",
+          "value": 1242000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-11",
+      "flow": "primacy_recheck_p07",
+      "question": "Lốp Landspider size 225/45R17 giá bao nhiêu?",
+      "expect": "1.242.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "answer": "Dạ, lốp Landspider 225/45ZR17 H/P giá 1.242.000đ/lốp, hiện còn 507 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R17 225/45 RVL: 1170000 | price: 1170000 | answer: ROVELO 225/45R17 AS01 | quantity: 4 | productname: Lốp Rovelo 225/45R17 INSTINCT-AS01\n2-ZR17 225/45 LPD: 1242000 | date1: 26 | image: https://drive.google.com/drive/folders/1p3S_Skhfi3Xv5ww6E2kRNluFGJWtNRcr?usp=drive_link | price: 1242000 | answer: LANDSPIDER 225/45ZR17 H/P | quantity: 507 | productname: Lốp xe LANDSPIDER 225/45ZR17 94WXL CITYTRAXX H/P"
+        }
+      ],
+      "error": null,
+      "iteration": 9,
+      "verdicts": [
+        {
+          "token": "1.242.000",
+          "value": 1242000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-11",
+      "flow": "primacy_recheck_p07",
+      "question": "Lốp Landspider size 225/45R17 giá bao nhiêu?",
+      "expect": "1.242.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "answer": "Dạ, lốp Landspider 225/45ZR17 H/P giá 1.242.000đ/lốp, hiện còn 507 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R17 225/45 RVL: 1170000 | price: 1170000 | answer: ROVELO 225/45R17 AS01 | quantity: 4 | productname: Lốp Rovelo 225/45R17 INSTINCT-AS01\n2-ZR17 225/45 LPD: 1242000 | date1: 26 | image: https://drive.google.com/drive/folders/1p3S_Skhfi3Xv5ww6E2kRNluFGJWtNRcr?usp=drive_link | price: 1242000 | answer: LANDSPIDER 225/45ZR17 H/P | quantity: 507 | productname: Lốp xe LANDSPIDER 225/45ZR17 94WXL CITYTRAXX H/P"
+        }
+      ],
+      "error": null,
+      "iteration": 10,
+      "verdicts": [
+        {
+          "token": "1.242.000",
+          "value": 1242000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-11",
+      "flow": "primacy_recheck_p07",
+      "question": "Lốp Landspider size 225/45R17 giá bao nhiêu?",
+      "expect": "1.242.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "answer": "Dạ, lốp Landspider 225/45ZR17 H/P giá 1.242.000đ/lốp, hiện còn 507 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R17 225/45 RVL: 1170000 | price: 1170000 | answer: ROVELO 225/45R17 AS01 | quantity: 4 | productname: Lốp Rovelo 225/45R17 INSTINCT-AS01\n2-ZR17 225/45 LPD: 1242000 | date1: 26 | image: https://drive.google.com/drive/folders/1p3S_Skhfi3Xv5ww6E2kRNluFGJWtNRcr?usp=drive_link | price: 1242000 | answer: LANDSPIDER 225/45ZR17 H/P | quantity: 507 | productname: Lốp xe LANDSPIDER 225/45ZR17 94WXL CITYTRAXX H/P"
+        }
+      ],
+      "error": null,
+      "iteration": 11,
+      "verdicts": [
+        {
+          "token": "1.242.000",
+          "value": 1242000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-11",
+      "flow": "primacy_recheck_p07",
+      "question": "Lốp Landspider size 225/45R17 giá bao nhiêu?",
+      "expect": "1.242.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "answer": "Dạ, lốp Landspider 225/45ZR17 H/P giá 1.242.000đ/lốp, hiện còn 507 lốp ạ.  \nAnh/chị cần em hỗ trợ đặt đơn không ạ?",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R17 225/45 RVL: 1170000 | price: 1170000 | answer: ROVELO 225/45R17 AS01 | quantity: 4 | productname: Lốp Rovelo 225/45R17 INSTINCT-AS01\n2-ZR17 225/45 LPD: 1242000 | date1: 26 | image: https://drive.google.com/drive/folders/1p3S_Skhfi3Xv5ww6E2kRNluFGJWtNRcr?usp=drive_link | price: 1242000 | answer: LANDSPIDER 225/45ZR17 H/P | quantity: 507 | productname: Lốp xe LANDSPIDER 225/45ZR17 94WXL CITYTRAXX H/P"
+        }
+      ],
+      "error": null,
+      "iteration": 12,
+      "verdicts": [
+        {
+          "token": "1.242.000",
+          "value": 1242000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-11",
+      "flow": "primacy_recheck_p07",
+      "question": "Lốp Landspider size 225/45R17 giá bao nhiêu?",
+      "expect": "1.242.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "answer": "Dạ, lốp Landspider 225/45ZR17 H/P (mã 2-ZR17 225/45 LPD) hiện đang có giá **1.242.000đ/lốp**, còn **507 lốp** ạ.  \n\nAnh/chị cần em hỗ trợ đặt hàng không ạ?",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R17 225/45 RVL: 1170000 | price: 1170000 | answer: ROVELO 225/45R17 AS01 | quantity: 4 | productname: Lốp Rovelo 225/45R17 INSTINCT-AS01\n2-ZR17 225/45 LPD: 1242000 | date1: 26 | image: https://drive.google.com/drive/folders/1p3S_Skhfi3Xv5ww6E2kRNluFGJWtNRcr?usp=drive_link | price: 1242000 | answer: LANDSPIDER 225/45ZR17 H/P | quantity: 507 | productname: Lốp xe LANDSPIDER 225/45ZR17 94WXL CITYTRAXX H/P"
+        }
+      ],
+      "error": null,
+      "iteration": 13,
+      "verdicts": [
+        {
+          "token": "1.242.000",
+          "value": 1242000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-11",
+      "flow": "primacy_recheck_p07",
+      "question": "Lốp Landspider size 225/45R17 giá bao nhiêu?",
+      "expect": "1.242.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "answer": "Dạ, lốp Landspider 225/45R17 hiện đang có giá **1.170.000đ/lốp**, còn **4 lốp** ạ.  \nAnh/chị muốn đặt hàng không ạ?",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R17 225/45 RVL: 1170000 | price: 1170000 | answer: ROVELO 225/45R17 AS01 | quantity: 4 | productname: Lốp Rovelo 225/45R17 INSTINCT-AS01\n2-ZR17 225/45 LPD: 1242000 | date1: 26 | image: https://drive.google.com/drive/folders/1p3S_Skhfi3Xv5ww6E2kRNluFGJWtNRcr?usp=drive_link | price: 1242000 | answer: LANDSPIDER 225/45ZR17 H/P | quantity: 507 | productname: Lốp xe LANDSPIDER 225/45ZR17 94WXL CITYTRAXX H/P"
+        }
+      ],
+      "error": null,
+      "iteration": 14,
+      "verdicts": [
+        {
+          "token": "1.170.000",
+          "value": 1170000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-11",
+      "flow": "primacy_recheck_p07",
+      "question": "Lốp Landspider size 225/45R17 giá bao nhiêu?",
+      "expect": "1.242.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "answer": "Dạ, lốp Landspider 225/45ZR17 H/P giá 1.242.000đ/lốp, hiện còn 507 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R17 225/45 RVL: 1170000 | price: 1170000 | answer: ROVELO 225/45R17 AS01 | quantity: 4 | productname: Lốp Rovelo 225/45R17 INSTINCT-AS01\n2-ZR17 225/45 LPD: 1242000 | date1: 26 | image: https://drive.google.com/drive/folders/1p3S_Skhfi3Xv5ww6E2kRNluFGJWtNRcr?usp=drive_link | price: 1242000 | answer: LANDSPIDER 225/45ZR17 H/P | quantity: 507 | productname: Lốp xe LANDSPIDER 225/45ZR17 94WXL CITYTRAXX H/P"
+        }
+      ],
+      "error": null,
+      "iteration": 15,
+      "verdicts": [
+        {
+          "token": "1.242.000",
+          "value": 1242000,
+          "class": "grounded"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,130 @@
+{
+  "generated": "2026-07-03",
+  "bot_ref": "chinh-sach-xe",
+  "grading": "L1=EXISTS (code present) | L2=WORKS (ran on real request) | L3=VERIFIED-GOOD (measured vs numeric target) | disabled",
+  "stages": [
+    {
+      "stage": "ingest",
+      "grade": "L2",
+      "evidence": [
+        {"kind": "trace", "ref": "init_bots_from_urls --wipe --apply 2026-07-03", "detail": "4 docs re-ingested clean: 401 chunks, 0 duplicate content_hash"},
+        {"kind": "db", "ref": "documents/document_chunks queries in reports/DEEPDIVE_60Q_chinh-sach-xe_20260703.md", "detail": "all chunks embedded"}
+      ],
+      "missing_for_next_level": "No numeric ingest-quality target measured (e.g. lossless numeric coverage rate via find_dropped_numbers)",
+      "label": "SU_THAT"
+    },
+    {
+      "stage": "chunk",
+      "grade": "L2",
+      "evidence": [
+        {"kind": "db", "ref": "401 chunks, char-1024 policy", "detail": "row-atomic table chunks verified (header+row per chunk in xe-3 traces)"}
+      ],
+      "missing_for_next_level": "No measured chunk-quality metric (numeric coverage / boundary integrity) on this corpus",
+      "label": "SU_THAT"
+    },
+    {
+      "stage": "embed",
+      "grade": "L2",
+      "evidence": [
+        {"kind": "db", "ref": "SELECT count(*) WHERE embedding IS NOT NULL = 401/401", "detail": "all chunks embedded, dense retrieval returns hits"}
+      ],
+      "missing_for_next_level": "No retrieval-quality metric (recall@k) measured against labeled set",
+      "label": "SU_THAT"
+    },
+    {
+      "stage": "index (stats extraction)",
+      "grade": "L2-not-L3",
+      "evidence": [
+        {"kind": "db", "ref": "evidence/shell_entities.json per_bot", "detail": "242 entities for xe; BUT bots 111/123 = 100% shell incl. syllable garbage entities ('chủ','đủ','tục','cứu','Mép','Mặt') — extractor mints noise on non-catalog corpora"},
+        {"kind": "code", "ref": "src/ragbot/shared/document_stats.py:245 _is_noise_entity", "detail": "noise gate EXISTS but leaks these shapes (workflow-Q1 autopsy pending)"}
+      ],
+      "missing_for_next_level": "Noise gate leak root-cause + fix + garbage=0 across all bots after re-ingest",
+      "label": "SU_THAT"
+    },
+    {
+      "stage": "retrieve",
+      "grade": "L2",
+      "evidence": [
+        {"kind": "trace", "ref": "reports/rag_trace_60.json", "detail": "hybrid retrieval returns candidates for 60/60; exact stats hits score=1.0"},
+        {"kind": "trace", "ref": "DEEPDIVE report — 3 size-miss cases (A-q27, D-xe-compare-01, C-d07)", "detail": "sibling-size retrieved instead of exact size on comparison queries → 3 coverage losses"}
+      ],
+      "missing_for_next_level": "Exact-size precision fix + measured recall on labeled pairs",
+      "label": "SU_THAT"
+    },
+    {
+      "stage": "rerank",
+      "grade": "L2",
+      "evidence": [
+        {"kind": "trace", "ref": "reports/rag_trace_60.json chunks_to_llm vs candidates", "detail": "20→1..5 funnel active; cliff/threshold branches instrumented (dropped_chunk_ids, commit c0c0dea)"}
+      ],
+      "missing_for_next_level": "No measured rerank lift (nDCG/precision before-after) on labeled set",
+      "label": "SU_THAT"
+    },
+    {
+      "stage": "grade (CRAG)",
+      "grade": "L2",
+      "evidence": [
+        {"kind": "trace", "ref": "rag_trace_60.json chunks_graded_pass", "detail": "grading runs on all answers; B-q13 shows 20→0 rejection path works"}
+      ],
+      "missing_for_next_level": "No false-reject/false-accept rate measured",
+      "label": "SU_THAT"
+    },
+    {
+      "stage": "stats-format (synthetic chunk)",
+      "grade": "L2-BUG-CONFIRMED",
+      "evidence": [
+        {"kind": "trace", "ref": "rag_trace_60.json H-01 chunk0 verbatim", "detail": "shell row rendered with NO price/quantity labels next to fully-labeled sibling → LLM conflates (5/60 cases). Formatter silently omits null price (query_graph.py ~2470)"},
+        {"kind": "code", "ref": "src/ragbot/orchestration/query_graph.py:339 _reconcile_cross_doc", "detail": "purpose-built split-sheet fix is DEAD for this corpus: parse_code_query keyword '2-R15' < 5 digits → _spec_key None → never folds. L1-not-L2. Latent brand-blind merge if revived (digit-key has no brand guard)"}
+      ],
+      "missing_for_next_level": "Phase 2 reconciler fix + Phase 3 serve policy + re-run showing conflation rate 0",
+      "label": "SU_THAT"
+    },
+    {
+      "stage": "prompt-build",
+      "grade": "L2",
+      "evidence": [
+        {"kind": "trace", "ref": "rag_trace_60.json — 5 deflect-oan cases (B-q06/B-q09/D-xe-list-02 score_max=1.0 with data served)", "detail": "context reaches the LLM but aggregation/list intents deflect to persona line — stage works mechanically, answer-shaping suspect (root-cause pending T050)"}
+      ],
+      "missing_for_next_level": "Deflect root-cause + fix + re-run",
+      "label": "SU_THAT"
+    },
+    {
+      "stage": "generate",
+      "grade": "L2-BUG-CONFIRMED",
+      "evidence": [
+        {"kind": "trace", "ref": "A-q20 two runs: fabricated 1.250.000đ then 26.000.000đ (non-deterministic)", "detail": "LLM gap-fills when served value-less records; violates its own sysprompt anti-fabrication rules (8911-char prompt has explicit no-number→no-invent rule)"},
+        {"kind": "db", "ref": "0 chunks contain fabricated values (DB grep)", "detail": "fabrication confirmed vs stats index"}
+      ],
+      "missing_for_next_level": "Statistical baseline (running: evidence/baseline_runs.json) + upstream fixes + deterministic guard; target fabrication rate 0 across N=15",
+      "label": "SU_THAT"
+    },
+    {
+      "stage": "guard (output)",
+      "grade": "L2",
+      "evidence": [
+        {"kind": "trace", "ref": "a1_measure.py run log (commit c0c0dea message)", "detail": "grounding_confirmed_action=block blocks fabricated q20 BUT also blocked valid comparison q10 → over-refuse trade-off unmeasured at scale; default observe"},
+        {"kind": "code", "ref": "src/ragbot/orchestration/nodes/guard_output.py", "detail": "numeric-fidelity deterministic check NOT YET implemented (Phase 4)"}
+      ],
+      "missing_for_next_level": "Numeric-fidelity observe metrics (false-positive + catch rates) on pinned set",
+      "label": "SU_THAT"
+    },
+    {
+      "stage": "answer (end-to-end)",
+      "grade": "L2-not-L3",
+      "evidence": [
+        {"kind": "report", "ref": "reports/DEEPDIVE_60Q_chinh-sach-xe_20260703.md", "detail": "60Q DB-anchored: 42 chuẩn (70%) / 6 HALLU (1 sai-bịa + 5 lệch) / 9 coverage losses. QA independent: 10/40 wrong (~30/100)"}
+      ],
+      "missing_for_next_level": "GP-100 gate: 0 sai + 0 bịa across --repeat 3 (thiếu allowed); currently FAILING",
+      "label": "SU_THAT"
+    },
+    {
+      "stage": "cache (semantic)",
+      "grade": "L2",
+      "evidence": [
+        {"kind": "db", "ref": "semantic_cache count=0 post-purge; cache_status field live (chat_routes.py:586)", "detail": "bypass path verified in every harness run; corpus_version-keyed"}
+      ],
+      "missing_for_next_level": "Hit-rate + staleness metrics not in audit scope this round",
+      "label": "SU_THAT"
+    }
+  ]
+}
