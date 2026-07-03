@@ -1033,6 +1033,12 @@ def parse_table_chunks(
         roles: dict[str, Any] = {}
         stub_fill: str | None = None
         current_category: str | None = None
+        # T012 positive-table-evidence: True only when the active header was
+        # detected STRUCTURALLY (separator-backed / vocab or owner token match).
+        # A header promoted by the _is_shape_header heuristic alone is NOT
+        # structural — that heuristic is what turned prose lines into
+        # pseudo-headers whose following prose "rows" minted garbage entities.
+        header_structural = False
 
         for _li, line in enumerate(lines):
             stripped_line = line.strip()
@@ -1057,13 +1063,15 @@ def parse_table_chunks(
 
             # Detect header row — STRUCTURAL (trust the | --- | separator the
             # converter emits) with vocab/owner-declared labels as a fallback hint.
-            if _is_header_row(
+            _hdr_structural = _is_header_row(
                 cols, _declared_labels,
                 next_is_separator=_next_nonempty_is_separator(lines, _li),
-            ) or (not header and _is_shape_header(lines, _li, cols)):
+            )
+            if _hdr_structural or (not header and _is_shape_header(lines, _li, cols)):
                 header = cols
                 roles = _column_roles(cols, custom_roles)
                 stub_fill = None  # new table → reset rowspan forward-fill
+                header_structural = _hdr_structural
                 continue
 
             # Single non-delimiter col → category heading. Reject noise candidates so
@@ -1106,7 +1114,22 @@ def parse_table_chunks(
                 cols, header, chunk_idx, forced_category, roles
             )
             if entity is not None and not _is_noise_entity(entity):
-                entities.append(entity)
+                # T012 positive-table-evidence gate: a PRICE-LESS entity may
+                # only be minted from a row with structural table evidence —
+                # a pipe/tab-delimited row or a structurally-detected header.
+                # A comma-split fragment of wrapped prose has neither, and its
+                # first cell becoming a price-less "entity" is exactly the
+                # garbage class the truth-audit measured (retrievable noise,
+                # 100+ rows on legal-prose corpora). A PRICED row is its own
+                # evidence (a real catalog row carries a value) — kept even
+                # header-less so comma-CSV price lists keep working.
+                _has_price = (
+                    entity.price_primary is not None
+                    or entity.price_secondary is not None
+                )
+                _pipe_row = "|" in line or "\t" in line
+                if _has_price or _pipe_row or header_structural:
+                    entities.append(entity)
 
     return entities
 

@@ -38,3 +38,20 @@
   criteria: existence-questions pinned-60 rớt >2 câu (đang đo: step2_pinned60.json).
 - Blast-radius: mọi bot có stats index (6 bots); paths: stats keyword/list/count;
   raw-chunk path KHÔNG đổi; pin tests: test_stats_serve_value_filter.py + parity suite.
+
+## Step 3 — CODE: T012 positive-table-evidence gate (2026-07-03)
+- Change (ONE): parse_table_chunks minting gate — PRICE-LESS entity chỉ được mint khi
+  row là pipe/tab HOẶC header structural (_is_header_row token/separator; _is_shape_header
+  heuristic KHÔNG tính — chính nó promote prose thành pseudo-header, gap B).
+- RED→GREEN: test_stats_extract_noise.py — 2 prose fixtures THẬT (empirical mint-scan,
+  bot-123 raw chunks) fail trước → pass sau; 3 positive controls (pipe delivery-sheet
+  2-row-merged header + priced catalog + comma-CSV vocab-header) pass cả trước lẫn sau.
+  Regression: 816 pass / 0 fail.
+- Delta (re-extract canonical): bot 123: 19 → 0 (prose thuần) · bot 111: 81 → 62
+  (19 prose killed; 62 giữ = bảng lịch-về pipe THẬT — đúng thiết kế) ·
+  chinh-sach-xe: 242 unchanged (blast-radius held).
+- Residual-gap A+B của _is_noise_entity: đóng luôn bằng gate này (prose không còn tới
+  được _extract_entity_from_row với evidence pass).
+- Rollback: revert commit (gate là additive condition, không đổi schema).
+- Blast-radius: ingest-time extraction mọi bot; serve-time không đổi; pin =
+  test_stats_extract_noise.py + 816 stats/chunk suite.
