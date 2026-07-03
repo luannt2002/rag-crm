@@ -250,3 +250,7 @@ DEFAULT_GUARD_OUTPUT_PARALLEL_ENABLED: Final[bool] = True
 # LLM actually saw (post-grade), chars = content head per chunk.
 SERVED_CHUNKS_PERSIST_MAX_ITEMS: Final[int] = 12
 SERVED_CHUNKS_PERSIST_MAX_CHARS: Final[int] = 400
+
+# 002-C: cap per-sub-query stats lookups when a decomposed comparison joins
+# the fan-out (bounds DB round-trips; comparisons are 2-3 legs in practice).
+DEFAULT_DECOMPOSE_STATS_MAX_SUBS: Final[int] = 4

@@ -119,6 +119,7 @@ from ragbot.shared.constants import (
     DEFAULT_SPECULATIVE_SIMILARITY_THRESHOLD,
     DEFAULT_STATS_CODE_LOOKUP_ENABLED,
     DEFAULT_STATS_INDEX_LIMIT,
+    DEFAULT_DECOMPOSE_STATS_MAX_SUBS,
     DEFAULT_STATS_PRICE_OF_ENTITY_ENABLED,
     DEFAULT_STATS_INDEX_RACE_ENABLED,
     DEFAULT_STATS_SUPERLATIVE_ENABLED,
@@ -146,6 +147,64 @@ try:
 except ImportError:
     _litellm_module = None  # type: ignore[assignment]
     _L3Extractor = None  # type: ignore[assignment,misc]
+
+
+async def _stats_chunks_for_sub_queries(
+    *,
+    state: dict,
+    sub_queries: list,
+    parse_fn,
+    lookup_fn,
+    min_confidence: float,
+    stats_limit: int,
+    expect_price: bool,
+    max_subs: int,
+) -> list[dict]:
+    """Per-sub-query stats lookups for a DECOMPOSED question (002 cluster C).
+
+    The old guard disabled the stats route entirely under decompose (symptom
+    fix) — both legs of a comparison then fell to fuzzy vector retrieval and
+    one leg routinely missed its priced row. This runs the authoritative
+    point-lookup for EACH confident sub-query and returns the synthetic price
+    chunks to JOIN the fan-out result set (never short-circuits it).
+
+    Failure-isolated per sub (one bad lookup never kills the others);
+    dedup by chunk_id; capped at *max_subs* to bound DB round-trips.
+    """
+    out: list[dict] = []
+    seen: set[str] = set()
+    for q in [x for x in (sub_queries or []) if isinstance(x, str) and x.strip()][:max_subs]:
+        try:
+            rf = parse_fn(q)
+            if rf is None or float(getattr(rf, "confidence", 0.0)) < min_confidence:
+                continue
+            payload = await lookup_fn(
+                state, range_filter=rf, stats_limit=stats_limit,
+                expect_price=expect_price,
+            )
+        except (ValueError, TypeError, KeyError, AttributeError, OSError):
+            continue  # isolated: a failed leg must not kill the fan-out merge
+        for ch in (payload or {}).get("linked_chunks") or []:
+            cid = str(ch.get("chunk_id") or "")
+            if cid and cid in seen:
+                continue
+            seen.add(cid)
+            out.append(ch)
+    return out
+
+
+def _speculative_keep_allowed(*, sub_queries: list | None) -> bool:
+    """Composition-aware speculative gate (truth-audit 002 cluster C).
+
+    The speculative race pre-computes ONE hybrid_search on the RAW query. When
+    the understand step decomposed the question into >=2 sub-queries, that
+    single result set cannot serve the composition — keeping it would return
+    from the node BEFORE the fan-out, so the sub-queries would never be
+    retrieved (measured: comparison questions missing the second entity's
+    row). Pure predicate, trivially testable.
+    """
+    subs = [q for q in (sub_queries or []) if isinstance(q, str) and q.strip()]
+    return len(subs) < 2
 
 
 async def retrieve(
@@ -642,6 +701,14 @@ async def retrieve(
             keep = _decide_keep_speculative(
                 spec_raw_embed, rewritten_embed, spec_threshold,
             )
+            # 002-C: decomposed questions MUST reach the fan-out below — a
+            # single raw-query result set cannot serve >=2 sub-queries.
+            if keep and not _speculative_keep_allowed(
+                sub_queries=state.get("sub_queries"),
+            ):
+                keep = False
+                logger.info("speculative_skipped_for_decompose",
+                            n_sub_queries=len(state.get("sub_queries") or []))
             if keep:
                 step_ctx.set_metadata(
                     candidates=len(spec_chunks),
@@ -1392,6 +1459,37 @@ async def retrieve(
                         successful_branches=len(per_query_chunks),
                         merged_unique=len(chunks),
                     )
+                    # 002-C step-3: decomposed legs get their AUTHORITATIVE
+                    # stats point-lookup too — synthetic price chunks join the
+                    # fused set (score 1.0 rows rank ahead of fuzzy vector).
+                    if decompose_active:
+                        _sub_stats = await _stats_chunks_for_sub_queries(
+                            state=state,
+                            sub_queries=sub_queries_state,
+                            parse_fn=_parse_code_query,
+                            lookup_fn=_do_stats_lookup,
+                            min_confidence=float(_pcfg(
+                                state, "range_query_min_confidence",
+                                RANGE_QUERY_MIN_CONFIDENCE)),
+                            stats_limit=int(_pcfg(
+                                state, "stats_index_limit",
+                                DEFAULT_STATS_INDEX_LIMIT)),
+                            expect_price=is_price_ask_query(
+                                state.get("query") or "",
+                                signals=_get_routing_signals(
+                                    state.get("language") or "")),
+                            max_subs=int(_pcfg(
+                                state, "decompose_stats_max_subs",
+                                DEFAULT_DECOMPOSE_STATS_MAX_SUBS)),
+                        )
+                        if _sub_stats:
+                            _have = {str(c.get("chunk_id") or "") for c in chunks}
+                            _added = [c for c in _sub_stats
+                                      if str(c.get("chunk_id") or "") not in _have]
+                            chunks = _added + chunks
+                            logger.info("decompose_stats_joined",
+                                        n_added=len(_added),
+                                        n_subs=len(sub_queries_state))
                     step_ctx.set_metadata(
                         decompose=decompose_active,
                         multi_query=not decompose_active,

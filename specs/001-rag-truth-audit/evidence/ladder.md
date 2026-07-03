@@ -109,3 +109,19 @@
   condense cho first-follow-up: đúng thiết kế 05-27, cost đã được chấp nhận từ fix cũ);
   pin = test_condense_gate_parity + test_condense_rewrite_multi_turn.
 - Rollback: revert commit (helper additive).
+
+## Step 7 (002-C, 2 sub-changes cùng class — attribution per-request qua structlog) — 2026-07-04
+- Changes: (1) speculative composition-aware (`_speculative_keep_allowed` — sub_queries ≥2
+  không short-circuit fan-out); (2) stats-per-sub-query join (`_stats_chunks_for_sub_queries`
+  — mỗi leg so-sánh có point-lookup, synthetic chunks NHẬP fan-out set, không short-circuit).
+  +2 hotfix khi wire: scope `_routing_signals`, alias `_get_routing_signals`.
+- RED→GREEN: test_speculative_composition_gate (2) + test_stats_per_subquery (3) fail trước
+  → pass; regression 413 pass (1 test decompose bắt được scope-bug thật của em trước khi ship).
+- ĐO N=10 × 4 probe (step23_cprobe_n10.json), attribution: speculative_skipped=30, stats_joined=30:
+  * C-2 (225/45ZR17 vs 225/50ZR17): đủ-2-leg **10/10** (baseline L-014 refuse-oan)
+  * C-3 (LPD vs RVL 195/65R15): đủ-2-leg **10/10**, 2 giá thật (baseline L-005 BỊA 1.050.000)
+  * C-4 control: 10/10, nf sạch 40/40 run
+  * C-1 residual: leg-1 fixed 10/10 (1.170.000 ✓); leg-2 chọn near-size 255/40 (rank-pick;
+    row 235/40 ĐÃ được serve — capture 500-char che giá; sub-stats leg-2 không hit) → điều tra
+    ở D-step (mmr/rank) + B-step (capture cap).
+- Blast-radius: retrieve fan-out mọi bot khi decompose active; pin = 5 test mới + suite retrieve.
