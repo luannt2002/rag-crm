@@ -85,3 +85,41 @@ class TestRecoverPendingMessages:
             stream="test:stream", group="test-group", consumer="c1",
         )
         assert result == 2
+
+    def test_dispatch_param_present(self) -> None:
+        sig = inspect.signature(RedisStreamsEventBus.recover_pending_messages)
+        assert "dispatch" in sig.parameters
+        assert sig.parameters["dispatch"].default is None
+
+    @pytest.mark.asyncio
+    async def test_claimed_messages_are_redispatched(self) -> None:
+        """O3: each XCLAIMed message is re-driven through the dispatch cb.
+
+        Without re-drive a reclaimed message only changes owner and rots to
+        DLQ unprocessed. The handler (dispatch) must run so a transient-failed
+        job actually completes on recovery.
+        """
+
+        class _FakeRedis:
+            async def xpending_range(self, *a, **kw):  # noqa: ANN
+                return [{"message_id": b"1-0"}, {"message_id": b"2-0"}]
+
+            async def xclaim(self, *a, **kw):  # noqa: ANN
+                return [
+                    (b"1-0", {b"payload": b"{}"}),
+                    (b"2-0", {b"payload": b"{}"}),
+                ]
+
+        seen: list[tuple[bytes, dict]] = []
+
+        async def _dispatch(mid: bytes, fields: dict) -> None:
+            seen.append((mid, fields))
+
+        bus = RedisStreamsEventBus(client=_FakeRedis())  # type: ignore[arg-type]
+        result = await bus.recover_pending_messages(
+            stream="test:stream", group="test-group", consumer="c1",
+            dispatch=_dispatch,
+        )
+        assert result == 2
+        assert sorted(m for m, _ in seen) == [b"1-0", b"2-0"]
+        assert all(f == {b"payload": b"{}"} for _, f in seen)

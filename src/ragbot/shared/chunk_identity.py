@@ -53,8 +53,10 @@ def deterministic_chunk_id(
     record_bot_id: str | uuid.UUID,
     document_id: str | uuid.UUID,
     content: str,
+    *,
+    chunk_index: int | None = None,
 ) -> uuid.UUID:
-    """Return a deterministic UUID5 for the (bot, doc, content) tuple.
+    """Return a deterministic UUID5 for the (bot, doc, [index,] content) tuple.
 
     Args:
         record_bot_id: Internal UUID of the bot — the tenant-scope
@@ -63,9 +65,17 @@ def deterministic_chunk_id(
             caller that passes ``UUID`` and a caller that passes
             ``str(uuid)`` get the same result.
         document_id: The document UUID this chunk belongs to.
-            Independent of chunk position so reordering chunks within
-            a document (very rare; only when the chunker changes
-            strategy mid-corpus) doesn't reshuffle IDs.
+        chunk_index: Position of the chunk within the document. When
+            supplied it is folded into the seed so two chunks with
+            byte-identical content at different positions get DISTINCT
+            IDs — without it they collapse to the same UUID5 and the PK
+            UPSERT silently overwrites the first with the second (data
+            loss on any doc that repeats a line/row). ``None`` keeps the
+            legacy position-independent seed for callers that guarantee
+            unique content. Idempotency holds for the normal re-ingest
+            (same chunker → same order → same index per content); only a
+            chunker-strategy change reshuffles indices, which re-ingests
+            the doc anyway.
         content: The chunk text content. Stripped of leading/trailing
             whitespace before hashing so trivial whitespace edits at
             the chunk boundary (e.g. trailing newline drift between
@@ -95,7 +105,10 @@ def deterministic_chunk_id(
     # Canonical form: ``str()`` works for both UUID and string inputs
     # without an explicit isinstance branch — UUID.__str__ already
     # returns the lower-hex hyphenated form.
-    seed = f"{record_bot_id!s}|{document_id!s}|{content.strip()}"
+    if chunk_index is None:
+        seed = f"{record_bot_id!s}|{document_id!s}|{content.strip()}"
+    else:
+        seed = f"{record_bot_id!s}|{document_id!s}|{chunk_index}|{content.strip()}"
     return uuid.uuid5(_CHUNK_NAMESPACE, seed)
 
 

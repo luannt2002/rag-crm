@@ -122,6 +122,11 @@ DEFAULT_GROUNDING_INTENTS: Final[tuple[str, ...]] = (
 # stock number leaked from history) pass unchecked. Owners who hit false-blocks
 # on legitimately-reformatted structured answers can re-enable the skip per-bot.
 DEFAULT_STATS_ROUTE_SKIP_GROUNDING: Final[bool] = False
+# Whether stats/aggregation collapses duplicate entities that name the same
+# real service/product across documents BEFORE emitting counts (so a shared
+# item indexed in two docs is counted once). Behaviour-toggle default lives
+# here per zero-hardcode rule; per-bot override via plan_limits.
+DEFAULT_CROSS_DOC_RECONCILE_ENABLED: Final[bool] = True
 # Generate-node SLA — drift surfaces as ops warning before user-visible p95.
 DEFAULT_GENERATE_P95_SLA_MS: Final[int] = 8000
 DEFAULT_MAX_REFLECT_RETRIES: Final[int] = 1

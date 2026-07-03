@@ -290,6 +290,13 @@ DEFAULT_GENERATE_QUESTION_TAG: Final[str] = "question"
 DEFAULT_GENERATE_SURFACE_VERBATIM_ENABLED: Final[bool] = False
 DEFAULT_GENERATE_VERBATIM_TAG: Final[str] = "verbatim"
 
+# PostgreSQL wire-protocol ceiling: a single prepared statement accepts at
+# most 32767 (int16) bind parameters. A multi-row chunk INSERT binds ~11-12
+# params/row, so a >~2900-chunk document would overflow one VALUES(...) batch
+# and abort the whole ingest. Bulk INSERT helpers derive a per-batch row cap
+# from this so large documents split into multiple round trips instead.
+POSTGRES_MAX_BIND_PARAMS: Final[int] = 32767
+
 DEFAULT_RERANK_INTENT_WHITELIST_ENABLED: Final[bool] = True
 # Owner-override opaque strings; superset of classifier outputs (booking/yesno
 # emerge only when bot owner injects them via pipeline_config).

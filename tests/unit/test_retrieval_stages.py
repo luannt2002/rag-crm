@@ -98,6 +98,7 @@ async def test_bm25_only_stage2_returns_chunks_from_mocked_session() -> None:
             "chunk_index": 0,
             "content": "Điều 8 quy định về xử phạt",
             "metadata_json": {"src": "law.pdf"},
+            "parent_chunk_id": None,
             "score": 0.7,
         },
         {
@@ -106,6 +107,7 @@ async def test_bm25_only_stage2_returns_chunks_from_mocked_session() -> None:
             "chunk_index": 3,
             "content": "Khoản 1 Điều 8 chi tiết",
             "metadata_json": None,
+            "parent_chunk_id": None,
             "score": 0.5,
         },
     ]
@@ -193,6 +195,7 @@ async def test_keyword_stage3_with_anchor_runs_query_and_scores_below_threshold(
             "chunk_index": 0,
             "content": "Điều 8 quy định nghĩa vụ",
             "metadata_json": {"law": "civil"},
+            "parent_chunk_id": None,
         },
     ]
     sink: list = []
@@ -218,7 +221,8 @@ async def test_keyword_stage3_with_anchor_runs_query_and_scores_below_threshold(
 @pytest.mark.asyncio
 async def test_keyword_stage3_runtime_pattern_override_works() -> None:
     rows = [{"id": "c-1", "record_document_id": "d-1", "chunk_index": 0,
-             "content": "SKU-123 in stock", "metadata_json": {}}]
+             "content": "SKU-123 in stock", "metadata_json": {},
+             "parent_chunk_id": None}]
     sf = _make_session_factory(rows=rows)
     stage = KeywordStage3Retriever()
     out = await stage.retrieve(

@@ -67,7 +67,10 @@ from ragbot.shared.constants import (
     INTENT_CHITCHAT,
     MAX_HISTORY_MESSAGE_CHARS,
 )
-from ragbot.shared.context_utils import reorder_for_lost_in_middle
+from ragbot.shared.context_utils import (
+    apply_context_char_cap,
+    reorder_for_lost_in_middle,
+)
 from ragbot.shared.errors import InvariantViolation
 from ragbot.shared.prompt_compression import compress_chunks
 from ragbot.shared.prompt_token_opt import apply_token_opt
@@ -488,27 +491,12 @@ async def generate(
                     })
                     graded = _ac_keep
 
-        # Lost-in-the-middle reorder (Liu et al., 2023): top-ranked chunks at start AND end.
-        if _pcfg(state, "lost_in_middle_reorder_enabled", DEFAULT_LITM_REORDER_ENABLED) and graded:
-            async with state["step_tracker"].step("litm_order") as litm_ctx:
-                _pre_ids = [
-                    str(c.get("chunk_id") or c.get("id") or "")
-                    for c in graded
-                ]
-                graded = reorder_for_lost_in_middle(graded)
-                _post_ids = [
-                    str(c.get("chunk_id") or c.get("id") or "")
-                    for c in graded
-                ]
-                _post_id_to_pos = {cid: i for i, cid in enumerate(_post_ids) if cid}
-                _kept_indices = [
-                    _post_id_to_pos.get(cid, -1)
-                    for cid in _pre_ids
-                ]
-                litm_ctx.set_metadata(
-                    n=len(graded),
-                    kept_indices=_kept_indices,
-                )
+        # Lost-in-the-middle reorder is applied LATER — AFTER token-opt +
+        # char-cap have trimmed the set on the score-DESCENDING order. Reordering
+        # here (before the cap) would place high-relevance chunks at the tail, and
+        # the char-cap drops from the tail → it would discard the MOST relevant
+        # chunks and keep the low-relevance middle. Filter on score order first,
+        # order the survivors last. See the litm_order step below.
 
         async with state["step_tracker"].step("prompt_build") as pb_ctx:
             # B2 Phase: prompt-token squeeze (min-score + dedupe + factoid skip-history).
@@ -579,20 +567,39 @@ async def generate(
                         DEFAULT_GENERATE_CONTEXT_CHARS_CAP,
                     )
                 )
-            _running = 0
-            _kept: list[dict] = []
-            _dropped_chunks = 0
-            _dropped_chars = 0
-            for _c in graded:
-                _ctext = _c.get("text") or _c.get("content") or ""
-                if _running + len(_ctext) <= _ctx_cap or not _kept:
-                    # Always keep at least one chunk to avoid zero-context refuse on a single huge chunk.
-                    _kept.append(_c)
-                    _running += len(_ctext)
-                else:
-                    _dropped_chunks += 1
-                    _dropped_chars += len(_ctext)
-            graded = _kept
+            # Char-cap on the score-DESCENDING order (B1): drops the lowest-
+            # relevance tail, always keeps ≥1. Runs BEFORE the LITM reorder
+            # below so a high-relevance chunk is never discarded from the
+            # reordered tail. See apply_context_char_cap's ORDER CONTRACT.
+            graded, _dropped_chunks, _dropped_chars = apply_context_char_cap(
+                graded, _ctx_cap,
+            )
+
+            # Lost-in-the-middle reorder (Liu et al., 2023): NOW that the set is
+            # trimmed on score order, place the top-ranked survivors at the start
+            # AND end so the LLM does not lose them in the middle. Runs last so the
+            # char-cap above never drops a high-relevance chunk from the tail.
+            if _pcfg(state, "lost_in_middle_reorder_enabled", DEFAULT_LITM_REORDER_ENABLED) and graded:
+                async with state["step_tracker"].step("litm_order") as litm_ctx:
+                    _pre_ids = [
+                        str(c.get("chunk_id") or c.get("id") or "")
+                        for c in graded
+                    ]
+                    graded = reorder_for_lost_in_middle(graded)
+                    _post_ids = [
+                        str(c.get("chunk_id") or c.get("id") or "")
+                        for c in graded
+                    ]
+                    _post_id_to_pos = {cid: i for i, cid in enumerate(_post_ids) if cid}
+                    _kept_indices = [
+                        _post_id_to_pos.get(cid, -1)
+                        for cid in _pre_ids
+                    ]
+                    litm_ctx.set_metadata(
+                        n=len(graded),
+                        kept_indices=_kept_indices,
+                    )
+
             chunk_ids_allowed = {
                 str(c.get("chunk_id") or c.get("id") or "")
                 for c in graded

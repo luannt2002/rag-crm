@@ -70,7 +70,7 @@ class BM25OnlyStage2Retriever:
         sql = sa_text(
             f"""
             SELECT dc.id, dc.record_document_id, dc.chunk_index,
-                   dc.content, dc.metadata_json,
+                   dc.content, dc.metadata_json, dc.parent_chunk_id,
                    ts_rank_cd(dc.search_vector,
                               websearch_to_tsquery('simple', :query),
                               {norm_flags}) AS score
@@ -114,6 +114,8 @@ class BM25OnlyStage2Retriever:
                 "text": r["content"],
                 "score": float(r["score"]) if r["score"] is not None else 0.0,
                 "metadata": dict(r["metadata_json"] or {}),
+                # Carried so stage-4 parent-expand can resolve the parent group.
+                "parent_chunk_id": r["parent_chunk_id"],
                 "stage": "bm25_only_stage2",
             }
             for r in rows

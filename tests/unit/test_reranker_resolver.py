@@ -426,3 +426,56 @@ async def test_redis_read_failure_falls_through_to_db():
     assert isinstance(result, NullReranker)
     # DB was still queried despite Redis failure
     session.execute.assert_called_once()
+
+
+# ---------------------------------------------------------------------------
+# Test 11 — Q12: same config across turns reuses the SAME built instance
+#           (preserves the reranker's CircuitBreaker state)
+# ---------------------------------------------------------------------------
+
+@pytest.mark.asyncio
+async def test_same_config_reuses_instance_preserving_cb():
+    """Q12 regression: rebuilding the reranker every turn hands each request
+    a fresh CircuitBreaker, so a provider outage never trips it. The resolver
+    must reuse the built adapter while the resolved config is unchanged."""
+    factory, _ = _make_session_factory(_JINA_CONFIG)
+    # Pre-seed Redis with the config so BOTH resolves take the cache-hit path.
+    redis = FakeRedis({
+        f"{REDIS_KEY_PREFIX}{_BOT_ID}": json.dumps(_JINA_CONFIG),
+    })
+    resolver = RerankerResolver(session_factory=factory, redis_client=redis)
+
+    sentinel = object()
+    with patch(
+        "ragbot.application.services.reranker_resolver.build_reranker",
+        return_value=sentinel,
+    ) as mock_build, patch.dict("os.environ", {"RERANKER_JINA_API_KEY": "k"}):
+        first = await resolver.resolve_for_bot(_BOT_ID)
+        second = await resolver.resolve_for_bot(_BOT_ID)
+
+    assert first is second, "Same config must reuse the built instance (CB state)"
+    assert mock_build.call_count == 1, "build_reranker must run ONCE, not per turn"
+
+
+@pytest.mark.asyncio
+async def test_config_change_rebuilds_instance():
+    """A config change (new binding / system_config flip) within the TTL must
+    rebuild so the new provider/model takes effect."""
+    factory, _ = _make_session_factory(_JINA_CONFIG)
+    redis = FakeRedis()
+    resolver = RerankerResolver(session_factory=factory, redis_client=redis)
+
+    cfg_a = dict(_JINA_CONFIG)
+    cfg_b = dict(_JINA_CONFIG, model_name="jina-reranker-other")
+
+    with patch(
+        "ragbot.application.services.reranker_resolver.build_reranker",
+        side_effect=[object(), object()],
+    ) as mock_build, patch.dict("os.environ", {"RERANKER_JINA_API_KEY": "k"}):
+        a = resolver._get_or_build(str(_BOT_ID), cfg_a)
+        a2 = resolver._get_or_build(str(_BOT_ID), cfg_a)   # unchanged → reuse
+        b = resolver._get_or_build(str(_BOT_ID), cfg_b)    # changed → rebuild
+
+    assert a is a2
+    assert a is not b
+    assert mock_build.call_count == 2

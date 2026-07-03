@@ -352,6 +352,7 @@ async def fetch_neighbors_sql(
                             "FROM document_chunks dc "
                             "JOIN documents d ON d.id = dc.record_document_id "
                             "WHERE d.record_tenant_id = :tid "
+                            "  AND d.deleted_at IS NULL "
                             "  AND dc.record_document_id = :did "
                             "  AND dc.chunk_index BETWEEN :lo AND :hi "
                             "ORDER BY dc.chunk_index"

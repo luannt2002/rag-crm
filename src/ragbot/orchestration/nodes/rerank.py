@@ -26,6 +26,7 @@ from ragbot.orchestration.retrieval_filter import (
 )
 from ragbot.orchestration.state import GraphState
 from ragbot.shared.constants import (
+    DEFAULT_CHUNK_SURVIVAL_TRACE_CAP,
     DEFAULT_RERANK_CLIFF_ABSOLUTE_FLOOR,
     DEFAULT_RERANK_CLIFF_GAP_RATIO,
     DEFAULT_RERANK_CLIFF_MIN_KEEP,
@@ -270,16 +271,29 @@ async def rerank(
                 )
                 if state.get("intent") in _cliff_skip:
                     _mink = len(out)
+                _ids_before_cliff = [
+                    str(c.get("chunk_id") or c.get("id") or "") for c in out
+                ]
                 out, _cliff_meta = _cliff_detect_filter(
                     out, absolute_floor=_floor, gap_ratio=_gap, min_keep=_mink,
                 )
                 n_kept = len(out)
                 _scores_out = [float(c.get("score", 0) or 0) for c in out]
                 top_out = max(_scores_out) if _scores_out else 0.0
+                # C1 chunk-survival trace: which candidate chunk_ids this stage
+                # dropped, so a "why did the answer chunk die" query on
+                # request_steps can pin the exact stage (cliff floor/gap here).
+                _ids_after_cliff = {
+                    str(c.get("chunk_id") or c.get("id") or "") for c in out
+                }
+                _dropped_ids = [
+                    cid for cid in _ids_before_cliff if cid and cid not in _ids_after_cliff
+                ]
                 fs_ctx.set_metadata(
                     n_in=n_in,
                     n_kept=n_kept,
                     n_dropped=n_in - n_kept,
+                    dropped_chunk_ids=_dropped_ids[:DEFAULT_CHUNK_SURVIVAL_TRACE_CAP],
                     strategy="cliff",
                     absolute_floor=_floor,
                     gap_ratio=_gap,
@@ -307,14 +321,25 @@ async def rerank(
                 n_in = len(out)
                 _scores_in = [float(c.get("score", 0) or 0) for c in out]
                 top_in = max(_scores_in) if _scores_in else 0.0
+                _ids_before_thr = [
+                    str(c.get("chunk_id") or c.get("id") or "") for c in out
+                ]
                 out = [c for c in out if float(c.get("score", 0)) >= float(min_score)]
                 n_kept = len(out)
                 _scores_out = [float(c.get("score", 0) or 0) for c in out]
                 top_out = max(_scores_out) if _scores_out else 0.0
+                # C1 chunk-survival trace (threshold branch): dropped chunk_ids.
+                _ids_after_thr = {
+                    str(c.get("chunk_id") or c.get("id") or "") for c in out
+                }
+                _dropped_ids = [
+                    cid for cid in _ids_before_thr if cid and cid not in _ids_after_thr
+                ]
                 fs_ctx.set_metadata(
                     n_in=n_in,
                     n_kept=n_kept,
                     n_dropped=n_in - n_kept,
+                    dropped_chunk_ids=_dropped_ids[:DEFAULT_CHUNK_SURVIVAL_TRACE_CAP],
                     strategy="threshold",
                     min_score_threshold=float(min_score),
                     top_score_in=round(top_in, 6),

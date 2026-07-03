@@ -40,6 +40,7 @@ from datetime import datetime, timezone
 from decimal import Decimal
 from typing import AsyncIterator
 
+import structlog
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -59,6 +60,8 @@ from ragbot.infrastructure.observability.metrics import (
 from ragbot.infrastructure.observability.tracing import get_tracer
 from ragbot.shared.constants import FEATURE_NAME_MAX_LEN, WORKSPACE_SYSTEM_SLUG
 from ragbot.shared.hashing import content_hash, content_hash_required
+
+logger = structlog.get_logger(__name__)
 
 _tracer = get_tracer("ragbot.invocation_logger")
 

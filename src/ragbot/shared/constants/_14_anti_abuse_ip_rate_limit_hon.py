@@ -305,3 +305,16 @@ GROUNDING_FAILURE_MODE_FAIL_CLOSED: Final[str] = "fail_closed"
 GROUNDING_FAILURE_MODE_FAIL_OPEN: Final[str] = "fail_open"
 DEFAULT_GROUNDING_FAILURE_MODE: Final[str] = GROUNDING_FAILURE_MODE_FAIL_CLOSED
 
+# A1 — action when the grounding judge RUNS and CONFIRMS the answer is ungrounded
+# (fabricated beyond the retrieved context). Distinct from the failure-mode above,
+# which handles the judge being DEAD/unavailable. "block" substitutes the bot's
+# oos_answer_template — the SAME sacred-#10-compliant path a regex block already
+# takes (the refusal text is the bot's own, never app-injected). "observe" keeps
+# the legacy behaviour: persist a flag and SHIP the answer. Default is "observe"
+# so no bot's refuse-rate changes without an explicit opt-in; owners flip to
+# "block" per-bot only AFTER measuring that the grounding threshold's deliberate
+# false-positive bias does not over-refuse genuinely-grounded answers.
+GROUNDING_CONFIRMED_ACTION_OBSERVE: Final[str] = "observe"
+GROUNDING_CONFIRMED_ACTION_BLOCK: Final[str] = "block"
+DEFAULT_GROUNDING_CONFIRMED_ACTION: Final[str] = GROUNDING_CONFIRMED_ACTION_OBSERVE
+

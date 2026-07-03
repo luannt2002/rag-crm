@@ -22,6 +22,8 @@ from typing import Final
 
 from ragbot.shared.constants import (
     DEFAULT_LANGUAGE,
+    HEURISTIC_INTENT_CONFIDENCE_STRONG,
+    HEURISTIC_INTENT_CONFIDENCE_WEAK,
     INTENT_CHITCHAT_LABEL,
     INTENT_GREETING,
 )
@@ -52,8 +54,8 @@ class HeuristicResult:
 # WHY these intents only:
 # - greeting / chitchat: zero retrieval needed → skip is 100 % safe
 # - aggregation / multi_hop / comparison: heuristic hint only; LLM still
-#   validates. Confidence is set lower (0.85 single-match) to force LLM check
-#   on anything borderline.
+#   validates. Confidence is set to the WEAK tier (below the trust floor) to
+#   force an LLM check on anything borderline.
 #
 # KHÔNG: factoid — factoid is the default fallback; no regex can safely detect
 # "needs RAG" without domain knowledge.
@@ -104,11 +106,11 @@ def classify_heuristic(
     → returns ``intent=None`` (LLM fallback), never mis-classifies.
 
     Confidence logic:
-    - Single pattern match on a greeting/chitchat (anchored) → 0.90 (very
-      high signal, anchored patterns reject mid-string matches).
-    - Single pattern match on aggregation/multi_hop/comparison → 0.85 (these
-      are mid-string patterns that could appear in domain queries; threshold
-      acts as a safety floor).
+    - Single pattern match on a greeting/chitchat (anchored) → STRONG tier
+      (above the trust floor; anchored patterns reject mid-string matches).
+    - Single pattern match on aggregation/multi_hop/comparison → WEAK tier
+      (below the trust floor; these are mid-string patterns that could appear
+      in domain queries, so the gate forces LLM validation).
     - No match → 0.0, intent=None.
 
     Caller contract: if ``intent is None`` OR ``confidence < threshold`` →
@@ -122,11 +124,13 @@ def classify_heuristic(
     stripped = query.strip()
     for intent_label, pattern in _compiled_registry(sig):
         if pattern.search(stripped):
-            # Greeting/chitchat are anchored → higher signal than mid-string patterns.
+            # Greeting/chitchat are anchored → strong signal, safe to skip LLM.
+            # Everything else is a mid-string hint below the trust floor so the
+            # gate forces LLM validation (see the constants' rationale).
             if intent_label in (INTENT_GREETING, INTENT_CHITCHAT_LABEL):
-                confidence = 0.90
+                confidence = HEURISTIC_INTENT_CONFIDENCE_STRONG
             else:
-                confidence = 0.85
+                confidence = HEURISTIC_INTENT_CONFIDENCE_WEAK
             return HeuristicResult(
                 intent=intent_label,
                 confidence=confidence,

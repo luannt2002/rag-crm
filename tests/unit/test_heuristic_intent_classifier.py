@@ -18,13 +18,23 @@ from ragbot.application.services.heuristic_intent_classifier import (
     classify_heuristic,
 )
 from ragbot.shared.constants import (
+    HEURISTIC_INTENT_CONFIDENCE_STRONG,
     HEURISTIC_INTENT_CONFIDENCE_THRESHOLD,
+    HEURISTIC_INTENT_CONFIDENCE_WEAK,
     INTENT_AGGREGATION,
     INTENT_CHITCHAT_LABEL as _CHITCHAT_LABEL,
     INTENT_COMPARISON,
     INTENT_GREETING,
     INTENT_MULTI_HOP,
 )
+
+
+def test_confidence_tiers_straddle_the_threshold() -> None:
+    """Q9 invariant guard: WEAK < THRESHOLD < STRONG. If a future edit collapses
+    the WEAK tier back to the threshold, ``confidence >= threshold`` would skip
+    the LLM for aggregation/multi_hop/comparison — the exact bug this fixes."""
+    assert HEURISTIC_INTENT_CONFIDENCE_WEAK < HEURISTIC_INTENT_CONFIDENCE_THRESHOLD
+    assert HEURISTIC_INTENT_CONFIDENCE_THRESHOLD < HEURISTIC_INTENT_CONFIDENCE_STRONG
 
 
 # ---------------------------------------------------------------------------
@@ -103,21 +113,27 @@ class TestChitchatIntent:
 # Aggregation patterns
 # ---------------------------------------------------------------------------
 
+# Q9: aggregation/multi_hop/comparison are mid-string HINTS — the classifier
+# detects the intent but assigns the WEAK tier (BELOW the trust floor) so the
+# understand node forces an LLM check. The old assertion ``>= THRESHOLD`` pinned
+# the bug (these skipped the LLM). Correct invariant: intent detected AND
+# confidence < threshold (→ caller falls back to LLM).
+
 class TestAggregationIntent:
     def test_bao_nhieu(self):
         result = classify_heuristic("bao nhiêu loại dịch vụ có ở đây?")
         assert result.intent == INTENT_AGGREGATION
-        assert result.confidence >= HEURISTIC_INTENT_CONFIDENCE_THRESHOLD
+        assert result.confidence < HEURISTIC_INTENT_CONFIDENCE_THRESHOLD
 
     def test_co_may(self):
         result = classify_heuristic("có mấy sản phẩm trong danh mục này")
         assert result.intent == INTENT_AGGREGATION
-        assert result.confidence >= HEURISTIC_INTENT_CONFIDENCE_THRESHOLD
+        assert result.confidence < HEURISTIC_INTENT_CONFIDENCE_THRESHOLD
 
     def test_liet_ke(self):
         result = classify_heuristic("liệt kê tất cả các gói cước")
         assert result.intent == INTENT_AGGREGATION
-        assert result.confidence >= HEURISTIC_INTENT_CONFIDENCE_THRESHOLD
+        assert result.confidence < HEURISTIC_INTENT_CONFIDENCE_THRESHOLD
 
 
 # ---------------------------------------------------------------------------
@@ -128,17 +144,17 @@ class TestMultiHopIntent:
     def test_tai_sao(self):
         result = classify_heuristic("tại sao phí tăng vậy?")
         assert result.intent == INTENT_MULTI_HOP
-        assert result.confidence >= HEURISTIC_INTENT_CONFIDENCE_THRESHOLD
+        assert result.confidence < HEURISTIC_INTENT_CONFIDENCE_THRESHOLD
 
     def test_vi_sao(self):
         result = classify_heuristic("vì sao cần đăng ký trước?")
         assert result.intent == INTENT_MULTI_HOP
-        assert result.confidence >= HEURISTIC_INTENT_CONFIDENCE_THRESHOLD
+        assert result.confidence < HEURISTIC_INTENT_CONFIDENCE_THRESHOLD
 
     def test_giai_thich(self):
         result = classify_heuristic("giải thích quy trình này")
         assert result.intent == INTENT_MULTI_HOP
-        assert result.confidence >= HEURISTIC_INTENT_CONFIDENCE_THRESHOLD
+        assert result.confidence < HEURISTIC_INTENT_CONFIDENCE_THRESHOLD
 
 
 # ---------------------------------------------------------------------------
@@ -149,17 +165,17 @@ class TestComparisonIntent:
     def test_so_sanh(self):
         result = classify_heuristic("so sánh gói A và gói B")
         assert result.intent == INTENT_COMPARISON
-        assert result.confidence >= HEURISTIC_INTENT_CONFIDENCE_THRESHOLD
+        assert result.confidence < HEURISTIC_INTENT_CONFIDENCE_THRESHOLD
 
     def test_khac_nhau(self):
         result = classify_heuristic("khác nhau như thế nào?")
         assert result.intent == INTENT_COMPARISON
-        assert result.confidence >= HEURISTIC_INTENT_CONFIDENCE_THRESHOLD
+        assert result.confidence < HEURISTIC_INTENT_CONFIDENCE_THRESHOLD
 
     def test_vs_keyword(self):
         result = classify_heuristic("gói A vs gói B giá thế nào")
         assert result.intent == INTENT_COMPARISON
-        assert result.confidence >= HEURISTIC_INTENT_CONFIDENCE_THRESHOLD
+        assert result.confidence < HEURISTIC_INTENT_CONFIDENCE_THRESHOLD
 
 
 # ---------------------------------------------------------------------------

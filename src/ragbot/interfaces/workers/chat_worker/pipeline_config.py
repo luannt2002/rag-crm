@@ -18,6 +18,18 @@ from ragbot.shared.constants import (
     DEFAULT_CRAG_MIN_FALLBACK_SCORE,
     DEFAULT_CRAG_SKIP_RETRY_ABOVE_SCORE,
     DEFAULT_CR_ENHANCED_ENABLED,
+    DEFAULT_GENERATE_SURFACE_VERBATIM_ENABLED,
+    DEFAULT_GROUNDING_CONFIRMED_ACTION,
+    DEFAULT_GROUNDING_FAILURE_MODE,
+    DEFAULT_GUARDRAIL_LEAK_MIN_MATCH_COUNT,
+    DEFAULT_STATS_CODE_LOOKUP_ENABLED,
+    DEFAULT_STATS_PRICE_OF_ENTITY_ENABLED,
+    DEFAULT_CROSS_DOC_RECONCILE_ENABLED,
+    DEFAULT_STATS_ROUTE_SKIP_GROUNDING,
+    DEFAULT_STATS_SUPERLATIVE_ENABLED,
+    DEFAULT_SYSPROMPT_LEAK_SKIP_INTENTS,
+    DEFAULT_SYSPROMPT_LEAK_SKIP_STATS_ROUTE,
+    DEFAULT_XML_WRAP_ENABLED,
     DEFAULT_GENERATION_TEMPERATURE,
     DEFAULT_GROUNDING_CHECK_ENABLED,
     DEFAULT_MULTI_QUERY_ENABLED,
@@ -270,6 +282,11 @@ def _build_pipeline_config(_cfg: dict[str, Any], bot_cfg: Any) -> dict[str, Any]
             _cfg_get(_cfg, "citation_marker_required", False),
         ),
         "embedding_model": _cfg_get(_cfg, "embedding_model", None) or "unknown",
+        # Mirrors test_chat: feeds the query-embedding cache key alongside
+        # embedding_model/dimension. Missing here would namespace production
+        # cache keys under the DEFAULT_EMBEDDING_PROVIDER fallback instead of
+        # the bot's actual provider (test_chat vs worker cache-key divergence).
+        "embedding_provider": _cfg_get(_cfg, "embedding_provider", None) or "unknown",
         "guardrail_leak_shingle_size": _cfg_int(
             _cfg, "guardrail_leak_shingle_size", 12,
         ),
@@ -497,5 +514,56 @@ def _build_pipeline_config(_cfg: dict[str, Any], bot_cfg: Any) -> dict[str, Any]
         # Race mode: concurrent stats + vector retrieve (opt-in per-bot).
         "stats_index_race_enabled": _cfg_get(_cfg, "stats_index_race_enabled", None),
         "stats_race_timeout_s": _cfg_get(_cfg, "stats_race_timeout_s", None),
+        # Per-bot knobs READ by _pcfg but formerly populated by NEITHER builder —
+        # on the PRODUCTION worker path they were read-only-never-configurable
+        # (a bot owner's override was silently ignored). Same default as the
+        # constant so behaviour is unchanged; now overridable via plan_limits.
+        "cross_doc_reconcile_enabled": resolve_bot_limit(
+            bot_cfg, "cross_doc_reconcile_enabled",
+            system_default=DEFAULT_CROSS_DOC_RECONCILE_ENABLED,
+        ),
+        "xml_wrap_enabled": resolve_bot_limit(
+            bot_cfg, "xml_wrap_enabled", system_default=DEFAULT_XML_WRAP_ENABLED,
+        ),
+        "stats_route_skip_grounding": resolve_bot_limit(
+            bot_cfg, "stats_route_skip_grounding",
+            system_default=DEFAULT_STATS_ROUTE_SKIP_GROUNDING,
+        ),
+        "stats_code_lookup_enabled": resolve_bot_limit(
+            bot_cfg, "stats_code_lookup_enabled",
+            system_default=DEFAULT_STATS_CODE_LOOKUP_ENABLED,
+        ),
+        "stats_price_of_entity_enabled": resolve_bot_limit(
+            bot_cfg, "stats_price_of_entity_enabled",
+            system_default=DEFAULT_STATS_PRICE_OF_ENTITY_ENABLED,
+        ),
+        "stats_superlative_enabled": resolve_bot_limit(
+            bot_cfg, "stats_superlative_enabled",
+            system_default=DEFAULT_STATS_SUPERLATIVE_ENABLED,
+        ),
+        "generate_surface_verbatim_enabled": resolve_bot_limit(
+            bot_cfg, "generate_surface_verbatim_enabled",
+            system_default=DEFAULT_GENERATE_SURFACE_VERBATIM_ENABLED,
+        ),
+        "grounding_failure_mode": resolve_bot_limit(
+            bot_cfg, "grounding_failure_mode",
+            system_default=DEFAULT_GROUNDING_FAILURE_MODE,
+        ),
+        "grounding_confirmed_action": resolve_bot_limit(
+            bot_cfg, "grounding_confirmed_action",
+            system_default=DEFAULT_GROUNDING_CONFIRMED_ACTION,
+        ),
+        "guardrail_leak_min_match_count": resolve_bot_limit(
+            bot_cfg, "guardrail_leak_min_match_count",
+            system_default=DEFAULT_GUARDRAIL_LEAK_MIN_MATCH_COUNT,
+        ),
+        "sysprompt_leak_skip_intents": resolve_bot_limit(
+            bot_cfg, "sysprompt_leak_skip_intents",
+            system_default=DEFAULT_SYSPROMPT_LEAK_SKIP_INTENTS,
+        ),
+        "sysprompt_leak_skip_stats_route": resolve_bot_limit(
+            bot_cfg, "sysprompt_leak_skip_stats_route",
+            system_default=DEFAULT_SYSPROMPT_LEAK_SKIP_STATS_ROUTE,
+        ),
     }
     return pipeline_config

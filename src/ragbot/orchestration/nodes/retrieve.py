@@ -1780,7 +1780,8 @@ async def retrieve(
                                 "SELECT dc.id, dc.content, dc.metadata_json "
                                 "FROM document_chunks dc "
                                 "JOIN documents d ON d.id = dc.record_document_id "
-                                "WHERE dc.id = ANY(:ids) AND d.record_bot_id = :rbid"
+                                "WHERE dc.id = ANY(:ids) AND d.record_bot_id = :rbid "
+                                "  AND d.deleted_at IS NULL"
                             ),
                             {"ids": child_ids_with_parent, "rbid": _record_bot_id_pc},
                         )

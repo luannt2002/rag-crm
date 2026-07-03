@@ -99,6 +99,15 @@ class RerankerResolver:
         self._sf = session_factory
         self._redis = redis_client
         self._ttl = ttl_s
+        # In-process per-bot instance cache: bot_id → (config_signature,
+        # reranker). Keeps the SAME built adapter (and its CircuitBreaker +
+        # httpx client) alive across turns while the resolved config is
+        # unchanged. Rebuilding every turn hands each request a fresh CB, so a
+        # provider outage never trips it — every turn starts CLOSED, makes a
+        # doomed live call, and degrades to RRF one-by-one instead of
+        # fast-failing. Cardinality is one entry per active bot (same as the
+        # Redis config cache); the signature rebuilds on any config change.
+        self._instance_cache: dict[str, tuple[str, RerankerPort]] = {}
         # Log-center: per-bot rerankers emit their token usage to this ledger
         # (action="rerank"). None → adapter no-ops the emit.
         self._ledger = ledger
@@ -126,7 +135,7 @@ class RerankerResolver:
                     record_bot_id=bot_id_str,
                     has_config=bool(cached),
                 )
-                return self._build_from_config(cached if cached else None)
+                return self._get_or_build(bot_id_str, cached if cached else None)
         except (RedisError, OSError, json.JSONDecodeError, UnicodeDecodeError, ValueError) as exc:
             logger.warning(
                 "rerank_resolver_cache_read_failed",
@@ -160,7 +169,40 @@ class RerankerResolver:
                 exc_info=False,
             )
 
-        return self._build_from_config(config)
+        return self._get_or_build(bot_id_str, config)
+
+    @staticmethod
+    def _config_signature(config: dict | None) -> str:
+        """Stable signature of the fields that determine the built adapter.
+
+        A change here (new binding, system_config flip) rebuilds; an
+        unchanged config reuses the live instance so its CircuitBreaker
+        state survives across turns.
+        """
+        if not config:
+            return ""
+        return json.dumps(
+            {
+                "provider": config.get("provider_code"),
+                "model": config.get("model_name"),
+                "api_key_ref": config.get("api_key_ref"),
+                "base_url": config.get("base_url"),
+            },
+            sort_keys=True,
+        )
+
+    def _get_or_build(
+        self, bot_id_str: str, config: dict | None,
+    ) -> RerankerPort:
+        """Return the per-bot reranker, reusing the built instance while its
+        resolved config is unchanged (preserves CircuitBreaker state)."""
+        signature = self._config_signature(config)
+        cached = self._instance_cache.get(bot_id_str)
+        if cached is not None and cached[0] == signature:
+            return cached[1]
+        reranker = self._build_from_config(config)
+        self._instance_cache[bot_id_str] = (signature, reranker)
+        return reranker
 
     async def _lookup_db(self, record_bot_id: UUID) -> dict | None:
         """Resolve reranker config: per-bot binding → platform default → None.

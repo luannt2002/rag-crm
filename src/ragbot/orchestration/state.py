@@ -223,6 +223,15 @@ class GraphState(TypedDict, total=False):
     chunks_used: int                            # generate → persist (answer provenance)
     crag_skip_reason: str                       # grade → observability
     grade_timeout_fallback: bool                # grade → observability
+    # in-place ``state[k] =`` writes — declared so the reducer keeps them and
+    # the AST pin's in-place-write coverage stays green. Written in one node,
+    # surfaced to a later node / the final persisted state / a subsequent turn.
+    action_state: dict                          # generate → conversation-state persist (slots)
+    resolved_answer_model: str                  # generate cascade → model-used provenance
+    grounding_async_task: Any                   # generate → guard_output (await the async judge)
+    multi_query_skipped_simple: bool            # fanout → observability (simple-query bypass)
+    _uq_cache_hit: bool                         # understand → observability (uq-cache memo)
+    _generate_empty_answer: bool                # generate → observability (empty-answer flag)
 
 
 __all__ = ["GraphState"]

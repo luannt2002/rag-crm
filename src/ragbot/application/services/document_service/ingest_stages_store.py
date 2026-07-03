@@ -622,17 +622,20 @@ class _StageStoreMixin:
         if _chunk_hash_id_enabled:
             from ragbot.shared.chunk_identity import deterministic_chunk_id
 
-            def _make_chunk_id(content: str) -> uuid.UUID:
-                """Deterministic UUID5 — same content → same UUID → idempotent UPSERT."""
+            def _make_chunk_id(content: str, chunk_index: int) -> uuid.UUID:
+                """Deterministic UUID5 — same (content, index) → same UUID → idempotent
+                UPSERT. Index folded in so two identical-content chunks in one doc
+                don't collapse to the same PK and silently overwrite each other."""
                 return deterministic_chunk_id(
                     record_bot_id=record_bot_id,
                     document_id=doc_id,
                     content=content,
+                    chunk_index=chunk_index,
                 )
         else:
             from ragbot.shared.chunk_identity import time_ordered_chunk_id  # noqa: PLC0415
 
-            def _make_chunk_id(_content: str) -> uuid.UUID:
+            def _make_chunk_id(_content: str, _chunk_index: int) -> uuid.UUID:
                 """Time-ordered UUIDv7 — sequential PK insert locality vs v4 scatter."""
                 return time_ordered_chunk_id()
 
@@ -797,7 +800,7 @@ class _StageStoreMixin:
                     # M21: deterministic UUID5 when per-bot flag is set,
                     # else legacy uuid.uuid4() — factory closure resolved
                     # once before the DB write loop above.
-                    row_id = _make_chunk_id(persisted_text)
+                    row_id = _make_chunk_id(persisted_text, chunk_idx)
                     _parent_id_map[chunk_idx] = row_id
                     parent_rows.append({
                         "id": row_id,
@@ -905,7 +908,7 @@ class _StageStoreMixin:
                     for _k, _v in _atomic_original_meta(chunk_text).items():
                         chunk_meta.setdefault(_k, _v)
                     child_rows.append({
-                        "id": _make_chunk_id(persisted_text),
+                        "id": _make_chunk_id(persisted_text, chunk_idx),
                         "doc_id": doc_id,
                         "idx": chunk_idx,
                         "content": persisted_text,
@@ -1014,7 +1017,7 @@ class _StageStoreMixin:
                     for _k, _v in _atomic_original_meta(chunk_text).items():
                         chunk_meta.setdefault(_k, _v)
                     rows.append({
-                        "id": _make_chunk_id(persisted_text),
+                        "id": _make_chunk_id(persisted_text, chunk_idx),
                         "doc_id": doc_id,
                         "idx": chunk_idx,
                         "content": persisted_text,

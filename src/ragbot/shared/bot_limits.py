@@ -20,6 +20,7 @@ from ragbot.shared.constants import (
     DEFAULT_GROUNDING_CHECK_ASYNC_INTENTS,
     DEFAULT_GROUNDING_CHECK_ASYNC_TOP_SCORE_THRESHOLD,
     DEFAULT_GROUNDING_CHECK_ENABLED,
+    DEFAULT_GROUNDING_CONFIRMED_ACTION,
     DEFAULT_HYDE_ENABLED,
     DEFAULT_MODALITY_RERANK_ENABLED,
     DEFAULT_NEIGHBOR_EXPAND_ENABLED,
@@ -40,6 +41,7 @@ from ragbot.shared.constants import (
     DEFAULT_SELF_RAG_ENABLED,
     DEFAULT_SELF_RAG_THRESHOLD,
     DEFAULT_SEMANTIC_CACHE_THRESHOLD,
+    SEMANTIC_CACHE_THRESHOLD_MIN_RECOMMENDED,
     DEFAULT_SKIP_UNDERSTAND_FOR_GREETING,
     DEFAULT_SPECULATIVE_STREAMING_ENABLED,
     DEFAULT_STATS_ROUTE_SKIP_GROUNDING,
@@ -134,6 +136,10 @@ PLAN_LIMIT_SCHEMA: dict[str, dict[str, Any]] = {
     # ``oos_answer_template`` (no application-injected text).
     "reranker_min_score_active":   {"type": "float", "default": DEFAULT_RERANKER_MIN_SCORE_ACTIVE, "min": 0.0, "max": 1.0},
     "grounding_check_threshold":   {"type": "float", "default": 0.30, "min": 0.0, "max": 1.0},
+    # A1 — action when the grounding judge CONFIRMS an ungrounded answer.
+    # "observe" (default) ships + flags; "block" substitutes the bot's
+    # oos_answer_template. Per-bot opt-in only (see the constant's rationale).
+    "grounding_confirmed_action":  {"type": "str",   "default": DEFAULT_GROUNDING_CONFIRMED_ACTION, "options": ["observe", "block"]},
     "guard_output_min_score":      {"type": "float", "default": 0.15, "min": 0.0, "max": 1.0},
     "generate_context_chars_cap":  {"type": "int",   "default": 2900, "min": 500, "max": 50000},
     # ── Semantic cache similarity threshold (WA-7) ──────────────────────
@@ -505,7 +511,23 @@ def resolve_semantic_cache_threshold(
         val = plan_limits.get("semantic_cache_threshold")
     if val is not None:
         try:
-            return float(val)
+            resolved = float(val)
+            # A2 warn-only: a per-bot threshold BELOW the recommended minimum is
+            # NOT clamped (an operator may deliberately A/B 0.90/0.85), but too
+            # low a cosine threshold collides semantically-different questions
+            # onto one cached answer — a wrong-answer / HALLU vector. Log it
+            # loudly for review. The safe HARD floor is a per-model calibration
+            # decision (needs score-distribution data), so it is intentionally
+            # NOT hardcoded as a clamp here.
+            if resolved < SEMANTIC_CACHE_THRESHOLD_MIN_RECOMMENDED:
+                import structlog
+                structlog.get_logger(__name__).warning(
+                    "semantic_cache_threshold_below_recommended",
+                    resolved=resolved,
+                    recommended_min=SEMANTIC_CACHE_THRESHOLD_MIN_RECOMMENDED,
+                    bot_id=getattr(bot_cfg, "bot_id", None),
+                )
+            return resolved
         except (TypeError, ValueError):
             # Malformed stored value — fall through to system_default.
             pass

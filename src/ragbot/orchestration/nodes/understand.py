@@ -33,6 +33,7 @@ from ragbot.shared.constants import (
     DEFAULT_HEURISTIC_INTENT_ENABLED,
     DEFAULT_INTENT_CONFIDENCE_FALLBACK,
     DEFAULT_INTENT_FALLBACK,
+    DEFAULT_LANGUAGE,
     DEFAULT_STRUCTURED_OUTPUT_ENABLED,
     DEFAULT_UNDERSTAND_BOT_CONTEXT_PREVIEW_CHARS,
     DEFAULT_UNDERSTAND_CONDENSED_QUERY_AUDIT_PREVIEW_LEN,
@@ -41,6 +42,7 @@ from ragbot.shared.constants import (
     HEURISTIC_INTENT_CONFIDENCE_THRESHOLD,
 )
 from ragbot.shared.errors import InvariantViolation
+from ragbot.shared.i18n import get_routing_signals
 
 logger = structlog.get_logger(__name__)
 
@@ -114,7 +116,15 @@ async def understand_query(
         _pcfg(state, "heuristic_intent_enabled", DEFAULT_HEURISTIC_INTENT_ENABLED)
     )
     if _heuristic_enabled and not state.get("force_re_understand"):
-        _h_result = _classify_heuristic(state.get("query") or "")
+        # Locale-scoped intent patterns: resolve the bot's language pack signals
+        # so a non-vi bot classifies on ITS patterns instead of the vi seed.
+        # A vi bot resolves the vi seed → byte-identical to the legacy call.
+        _h_signals = get_routing_signals(
+            str(state.get("language") or DEFAULT_LANGUAGE)
+        )
+        _h_result = _classify_heuristic(
+            state.get("query") or "", signals=_h_signals
+        )
         _h_threshold = float(
             _pcfg(
                 state,

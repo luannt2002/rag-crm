@@ -1,0 +1,27 @@
+{
+  "bot_id": "chinh-sach-xe",
+  "channel_type": "web",
+  "workspace_id": "xe",
+  "note": "20 QA ground-truth from QA Google Sheet (rows 8-27). expect = key checkable fact/number; *_trap flows must REFUSE (out-of-scope / no-data). Multi-turn context Qs marked flow=context.",
+  "questions": [
+    {"id": "q08", "flow": "product_info",   "q": "Lốp Landspider xuất xứ ở đâu?", "expect": "Thái Lan"},
+    {"id": "q09", "flow": "company_info",    "q": "Cho mình xin thông tin công ty để chuyển khoản", "expect": "Quang Minh"},
+    {"id": "q10", "flow": "comparison",      "q": "Nên chọn Landspider hay Rovelo?", "expect": null},
+    {"id": "q11", "flow": "oos_trap",        "q": "Lốp Bridgestone giá bao nhiêu?", "expect": null},
+    {"id": "q12", "flow": "product_feature", "q": "Lốp Davanti DX640 có đặc điểm gì?", "expect": "DX640"},
+    {"id": "q13", "flow": "price_lookup",    "q": "Lốp Landspider size 225/45R17 giá bao nhiêu?", "expect": "225/45R17"},
+    {"id": "q15", "flow": "oos_trap",        "q": "Thời tiết Hà Nội hôm nay thế nào?", "expect": null},
+    {"id": "q16", "flow": "price_inventory", "q": "Lốp Landspider 185/60R15 giá bao nhiêu và còn bao nhiêu chiếc?", "expect": "810.000"},
+    {"id": "q17", "flow": "inventory",       "q": "Lốp Landspider 175/70R14 còn hàng không?", "expect": null},
+    {"id": "q18", "flow": "price_lookup",    "q": "Lốp Davanti DX640 215/60R17 giá bao nhiêu?", "expect": "1.485.000"},
+    {"id": "q19", "flow": "price_lookup",    "q": "Rovelo 215/60R16 giá bao nhiêu?", "expect": "1.152.000"},
+    {"id": "q20", "flow": "missing_data",    "q": "Lốp Neoterra 195/65R16 giá bao nhiêu?", "expect": null},
+    {"id": "q21", "flow": "recommendation",  "q": "Tôi cần mua lốp cho xe Vios, tư vấn giúp mình", "expect": null},
+    {"id": "q22", "flow": "price_lookup",    "q": "Lốp Davanti 275/40ZR21 giá bao nhiêu?", "expect": "3.240.000"},
+    {"id": "q23", "flow": "price_inventory", "q": "Lốp Landspider 245/70R17 giá bao nhiêu và còn bao nhiêu chiếc?", "expect": "2.322.000"},
+    {"id": "q24", "flow": "price_lookup",    "q": "Lốp Landspider size 285/70R17 giá bao nhiêu?", "expect": "3.123.000"},
+    {"id": "q25", "flow": "oos_trap",        "q": "Lốp Michelin Pilot Sport 5 size 245/40R18 giá bao nhiêu?", "expect": null},
+    {"id": "q26", "flow": "inventory",       "q": "Lốp Landspider 175/70R14 84H còn hàng không?", "expect": null},
+    {"id": "q27", "flow": "comparison",      "q": "So sánh giá Landspider 205/65R16 và 235/40R18", "expect": "1.602.000"}
+  ]
+}

@@ -25,10 +25,16 @@ APP_ENVS_STRICT: Final[frozenset[str]] = frozenset({
 })
 
 # --- Retrieval / RAG defaults -----------------------------------------------
+# Retrieval casts a WIDE net (20 candidates from hybrid dense+sparse) so the
+# reranker has enough to score. This is the candidate pool, NOT the count that
+# reaches the LLM — that is capped by DEFAULT_RERANK_TOP_N below (and the
+# separate DEFAULT_RERANK_MAX_CHUNKS_TO_LLM=5 hard cap), then narrowed further
+# by filter_min_score / mmr_dedup / grade.
 DEFAULT_TOP_K: Final[int] = 20
-# Wider answer-context window into generate node; rerank cost is one batched
-# call, so growing top_n keeps multi-fact coverage without measurable latency
-# hit. Lifts top_score recall on probe set.
+# Base fallback for chunks kept after the reranker scores candidates. The
+# per-intent DEFAULT_RERANK_TOP_N_BY_INTENT overrides this (factoid=7 mirrors
+# this base); the actual count into the LLM is hard-capped at
+# DEFAULT_RERANK_MAX_CHUNKS_TO_LLM (5).
 DEFAULT_RERANK_TOP_N: Final[int] = 7
 # Cap on auto-mapped citations when LLM omits explicit [chunk:<id>] markers.
 DEFAULT_CITATIONS_TOP_K: Final[int] = 3

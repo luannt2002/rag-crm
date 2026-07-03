@@ -24,6 +24,7 @@ the constant. That was the Phase 3 dead-code symptom.
 
 from __future__ import annotations
 
+import ast
 import re
 from pathlib import Path
 
@@ -122,9 +123,38 @@ def pcfg_keys() -> set[str]:
     return _extract_pcfg_keys(_QUERY_GRAPH)
 
 
+def _extract_worker_builder_keys(source_path: Path) -> set[str]:
+    """Worker builder assigns ``pipeline_config = {...}`` then returns the
+    variable (unlike test_chat's ``return {...}``), so the return-literal
+    extractor misses it. Parse the AST and collect the keys of every dict
+    literal assigned to a ``pipeline_config`` Name target."""
+    tree = ast.parse(source_path.read_text(encoding="utf-8"))
+    keys: set[str] = set()
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Assign) or not isinstance(node.value, ast.Dict):
+            continue
+        if not any(
+            isinstance(t, ast.Name) and t.id == "pipeline_config"
+            for t in node.targets
+        ):
+            continue
+        for k in node.value.keys:
+            if isinstance(k, ast.Constant) and isinstance(k.value, str):
+                keys.add(k.value)
+    return keys
+
+
 @pytest.fixture(scope="module")
 def test_chat_builder_keys() -> set[str]:
     return _extract_dict_keys(_TEST_CHAT, "_build_pipeline_config")
+
+
+@pytest.fixture(scope="module")
+def worker_builder_keys() -> set[str]:
+    return _extract_worker_builder_keys(
+        _REPO_ROOT / "src" / "ragbot" / "interfaces" / "workers"
+        / "chat_worker" / "pipeline_config.py",
+    )
 
 
 def test_query_graph_pcfg_keys_all_built_in_test_chat(
@@ -141,6 +171,25 @@ def test_query_graph_pcfg_keys_all_built_in_test_chat(
         "Fix: add an entry to _build_pipeline_config OR — if the key is "
         "populated elsewhere (e.g. from bot_cfg, JWT) — add it to "
         "_PCFG_ALLOWLIST in this test."
+    )
+
+
+def test_query_graph_pcfg_keys_all_built_in_worker(
+    pcfg_keys: set[str], worker_builder_keys: set[str],
+) -> None:
+    """UNCTRL-C: the PRODUCTION worker builder must populate every ``_pcfg``
+    key too. The tuple-parity test only compares the KEYS tuples, and the
+    test_chat check only inspects the test_chat dict — so a knob present in
+    test_chat but missing from the worker dict (the mirage-knob class) slips
+    through both and the per-bot override is silently ignored on B2B prod."""
+    missing = pcfg_keys - worker_builder_keys - _PCFG_ALLOWLIST
+    assert not missing, (
+        "query_graph._pcfg reads these keys but the WORKER _build_pipeline_config "
+        "(chat_worker/pipeline_config.py) never populates them — the per-bot "
+        "override is silently ignored on the production B2B path (mirage-knob).\n"
+        f"Missing keys: {sorted(missing)!r}\n"
+        "Fix: add the entry to the worker builder dict OR add to _PCFG_ALLOWLIST "
+        "if genuinely populated upstream on BOTH paths."
     )
 
 

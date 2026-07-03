@@ -39,6 +39,7 @@ from ragbot.shared.chunking_policy import resolve_chunking_policy
 from ragbot.shared.markdown_normalizer import normalize_to_markdown
 from ragbot.shared.constants import (
     ALLOWED_EMBEDDING_COLUMNS,
+    POSTGRES_MAX_BIND_PARAMS,
     DEFAULT_MARKDOWN_NORMALIZE_ENABLED,
     DEFAULT_TABLE_STRATEGY,
     DEFAULT_ADAPCHUNK_BLOCK_PIPELINE_ENABLED,
@@ -197,48 +198,60 @@ async def _bulk_insert_chunks(
             f"chunk_context"
         )
 
-    value_clauses: list[str] = []
-    params: dict[str, Any] = {"_bot_id": record_bot_id}
+    # Per-row bind count (13 with parent, 12 without); the shared :_bot_id is
+    # bound once per statement. Cap rows/batch below the int16 protocol ceiling
+    # so a large document (>~2900 chunks) splits into several round trips
+    # instead of overflowing one VALUES(...) and aborting the whole ingest.
+    binds_per_row = 13 if has_parent_chunk_id else 12
+    max_rows_per_batch = max(1, (POSTGRES_MAX_BIND_PARAMS - 1) // binds_per_row)
 
-    for i, row in enumerate(rows):
-        if has_parent_chunk_id:
-            value_clauses.append(
-                f"(:id_{i}, :doc_id_{i}, :_bot_id, :idx_{i}, :content_{i}, :seg_{i}, "
-                f":hash_{i}, CAST(:emb_{i} AS vector), CAST(:meta_{i} AS jsonb), "
-                f":par_{i}, :chars_{i}, :ctype_{i}, :ctx_{i})"
-            )
-            params[f"par_{i}"] = row.get("parent_chunk_id")
-        else:
-            value_clauses.append(
-                f"(:id_{i}, :doc_id_{i}, :_bot_id, :idx_{i}, :content_{i}, :seg_{i}, "
-                f":hash_{i}, CAST(:emb_{i} AS vector), CAST(:meta_{i} AS jsonb), "
-                f":chars_{i}, :ctype_{i}, :ctx_{i})"
-            )
+    async def _execute_batch(batch: list[dict[str, Any]]) -> None:
+        value_clauses: list[str] = []
+        params: dict[str, Any] = {"_bot_id": record_bot_id}
+        for i, row in enumerate(batch):
+            if has_parent_chunk_id:
+                value_clauses.append(
+                    f"(:id_{i}, :doc_id_{i}, :_bot_id, :idx_{i}, :content_{i}, :seg_{i}, "
+                    f":hash_{i}, CAST(:emb_{i} AS vector), CAST(:meta_{i} AS jsonb), "
+                    f":par_{i}, :chars_{i}, :ctype_{i}, :ctx_{i})"
+                )
+                params[f"par_{i}"] = row.get("parent_chunk_id")
+            else:
+                value_clauses.append(
+                    f"(:id_{i}, :doc_id_{i}, :_bot_id, :idx_{i}, :content_{i}, :seg_{i}, "
+                    f":hash_{i}, CAST(:emb_{i} AS vector), CAST(:meta_{i} AS jsonb), "
+                    f":chars_{i}, :ctype_{i}, :ctx_{i})"
+                )
 
-        params[f"id_{i}"] = row["id"]
-        params[f"doc_id_{i}"] = row["doc_id"]
-        params[f"idx_{i}"] = row["idx"]
-        params[f"content_{i}"] = row["content"]
-        params[f"seg_{i}"] = row.get("content_segmented")
-        params[f"hash_{i}"] = row["hash"]
-        params[f"emb_{i}"] = row.get("emb")
-        params[f"meta_{i}"] = row["meta"]
-        params[f"chars_{i}"] = row["chunk_chars"]
-        # M10 — first-class modality column. Caller passes pre-classified
-        # ``chunk_type``; row absent the key defaults to TEXT so legacy
-        # callers (and orphan call-sites) keep prose-style behaviour.
-        params[f"ctype_{i}"] = row.get("chunk_type") or DEFAULT_CHUNK_TYPE_TEXT
-        # WA-3 — Enhanced CR storage column (alembic 010l). NULL is the
-        # opt-out / legacy value; only populated when the bot owner
-        # flipped ``plan_limits.cr_enhanced_enabled`` and the enricher
-        # returned a non-empty context for this row.
-        params[f"ctx_{i}"] = row.get("chunk_context")
+            params[f"id_{i}"] = row["id"]
+            params[f"doc_id_{i}"] = row["doc_id"]
+            params[f"idx_{i}"] = row["idx"]
+            params[f"content_{i}"] = row["content"]
+            params[f"seg_{i}"] = row.get("content_segmented")
+            params[f"hash_{i}"] = row["hash"]
+            params[f"emb_{i}"] = row.get("emb")
+            params[f"meta_{i}"] = row["meta"]
+            params[f"chars_{i}"] = row["chunk_chars"]
+            # M10 — first-class modality column. Caller passes pre-classified
+            # ``chunk_type``; row absent the key defaults to TEXT so legacy
+            # callers (and orphan call-sites) keep prose-style behaviour.
+            params[f"ctype_{i}"] = row.get("chunk_type") or DEFAULT_CHUNK_TYPE_TEXT
+            # WA-3 — Enhanced CR storage column (alembic 010l). NULL is the
+            # opt-out / legacy value; only populated when the bot owner
+            # flipped ``plan_limits.cr_enhanced_enabled`` and the enricher
+            # returned a non-empty context for this row.
+            params[f"ctx_{i}"] = row.get("chunk_context")
 
-    sql = (
-        f"INSERT INTO document_chunks ({col_names}) "
-        f"VALUES {', '.join(value_clauses)}"
-    )
-    await session.execute(text(sql), params)
+        sql = (
+            f"INSERT INTO document_chunks ({col_names}) "
+            f"VALUES {', '.join(value_clauses)}"
+        )
+        await session.execute(text(sql), params)
+
+    # Sequential batches share one session/transaction — a mid-document batch
+    # failure rolls back the whole INSERT set (no half-ingested document).
+    for _start in range(0, len(rows), max_rows_per_batch):
+        await _execute_batch(rows[_start:_start + max_rows_per_batch])
 
 
 async def _maybe_redact_ingest_content(

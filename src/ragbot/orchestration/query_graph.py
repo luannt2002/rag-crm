@@ -246,6 +246,7 @@ from ragbot.application.services.multi_query_expansion import (
     expand_query_with_entities as mq_expand_query_with_entities,
 )
 from ragbot.shared.constants import (
+    DEFAULT_CROSS_DOC_RECONCILE_ENABLED,
     DEFAULT_EMBEDDING_COLUMN,
     DEFAULT_EMBEDDING_DIM,
     DEFAULT_EMBEDDING_FALLBACK_VERSION,
@@ -1061,6 +1062,7 @@ def build_graph(
                 # and tests that don't exercise the gate don't drag the
                 # router into their unit boundary.
                 from ragbot.infrastructure.llm.speculative_router import (
+                    SPECULATIVE_REDO_SENTINEL,
                     SpeculativeRouter,
                 )
 
@@ -1127,6 +1129,16 @@ def build_graph(
                 _stream_t0 = time.monotonic()
                 _first_token_ms: int | None = None
                 async for delta in stream_fn(cfg, messages, **stream_kwargs):
+                    # Speculative-streaming control marker: the hallu-verifier
+                    # rejected the draft, so discard anything buffered and
+                    # restart from the authoritative main stream that follows.
+                    # The sentinel is NEVER answer text — appended/streamed it
+                    # would leak "__SPECULATIVE_REDO__" into the user's reply.
+                    # Short-circuit guards the name (imported only on the
+                    # opt-in path); no-op when speculative streaming is off.
+                    if _speculative_enabled and delta == SPECULATIVE_REDO_SENTINEL:
+                        buffer.clear()
+                        continue
                     if _first_token_ms is None and isinstance(delta, str) and delta:
                         _first_token_ms = int(
                             (time.monotonic() - _stream_t0) * 1000,
@@ -2418,7 +2430,7 @@ def build_graph(
             # combined "giá + tồn + ngày về" query sees one complete record
             # instead of 3 partial ones (the split-sheet HALLU). No-op for a
             # corpus without priced+alias anchors. Per-bot opt-out.
-            if bool(_pcfg(state, "cross_doc_reconcile_enabled", True)):
+            if bool(_pcfg(state, "cross_doc_reconcile_enabled", DEFAULT_CROSS_DOC_RECONCILE_ENABLED)):
                 entities = _reconcile_cross_doc(entities)
             _seen: set[tuple[str, int]] = set()
             _rows: list[str] = []

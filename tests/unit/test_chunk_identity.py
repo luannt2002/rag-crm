@@ -70,6 +70,40 @@ def test_deterministic_chunk_id_distinct_content():
     assert u_a != u_b
 
 
+def test_deterministic_chunk_id_index_disambiguates_identical_content():
+    """I15: two byte-identical chunks at different positions in one doc must
+    get DISTINCT UUIDs — otherwise the PK UPSERT silently overwrites the
+    first with the second (data loss on any doc that repeats a line/row)."""
+    bot_id = uuid.uuid4()
+    doc_id = uuid.uuid4()
+    same = "Có"  # a repeated table cell / boilerplate line
+    u0 = deterministic_chunk_id(bot_id, doc_id, same, chunk_index=0)
+    u1 = deterministic_chunk_id(bot_id, doc_id, same, chunk_index=1)
+    assert u0 != u1, "identical content at different index must not collide"
+
+
+def test_deterministic_chunk_id_same_index_same_content_idempotent():
+    """Idempotency preserved: same (doc, index, content) → same UUID, so a
+    normal re-ingest (same chunker, same order) UPSERTs in place."""
+    bot_id = uuid.uuid4()
+    doc_id = uuid.uuid4()
+    u_a = deterministic_chunk_id(bot_id, doc_id, "row text", chunk_index=3)
+    u_b = deterministic_chunk_id(bot_id, doc_id, "row text", chunk_index=3)
+    assert u_a == u_b
+
+
+def test_deterministic_chunk_id_index_none_is_legacy_seed():
+    """chunk_index=None keeps the legacy position-independent seed
+    (backward compatibility for callers that guarantee unique content)."""
+    bot_id = uuid.uuid4()
+    doc_id = uuid.uuid4()
+    legacy = deterministic_chunk_id(bot_id, doc_id, "x")
+    explicit_none = deterministic_chunk_id(bot_id, doc_id, "x", chunk_index=None)
+    assert legacy == explicit_none
+    # And it differs from the indexed seed (index 0 is NOT the same as absent).
+    assert legacy != deterministic_chunk_id(bot_id, doc_id, "x", chunk_index=0)
+
+
 def test_deterministic_chunk_id_strip_tolerance():
     """Leading/trailing whitespace is stripped before hashing — parser
     version drift on trailing newlines must NOT shuffle UUIDs."""

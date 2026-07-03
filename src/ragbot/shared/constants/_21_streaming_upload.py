@@ -203,6 +203,18 @@ SUMMARY_QUERY_PATTERNS_VI: Final[tuple[str, ...]] = (
 # audit of 50-turn VN probe set. Bot owners cannot lower threshold via config
 # (would break HALLU sacred).
 HEURISTIC_INTENT_CONFIDENCE_THRESHOLD: Final[float] = 0.85
+# Two-tier classifier confidence, straddling the threshold above:
+#   STRONG (anchored greeting/chitchat) > THRESHOLD → skip LLM (zero-retrieval,
+#     100% safe to fast-path).
+#   WEAK (mid-string aggregation/multi_hop/comparison) < THRESHOLD → the gate
+#     forces the LLM check. These patterns can appear inside a domain query, so
+#     the heuristic is a hint only and must NOT short-circuit validation.
+# The prior code set the WEAK tier to the SAME 0.85 as the threshold, so
+# ``0.85 >= 0.85`` skipped the LLM for exactly the intents that needed it —
+# the opposite of the documented intent. Keeping the tiers as distinct
+# constants that straddle the floor makes the relationship explicit.
+HEURISTIC_INTENT_CONFIDENCE_STRONG: Final[float] = 0.90
+HEURISTIC_INTENT_CONFIDENCE_WEAK: Final[float] = 0.80
 # Flag lets ops disable the heuristic layer per-bot without redeploying.
 # Default ON — measured latency saving 1.4-1.6s on greeter / chitchat turns.
 DEFAULT_HEURISTIC_INTENT_ENABLED: Final[bool] = True

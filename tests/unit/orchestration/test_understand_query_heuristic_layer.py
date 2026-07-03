@@ -84,6 +84,53 @@ class TestHeuristicMatchSkipsLLM:
         llm.complete.assert_not_called()
 
 
+class TestComplexIntentFallsBackToLLM:
+    """Q9: aggregation/multi_hop/comparison match the heuristic but at the WEAK
+    tier (< threshold), so the node MUST fall through to the LLM path instead of
+    fast-pathing them. The old ``0.85 >= 0.85`` gate skipped the LLM here."""
+
+    @pytest.mark.asyncio
+    async def test_aggregation_query_falls_back_to_llm(self, graph_parts):
+        compiled, tracker, audit, resolver, llm = graph_parts
+        understand_query = node_callable(compiled, "understand_query")
+        state = make_state(
+            query="có bao nhiêu loại dịch vụ ở đây",
+            step_tracker=tracker,
+            pipeline_config={},
+        )
+        result = await understand_query(state)
+        # Heuristic detected the pattern but its confidence is below the floor,
+        # so the node must NOT short-circuit on the heuristic — it falls through
+        # to the LLM understand path (intent_source is never "heuristic" here).
+        assert result.get("intent_source") != "heuristic"
+
+
+class TestHeuristicLocaleSignals:
+    """Q9 locale wire: the node resolves the bot's language-pack signals and
+    passes them to the classifier so a non-vi bot classifies on ITS patterns."""
+
+    @pytest.mark.asyncio
+    async def test_classifier_called_with_locale_signals(self, graph_parts):
+        compiled, tracker, audit, resolver, llm = graph_parts
+        understand_query = node_callable(compiled, "understand_query")
+        state = make_state(
+            query="xin chào",
+            step_tracker=tracker,
+            pipeline_config={},
+        )
+        with patch(
+            "ragbot.orchestration.nodes.understand._classify_heuristic",
+        ) as mock_classify:
+            mock_classify.return_value = MagicMock(
+                intent=None, confidence=0.0, matched_pattern=None,
+            )
+            await understand_query(state)
+        assert mock_classify.called
+        # Must be threaded with a resolved signals object, not the vi default.
+        _, kwargs = mock_classify.call_args
+        assert "signals" in kwargs and kwargs["signals"] is not None
+
+
 class TestHeuristicNoMatchFallsBackToLLM:
     """When no pattern matches → result does NOT have intent_source='heuristic'."""
 

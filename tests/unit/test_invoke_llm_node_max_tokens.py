@@ -52,3 +52,31 @@ def test_zero_or_none_max_tokens_skipped() -> None:
     assert _should_forward(0) is False
     assert _should_forward(-1) is False
     assert _should_forward(None) is False
+
+
+def test_speculative_redo_sentinel_stripped_from_answer_stream() -> None:
+    """Q11: the SPECULATIVE_REDO_SENTINEL control marker must NEVER reach the
+    answer buffer or the SSE sink — it would leak "__SPECULATIVE_REDO__" as
+    literal text into the user's reply. Guard the strip is present in source."""
+    from ragbot.orchestration import query_graph
+
+    src = inspect.getsource(query_graph)
+    assert "delta == SPECULATIVE_REDO_SENTINEL" in src
+    assert "buffer.clear()" in src
+
+
+def test_sentinel_strip_predicate_behavior() -> None:
+    """Mirror the consumer predicate: only the exact sentinel is dropped;
+    an ordinary token containing similar text still streams."""
+    from ragbot.infrastructure.llm.speculative_router import (
+        SPECULATIVE_REDO_SENTINEL,
+    )
+
+    def _is_control(delta: str, speculative_enabled: bool) -> bool:
+        return speculative_enabled and delta == SPECULATIVE_REDO_SENTINEL
+
+    assert _is_control(SPECULATIVE_REDO_SENTINEL, True) is True
+    # Off-path: sentinel never checked when speculative streaming disabled.
+    assert _is_control(SPECULATIVE_REDO_SENTINEL, False) is False
+    # A normal answer token is never treated as control.
+    assert _is_control("the price is 500k", True) is False

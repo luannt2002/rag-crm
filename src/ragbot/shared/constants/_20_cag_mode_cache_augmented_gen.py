@@ -116,11 +116,6 @@ DEFAULT_PROPOSITION_USE_LLM: Final[bool] = False
 
 DEFAULT_PROXIMITY_CACHE_TTL_S: Final[int] = 3600
 
-# Default OFF: NullQueryRouter always returns ``semantic`` so the pipeline
-# preserves byte-identical behaviour until operator flips this knob in
-# ``system_config.query_router_provider``.
-DEFAULT_QUERY_ROUTER_PROVIDER: Final[str] = "null"
-
 # Speculative retrieve: fire embed(raw_query) + hybrid_search in parallel with
 # understand_query+rewrite. When the rewritten query is close enough to raw
 # (cosine_similarity >= threshold), keep speculative chunks and skip the second

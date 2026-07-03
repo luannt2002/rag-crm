@@ -32,34 +32,11 @@ JWT_REQUIRED_CLAIMS: Final[list[str]] = ["exp", "iss"]
 # backward-compat). Set → middleware-free route handler enforces match.
 RAGBOT_METRICS_AUTH_TOKEN_ENV: Final[str] = "RAGBOT_METRICS_AUTH_TOKEN"
 
-# --- 260511-S9-query-router (7 constants) ---
-QUERY_INTENT_COMPARISON: Final[str] = "comparison"
-QUERY_INTENT_FACTOID: Final[str] = "factoid"
-QUERY_INTENT_HALLU_TRAP: Final[str] = "hallu_trap"
-QUERY_INTENT_SEMANTIC: Final[str] = "semantic"
-QUERY_INTENT_SMALLTALK: Final[str] = "smalltalk"
-# --- Query router (pre-retrieve intent detection) ---------------------------
-# Coarse query-intent labels surfaced by ``QueryRouterPort`` strategies BEFORE
-# embed+retrieve. Used downstream to bias retrieval strategy (BM25 priority
-# for structured refs, hybrid default for semantic), tune cliff floors and
-# select sysprompt rendering. This is distinct from the LLM-driven
-# ``UnderstandOutput.intent`` classifier (factoid / comparison / aggregation /
-# multi_hop / chitchat …) — the router is a fast pre-filter, the classifier
-# is the authoritative downstream label.
-# Why decoupled label set: router patterns are signal-cheap (regex / LLM
-# binary classify) and target the *shape* of the query (does it cite an
-# Article? compare two things? smalltalk greet?), whereas the classifier
-# answers the *semantic role* of the answer needed. Keeping the vocabularies
-# separate avoids ambiguous overloads of ``factoid`` / ``smalltalk``.
-QUERY_INTENT_STRUCTURED_REF: Final[str] = "structured_ref"
-QUERY_INTENT_TYPES: Final[tuple[str, ...]] = (
-    QUERY_INTENT_STRUCTURED_REF,
-    QUERY_INTENT_COMPARISON,
-    QUERY_INTENT_FACTOID,
-    QUERY_INTENT_SMALLTALK,
-    QUERY_INTENT_HALLU_TRAP,
-    QUERY_INTENT_SEMANTIC,
-)
+# Cap on how many dropped chunk_ids each filter stage records into its
+# request_steps metadata (C1 chunk-survival trace). Bounds the JSONB row size /
+# label cardinality while still surfacing enough of the dropped set to diagnose
+# a "why did the answer chunk die" case.
+DEFAULT_CHUNK_SURVIVAL_TRACE_CAP: Final[int] = 20
 
 # --- 260512-S7-adaptive-router-l4-bm25 (2 constants) ---
 # RRF k constant used when fusing vector + lexical lists. Mirrors

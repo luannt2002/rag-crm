@@ -22,11 +22,13 @@ from ragbot.shared.constants import (
     DEFAULT_CRAG_SKIP_RETRY_ABOVE_SCORE,
     DEFAULT_GENERATION_TEMPERATURE,
     DEFAULT_GROUNDING_CHECK_ENABLED,
+    DEFAULT_GROUNDING_CONFIRMED_ACTION,
     DEFAULT_GROUNDING_FAILURE_MODE,
     DEFAULT_GUARDRAIL_LEAK_MIN_MATCH_COUNT,
     DEFAULT_GENERATE_SURFACE_VERBATIM_ENABLED,
     DEFAULT_STATS_CODE_LOOKUP_ENABLED,
     DEFAULT_STATS_PRICE_OF_ENTITY_ENABLED,
+    DEFAULT_CROSS_DOC_RECONCILE_ENABLED,
     DEFAULT_STATS_ROUTE_SKIP_GROUNDING,
     DEFAULT_STATS_SUPERLATIVE_ENABLED,
     DEFAULT_SYSPROMPT_LEAK_SKIP_INTENTS,
@@ -860,7 +862,8 @@ async def _build_pipeline_config(cfg_svc: SystemConfigService, bot_cfg: Any) -> 
         # test_pipeline_cfg_keys_parity pins this).
         "bot_custom_vocabulary": getattr(bot_cfg, "custom_vocabulary", None) or {},
         "cross_doc_reconcile_enabled": resolve_bot_limit(
-            bot_cfg, "cross_doc_reconcile_enabled", system_default=True,
+            bot_cfg, "cross_doc_reconcile_enabled",
+            system_default=DEFAULT_CROSS_DOC_RECONCILE_ENABLED,
         ),
         "xml_wrap_enabled": resolve_bot_limit(
             bot_cfg, "xml_wrap_enabled", system_default=DEFAULT_XML_WRAP_ENABLED,
@@ -888,6 +891,10 @@ async def _build_pipeline_config(cfg_svc: SystemConfigService, bot_cfg: Any) -> 
         "grounding_failure_mode": resolve_bot_limit(
             bot_cfg, "grounding_failure_mode",
             system_default=DEFAULT_GROUNDING_FAILURE_MODE,
+        ),
+        "grounding_confirmed_action": resolve_bot_limit(
+            bot_cfg, "grounding_confirmed_action",
+            system_default=DEFAULT_GROUNDING_CONFIRMED_ACTION,
         ),
         "guardrail_leak_min_match_count": resolve_bot_limit(
             bot_cfg, "guardrail_leak_min_match_count",

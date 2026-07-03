@@ -5,7 +5,6 @@ import asyncio
 import hashlib
 import json
 import time
-import uuid
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -557,9 +556,9 @@ class _StageFinalizeMixin:
                 _ws = workspace_id or (
                     str(record_tenant_id) if record_tenant_id else "system"
                 )
-                if _stats_delete_ok:
+                if _stats_delete_ok and record_tenant_id is not None:
                     await self._insert_stats_index(
-                        record_tenant_id=record_tenant_id or uuid.uuid4(),
+                        record_tenant_id=record_tenant_id,
                         workspace_id=_ws,
                         record_bot_id=record_bot_id,
                         record_document_id=doc_id,
@@ -569,6 +568,16 @@ class _StageFinalizeMixin:
                     await self._upsert_doc_summary(
                         record_document_id=doc_id,
                         summary_json=_summary,
+                    )
+                elif _stats_delete_ok:
+                    # record_tenant_id is None — fail-loud, never fabricate a
+                    # random tenant UUID. A fabricated tenant writes orphan
+                    # stats rows under a UUID no query ever scopes to (tenant
+                    # isolation is sacred); skip the index instead.
+                    logger.warning(
+                        "stats_index_insert_skipped_no_tenant",
+                        record_document_id=str(doc_id),
+                        record_bot_id=str(record_bot_id),
                     )
 
         if _audit is not None:

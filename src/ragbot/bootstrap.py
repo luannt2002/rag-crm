@@ -446,7 +446,9 @@ class Container(containers.DeclarativeContainer):
     # DocumentService.ingest — see Master Finding #4.
     # Was frozen to the compile-time constant, so system_config selection had zero
     # effect (redaction stayed null/passthrough even with both opt-in gates on).
-    # Resolve the provider from system_config per-call like crag_grader above.
+    # Resolve the provider from system_config (Callable → get_boot_config). Singleton
+    # caches after first build, so a provider change needs a reload — acceptable for
+    # a rarely-changed config value; use a Factory if hot-reload becomes required.
     pii = providers.Singleton(
         build_pii_redactor,
         provider=providers.Callable(

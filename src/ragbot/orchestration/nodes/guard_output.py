@@ -33,7 +33,9 @@ from ragbot.shared.constants import (
     DEFAULT_GROUNDING_CHECK_ASYNC_TOP_SCORE_THRESHOLD,
     DEFAULT_GROUNDING_CHECK_ENABLED,
     DEFAULT_GROUNDING_CHECK_THRESHOLD,
+    DEFAULT_GROUNDING_CONFIRMED_ACTION,
     DEFAULT_GROUNDING_FAILURE_MODE,
+    GROUNDING_CONFIRMED_ACTION_BLOCK,
     DEFAULT_GROUNDING_INTENTS,
     DEFAULT_GUARDRAIL_LEAK_MIN_MATCH_COUNT,
     DEFAULT_GUARDRAIL_LEAK_SHINGLE_SIZE,
@@ -516,6 +518,30 @@ async def guard_output(
                     message_id=state["message_id"],
                     request_id=state.get("request_id"),
                 )
+                # A1 symmetric gate: when the judge CONFIRMS the answer is
+                # ungrounded and the bot opted into block, substitute the bot's
+                # oos_answer_template — the SAME sacred-#10-safe path a regex
+                # block takes (bot's own refusal text, never app-injected).
+                # Default "observe" preserves the legacy flag-and-ship behaviour;
+                # block is per-bot opt-in (the grounding threshold's deliberate
+                # false-positive bias means an un-measured default block would
+                # over-refuse grounded answers).
+                _grounding_confirmed_action = str(
+                    _pcfg(
+                        state,
+                        "grounding_confirmed_action",
+                        DEFAULT_GROUNDING_CONFIRMED_ACTION,
+                    )
+                    or DEFAULT_GROUNDING_CONFIRMED_ACTION
+                )
+                if _grounding_confirmed_action == GROUNDING_CONFIRMED_ACTION_BLOCK:
+                    flags[-1]["blocked"] = True
+                    return {
+                        "guardrail_flags": flags,
+                        "answer": _oos_template,
+                        "answer_type": "blocked",
+                        "answer_reason": "Grounding judge confirmed ungrounded answer",
+                    }
             return {"guardrail_flags": flags}
 
         try:

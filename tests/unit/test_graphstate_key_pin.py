@@ -70,6 +70,28 @@ def _returned_keys(tree: ast.AST) -> set[str]:
     return keys
 
 
+def _inplace_written_keys(tree: ast.AST) -> set[str]:
+    """Collect string keys from ``state["k"] = ...`` in-place writes ANYWHERE in
+    the module (closures included). langgraph 1.2.4 drops an undeclared in-place
+    write exactly like an undeclared return dict key — the return-only pin above
+    is blind to these (UNCTRL-A). Any Subscript-assignment whose object is a
+    Name ``state`` and whose slice is a string constant is a channel write."""
+    keys: set[str] = set()
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Assign):
+            continue
+        for tgt in node.targets:
+            if (
+                isinstance(tgt, ast.Subscript)
+                and isinstance(tgt.value, ast.Name)
+                and tgt.value.id == "state"
+                and isinstance(tgt.slice, ast.Constant)
+                and isinstance(tgt.slice.value, str)
+            ):
+                keys.add(tgt.slice.value)
+    return keys
+
+
 def test_returned_state_keys_are_declared_in_graphstate() -> None:
     declared = set(GraphState.__annotations__) | _ALLOWED_NON_STATE_KEYS
     offenders: dict[str, set[str]] = {}
@@ -83,5 +105,26 @@ def test_returned_state_keys_are_declared_in_graphstate() -> None:
         "Node functions RETURN state keys not declared in GraphState — langgraph "
         "drops them at the reducer, silently killing the reader. Declare them in "
         "state.py (or add to the allowlist if genuinely non-channel):\n"
+        + "\n".join(f"  {f}: {sorted(ks)}" for f, ks in sorted(offenders.items()))
+    )
+
+
+def test_inplace_written_state_keys_are_declared_in_graphstate() -> None:
+    """UNCTRL-A: an in-place ``state[k] = …`` write with an undeclared ``k`` is
+    dropped by the reducer just like an undeclared return — the return-only pin
+    misses it. This closes that coverage hole."""
+    declared = set(GraphState.__annotations__) | _ALLOWED_NON_STATE_KEYS
+    offenders: dict[str, set[str]] = {}
+    for f in _iter_py_files():
+        tree = ast.parse(f.read_text(), filename=str(f))
+        used = _inplace_written_keys(tree)
+        bad = {k for k in used if not k.startswith("__") and k not in declared}
+        if bad:
+            offenders[str(f)] = bad
+    assert not offenders, (
+        "Node code writes ``state[k]=`` for keys not declared in GraphState — "
+        "langgraph drops them at the reducer, silently killing any later reader. "
+        "Declare them in state.py (or add to the allowlist if genuinely "
+        "non-channel):\n"
         + "\n".join(f"  {f}: {sorted(ks)}" for f, ks in sorted(offenders.items()))
     )

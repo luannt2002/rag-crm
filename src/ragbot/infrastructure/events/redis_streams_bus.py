@@ -504,6 +504,7 @@ class RedisStreamsEventBus:
                     if _recovery_counter % 12 == 0:  # every ~60s (12 * 5s block)
                         await self.recover_pending_messages(
                             stream=key, group=group, consumer=consumer_name,
+                            dispatch=_dispatch_one,
                         )
                     messages = await self._redis.xreadgroup(
                         group, consumer_name,
@@ -575,8 +576,20 @@ class RedisStreamsEventBus:
         consumer: str,
         min_idle_ms: int = 30_000,
         count: int = 10,
+        dispatch: Callable[[bytes, dict[Any, Any]], Awaitable[None]] | None = None,
     ) -> int:
-        """Claim messages from crashed consumers via XPENDING/XCLAIM."""
+        """Claim messages from crashed consumers via XPENDING/XCLAIM.
+
+        When ``dispatch`` is supplied the reclaimed messages are re-driven
+        through it (the consumer loop passes its own ``_dispatch_one``).
+        Without re-drive an XCLAIMed message only changes owner: it idles
+        in this consumer's PEL, gets re-claimed each pass, and after
+        ``DEFAULT_BUS_DLQ_MAX_DELIVERIES`` dead-letters WITHOUT ever running
+        the handler — a transient-failed job (embed 429, owner crash) rots
+        to DLQ unprocessed. ``_dispatch_one`` owns XACK + inbox-dedup, so a
+        job that DID commit on its prior attempt is skipped via its inbox
+        row; only genuinely-unprocessed work re-runs.
+        """
         try:
             pending = await self._redis.xpending_range(
                 stream, group,
@@ -612,6 +625,17 @@ class RedisStreamsEventBus:
             )
             if claimed:
                 logger.info("redis_streams_claimed_pending", count=len(claimed), stream=stream)
+                if dispatch is not None:
+                    # Re-drive each reclaimed message through the handler.
+                    # Same (msg_id, fields) shape as an xreadgroup entry, so
+                    # _dispatch_one handles decode + inbox-dedup + XACK. Isolate
+                    # per message (gather return_exceptions) — one poison payload
+                    # must not abort recovery of its siblings.
+                    _redrive = [
+                        asyncio.create_task(dispatch(_mid, dict(_fields)))
+                        for _mid, _fields in claimed
+                    ]
+                    await asyncio.gather(*_redrive, return_exceptions=True)
             return len(claimed) if claimed else 0
         except (RedisError, OSError, asyncio.TimeoutError) as exc:
             logger.warning("redis_streams_claim_failed", error=str(exc))

@@ -329,6 +329,7 @@ class PgVectorStore:
 
             sql = f"""
                 SELECT id, record_document_id, chunk_index, content, metadata_json,
+                       parent_chunk_id,
                        1 - ({col} <=> CAST(:emb AS vector)) AS score
                 FROM document_chunks
                 WHERE {doc_filter}
@@ -345,6 +346,10 @@ class PgVectorStore:
                     "content": r["content"],
                     "score": float(r["score"]) if r["score"] else 0.0,
                     "metadata": dict(r["metadata_json"] or {}),
+                    # parent_chunk_id read back so small-to-big expansion,
+                    # stage-4 parent-expand, and auto-merge can resolve the
+                    # parent group. NULL for flat-chunked corpora.
+                    "parent_chunk_id": r["parent_chunk_id"],
                 }
                 for r in result.mappings().all()
             ]
@@ -521,6 +526,7 @@ class PgVectorStore:
             sql = f"""
             WITH dense AS (
                 SELECT id, content, metadata_json, record_document_id, chunk_index,
+                       parent_chunk_id,
                        {col}::float4[] AS embedding,
                        ROW_NUMBER() OVER (ORDER BY {col} <=> CAST(:emb AS vector)) AS rank_d
                 FROM document_chunks
@@ -530,6 +536,7 @@ class PgVectorStore:
             ),
             sparse AS (
                 SELECT id, content, metadata_json, record_document_id, chunk_index,
+                       parent_chunk_id,
                        {col}::float4[] AS embedding,
                        ROW_NUMBER() OVER (ORDER BY {_rank_expr} DESC) AS rank_s
                 FROM document_chunks
@@ -544,13 +551,15 @@ class PgVectorStore:
                        COALESCE(d.metadata_json, s.metadata_json) AS metadata_json,
                        COALESCE(d.record_document_id, s.record_document_id) AS record_document_id,
                        COALESCE(d.chunk_index, s.chunk_index) AS chunk_index,
+                       COALESCE(d.parent_chunk_id, s.parent_chunk_id) AS parent_chunk_id,
                        COALESCE(d.embedding, s.embedding) AS embedding,
                        (:vec_w / (:rrf_k + COALESCE(d.rank_d, :rrf_miss))) +
                        (:bm25_w / (:rrf_k + COALESCE(s.rank_s, :rrf_miss))) AS rrf_score
                 FROM dense d
                 FULL OUTER JOIN sparse s ON d.id = s.id
             )
-            SELECT id, content, metadata_json, record_document_id, chunk_index, rrf_score, embedding
+            SELECT id, content, metadata_json, record_document_id, chunk_index,
+                   parent_chunk_id, rrf_score, embedding
             FROM fused
             ORDER BY rrf_score DESC
             LIMIT :final_k
@@ -587,6 +596,9 @@ class PgVectorStore:
                     "score": float(r["rrf_score"]),
                     "metadata": dict(r["metadata_json"] or {}),
                     "embedding": _coerce_embedding(r["embedding"]),
+                    # parent_chunk_id enables small-to-big expansion, stage-4
+                    # parent-expand, and auto-merge. NULL for flat corpora.
+                    "parent_chunk_id": r["parent_chunk_id"],
                 }
                 for r in rows
             ]

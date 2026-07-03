@@ -98,7 +98,7 @@ class KeywordStage3Retriever:
         sql = sa_text(
             """
             SELECT dc.id, dc.record_document_id, dc.chunk_index,
-                   dc.content, dc.metadata_json
+                   dc.content, dc.metadata_json, dc.parent_chunk_id
             FROM document_chunks dc
             JOIN documents d ON d.id = dc.record_document_id
             WHERE d.record_bot_id = :rbid
@@ -140,6 +140,8 @@ class KeywordStage3Retriever:
                 "text": r["content"],
                 "score": keyword_score,
                 "metadata": dict(r["metadata_json"] or {}),
+                # Carried so stage-4 parent-expand can resolve the parent group.
+                "parent_chunk_id": r["parent_chunk_id"],
                 "stage": "keyword_stage3",
                 "anchor": anchor,
             }

@@ -58,6 +58,59 @@ _DOC_LIVE_JOIN = "JOIN documents AS d ON d.id = dsi.record_document_id"
 _DOC_LIVE_PREDICATE = "d.deleted_at IS NULL"
 
 
+def _price_clauses(
+    price_min: int | None,
+    price_max: int | None,
+    price_column: str,
+    params: dict[str, Any],
+) -> list[str]:
+    """Build the price WHERE clause(s) for a range query, binding params.
+
+    ``primary``/``secondary`` compare a single column against each bound.
+
+    ``any`` must group the bounds PER-COLUMN when BOTH are present:
+
+        (pp BETWEEN min AND max) OR (ps BETWEEN min AND max)
+
+    The naive form ``(pp>=min OR ps>=min) AND (pp<=max OR ps<=max)`` is
+    WRONG — it matches a row where the lower bound is met by one column and
+    the upper bound by the OTHER, so neither price actually lies in the
+    range (e.g. min=500k max=1M, pp=2M ps=300k → both sub-clauses true,
+    row wrongly returned + counted). With a single bound the OR-across-
+    columns form IS correct (a one-sided "trên/dưới X" needs only one
+    column past the bound), so keep it.
+    """
+    clauses: list[str] = []
+    if price_column in ("primary", "secondary"):
+        col = f"price_{price_column}"
+        if price_min is not None:
+            clauses.append(f"{col} >= :price_min")
+            params["price_min"] = price_min
+        if price_max is not None:
+            clauses.append(f"{col} <= :price_max")
+            params["price_max"] = price_max
+        return clauses
+    # "any"
+    if price_min is not None and price_max is not None:
+        clauses.append(
+            "((price_primary >= :price_min AND price_primary <= :price_max) "
+            "OR (price_secondary >= :price_min AND price_secondary <= :price_max))"
+        )
+        params["price_min"] = price_min
+        params["price_max"] = price_max
+    elif price_min is not None:
+        clauses.append(
+            "(price_primary >= :price_min OR price_secondary >= :price_min)"
+        )
+        params["price_min"] = price_min
+    elif price_max is not None:
+        clauses.append(
+            "(price_primary <= :price_max OR price_secondary <= :price_max)"
+        )
+        params["price_max"] = price_max
+    return clauses
+
+
 class StatsIndexRepository:
     """CRUD for ``document_service_index`` — stats index per document."""
 
@@ -220,32 +273,7 @@ class StatsIndexRepository:
             "limit": effective_limit,
         }
 
-        price_clauses: list[str] = []
-        if price_column == "primary":
-            if price_min is not None:
-                price_clauses.append("price_primary >= :price_min")
-                params["price_min"] = price_min
-            if price_max is not None:
-                price_clauses.append("price_primary <= :price_max")
-                params["price_max"] = price_max
-        elif price_column == "secondary":
-            if price_min is not None:
-                price_clauses.append("price_secondary >= :price_min")
-                params["price_min"] = price_min
-            if price_max is not None:
-                price_clauses.append("price_secondary <= :price_max")
-                params["price_max"] = price_max
-        else:  # "any"
-            if price_min is not None:
-                price_clauses.append(
-                    "(price_primary >= :price_min OR price_secondary >= :price_min)"
-                )
-                params["price_min"] = price_min
-            if price_max is not None:
-                price_clauses.append(
-                    "(price_primary <= :price_max OR price_secondary <= :price_max)"
-                )
-                params["price_max"] = price_max
+        price_clauses = _price_clauses(price_min, price_max, price_column, params)
 
         where_parts = ["dsi.record_bot_id = :bot_id", _DOC_LIVE_PREDICATE]
         where_parts.extend(price_clauses)
@@ -363,32 +391,7 @@ class StatsIndexRepository:
         """
         params: dict[str, Any] = {"bot_id": record_bot_id}
 
-        price_clauses: list[str] = []
-        if price_column == "primary":
-            if price_min is not None:
-                price_clauses.append("price_primary >= :price_min")
-                params["price_min"] = price_min
-            if price_max is not None:
-                price_clauses.append("price_primary <= :price_max")
-                params["price_max"] = price_max
-        elif price_column == "secondary":
-            if price_min is not None:
-                price_clauses.append("price_secondary >= :price_min")
-                params["price_min"] = price_min
-            if price_max is not None:
-                price_clauses.append("price_secondary <= :price_max")
-                params["price_max"] = price_max
-        else:  # "any"
-            if price_min is not None:
-                price_clauses.append(
-                    "(price_primary >= :price_min OR price_secondary >= :price_min)"
-                )
-                params["price_min"] = price_min
-            if price_max is not None:
-                price_clauses.append(
-                    "(price_primary <= :price_max OR price_secondary <= :price_max)"
-                )
-                params["price_max"] = price_max
+        price_clauses = _price_clauses(price_min, price_max, price_column, params)
 
         where_parts = ["dsi.record_bot_id = :bot_id", _DOC_LIVE_PREDICATE]
         where_parts.extend(price_clauses)

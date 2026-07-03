@@ -104,15 +104,6 @@ ChunkingStrategyName = Literal[
 
 BlockType = Literal["HEADING", "TEXT", "TABLE", "FORMULA", "IMAGE", "CODE", "LIST"]
 
-QueryIntent = Literal[
-    "factoid",
-    "multi_hop",
-    "aggregation",
-    "conversational",
-    "out_of_scope",
-    "realtime",
-]
-
 LLMIntent = Literal[
     "routing",
     "generation",
@@ -148,7 +139,6 @@ __all__ = [
     "LLMIntent",
     "MessageId",
     "ModerationResultKind",
-    "QueryIntent",
     "Role",
     "TenantId",
     "TraceId",
