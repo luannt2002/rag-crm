@@ -74,21 +74,30 @@ def test_mmr_dedup_preserves_diverse_chunks():
 
 
 def test_mmr_dedup_drops_near_duplicate_at_default_threshold():
+    """002-D contract update: the survivor FLOOR (DEFAULT_MMR_MIN_KEEP=3)
+    outranks dedup — measured on zembed-1, no threshold separates distinct
+    sections from near-dups, so small contexts must never be collapsed
+    (the 6→1 warranty collapse starved generate into fabricating scope).
+    Dedup therefore manifests only ABOVE the floor: with 5 candidates and
+    identical texts, the dup is dropped but never below 3 survivors."""
     compiled, _tracker, audit, *_ = build_test_graph()
     near_dup = "ABCDE FGHIJ KLMNO PQRST UVWXY"
     chunks = _chunks(
         [
             (near_dup, 0.95),
             (near_dup, 0.94),  # identical text → similarity = 1.0
+            (near_dup, 0.93),
+            (near_dup, 0.92),
             ("entirely different topic about parking", 0.5),
         ]
     )
     out = _run(compiled, make_state(reranked_chunks=chunks))
     payload = audit.by_event("mmr_dedup")[-1]
-    assert payload["before"] == 3
-    # MMR with threshold=0.88 drops the duplicate; the unique third stays.
-    assert payload["after"] < 3
-    assert payload["after"] >= 1
+    assert payload["before"] == 5
+    # dedup fires above the floor…
+    assert payload["after"] < 5
+    # …but the floor is never pierced (002-D).
+    assert payload["after"] >= 3
 
 
 def test_mmr_dedup_respects_lambda_param_in_audit():

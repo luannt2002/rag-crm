@@ -77,6 +77,7 @@ def mmr_filter(
     max_results: int | None = None,
     use_cosine: bool = DEFAULT_MMR_USE_COSINE,
     strip_embedding: bool = False,
+    min_keep: int = 1,
 ) -> list[dict]:
     """MMR diversity filter — cosine when embeddings present, trigram fallback.
 
@@ -89,6 +90,14 @@ def mmr_filter(
     @param max_results: optional cap on returned chunks (None = no cap).
     @param use_cosine: when True and chunks have ``embedding`` field, use cosine;
         else fall back to character trigram Jaccard.
+    @param min_keep: survivor FLOOR (truth-audit 002-D). Measured on zembed-1:
+        distinct-section same-doc pairs (cosine p50 0.975, max 0.990) overlap
+        the near-duplicate band almost completely, so NO threshold separates
+        them — the ceiling alone can collapse a sectioned document to 1 chunk
+        and starve generate into fabricating (warranty-scope class). When the
+        ceiling would leave fewer than ``min_keep`` survivors, the highest-
+        RELEVANCE remaining candidates are force-kept (diversity ceiling
+        waived for them). Default 1 = legacy behavior.
     @param strip_embedding: pop ``embedding`` from each output chunk before
         returning. Lets pipeline callers release the per-chunk vector once
         cosine diversity has consumed it; downstream nodes (grade /
@@ -191,7 +200,20 @@ def mmr_filter(
                 best_pos = pos
 
         if best_pos < 0:
-            break  # all remaining candidates exceed similarity threshold
+            # All remaining candidates exceed the similarity ceiling. 002-D
+            # floor: below ``min_keep`` survivors, force-keep by pure
+            # relevance instead of collapsing the context.
+            if len(selected) < max(1, min_keep) and candidates:
+                best_pos = max(
+                    range(len(candidates)),
+                    key=lambda pos: float(
+                        candidates[pos][1].get(
+                            "score", candidates[pos][1].get("rerank_score", 0)
+                        ) or 0
+                    ),
+                )
+            else:
+                break
 
         orig_idx, winner = candidates.pop(best_pos)
         selected.append(winner)

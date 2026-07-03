@@ -228,8 +228,16 @@ DEFAULT_GROUNDING_CHECK_ASYNC_INTENTS: Final[tuple[str, ...]] = ("factoid",)
 
 # MMR diversity filter: True=cosine semantic, False=trigram Jaccard fallback.
 DEFAULT_MMR_USE_COSINE: Final[bool] = True
+# 0.88→0.98 (002-D, 2026-07-04): 0.88 was calibrated for the pre-zembed-1
+# embedding distribution and wrongly deduped 100% of distinct-section pairs
+# on the measured corpus (threshold-drift-post-migration lesson).
 # Pairwise similarity above which two MMR-candidates are dropped as dupes.
-DEFAULT_MMR_SIMILARITY_THRESHOLD: Final[float] = 0.88
+DEFAULT_MMR_SIMILARITY_THRESHOLD: Final[float] = 0.98
+# 002-D survivor floor: mmr_filter never collapses below this many chunks —
+# measured (specs/002 evidence): zembed-1 same-doc distinct-section cosine
+# p50 0.975/max 0.990 overlaps the near-dup band, no threshold separates them;
+# the floor (not the ceiling) is what protects sectioned-document answers.
+DEFAULT_MMR_MIN_KEEP: Final[int] = 3
 # score = lambda * relevance - (1-lambda) * redundancy.
 DEFAULT_MMR_LAMBDA: Final[float] = 0.7
 

@@ -9,7 +9,11 @@ from __future__ import annotations
 from typing import Any
 
 from ragbot.orchestration.state import GraphState
-from ragbot.shared.constants import DEFAULT_MMR_LAMBDA, DEFAULT_MMR_SIMILARITY_THRESHOLD
+from ragbot.shared.constants import (
+    DEFAULT_MMR_LAMBDA,
+    DEFAULT_MMR_MIN_KEEP,
+    DEFAULT_MMR_SIMILARITY_THRESHOLD,
+)
 from ragbot.shared.mmr import mmr_filter
 
 
@@ -43,11 +47,13 @@ async def mmr_dedup(
                 _pcfg(state, "mmr_similarity_threshold", DEFAULT_MMR_SIMILARITY_THRESHOLD)
             )
         mmr_lambda = float(_pcfg(state, "mmr_lambda", DEFAULT_MMR_LAMBDA))
+        _min_keep = int(_pcfg(state, "mmr_min_keep", DEFAULT_MMR_MIN_KEEP))
         filtered = mmr_filter(
             chunks,
             lambda_param=mmr_lambda,
             similarity_threshold=mmr_thresh,
             strip_embedding=True,
+            min_keep=_min_keep,
         )
         mmr_ctx.set_metadata(
             before=len(chunks),

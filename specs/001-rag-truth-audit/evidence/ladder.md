@@ -125,3 +125,23 @@
     row 235/40 ĐÃ được serve — capture 500-char che giá; sub-stats leg-2 không hit) → điều tra
     ở D-step (mmr/rank) + B-step (capture cap).
 - Blast-radius: retrieve fan-out mọi bot khi decompose active; pin = 5 test mới + suite retrieve.
+
+## Step 8 (002-D) — CODE: mmr survivor floor + threshold recalibrate (2026-07-04)
+- ĐO TRƯỚC KHI CHỐT SỐ (đúng plan): zembed-1 same-doc distribution — distant-section
+  p50=0.975/max=0.990 vs adjacent p50=0.982 → CHỒNG LẤN, không threshold nào tách được;
+  0.88 cũ dedup oan 100% distinct-section pairs. → floor là fix chính, không phải threshold.
+- Changes (ONE class): mmr_filter(min_keep) — dưới floor thì force-keep theo relevance;
+  DEFAULT_MMR_MIN_KEEP=3 + knob mmr_min_keep (_pcfg chain); DEFAULT_MMR_SIMILARITY_THRESHOLD
+  0.88→0.98 (comment ghi measurement + bài học threshold-drift-post-migration).
+- RED→GREEN: test_mmr_min_keep_floor 4 test; 1 contract-test cũ update có chú thích
+  (dedup chỉ thể hiện TRÊN floor); mmr suite 60 pass; regression 443 pass
+  (1 fail test_generate_intent_max_tokens = PRE-EXISTING trên HEAD, stash-proof, ngoài scope).
+- ĐO N=10 × 4 câu bảo hành (step4_dprobe_n10.json):
+  * D-2 mòn↔còn: 8/10 đúng "60%", 0/10 sai-chiều · D-4 control 1.6mm: 10/10 · nf sạch 40/40
+  * D-1 xe-tải-scope: VẪN BỊA — mechanism RECLASSIFIED: chunk [I. Phạm vi] KHÔNG được
+    retrieve 0/10 (top=III/II/VII) → tầng lỗi retrieval/rerank ranking, KHÔNG phải mmr
+    → OPEN follow-up (section-ranking cho câu scope-exclusion).
+  * D-3 bịa 8-9mm: 10/10 — world-knowledge unit-number, gate mù (min_digits=4 bỏ '8mm')
+    → OPEN follow-up: numeric-fidelity unit-token extension (mm/kg/inch nhỏ).
+- Blast-radius: mmr_dedup mọi bot (floor có thể tăng nhẹ context size khi trước đây
+  collapse — chủ đích); pin = test_mmr_min_keep_floor + test_node_mmr_dedup.
