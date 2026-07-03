@@ -40,6 +40,11 @@ class GraphState(TypedDict, total=False):
     answer: str
     citations: list[dict]
     guardrail_flags: list[dict]
+    # Numeric-fidelity OBSERVE verdict (truth-audit Phase 4): counts of
+    # answer numbers grounded/derived/unsupported vs served context.
+    # Written in-place by guard_output; read by the debug trace. Never
+    # gates the answer (sacred #10).
+    numeric_fidelity: dict
     tokens: dict
     cost_usd: float
     model_used: str

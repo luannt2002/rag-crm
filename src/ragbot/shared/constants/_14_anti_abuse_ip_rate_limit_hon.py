@@ -318,3 +318,12 @@ GROUNDING_CONFIRMED_ACTION_OBSERVE: Final[str] = "observe"
 GROUNDING_CONFIRMED_ACTION_BLOCK: Final[str] = "block"
 DEFAULT_GROUNDING_CONFIRMED_ACTION: Final[str] = GROUNDING_CONFIRMED_ACTION_OBSERVE
 
+
+
+# --- Numeric-fidelity observe gate (truth-audit Phase 4, contract in specs/) --
+# structlog event name for the observe-mode verdict (one per answered request
+# with >=1 significant number). Observe-only: the verdict NEVER modifies the
+# answer (sacred #10); blocking is a separate owner-gated future step.
+NUMERIC_FIDELITY_EVENT: Final[str] = "numeric_fidelity_observe"
+# Cap the unsupported-token list in events/trace (counts stay exact).
+NUMERIC_FIDELITY_UNSUPPORTED_TOKENS_CAP: Final[int] = 8

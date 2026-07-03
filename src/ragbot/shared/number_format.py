@@ -205,6 +205,22 @@ def parse_money_vn(
 _SIGNIFICANT_NUMBER_RE: Final[re.Pattern[str]] = re.compile(r"\d[\d.,]*\d|\d")
 
 
+def iter_significant_number_tokens(
+    text: str,
+    *,
+    min_digits: int = DEFAULT_NUMERIC_COVERAGE_MIN_DIGITS,
+):
+    """Yield significant number tokens of *text* (shared tokenizer for the
+    ingest-side coverage check and the answer-side numeric-fidelity gate —
+    single source of truth so the two can never drift)."""
+    if not text:
+        return
+    for m in _SIGNIFICANT_NUMBER_RE.finditer(text):
+        tok = m.group(0)
+        if sum(c.isdigit() for c in tok) >= min_digits:
+            yield tok
+
+
 def find_dropped_numbers(
     source: str,
     chunks: list[str],
@@ -239,4 +255,4 @@ def find_dropped_numbers(
     return missing
 
 
-__all__ = ["find_dropped_numbers", "parse_money_vn"]
+__all__ = ["find_dropped_numbers", "iter_significant_number_tokens", "parse_money_vn"]

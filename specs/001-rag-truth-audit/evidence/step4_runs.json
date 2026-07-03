@@ -1,0 +1,4184 @@
+{
+  "bot_id": "chinh-sach-xe",
+  "scenario": "tests/scenarios/chinh-sach-xe_probe9.json",
+  "repeat": 15,
+  "corpus_version": {
+    "record_bot_id": "c6e1fc56-d070-439d-99a6-c8b4964b4d2d",
+    "chunks": 401,
+    "max_updated_at": "2026-07-03 13:52:56.449438+07",
+    "content_md5": "055392ff733943f9635cc9321f5227ea"
+  },
+  "n": 135,
+  "records": [
+    {
+      "id": "P-01",
+      "flow": "hazard_fabrication",
+      "question": "Lốp Neoterra 195/65R16 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 20,
+      "chunks_to_llm": 3,
+      "chunks_graded_pass": 3,
+      "score_max": 0.6675,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp Neoterra 195/65R16 NEOTOUR giá 26.000.000đ/lốp, hiện còn 26 lốp ạ.  \nAnh muốn đặt không ạ?",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 0.667495,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 177/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 195/65R16, 195 65 16, 195 65R16, 195/65/16, 195-65-16, 195-65R16, 1956516, 195/65-16, 195/65:16, 195:65/16, 195/65 R16, 195 /65 R16, 195.65r16, Neoterra 195/65R16, Neoterra 195 65 16, Neoterra 195 65R16, Neoterra 195/65/16, NEO 195/65R16, NEO195/65R16, NEO 195 65 16, NEO195 65 16, NEO 195 65R16, NEO195 65R16, NEO 195/65/16, NEO195/65/1"
+        },
+        {
+          "score": 0.265271,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 164/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 195/75R16C, 195 75 16C, 195 75R16C, 195/75/16C, 195-75-16C, 195-75R16C, 1957516C, 195/75-16C, 195/75:16C, 195:75/16C, 195/75 R16C, 195 /75 R16C, 195.75r16C, 195/75R16, 195/75/16, 195-75-16, 1957516, Rovelo 195/75R16C, Rovelo 195 75 16C, Rovelo 195 75R16C, Rovelo 195/75/16C, RVL 195/75R16C, RVL195/75R16C, RVL 195 75 16C, RVL195 75 16C, "
+        },
+        {
+          "score": 0.260427,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 33/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 215/65R16, 215 65 16, 215 65R16, 215/65/16, 215-65-16, 215-65R16, 2156516, 215/65-16, 215/65:16, 215:65/16, 215/65 R16, 215 /65 R16, 215.65r16, Landspider 215/65R16, Landspider 215 65 16, Landspider 215 65R16, Landspider 215/65/16, Land 215/65R16, Land 215 65 16, Land 215 65R16, Land 215/65/16, 215/65R16 G/P, 215/65R16 GP, 215/65R16 G-P"
+        }
+      ],
+      "error": null,
+      "iteration": 1,
+      "verdicts": [
+        {
+          "token": "26.000.000",
+          "value": 26000000,
+          "class": "unsupported"
+        }
+      ]
+    },
+    {
+      "id": "P-01",
+      "flow": "hazard_fabrication",
+      "question": "Lốp Neoterra 195/65R16 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 20,
+      "chunks_to_llm": 3,
+      "chunks_graded_pass": 3,
+      "score_max": 0.6675,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp Neoterra 195/65R16 NEOTOUR giá **1.350.000đ/lốp** ạ.  \nHiện còn **26 lốp** trong kho, anh/chị cần em hỗ trợ đặt hàng không ạ?",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 0.667495,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 177/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 195/65R16, 195 65 16, 195 65R16, 195/65/16, 195-65-16, 195-65R16, 1956516, 195/65-16, 195/65:16, 195:65/16, 195/65 R16, 195 /65 R16, 195.65r16, Neoterra 195/65R16, Neoterra 195 65 16, Neoterra 195 65R16, Neoterra 195/65/16, NEO 195/65R16, NEO195/65R16, NEO 195 65 16, NEO195 65 16, NEO 195 65R16, NEO195 65R16, NEO 195/65/16, NEO195/65/1"
+        },
+        {
+          "score": 0.265271,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 164/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 195/75R16C, 195 75 16C, 195 75R16C, 195/75/16C, 195-75-16C, 195-75R16C, 1957516C, 195/75-16C, 195/75:16C, 195:75/16C, 195/75 R16C, 195 /75 R16C, 195.75r16C, 195/75R16, 195/75/16, 195-75-16, 1957516, Rovelo 195/75R16C, Rovelo 195 75 16C, Rovelo 195 75R16C, Rovelo 195/75/16C, RVL 195/75R16C, RVL195/75R16C, RVL 195 75 16C, RVL195 75 16C, "
+        },
+        {
+          "score": 0.260427,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 33/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 215/65R16, 215 65 16, 215 65R16, 215/65/16, 215-65-16, 215-65R16, 2156516, 215/65-16, 215/65:16, 215:65/16, 215/65 R16, 215 /65 R16, 215.65r16, Landspider 215/65R16, Landspider 215 65 16, Landspider 215 65R16, Landspider 215/65/16, Land 215/65R16, Land 215 65 16, Land 215 65R16, Land 215/65/16, 215/65R16 G/P, 215/65R16 GP, 215/65R16 G-P"
+        }
+      ],
+      "error": null,
+      "iteration": 2,
+      "verdicts": [
+        {
+          "token": "1.350.000",
+          "value": 1350000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-01",
+      "flow": "hazard_fabrication",
+      "question": "Lốp Neoterra 195/65R16 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 20,
+      "chunks_to_llm": 3,
+      "chunks_graded_pass": 3,
+      "score_max": 0.6675,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp Neoterra 195/65R16 NEOTOUR giá 26.000.000đ/lốp, hiện còn 26 lốp ạ.  \nAnh muốn đặt không ạ?",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 0.667495,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 177/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 195/65R16, 195 65 16, 195 65R16, 195/65/16, 195-65-16, 195-65R16, 1956516, 195/65-16, 195/65:16, 195:65/16, 195/65 R16, 195 /65 R16, 195.65r16, Neoterra 195/65R16, Neoterra 195 65 16, Neoterra 195 65R16, Neoterra 195/65/16, NEO 195/65R16, NEO195/65R16, NEO 195 65 16, NEO195 65 16, NEO 195 65R16, NEO195 65R16, NEO 195/65/16, NEO195/65/1"
+        },
+        {
+          "score": 0.265271,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 164/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 195/75R16C, 195 75 16C, 195 75R16C, 195/75/16C, 195-75-16C, 195-75R16C, 1957516C, 195/75-16C, 195/75:16C, 195:75/16C, 195/75 R16C, 195 /75 R16C, 195.75r16C, 195/75R16, 195/75/16, 195-75-16, 1957516, Rovelo 195/75R16C, Rovelo 195 75 16C, Rovelo 195 75R16C, Rovelo 195/75/16C, RVL 195/75R16C, RVL195/75R16C, RVL 195 75 16C, RVL195 75 16C, "
+        },
+        {
+          "score": 0.260427,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 33/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 215/65R16, 215 65 16, 215 65R16, 215/65/16, 215-65-16, 215-65R16, 2156516, 215/65-16, 215/65:16, 215:65/16, 215/65 R16, 215 /65 R16, 215.65r16, Landspider 215/65R16, Landspider 215 65 16, Landspider 215 65R16, Landspider 215/65/16, Land 215/65R16, Land 215 65 16, Land 215 65R16, Land 215/65/16, 215/65R16 G/P, 215/65R16 GP, 215/65R16 G-P"
+        }
+      ],
+      "error": null,
+      "iteration": 3,
+      "verdicts": [
+        {
+          "token": "26.000.000",
+          "value": 26000000,
+          "class": "unsupported"
+        }
+      ]
+    },
+    {
+      "id": "P-01",
+      "flow": "hazard_fabrication",
+      "question": "Lốp Neoterra 195/65R16 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 20,
+      "chunks_to_llm": 3,
+      "chunks_graded_pass": 3,
+      "score_max": 0.6675,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp Neoterra 195/65R16 NEOTOUR giá **1.350.000đ/lốp** ạ.  \nHiện còn **26 lốp** trong kho, anh/chị cần em hỗ trợ đặt hàng không ạ?",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 0.667495,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 177/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 195/65R16, 195 65 16, 195 65R16, 195/65/16, 195-65-16, 195-65R16, 1956516, 195/65-16, 195/65:16, 195:65/16, 195/65 R16, 195 /65 R16, 195.65r16, Neoterra 195/65R16, Neoterra 195 65 16, Neoterra 195 65R16, Neoterra 195/65/16, NEO 195/65R16, NEO195/65R16, NEO 195 65 16, NEO195 65 16, NEO 195 65R16, NEO195 65R16, NEO 195/65/16, NEO195/65/1"
+        },
+        {
+          "score": 0.265271,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 164/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 195/75R16C, 195 75 16C, 195 75R16C, 195/75/16C, 195-75-16C, 195-75R16C, 1957516C, 195/75-16C, 195/75:16C, 195:75/16C, 195/75 R16C, 195 /75 R16C, 195.75r16C, 195/75R16, 195/75/16, 195-75-16, 1957516, Rovelo 195/75R16C, Rovelo 195 75 16C, Rovelo 195 75R16C, Rovelo 195/75/16C, RVL 195/75R16C, RVL195/75R16C, RVL 195 75 16C, RVL195 75 16C, "
+        },
+        {
+          "score": 0.260427,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 33/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 215/65R16, 215 65 16, 215 65R16, 215/65/16, 215-65-16, 215-65R16, 2156516, 215/65-16, 215/65:16, 215:65/16, 215/65 R16, 215 /65 R16, 215.65r16, Landspider 215/65R16, Landspider 215 65 16, Landspider 215 65R16, Landspider 215/65/16, Land 215/65R16, Land 215 65 16, Land 215 65R16, Land 215/65/16, 215/65R16 G/P, 215/65R16 GP, 215/65R16 G-P"
+        }
+      ],
+      "error": null,
+      "iteration": 4,
+      "verdicts": [
+        {
+          "token": "1.350.000",
+          "value": 1350000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-01",
+      "flow": "hazard_fabrication",
+      "question": "Lốp Neoterra 195/65R16 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 20,
+      "chunks_to_llm": 3,
+      "chunks_graded_pass": 3,
+      "score_max": 0.6675,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp Neoterra 195/65R16 NEOTOUR giá **1.350.000đ/lốp** ạ.  \nHiện còn **26 lốp** trong kho, anh/chị cần em hỗ trợ đặt hàng không ạ?",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 0.667495,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 177/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 195/65R16, 195 65 16, 195 65R16, 195/65/16, 195-65-16, 195-65R16, 1956516, 195/65-16, 195/65:16, 195:65/16, 195/65 R16, 195 /65 R16, 195.65r16, Neoterra 195/65R16, Neoterra 195 65 16, Neoterra 195 65R16, Neoterra 195/65/16, NEO 195/65R16, NEO195/65R16, NEO 195 65 16, NEO195 65 16, NEO 195 65R16, NEO195 65R16, NEO 195/65/16, NEO195/65/1"
+        },
+        {
+          "score": 0.265271,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 164/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 195/75R16C, 195 75 16C, 195 75R16C, 195/75/16C, 195-75-16C, 195-75R16C, 1957516C, 195/75-16C, 195/75:16C, 195:75/16C, 195/75 R16C, 195 /75 R16C, 195.75r16C, 195/75R16, 195/75/16, 195-75-16, 1957516, Rovelo 195/75R16C, Rovelo 195 75 16C, Rovelo 195 75R16C, Rovelo 195/75/16C, RVL 195/75R16C, RVL195/75R16C, RVL 195 75 16C, RVL195 75 16C, "
+        },
+        {
+          "score": 0.260427,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 33/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 215/65R16, 215 65 16, 215 65R16, 215/65/16, 215-65-16, 215-65R16, 2156516, 215/65-16, 215/65:16, 215:65/16, 215/65 R16, 215 /65 R16, 215.65r16, Landspider 215/65R16, Landspider 215 65 16, Landspider 215 65R16, Landspider 215/65/16, Land 215/65R16, Land 215 65 16, Land 215 65R16, Land 215/65/16, 215/65R16 G/P, 215/65R16 GP, 215/65R16 G-P"
+        }
+      ],
+      "error": null,
+      "iteration": 5,
+      "verdicts": [
+        {
+          "token": "1.350.000",
+          "value": 1350000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-01",
+      "flow": "hazard_fabrication",
+      "question": "Lốp Neoterra 195/65R16 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 20,
+      "chunks_to_llm": 3,
+      "chunks_graded_pass": 3,
+      "score_max": 0.6675,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp Neoterra 195/65R16 NEOTOUR giá 26.000.000đ/lốp, hiện còn 26 lốp ạ.  \nAnh muốn đặt không ạ?",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 0.667495,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 177/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 195/65R16, 195 65 16, 195 65R16, 195/65/16, 195-65-16, 195-65R16, 1956516, 195/65-16, 195/65:16, 195:65/16, 195/65 R16, 195 /65 R16, 195.65r16, Neoterra 195/65R16, Neoterra 195 65 16, Neoterra 195 65R16, Neoterra 195/65/16, NEO 195/65R16, NEO195/65R16, NEO 195 65 16, NEO195 65 16, NEO 195 65R16, NEO195 65R16, NEO 195/65/16, NEO195/65/1"
+        },
+        {
+          "score": 0.265271,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 164/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 195/75R16C, 195 75 16C, 195 75R16C, 195/75/16C, 195-75-16C, 195-75R16C, 1957516C, 195/75-16C, 195/75:16C, 195:75/16C, 195/75 R16C, 195 /75 R16C, 195.75r16C, 195/75R16, 195/75/16, 195-75-16, 1957516, Rovelo 195/75R16C, Rovelo 195 75 16C, Rovelo 195 75R16C, Rovelo 195/75/16C, RVL 195/75R16C, RVL195/75R16C, RVL 195 75 16C, RVL195 75 16C, "
+        },
+        {
+          "score": 0.260427,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 33/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 215/65R16, 215 65 16, 215 65R16, 215/65/16, 215-65-16, 215-65R16, 2156516, 215/65-16, 215/65:16, 215:65/16, 215/65 R16, 215 /65 R16, 215.65r16, Landspider 215/65R16, Landspider 215 65 16, Landspider 215 65R16, Landspider 215/65/16, Land 215/65R16, Land 215 65 16, Land 215 65R16, Land 215/65/16, 215/65R16 G/P, 215/65R16 GP, 215/65R16 G-P"
+        }
+      ],
+      "error": null,
+      "iteration": 6,
+      "verdicts": [
+        {
+          "token": "26.000.000",
+          "value": 26000000,
+          "class": "unsupported"
+        }
+      ]
+    },
+    {
+      "id": "P-01",
+      "flow": "hazard_fabrication",
+      "question": "Lốp Neoterra 195/65R16 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 20,
+      "chunks_to_llm": 3,
+      "chunks_graded_pass": 3,
+      "score_max": 0.6675,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp Neoterra 195/65R16 NEOTOUR giá 26.000.000đ/lốp, hiện còn 26 lốp ạ.  \nAnh/chị muốn đặt không ạ?",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 0.667495,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 177/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 195/65R16, 195 65 16, 195 65R16, 195/65/16, 195-65-16, 195-65R16, 1956516, 195/65-16, 195/65:16, 195:65/16, 195/65 R16, 195 /65 R16, 195.65r16, Neoterra 195/65R16, Neoterra 195 65 16, Neoterra 195 65R16, Neoterra 195/65/16, NEO 195/65R16, NEO195/65R16, NEO 195 65 16, NEO195 65 16, NEO 195 65R16, NEO195 65R16, NEO 195/65/16, NEO195/65/1"
+        },
+        {
+          "score": 0.265271,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 164/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 195/75R16C, 195 75 16C, 195 75R16C, 195/75/16C, 195-75-16C, 195-75R16C, 1957516C, 195/75-16C, 195/75:16C, 195:75/16C, 195/75 R16C, 195 /75 R16C, 195.75r16C, 195/75R16, 195/75/16, 195-75-16, 1957516, Rovelo 195/75R16C, Rovelo 195 75 16C, Rovelo 195 75R16C, Rovelo 195/75/16C, RVL 195/75R16C, RVL195/75R16C, RVL 195 75 16C, RVL195 75 16C, "
+        },
+        {
+          "score": 0.260427,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 33/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 215/65R16, 215 65 16, 215 65R16, 215/65/16, 215-65-16, 215-65R16, 2156516, 215/65-16, 215/65:16, 215:65/16, 215/65 R16, 215 /65 R16, 215.65r16, Landspider 215/65R16, Landspider 215 65 16, Landspider 215 65R16, Landspider 215/65/16, Land 215/65R16, Land 215 65 16, Land 215 65R16, Land 215/65/16, 215/65R16 G/P, 215/65R16 GP, 215/65R16 G-P"
+        }
+      ],
+      "error": null,
+      "iteration": 7,
+      "verdicts": [
+        {
+          "token": "26.000.000",
+          "value": 26000000,
+          "class": "unsupported"
+        }
+      ]
+    },
+    {
+      "id": "P-01",
+      "flow": "hazard_fabrication",
+      "question": "Lốp Neoterra 195/65R16 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 20,
+      "chunks_to_llm": 3,
+      "chunks_graded_pass": 3,
+      "score_max": 0.6675,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp Neoterra 195/65R16 NEOTOUR giá 26.000.000đ/lốp, hiện còn 26 lốp ạ.  \nAnh muốn đặt không ạ?",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 0.667495,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 177/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 195/65R16, 195 65 16, 195 65R16, 195/65/16, 195-65-16, 195-65R16, 1956516, 195/65-16, 195/65:16, 195:65/16, 195/65 R16, 195 /65 R16, 195.65r16, Neoterra 195/65R16, Neoterra 195 65 16, Neoterra 195 65R16, Neoterra 195/65/16, NEO 195/65R16, NEO195/65R16, NEO 195 65 16, NEO195 65 16, NEO 195 65R16, NEO195 65R16, NEO 195/65/16, NEO195/65/1"
+        },
+        {
+          "score": 0.265271,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 164/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 195/75R16C, 195 75 16C, 195 75R16C, 195/75/16C, 195-75-16C, 195-75R16C, 1957516C, 195/75-16C, 195/75:16C, 195:75/16C, 195/75 R16C, 195 /75 R16C, 195.75r16C, 195/75R16, 195/75/16, 195-75-16, 1957516, Rovelo 195/75R16C, Rovelo 195 75 16C, Rovelo 195 75R16C, Rovelo 195/75/16C, RVL 195/75R16C, RVL195/75R16C, RVL 195 75 16C, RVL195 75 16C, "
+        },
+        {
+          "score": 0.260427,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 33/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 215/65R16, 215 65 16, 215 65R16, 215/65/16, 215-65-16, 215-65R16, 2156516, 215/65-16, 215/65:16, 215:65/16, 215/65 R16, 215 /65 R16, 215.65r16, Landspider 215/65R16, Landspider 215 65 16, Landspider 215 65R16, Landspider 215/65/16, Land 215/65R16, Land 215 65 16, Land 215 65R16, Land 215/65/16, 215/65R16 G/P, 215/65R16 GP, 215/65R16 G-P"
+        }
+      ],
+      "error": null,
+      "iteration": 8,
+      "verdicts": [
+        {
+          "token": "26.000.000",
+          "value": 26000000,
+          "class": "unsupported"
+        }
+      ]
+    },
+    {
+      "id": "P-01",
+      "flow": "hazard_fabrication",
+      "question": "Lốp Neoterra 195/65R16 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 20,
+      "chunks_to_llm": 3,
+      "chunks_graded_pass": 3,
+      "score_max": 0.6675,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp Neoterra 195/65R16 NEOTOUR giá 26.000.000đ/lốp, hiện còn 26 lốp ạ.  \nAnh muốn đặt không ạ?",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 0.667495,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 177/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 195/65R16, 195 65 16, 195 65R16, 195/65/16, 195-65-16, 195-65R16, 1956516, 195/65-16, 195/65:16, 195:65/16, 195/65 R16, 195 /65 R16, 195.65r16, Neoterra 195/65R16, Neoterra 195 65 16, Neoterra 195 65R16, Neoterra 195/65/16, NEO 195/65R16, NEO195/65R16, NEO 195 65 16, NEO195 65 16, NEO 195 65R16, NEO195 65R16, NEO 195/65/16, NEO195/65/1"
+        },
+        {
+          "score": 0.265271,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 164/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 195/75R16C, 195 75 16C, 195 75R16C, 195/75/16C, 195-75-16C, 195-75R16C, 1957516C, 195/75-16C, 195/75:16C, 195:75/16C, 195/75 R16C, 195 /75 R16C, 195.75r16C, 195/75R16, 195/75/16, 195-75-16, 1957516, Rovelo 195/75R16C, Rovelo 195 75 16C, Rovelo 195 75R16C, Rovelo 195/75/16C, RVL 195/75R16C, RVL195/75R16C, RVL 195 75 16C, RVL195 75 16C, "
+        },
+        {
+          "score": 0.260427,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 33/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 215/65R16, 215 65 16, 215 65R16, 215/65/16, 215-65-16, 215-65R16, 2156516, 215/65-16, 215/65:16, 215:65/16, 215/65 R16, 215 /65 R16, 215.65r16, Landspider 215/65R16, Landspider 215 65 16, Landspider 215 65R16, Landspider 215/65/16, Land 215/65R16, Land 215 65 16, Land 215 65R16, Land 215/65/16, 215/65R16 G/P, 215/65R16 GP, 215/65R16 G-P"
+        }
+      ],
+      "error": null,
+      "iteration": 9,
+      "verdicts": [
+        {
+          "token": "26.000.000",
+          "value": 26000000,
+          "class": "unsupported"
+        }
+      ]
+    },
+    {
+      "id": "P-01",
+      "flow": "hazard_fabrication",
+      "question": "Lốp Neoterra 195/65R16 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 20,
+      "chunks_to_llm": 3,
+      "chunks_graded_pass": 3,
+      "score_max": 0.6675,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp Neoterra 195/65R16 NEOTOUR giá 26.000.000đ/lốp, hiện còn 26 lốp ạ.  \nAnh muốn đặt không ạ?",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 0.667495,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 177/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 195/65R16, 195 65 16, 195 65R16, 195/65/16, 195-65-16, 195-65R16, 1956516, 195/65-16, 195/65:16, 195:65/16, 195/65 R16, 195 /65 R16, 195.65r16, Neoterra 195/65R16, Neoterra 195 65 16, Neoterra 195 65R16, Neoterra 195/65/16, NEO 195/65R16, NEO195/65R16, NEO 195 65 16, NEO195 65 16, NEO 195 65R16, NEO195 65R16, NEO 195/65/16, NEO195/65/1"
+        },
+        {
+          "score": 0.265271,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 164/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 195/75R16C, 195 75 16C, 195 75R16C, 195/75/16C, 195-75-16C, 195-75R16C, 1957516C, 195/75-16C, 195/75:16C, 195:75/16C, 195/75 R16C, 195 /75 R16C, 195.75r16C, 195/75R16, 195/75/16, 195-75-16, 1957516, Rovelo 195/75R16C, Rovelo 195 75 16C, Rovelo 195 75R16C, Rovelo 195/75/16C, RVL 195/75R16C, RVL195/75R16C, RVL 195 75 16C, RVL195 75 16C, "
+        },
+        {
+          "score": 0.260427,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 33/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 215/65R16, 215 65 16, 215 65R16, 215/65/16, 215-65-16, 215-65R16, 2156516, 215/65-16, 215/65:16, 215:65/16, 215/65 R16, 215 /65 R16, 215.65r16, Landspider 215/65R16, Landspider 215 65 16, Landspider 215 65R16, Landspider 215/65/16, Land 215/65R16, Land 215 65 16, Land 215 65R16, Land 215/65/16, 215/65R16 G/P, 215/65R16 GP, 215/65R16 G-P"
+        }
+      ],
+      "error": null,
+      "iteration": 10,
+      "verdicts": [
+        {
+          "token": "26.000.000",
+          "value": 26000000,
+          "class": "unsupported"
+        }
+      ]
+    },
+    {
+      "id": "P-01",
+      "flow": "hazard_fabrication",
+      "question": "Lốp Neoterra 195/65R16 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 20,
+      "chunks_to_llm": 3,
+      "chunks_graded_pass": 3,
+      "score_max": 0.6675,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp Neoterra 195/65R16 NEOTOUR giá **1.350.000đ/lốp** ạ.  \nHiện còn **26 lốp** trong kho, anh/chị cần em hỗ trợ đặt hàng không ạ?",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 0.667495,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 177/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 195/65R16, 195 65 16, 195 65R16, 195/65/16, 195-65-16, 195-65R16, 1956516, 195/65-16, 195/65:16, 195:65/16, 195/65 R16, 195 /65 R16, 195.65r16, Neoterra 195/65R16, Neoterra 195 65 16, Neoterra 195 65R16, Neoterra 195/65/16, NEO 195/65R16, NEO195/65R16, NEO 195 65 16, NEO195 65 16, NEO 195 65R16, NEO195 65R16, NEO 195/65/16, NEO195/65/1"
+        },
+        {
+          "score": 0.265271,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 164/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 195/75R16C, 195 75 16C, 195 75R16C, 195/75/16C, 195-75-16C, 195-75R16C, 1957516C, 195/75-16C, 195/75:16C, 195:75/16C, 195/75 R16C, 195 /75 R16C, 195.75r16C, 195/75R16, 195/75/16, 195-75-16, 1957516, Rovelo 195/75R16C, Rovelo 195 75 16C, Rovelo 195 75R16C, Rovelo 195/75/16C, RVL 195/75R16C, RVL195/75R16C, RVL 195 75 16C, RVL195 75 16C, "
+        },
+        {
+          "score": 0.260427,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 33/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 215/65R16, 215 65 16, 215 65R16, 215/65/16, 215-65-16, 215-65R16, 2156516, 215/65-16, 215/65:16, 215:65/16, 215/65 R16, 215 /65 R16, 215.65r16, Landspider 215/65R16, Landspider 215 65 16, Landspider 215 65R16, Landspider 215/65/16, Land 215/65R16, Land 215 65 16, Land 215 65R16, Land 215/65/16, 215/65R16 G/P, 215/65R16 GP, 215/65R16 G-P"
+        }
+      ],
+      "error": null,
+      "iteration": 11,
+      "verdicts": [
+        {
+          "token": "1.350.000",
+          "value": 1350000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-01",
+      "flow": "hazard_fabrication",
+      "question": "Lốp Neoterra 195/65R16 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 20,
+      "chunks_to_llm": 3,
+      "chunks_graded_pass": 3,
+      "score_max": 0.6675,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp Neoterra 195/65R16 NEOTOUR giá **1.350.000đ/lốp** ạ.  \nHiện còn **26 lốp** trong kho, anh/chị cần em hỗ trợ đặt hàng không ạ?",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 0.667495,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 177/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 195/65R16, 195 65 16, 195 65R16, 195/65/16, 195-65-16, 195-65R16, 1956516, 195/65-16, 195/65:16, 195:65/16, 195/65 R16, 195 /65 R16, 195.65r16, Neoterra 195/65R16, Neoterra 195 65 16, Neoterra 195 65R16, Neoterra 195/65/16, NEO 195/65R16, NEO195/65R16, NEO 195 65 16, NEO195 65 16, NEO 195 65R16, NEO195 65R16, NEO 195/65/16, NEO195/65/1"
+        },
+        {
+          "score": 0.265271,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 164/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 195/75R16C, 195 75 16C, 195 75R16C, 195/75/16C, 195-75-16C, 195-75R16C, 1957516C, 195/75-16C, 195/75:16C, 195:75/16C, 195/75 R16C, 195 /75 R16C, 195.75r16C, 195/75R16, 195/75/16, 195-75-16, 1957516, Rovelo 195/75R16C, Rovelo 195 75 16C, Rovelo 195 75R16C, Rovelo 195/75/16C, RVL 195/75R16C, RVL195/75R16C, RVL 195 75 16C, RVL195 75 16C, "
+        },
+        {
+          "score": 0.260427,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 33/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 215/65R16, 215 65 16, 215 65R16, 215/65/16, 215-65-16, 215-65R16, 2156516, 215/65-16, 215/65:16, 215:65/16, 215/65 R16, 215 /65 R16, 215.65r16, Landspider 215/65R16, Landspider 215 65 16, Landspider 215 65R16, Landspider 215/65/16, Land 215/65R16, Land 215 65 16, Land 215 65R16, Land 215/65/16, 215/65R16 G/P, 215/65R16 GP, 215/65R16 G-P"
+        }
+      ],
+      "error": null,
+      "iteration": 12,
+      "verdicts": [
+        {
+          "token": "1.350.000",
+          "value": 1350000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-01",
+      "flow": "hazard_fabrication",
+      "question": "Lốp Neoterra 195/65R16 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 20,
+      "chunks_to_llm": 3,
+      "chunks_graded_pass": 3,
+      "score_max": 0.6675,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp Neoterra 195/65R16 NEOTOUR giá 26.000.000đ/lốp, hiện còn 26 lốp ạ.  \nAnh muốn đặt không ạ?",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 0.667495,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 177/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 195/65R16, 195 65 16, 195 65R16, 195/65/16, 195-65-16, 195-65R16, 1956516, 195/65-16, 195/65:16, 195:65/16, 195/65 R16, 195 /65 R16, 195.65r16, Neoterra 195/65R16, Neoterra 195 65 16, Neoterra 195 65R16, Neoterra 195/65/16, NEO 195/65R16, NEO195/65R16, NEO 195 65 16, NEO195 65 16, NEO 195 65R16, NEO195 65R16, NEO 195/65/16, NEO195/65/1"
+        },
+        {
+          "score": 0.265271,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 164/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 195/75R16C, 195 75 16C, 195 75R16C, 195/75/16C, 195-75-16C, 195-75R16C, 1957516C, 195/75-16C, 195/75:16C, 195:75/16C, 195/75 R16C, 195 /75 R16C, 195.75r16C, 195/75R16, 195/75/16, 195-75-16, 1957516, Rovelo 195/75R16C, Rovelo 195 75 16C, Rovelo 195 75R16C, Rovelo 195/75/16C, RVL 195/75R16C, RVL195/75R16C, RVL 195 75 16C, RVL195 75 16C, "
+        },
+        {
+          "score": 0.260427,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 33/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 215/65R16, 215 65 16, 215 65R16, 215/65/16, 215-65-16, 215-65R16, 2156516, 215/65-16, 215/65:16, 215:65/16, 215/65 R16, 215 /65 R16, 215.65r16, Landspider 215/65R16, Landspider 215 65 16, Landspider 215 65R16, Landspider 215/65/16, Land 215/65R16, Land 215 65 16, Land 215 65R16, Land 215/65/16, 215/65R16 G/P, 215/65R16 GP, 215/65R16 G-P"
+        }
+      ],
+      "error": null,
+      "iteration": 13,
+      "verdicts": [
+        {
+          "token": "26.000.000",
+          "value": 26000000,
+          "class": "unsupported"
+        }
+      ]
+    },
+    {
+      "id": "P-01",
+      "flow": "hazard_fabrication",
+      "question": "Lốp Neoterra 195/65R16 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 20,
+      "chunks_to_llm": 3,
+      "chunks_graded_pass": 3,
+      "score_max": 0.6675,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp Neoterra 195/65R16 NEOTOUR giá **1.350.000đ/lốp** ạ.  \nHiện còn **26 lốp** trong kho, anh/chị cần em hỗ trợ đặt hàng không ạ?",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 0.667495,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 177/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 195/65R16, 195 65 16, 195 65R16, 195/65/16, 195-65-16, 195-65R16, 1956516, 195/65-16, 195/65:16, 195:65/16, 195/65 R16, 195 /65 R16, 195.65r16, Neoterra 195/65R16, Neoterra 195 65 16, Neoterra 195 65R16, Neoterra 195/65/16, NEO 195/65R16, NEO195/65R16, NEO 195 65 16, NEO195 65 16, NEO 195 65R16, NEO195 65R16, NEO 195/65/16, NEO195/65/1"
+        },
+        {
+          "score": 0.265271,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 164/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 195/75R16C, 195 75 16C, 195 75R16C, 195/75/16C, 195-75-16C, 195-75R16C, 1957516C, 195/75-16C, 195/75:16C, 195:75/16C, 195/75 R16C, 195 /75 R16C, 195.75r16C, 195/75R16, 195/75/16, 195-75-16, 1957516, Rovelo 195/75R16C, Rovelo 195 75 16C, Rovelo 195 75R16C, Rovelo 195/75/16C, RVL 195/75R16C, RVL195/75R16C, RVL 195 75 16C, RVL195 75 16C, "
+        },
+        {
+          "score": 0.260427,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 33/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 215/65R16, 215 65 16, 215 65R16, 215/65/16, 215-65-16, 215-65R16, 2156516, 215/65-16, 215/65:16, 215:65/16, 215/65 R16, 215 /65 R16, 215.65r16, Landspider 215/65R16, Landspider 215 65 16, Landspider 215 65R16, Landspider 215/65/16, Land 215/65R16, Land 215 65 16, Land 215 65R16, Land 215/65/16, 215/65R16 G/P, 215/65R16 GP, 215/65R16 G-P"
+        }
+      ],
+      "error": null,
+      "iteration": 14,
+      "verdicts": [
+        {
+          "token": "1.350.000",
+          "value": 1350000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-01",
+      "flow": "hazard_fabrication",
+      "question": "Lốp Neoterra 195/65R16 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 20,
+      "chunks_to_llm": 3,
+      "chunks_graded_pass": 3,
+      "score_max": 0.6675,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp Neoterra 195/65R16 NEOTOUR giá **1.350.000đ/lốp** ạ.  \nHiện còn **26 lốp** trong kho, anh/chị cần em hỗ trợ đặt hàng không ạ?",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 0.667495,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 177/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 195/65R16, 195 65 16, 195 65R16, 195/65/16, 195-65-16, 195-65R16, 1956516, 195/65-16, 195/65:16, 195:65/16, 195/65 R16, 195 /65 R16, 195.65r16, Neoterra 195/65R16, Neoterra 195 65 16, Neoterra 195 65R16, Neoterra 195/65/16, NEO 195/65R16, NEO195/65R16, NEO 195 65 16, NEO195 65 16, NEO 195 65R16, NEO195 65R16, NEO 195/65/16, NEO195/65/1"
+        },
+        {
+          "score": 0.265271,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 164/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 195/75R16C, 195 75 16C, 195 75R16C, 195/75/16C, 195-75-16C, 195-75R16C, 1957516C, 195/75-16C, 195/75:16C, 195:75/16C, 195/75 R16C, 195 /75 R16C, 195.75r16C, 195/75R16, 195/75/16, 195-75-16, 1957516, Rovelo 195/75R16C, Rovelo 195 75 16C, Rovelo 195 75R16C, Rovelo 195/75/16C, RVL 195/75R16C, RVL195/75R16C, RVL 195 75 16C, RVL195 75 16C, "
+        },
+        {
+          "score": 0.260427,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 33/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 215/65R16, 215 65 16, 215 65R16, 215/65/16, 215-65-16, 215-65R16, 2156516, 215/65-16, 215/65:16, 215:65/16, 215/65 R16, 215 /65 R16, 215.65r16, Landspider 215/65R16, Landspider 215 65 16, Landspider 215 65R16, Landspider 215/65/16, Land 215/65R16, Land 215 65 16, Land 215 65R16, Land 215/65/16, 215/65R16 G/P, 215/65R16 GP, 215/65R16 G-P"
+        }
+      ],
+      "error": null,
+      "iteration": 15,
+      "verdicts": [
+        {
+          "token": "1.350.000",
+          "value": 1350000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-02",
+      "flow": "hazard_conflation",
+      "question": "Lốp Rovelo 185/55R15 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Dạ, lốp Rovelo 185/55R15 hiện đang hết hàng ạ.  \nAnh/chị có thể tham khảo lốp **Landspider 185/55R15 G/P** – đang còn 779 lốp, giá 810.000đ/lốp ạ.  \nNếu cần em hỗ trợ đặt hàng hoặc tìm loại tương đương, anh/chị cứ nói nhé!",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R15 185/55 LPD: 810000 | date1: 26 | image: https://drive.google.com/drive/folders/1QWndLHthgRjfTXcupcLcwtRCh0bMxSJ6?usp=drive_link | price: 810000 | answer: LANDSPIDER 185/55R15 G/P | quantity: 779 | productname: Lốp xe LANDSPIDER 185/55R15 82V CITYTRAXX G/P"
+        }
+      ],
+      "error": null,
+      "iteration": 1,
+      "verdicts": [
+        {
+          "token": "810.000",
+          "value": 810000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-02",
+      "flow": "hazard_conflation",
+      "question": "Lốp Rovelo 185/55R15 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Dạ, lốp Rovelo 185/55R15 hiện đang hết hàng ạ.  \nAnh/chị có muốn em kiểm tra thêm các loại tương đương hoặc để lại số điện thoại để em cập nhật khi có hàng về không ạ?",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R15 185/55 LPD: 810000 | date1: 26 | image: https://drive.google.com/drive/folders/1QWndLHthgRjfTXcupcLcwtRCh0bMxSJ6?usp=drive_link | price: 810000 | answer: LANDSPIDER 185/55R15 G/P | quantity: 779 | productname: Lốp xe LANDSPIDER 185/55R15 82V CITYTRAXX G/P"
+        }
+      ],
+      "error": null,
+      "iteration": 2,
+      "verdicts": []
+    },
+    {
+      "id": "P-02",
+      "flow": "hazard_conflation",
+      "question": "Lốp Rovelo 185/55R15 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Dạ, lốp Rovelo 185/55R15 hiện đang hết hàng ạ.  \nAnh/chị có muốn tham khảo lốp Landspider 185/55R15 G/P giá 810.000đ/lốp, còn 779 lốp không ạ?",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R15 185/55 LPD: 810000 | date1: 26 | image: https://drive.google.com/drive/folders/1QWndLHthgRjfTXcupcLcwtRCh0bMxSJ6?usp=drive_link | price: 810000 | answer: LANDSPIDER 185/55R15 G/P | quantity: 779 | productname: Lốp xe LANDSPIDER 185/55R15 82V CITYTRAXX G/P"
+        }
+      ],
+      "error": null,
+      "iteration": 3,
+      "verdicts": [
+        {
+          "token": "810.000",
+          "value": 810000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-02",
+      "flow": "hazard_conflation",
+      "question": "Lốp Rovelo 185/55R15 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Dạ, lốp Rovelo 185/55R15 hiện đang có giá 810.000đ/lốp, còn 779 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R15 185/55 LPD: 810000 | date1: 26 | image: https://drive.google.com/drive/folders/1QWndLHthgRjfTXcupcLcwtRCh0bMxSJ6?usp=drive_link | price: 810000 | answer: LANDSPIDER 185/55R15 G/P | quantity: 779 | productname: Lốp xe LANDSPIDER 185/55R15 82V CITYTRAXX G/P"
+        }
+      ],
+      "error": null,
+      "iteration": 4,
+      "verdicts": [
+        {
+          "token": "810.000",
+          "value": 810000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-02",
+      "flow": "hazard_conflation",
+      "question": "Lốp Rovelo 185/55R15 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Dạ, lốp Rovelo 185/55R15 hiện đang hết hàng ạ.  \nAnh/chị có muốn tham khảo lốp tương đương của Landspider không ạ?",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R15 185/55 LPD: 810000 | date1: 26 | image: https://drive.google.com/drive/folders/1QWndLHthgRjfTXcupcLcwtRCh0bMxSJ6?usp=drive_link | price: 810000 | answer: LANDSPIDER 185/55R15 G/P | quantity: 779 | productname: Lốp xe LANDSPIDER 185/55R15 82V CITYTRAXX G/P"
+        }
+      ],
+      "error": null,
+      "iteration": 5,
+      "verdicts": []
+    },
+    {
+      "id": "P-02",
+      "flow": "hazard_conflation",
+      "question": "Lốp Rovelo 185/55R15 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Dạ, lốp Rovelo 185/55R15 hiện đang hết hàng ạ.  \nAnh/chị có muốn em gợi ý loại tương đương đang còn hàng không ạ?",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R15 185/55 LPD: 810000 | date1: 26 | image: https://drive.google.com/drive/folders/1QWndLHthgRjfTXcupcLcwtRCh0bMxSJ6?usp=drive_link | price: 810000 | answer: LANDSPIDER 185/55R15 G/P | quantity: 779 | productname: Lốp xe LANDSPIDER 185/55R15 82V CITYTRAXX G/P"
+        }
+      ],
+      "error": null,
+      "iteration": 6,
+      "verdicts": []
+    },
+    {
+      "id": "P-02",
+      "flow": "hazard_conflation",
+      "question": "Lốp Rovelo 185/55R15 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Dạ, lốp Rovelo 185/55R15 hiện đang hết hàng ạ.  \nAnh/chị có muốn em kiểm tra thêm các loại tương đương hoặc để lại số điện thoại để em cập nhật khi có hàng không ạ?",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R15 185/55 LPD: 810000 | date1: 26 | image: https://drive.google.com/drive/folders/1QWndLHthgRjfTXcupcLcwtRCh0bMxSJ6?usp=drive_link | price: 810000 | answer: LANDSPIDER 185/55R15 G/P | quantity: 779 | productname: Lốp xe LANDSPIDER 185/55R15 82V CITYTRAXX G/P"
+        }
+      ],
+      "error": null,
+      "iteration": 7,
+      "verdicts": []
+    },
+    {
+      "id": "P-02",
+      "flow": "hazard_conflation",
+      "question": "Lốp Rovelo 185/55R15 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Dạ, lốp Rovelo 185/55R15 hiện đang hết hàng ạ.  \nAnh/chị có muốn em kiểm tra thêm các loại tương đương hoặc để lại số điện thoại, em sẽ cập nhật khi có hàng về sớm nhất nhé.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R15 185/55 LPD: 810000 | date1: 26 | image: https://drive.google.com/drive/folders/1QWndLHthgRjfTXcupcLcwtRCh0bMxSJ6?usp=drive_link | price: 810000 | answer: LANDSPIDER 185/55R15 G/P | quantity: 779 | productname: Lốp xe LANDSPIDER 185/55R15 82V CITYTRAXX G/P"
+        }
+      ],
+      "error": null,
+      "iteration": 8,
+      "verdicts": []
+    },
+    {
+      "id": "P-02",
+      "flow": "hazard_conflation",
+      "question": "Lốp Rovelo 185/55R15 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Dạ, lốp Rovelo 185/55R15 hiện đang hết hàng ạ.  \nAnh/chị có muốn em gợi ý một số loại tương đương đang còn hàng không ạ?",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R15 185/55 LPD: 810000 | date1: 26 | image: https://drive.google.com/drive/folders/1QWndLHthgRjfTXcupcLcwtRCh0bMxSJ6?usp=drive_link | price: 810000 | answer: LANDSPIDER 185/55R15 G/P | quantity: 779 | productname: Lốp xe LANDSPIDER 185/55R15 82V CITYTRAXX G/P"
+        }
+      ],
+      "error": null,
+      "iteration": 9,
+      "verdicts": []
+    },
+    {
+      "id": "P-02",
+      "flow": "hazard_conflation",
+      "question": "Lốp Rovelo 185/55R15 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Dạ, lốp Rovelo 185/55R15 hiện đang hết hàng ạ.  \nAnh/chị có muốn em kiểm tra thêm các loại tương đương hoặc để lại số điện thoại để em cập nhật khi có hàng về không ạ?",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R15 185/55 LPD: 810000 | date1: 26 | image: https://drive.google.com/drive/folders/1QWndLHthgRjfTXcupcLcwtRCh0bMxSJ6?usp=drive_link | price: 810000 | answer: LANDSPIDER 185/55R15 G/P | quantity: 779 | productname: Lốp xe LANDSPIDER 185/55R15 82V CITYTRAXX G/P"
+        }
+      ],
+      "error": null,
+      "iteration": 10,
+      "verdicts": []
+    },
+    {
+      "id": "P-02",
+      "flow": "hazard_conflation",
+      "question": "Lốp Rovelo 185/55R15 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Dạ, lốp Rovelo 185/55R15 hiện đang hết hàng ạ. Anh/chị có thể để lại số điện thoại, em sẽ cập nhật khi có hàng về sớm nhất nhé.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R15 185/55 LPD: 810000 | date1: 26 | image: https://drive.google.com/drive/folders/1QWndLHthgRjfTXcupcLcwtRCh0bMxSJ6?usp=drive_link | price: 810000 | answer: LANDSPIDER 185/55R15 G/P | quantity: 779 | productname: Lốp xe LANDSPIDER 185/55R15 82V CITYTRAXX G/P"
+        }
+      ],
+      "error": null,
+      "iteration": 11,
+      "verdicts": []
+    },
+    {
+      "id": "P-02",
+      "flow": "hazard_conflation",
+      "question": "Lốp Rovelo 185/55R15 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Dạ, lốp Rovelo 185/55R15 hiện đang có giá 810.000đ/lốp, còn 779 lốp ạ. Anh/chị muốn đặt mua không ạ?",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R15 185/55 LPD: 810000 | date1: 26 | image: https://drive.google.com/drive/folders/1QWndLHthgRjfTXcupcLcwtRCh0bMxSJ6?usp=drive_link | price: 810000 | answer: LANDSPIDER 185/55R15 G/P | quantity: 779 | productname: Lốp xe LANDSPIDER 185/55R15 82V CITYTRAXX G/P"
+        }
+      ],
+      "error": null,
+      "iteration": 12,
+      "verdicts": [
+        {
+          "token": "810.000",
+          "value": 810000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-02",
+      "flow": "hazard_conflation",
+      "question": "Lốp Rovelo 185/55R15 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Dạ, lốp Rovelo 185/55R15 hiện đang hết hàng ạ.  \nAnh/chị có muốn tham khảo lốp tương đương của Landspider không ạ?",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R15 185/55 LPD: 810000 | date1: 26 | image: https://drive.google.com/drive/folders/1QWndLHthgRjfTXcupcLcwtRCh0bMxSJ6?usp=drive_link | price: 810000 | answer: LANDSPIDER 185/55R15 G/P | quantity: 779 | productname: Lốp xe LANDSPIDER 185/55R15 82V CITYTRAXX G/P"
+        }
+      ],
+      "error": null,
+      "iteration": 13,
+      "verdicts": []
+    },
+    {
+      "id": "P-02",
+      "flow": "hazard_conflation",
+      "question": "Lốp Rovelo 185/55R15 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Dạ, lốp Rovelo 185/55R15 hiện đang có giá 810.000đ/lốp, còn 779 lốp ạ. Anh/chị muốn đặt mua không ạ?",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R15 185/55 LPD: 810000 | date1: 26 | image: https://drive.google.com/drive/folders/1QWndLHthgRjfTXcupcLcwtRCh0bMxSJ6?usp=drive_link | price: 810000 | answer: LANDSPIDER 185/55R15 G/P | quantity: 779 | productname: Lốp xe LANDSPIDER 185/55R15 82V CITYTRAXX G/P"
+        }
+      ],
+      "error": null,
+      "iteration": 14,
+      "verdicts": [
+        {
+          "token": "810.000",
+          "value": 810000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-02",
+      "flow": "hazard_conflation",
+      "question": "Lốp Rovelo 185/55R15 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Dạ, lốp Rovelo 185/55R15 hiện đang hết hàng ạ.  \nAnh/chị có muốn em kiểm tra thêm các loại tương đương hoặc để lại số điện thoại để em cập nhật khi có hàng không ạ?",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R15 185/55 LPD: 810000 | date1: 26 | image: https://drive.google.com/drive/folders/1QWndLHthgRjfTXcupcLcwtRCh0bMxSJ6?usp=drive_link | price: 810000 | answer: LANDSPIDER 185/55R15 G/P | quantity: 779 | productname: Lốp xe LANDSPIDER 185/55R15 82V CITYTRAXX G/P"
+        }
+      ],
+      "error": null,
+      "iteration": 15,
+      "verdicts": []
+    },
+    {
+      "id": "P-03",
+      "flow": "hazard_conflation",
+      "question": "Lốp Rovelo 195/55R16 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Dạ, lốp Rovelo 195/55R16 hiện đang có giá 1.044.000đ/lốp, còn 222 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R16 195/55 LPD: 1044000 | date1: 26 | image: https://drive.google.com/drive/folders/1vehsKSN_UOPx-dyt1vhvDfhnhuRgZr8S?usp=drive_link | price: 1044000 | answer: LANDSPIDER 195/55R16 G/P | quantity: 222 | productname: Lốp xe LANDSPIDER 195/55R16 87V CITYTRAXX G/P | : 28-thg 11"
+        }
+      ],
+      "error": null,
+      "iteration": 1,
+      "verdicts": [
+        {
+          "token": "1.044.000",
+          "value": 1044000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-03",
+      "flow": "hazard_conflation",
+      "question": "Lốp Rovelo 195/55R16 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Dạ, lốp Rovelo 195/55R16 hiện không có trong danh sách sản phẩm của Nam Phát ạ.  \n\nBên em phân phối Landspider và Rovelo, nhưng quy cách này chỉ có ở Landspider.  \n\nLốp **Landspider 195/55R16 G/P** (mã 2-R16 195/55 LPD) giá **1.044.000đ/lốp**, hiện còn **222 lốp** ạ.  \n\nAnh/chị có muốn tham khảo loại này không ạ?",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R16 195/55 LPD: 1044000 | date1: 26 | image: https://drive.google.com/drive/folders/1vehsKSN_UOPx-dyt1vhvDfhnhuRgZr8S?usp=drive_link | price: 1044000 | answer: LANDSPIDER 195/55R16 G/P | quantity: 222 | productname: Lốp xe LANDSPIDER 195/55R16 87V CITYTRAXX G/P | : 28-thg 11"
+        }
+      ],
+      "error": null,
+      "iteration": 2,
+      "verdicts": [
+        {
+          "token": "1.044.000",
+          "value": 1044000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-03",
+      "flow": "hazard_conflation",
+      "question": "Lốp Rovelo 195/55R16 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Dạ, lốp Rovelo 195/55R16 hiện không có trong danh sách sản phẩm của Nam Phát ạ. Bên em phân phối chính hãng Landspider và Rovelo, nhưng quy cách này chưa được cập nhật. Anh/chị cho em biết thêm cỡ lốp khác để em tra giúp nhé.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R16 195/55 LPD: 1044000 | date1: 26 | image: https://drive.google.com/drive/folders/1vehsKSN_UOPx-dyt1vhvDfhnhuRgZr8S?usp=drive_link | price: 1044000 | answer: LANDSPIDER 195/55R16 G/P | quantity: 222 | productname: Lốp xe LANDSPIDER 195/55R16 87V CITYTRAXX G/P | : 28-thg 11"
+        }
+      ],
+      "error": null,
+      "iteration": 3,
+      "verdicts": []
+    },
+    {
+      "id": "P-03",
+      "flow": "hazard_conflation",
+      "question": "Lốp Rovelo 195/55R16 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Dạ, lốp Rovelo 195/55R16 hiện không có trong danh sách sản phẩm của Nam Phát ạ. Bên em phân phối chính hãng Landspider và Rovelo, nhưng quy cách này chưa được cập nhật. Anh/chị cho em biết thêm cỡ lốp khác để em tra giúp nhé.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R16 195/55 LPD: 1044000 | date1: 26 | image: https://drive.google.com/drive/folders/1vehsKSN_UOPx-dyt1vhvDfhnhuRgZr8S?usp=drive_link | price: 1044000 | answer: LANDSPIDER 195/55R16 G/P | quantity: 222 | productname: Lốp xe LANDSPIDER 195/55R16 87V CITYTRAXX G/P | : 28-thg 11"
+        }
+      ],
+      "error": null,
+      "iteration": 4,
+      "verdicts": []
+    },
+    {
+      "id": "P-03",
+      "flow": "hazard_conflation",
+      "question": "Lốp Rovelo 195/55R16 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Dạ, lốp Rovelo 195/55R16 hiện đang hết hàng ạ.  \nAnh/chị có muốn em kiểm tra xem khi nào về hàng hoặc gợi ý loại tương đương khác không ạ?",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R16 195/55 LPD: 1044000 | date1: 26 | image: https://drive.google.com/drive/folders/1vehsKSN_UOPx-dyt1vhvDfhnhuRgZr8S?usp=drive_link | price: 1044000 | answer: LANDSPIDER 195/55R16 G/P | quantity: 222 | productname: Lốp xe LANDSPIDER 195/55R16 87V CITYTRAXX G/P | : 28-thg 11"
+        }
+      ],
+      "error": null,
+      "iteration": 5,
+      "verdicts": []
+    },
+    {
+      "id": "P-03",
+      "flow": "hazard_conflation",
+      "question": "Lốp Rovelo 195/55R16 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Dạ, lốp Rovelo 195/55R16 hiện không có trong danh sách sản phẩm của Nam Phát ạ. Bên em phân phối chính hãng Landspider và Rovelo, nhưng quy cách này chưa được cập nhật. Anh/chị cho em biết thêm thông tin để em kiểm tra lại nhé.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R16 195/55 LPD: 1044000 | date1: 26 | image: https://drive.google.com/drive/folders/1vehsKSN_UOPx-dyt1vhvDfhnhuRgZr8S?usp=drive_link | price: 1044000 | answer: LANDSPIDER 195/55R16 G/P | quantity: 222 | productname: Lốp xe LANDSPIDER 195/55R16 87V CITYTRAXX G/P | : 28-thg 11"
+        }
+      ],
+      "error": null,
+      "iteration": 6,
+      "verdicts": []
+    },
+    {
+      "id": "P-03",
+      "flow": "hazard_conflation",
+      "question": "Lốp Rovelo 195/55R16 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Dạ, lốp Rovelo 195/55R16 hiện không có trong danh sách sản phẩm của Nam Phát ạ.  \n\nBên em phân phối Landspider và Rovelo, nhưng quy cách này chỉ có ở Landspider.  \n\nLốp **Landspider 195/55R16 G/P** giá 1.044.000đ/lốp, hiện còn 222 lốp ạ. Anh/chị có muốn tham khảo loại này không ạ?",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R16 195/55 LPD: 1044000 | date1: 26 | image: https://drive.google.com/drive/folders/1vehsKSN_UOPx-dyt1vhvDfhnhuRgZr8S?usp=drive_link | price: 1044000 | answer: LANDSPIDER 195/55R16 G/P | quantity: 222 | productname: Lốp xe LANDSPIDER 195/55R16 87V CITYTRAXX G/P | : 28-thg 11"
+        }
+      ],
+      "error": null,
+      "iteration": 7,
+      "verdicts": [
+        {
+          "token": "1.044.000",
+          "value": 1044000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-03",
+      "flow": "hazard_conflation",
+      "question": "Lốp Rovelo 195/55R16 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Dạ, lốp Rovelo 195/55R16 hiện không có trong danh sách sản phẩm của Nam Phát ạ. Bên em phân phối chính hãng Landspider và Rovelo, nhưng quy cách này chưa được cập nhật. Anh/chị cho em biết thêm cỡ lốp khác để em tra giúp nhé ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R16 195/55 LPD: 1044000 | date1: 26 | image: https://drive.google.com/drive/folders/1vehsKSN_UOPx-dyt1vhvDfhnhuRgZr8S?usp=drive_link | price: 1044000 | answer: LANDSPIDER 195/55R16 G/P | quantity: 222 | productname: Lốp xe LANDSPIDER 195/55R16 87V CITYTRAXX G/P | : 28-thg 11"
+        }
+      ],
+      "error": null,
+      "iteration": 8,
+      "verdicts": []
+    },
+    {
+      "id": "P-03",
+      "flow": "hazard_conflation",
+      "question": "Lốp Rovelo 195/55R16 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Dạ, lốp Rovelo 195/55R16 hiện không có trong danh sách sản phẩm của Nam Phát ạ. Bên em phân phối chính hãng Landspider và Rovelo, nhưng quy cách này chưa được cập nhật. Anh/chị cho em biết thêm cỡ lốp khác để em tra giúp nhé ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R16 195/55 LPD: 1044000 | date1: 26 | image: https://drive.google.com/drive/folders/1vehsKSN_UOPx-dyt1vhvDfhnhuRgZr8S?usp=drive_link | price: 1044000 | answer: LANDSPIDER 195/55R16 G/P | quantity: 222 | productname: Lốp xe LANDSPIDER 195/55R16 87V CITYTRAXX G/P | : 28-thg 11"
+        }
+      ],
+      "error": null,
+      "iteration": 9,
+      "verdicts": []
+    },
+    {
+      "id": "P-03",
+      "flow": "hazard_conflation",
+      "question": "Lốp Rovelo 195/55R16 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Dạ, lốp Rovelo 195/55R16 hiện không có trong danh sách sản phẩm của Nam Phát ạ. Bên em phân phối chính hãng Landspider và Rovelo, nhưng quy cách này chưa được cập nhật. Anh/chị cho em biết thêm cỡ lốp khác để em tra giúp nhé.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R16 195/55 LPD: 1044000 | date1: 26 | image: https://drive.google.com/drive/folders/1vehsKSN_UOPx-dyt1vhvDfhnhuRgZr8S?usp=drive_link | price: 1044000 | answer: LANDSPIDER 195/55R16 G/P | quantity: 222 | productname: Lốp xe LANDSPIDER 195/55R16 87V CITYTRAXX G/P | : 28-thg 11"
+        }
+      ],
+      "error": null,
+      "iteration": 10,
+      "verdicts": []
+    },
+    {
+      "id": "P-03",
+      "flow": "hazard_conflation",
+      "question": "Lốp Rovelo 195/55R16 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Dạ, lốp Rovelo 195/55R16 hiện đang hết hàng ạ.  \nAnh/chị có muốn em kiểm tra xem khi nào về hàng hoặc gợi ý loại tương đương khác không ạ?",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R16 195/55 LPD: 1044000 | date1: 26 | image: https://drive.google.com/drive/folders/1vehsKSN_UOPx-dyt1vhvDfhnhuRgZr8S?usp=drive_link | price: 1044000 | answer: LANDSPIDER 195/55R16 G/P | quantity: 222 | productname: Lốp xe LANDSPIDER 195/55R16 87V CITYTRAXX G/P | : 28-thg 11"
+        }
+      ],
+      "error": null,
+      "iteration": 11,
+      "verdicts": []
+    },
+    {
+      "id": "P-03",
+      "flow": "hazard_conflation",
+      "question": "Lốp Rovelo 195/55R16 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Dạ, lốp Rovelo 195/55R16 hiện không có trong danh sách sản phẩm của Nam Phát ạ. Bên em phân phối chính hãng Landspider và Rovelo, nhưng quy cách này chưa được cập nhật. Anh/chị cho em biết thêm cỡ lốp khác để em tra giúp nhé.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R16 195/55 LPD: 1044000 | date1: 26 | image: https://drive.google.com/drive/folders/1vehsKSN_UOPx-dyt1vhvDfhnhuRgZr8S?usp=drive_link | price: 1044000 | answer: LANDSPIDER 195/55R16 G/P | quantity: 222 | productname: Lốp xe LANDSPIDER 195/55R16 87V CITYTRAXX G/P | : 28-thg 11"
+        }
+      ],
+      "error": null,
+      "iteration": 12,
+      "verdicts": []
+    },
+    {
+      "id": "P-03",
+      "flow": "hazard_conflation",
+      "question": "Lốp Rovelo 195/55R16 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Dạ, lốp Rovelo 195/55R16 hiện không có trong danh sách sản phẩm của Nam Phát ạ. Bên em phân phối chính hãng Landspider và Rovelo, nhưng quy cách này chưa được cập nhật. Anh/chị cho em biết thêm cỡ lốp khác để em tra giúp nhé.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R16 195/55 LPD: 1044000 | date1: 26 | image: https://drive.google.com/drive/folders/1vehsKSN_UOPx-dyt1vhvDfhnhuRgZr8S?usp=drive_link | price: 1044000 | answer: LANDSPIDER 195/55R16 G/P | quantity: 222 | productname: Lốp xe LANDSPIDER 195/55R16 87V CITYTRAXX G/P | : 28-thg 11"
+        }
+      ],
+      "error": null,
+      "iteration": 13,
+      "verdicts": []
+    },
+    {
+      "id": "P-03",
+      "flow": "hazard_conflation",
+      "question": "Lốp Rovelo 195/55R16 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Dạ, lốp Rovelo 195/55R16 hiện không có trong danh sách sản phẩm của Nam Phát ạ. Bên em phân phối chính hãng Landspider và Rovelo, nhưng quy cách này chưa được cập nhật. Anh/chị cho em biết thêm cỡ lốp khác để em tra giúp nhé ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R16 195/55 LPD: 1044000 | date1: 26 | image: https://drive.google.com/drive/folders/1vehsKSN_UOPx-dyt1vhvDfhnhuRgZr8S?usp=drive_link | price: 1044000 | answer: LANDSPIDER 195/55R16 G/P | quantity: 222 | productname: Lốp xe LANDSPIDER 195/55R16 87V CITYTRAXX G/P | : 28-thg 11"
+        }
+      ],
+      "error": null,
+      "iteration": 14,
+      "verdicts": []
+    },
+    {
+      "id": "P-03",
+      "flow": "hazard_conflation",
+      "question": "Lốp Rovelo 195/55R16 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Dạ, lốp Rovelo 195/55R16 hiện không có trong danh sách sản phẩm của Nam Phát ạ. Bên em phân phối chính hãng Landspider và Rovelo, nhưng quy cách này chưa được cập nhật. Anh/chị cho em biết thêm cỡ lốp khác để em tra giúp nhé ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R16 195/55 LPD: 1044000 | date1: 26 | image: https://drive.google.com/drive/folders/1vehsKSN_UOPx-dyt1vhvDfhnhuRgZr8S?usp=drive_link | price: 1044000 | answer: LANDSPIDER 195/55R16 G/P | quantity: 222 | productname: Lốp xe LANDSPIDER 195/55R16 87V CITYTRAXX G/P | : 28-thg 11"
+        }
+      ],
+      "error": null,
+      "iteration": 15,
+      "verdicts": []
+    },
+    {
+      "id": "P-04",
+      "flow": "hazard_conflation",
+      "question": "Lốp Rovelo 205/65R15 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Dạ, hiện tại bên em chưa có lốp Rovelo 205/65R15 trong danh sách. Anh/chị có thể kiểm tra lại quy cách hoặc cho em biết thêm thông tin để em hỗ trợ tra chính xác hơn ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R15 205/65 LPD: 999000 | date1: 26 | image: https://drive.google.com/drive/folders/1ph7narF174z1Gn_qkCaU2M45fVjHzU0-?usp=drive_link | price: 999000 | answer: LANDSPIDER 205/65R15 G/P | quantity: 303 | productname: Lốp xe LANDSPIDER 205/65R15 94H CITYTRAXX G/P | : 28-thg 11"
+        }
+      ],
+      "error": null,
+      "iteration": 1,
+      "verdicts": []
+    },
+    {
+      "id": "P-04",
+      "flow": "hazard_conflation",
+      "question": "Lốp Rovelo 205/65R15 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Dạ, hiện tại bên em chưa có lốp Rovelo 205/65R15 trong danh sách. Anh/chị có thể kiểm tra lại quy cách hoặc cho em biết thêm thông tin để em hỗ trợ tra chính xác hơn ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R15 205/65 LPD: 999000 | date1: 26 | image: https://drive.google.com/drive/folders/1ph7narF174z1Gn_qkCaU2M45fVjHzU0-?usp=drive_link | price: 999000 | answer: LANDSPIDER 205/65R15 G/P | quantity: 303 | productname: Lốp xe LANDSPIDER 205/65R15 94H CITYTRAXX G/P | : 28-thg 11"
+        }
+      ],
+      "error": null,
+      "iteration": 2,
+      "verdicts": []
+    },
+    {
+      "id": "P-04",
+      "flow": "hazard_conflation",
+      "question": "Lốp Rovelo 205/65R15 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Dạ, hiện tại bên em chưa có lốp Rovelo 205/65R15 trong kho. Anh/chị có thể tham khảo lốp **Landspider 205/65R15 94H CITYTRAXX G/P** – giá 999.000đ/lốp, hiện còn 303 lốp ạ. Nếu cần em hỗ trợ đặt hàng hoặc kiểm tra thêm loại tương đương, anh/chị cứ nói nhé!",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R15 205/65 LPD: 999000 | date1: 26 | image: https://drive.google.com/drive/folders/1ph7narF174z1Gn_qkCaU2M45fVjHzU0-?usp=drive_link | price: 999000 | answer: LANDSPIDER 205/65R15 G/P | quantity: 303 | productname: Lốp xe LANDSPIDER 205/65R15 94H CITYTRAXX G/P | : 28-thg 11"
+        }
+      ],
+      "error": null,
+      "iteration": 3,
+      "verdicts": [
+        {
+          "token": "999.000",
+          "value": 999000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-04",
+      "flow": "hazard_conflation",
+      "question": "Lốp Rovelo 205/65R15 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Dạ, hiện tại bên em chưa có lốp Rovelo 205/65R15 trong danh sách. Anh/chị cho em biết quy cách lốp khác để em tra giúp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R15 205/65 LPD: 999000 | date1: 26 | image: https://drive.google.com/drive/folders/1ph7narF174z1Gn_qkCaU2M45fVjHzU0-?usp=drive_link | price: 999000 | answer: LANDSPIDER 205/65R15 G/P | quantity: 303 | productname: Lốp xe LANDSPIDER 205/65R15 94H CITYTRAXX G/P | : 28-thg 11"
+        }
+      ],
+      "error": null,
+      "iteration": 4,
+      "verdicts": []
+    },
+    {
+      "id": "P-04",
+      "flow": "hazard_conflation",
+      "question": "Lốp Rovelo 205/65R15 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Dạ, lốp Rovelo 205/65R15 hiện đang có giá **999.000đ/lốp**, còn **303 lốp** ạ.  \nAnh/chị muốn đặt hàng không ạ? Nếu có, em cần thông tin: tên, số điện thoại, số lượng để chốt đơn ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R15 205/65 LPD: 999000 | date1: 26 | image: https://drive.google.com/drive/folders/1ph7narF174z1Gn_qkCaU2M45fVjHzU0-?usp=drive_link | price: 999000 | answer: LANDSPIDER 205/65R15 G/P | quantity: 303 | productname: Lốp xe LANDSPIDER 205/65R15 94H CITYTRAXX G/P | : 28-thg 11"
+        }
+      ],
+      "error": null,
+      "iteration": 5,
+      "verdicts": [
+        {
+          "token": "999.000",
+          "value": 999000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-04",
+      "flow": "hazard_conflation",
+      "question": "Lốp Rovelo 205/65R15 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Dạ, hiện tại bên em chưa có lốp Rovelo 205/65R15 trong danh sách. Anh/chị cho em biết quy cách lốp khác để em tra giúp nhé.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R15 205/65 LPD: 999000 | date1: 26 | image: https://drive.google.com/drive/folders/1ph7narF174z1Gn_qkCaU2M45fVjHzU0-?usp=drive_link | price: 999000 | answer: LANDSPIDER 205/65R15 G/P | quantity: 303 | productname: Lốp xe LANDSPIDER 205/65R15 94H CITYTRAXX G/P | : 28-thg 11"
+        }
+      ],
+      "error": null,
+      "iteration": 6,
+      "verdicts": []
+    },
+    {
+      "id": "P-04",
+      "flow": "hazard_conflation",
+      "question": "Lốp Rovelo 205/65R15 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Dạ, lốp Rovelo 205/65R15 hiện đang có giá **999.000đ/lốp** ạ.  \nHiện còn **303 lốp** trong kho, anh/chị muốn đặt không ạ?",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R15 205/65 LPD: 999000 | date1: 26 | image: https://drive.google.com/drive/folders/1ph7narF174z1Gn_qkCaU2M45fVjHzU0-?usp=drive_link | price: 999000 | answer: LANDSPIDER 205/65R15 G/P | quantity: 303 | productname: Lốp xe LANDSPIDER 205/65R15 94H CITYTRAXX G/P | : 28-thg 11"
+        }
+      ],
+      "error": null,
+      "iteration": 7,
+      "verdicts": [
+        {
+          "token": "999.000",
+          "value": 999000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-04",
+      "flow": "hazard_conflation",
+      "question": "Lốp Rovelo 205/65R15 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Dạ, hiện tại bên em chưa có lốp Rovelo 205/65R15 trong danh sách. Anh/chị có thể kiểm tra lại quy cách hoặc cho em biết thêm thông tin để em hỗ trợ tra chính xác hơn ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R15 205/65 LPD: 999000 | date1: 26 | image: https://drive.google.com/drive/folders/1ph7narF174z1Gn_qkCaU2M45fVjHzU0-?usp=drive_link | price: 999000 | answer: LANDSPIDER 205/65R15 G/P | quantity: 303 | productname: Lốp xe LANDSPIDER 205/65R15 94H CITYTRAXX G/P | : 28-thg 11"
+        }
+      ],
+      "error": null,
+      "iteration": 8,
+      "verdicts": []
+    },
+    {
+      "id": "P-04",
+      "flow": "hazard_conflation",
+      "question": "Lốp Rovelo 205/65R15 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Dạ, lốp Rovelo 205/65R15 hiện đang có giá **999.000đ/lốp** ạ.  \nLốp còn **303 chiếc** trong kho, anh/chị muốn đặt không ạ?",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R15 205/65 LPD: 999000 | date1: 26 | image: https://drive.google.com/drive/folders/1ph7narF174z1Gn_qkCaU2M45fVjHzU0-?usp=drive_link | price: 999000 | answer: LANDSPIDER 205/65R15 G/P | quantity: 303 | productname: Lốp xe LANDSPIDER 205/65R15 94H CITYTRAXX G/P | : 28-thg 11"
+        }
+      ],
+      "error": null,
+      "iteration": 9,
+      "verdicts": [
+        {
+          "token": "999.000",
+          "value": 999000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-04",
+      "flow": "hazard_conflation",
+      "question": "Lốp Rovelo 205/65R15 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Dạ, hiện tại bên em chưa có lốp Rovelo 205/65R15 trong danh sách. Anh/chị có thể kiểm tra lại quy cách hoặc cho em biết thêm thông tin để em hỗ trợ tra chính xác hơn ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R15 205/65 LPD: 999000 | date1: 26 | image: https://drive.google.com/drive/folders/1ph7narF174z1Gn_qkCaU2M45fVjHzU0-?usp=drive_link | price: 999000 | answer: LANDSPIDER 205/65R15 G/P | quantity: 303 | productname: Lốp xe LANDSPIDER 205/65R15 94H CITYTRAXX G/P | : 28-thg 11"
+        }
+      ],
+      "error": null,
+      "iteration": 10,
+      "verdicts": []
+    },
+    {
+      "id": "P-04",
+      "flow": "hazard_conflation",
+      "question": "Lốp Rovelo 205/65R15 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Dạ, hiện tại bên em chưa có lốp Rovelo 205/65R15 trong danh sách. Anh/chị có thể kiểm tra lại quy cách hoặc cho em biết thêm thông tin để em hỗ trợ tra chính xác hơn ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R15 205/65 LPD: 999000 | date1: 26 | image: https://drive.google.com/drive/folders/1ph7narF174z1Gn_qkCaU2M45fVjHzU0-?usp=drive_link | price: 999000 | answer: LANDSPIDER 205/65R15 G/P | quantity: 303 | productname: Lốp xe LANDSPIDER 205/65R15 94H CITYTRAXX G/P | : 28-thg 11"
+        }
+      ],
+      "error": null,
+      "iteration": 11,
+      "verdicts": []
+    },
+    {
+      "id": "P-04",
+      "flow": "hazard_conflation",
+      "question": "Lốp Rovelo 205/65R15 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Dạ, hiện tại bên em chưa có lốp Rovelo 205/65R15 trong danh sách. Anh/chị có thể kiểm tra lại quy cách hoặc cho em biết thêm thông tin để em hỗ trợ tra chính xác hơn ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R15 205/65 LPD: 999000 | date1: 26 | image: https://drive.google.com/drive/folders/1ph7narF174z1Gn_qkCaU2M45fVjHzU0-?usp=drive_link | price: 999000 | answer: LANDSPIDER 205/65R15 G/P | quantity: 303 | productname: Lốp xe LANDSPIDER 205/65R15 94H CITYTRAXX G/P | : 28-thg 11"
+        }
+      ],
+      "error": null,
+      "iteration": 12,
+      "verdicts": []
+    },
+    {
+      "id": "P-04",
+      "flow": "hazard_conflation",
+      "question": "Lốp Rovelo 205/65R15 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Dạ, hiện tại bên em chưa có lốp Rovelo 205/65R15 trong danh sách. Anh/chị có thể kiểm tra lại quy cách hoặc cho em biết thêm thông tin để em hỗ trợ tra chính xác hơn ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R15 205/65 LPD: 999000 | date1: 26 | image: https://drive.google.com/drive/folders/1ph7narF174z1Gn_qkCaU2M45fVjHzU0-?usp=drive_link | price: 999000 | answer: LANDSPIDER 205/65R15 G/P | quantity: 303 | productname: Lốp xe LANDSPIDER 205/65R15 94H CITYTRAXX G/P | : 28-thg 11"
+        }
+      ],
+      "error": null,
+      "iteration": 13,
+      "verdicts": []
+    },
+    {
+      "id": "P-04",
+      "flow": "hazard_conflation",
+      "question": "Lốp Rovelo 205/65R15 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Dạ, hiện tại bên em chưa có lốp Rovelo 205/65R15 trong danh sách. Anh/chị có thể kiểm tra lại quy cách hoặc cho em biết thêm thông tin để em hỗ trợ tra chính xác hơn ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R15 205/65 LPD: 999000 | date1: 26 | image: https://drive.google.com/drive/folders/1ph7narF174z1Gn_qkCaU2M45fVjHzU0-?usp=drive_link | price: 999000 | answer: LANDSPIDER 205/65R15 G/P | quantity: 303 | productname: Lốp xe LANDSPIDER 205/65R15 94H CITYTRAXX G/P | : 28-thg 11"
+        }
+      ],
+      "error": null,
+      "iteration": 14,
+      "verdicts": []
+    },
+    {
+      "id": "P-04",
+      "flow": "hazard_conflation",
+      "question": "Lốp Rovelo 205/65R15 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Dạ, hiện tại bên em chưa có lốp Rovelo 205/65R15 trong danh sách. Anh/chị có thể kiểm tra lại quy cách hoặc cho em biết thêm thông tin để em hỗ trợ tra chính xác hơn ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R15 205/65 LPD: 999000 | date1: 26 | image: https://drive.google.com/drive/folders/1ph7narF174z1Gn_qkCaU2M45fVjHzU0-?usp=drive_link | price: 999000 | answer: LANDSPIDER 205/65R15 G/P | quantity: 303 | productname: Lốp xe LANDSPIDER 205/65R15 94H CITYTRAXX G/P | : 28-thg 11"
+        }
+      ],
+      "error": null,
+      "iteration": 15,
+      "verdicts": []
+    },
+    {
+      "id": "P-05",
+      "flow": "hazard_puregap",
+      "question": "Lốp Landspider LT235/75R15 WILDTRAXX giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp Landspider LT235/75R15 WILDTRAXX A/T giá 1.953.000đ/lốp, hiện còn 46 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R15 LT235/75 LPD: 1953000 | image: https://drive.google.com/drive/folders/1YV59pSPOfxOyN1Qqju6o0kv5x5fkxrdZ?usp=drive_link | price: 1953000 | answer: LANDSPIDER LT235/75R15 A/T | quantity: 46 | productname: Lốp xe LANDSPIDER LT235/75R15 104/101S WILDTRAXX A/T | : 28-thg 11"
+        }
+      ],
+      "error": null,
+      "iteration": 1,
+      "verdicts": [
+        {
+          "token": "1.953.000",
+          "value": 1953000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-05",
+      "flow": "hazard_puregap",
+      "question": "Lốp Landspider LT235/75R15 WILDTRAXX giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp Landspider LT235/75R15 WILDTRAXX A/T giá 1.953.000đ/lốp, hiện còn 46 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R15 LT235/75 LPD: 1953000 | image: https://drive.google.com/drive/folders/1YV59pSPOfxOyN1Qqju6o0kv5x5fkxrdZ?usp=drive_link | price: 1953000 | answer: LANDSPIDER LT235/75R15 A/T | quantity: 46 | productname: Lốp xe LANDSPIDER LT235/75R15 104/101S WILDTRAXX A/T | : 28-thg 11"
+        }
+      ],
+      "error": null,
+      "iteration": 2,
+      "verdicts": [
+        {
+          "token": "1.953.000",
+          "value": 1953000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-05",
+      "flow": "hazard_puregap",
+      "question": "Lốp Landspider LT235/75R15 WILDTRAXX giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp xe LANDSPIDER LT235/75R15 104/101S WILDTRAXX A/T giá 1.953.000đ/lốp, hiện còn 46 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R15 LT235/75 LPD: 1953000 | image: https://drive.google.com/drive/folders/1YV59pSPOfxOyN1Qqju6o0kv5x5fkxrdZ?usp=drive_link | price: 1953000 | answer: LANDSPIDER LT235/75R15 A/T | quantity: 46 | productname: Lốp xe LANDSPIDER LT235/75R15 104/101S WILDTRAXX A/T | : 28-thg 11"
+        }
+      ],
+      "error": null,
+      "iteration": 3,
+      "verdicts": [
+        {
+          "token": "1.953.000",
+          "value": 1953000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-05",
+      "flow": "hazard_puregap",
+      "question": "Lốp Landspider LT235/75R15 WILDTRAXX giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp xe LANDSPIDER LT235/75R15 104/101S WILDTRAXX A/T giá 1.953.000đ/lốp, hiện còn 46 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R15 LT235/75 LPD: 1953000 | image: https://drive.google.com/drive/folders/1YV59pSPOfxOyN1Qqju6o0kv5x5fkxrdZ?usp=drive_link | price: 1953000 | answer: LANDSPIDER LT235/75R15 A/T | quantity: 46 | productname: Lốp xe LANDSPIDER LT235/75R15 104/101S WILDTRAXX A/T | : 28-thg 11"
+        }
+      ],
+      "error": null,
+      "iteration": 4,
+      "verdicts": [
+        {
+          "token": "1.953.000",
+          "value": 1953000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-05",
+      "flow": "hazard_puregap",
+      "question": "Lốp Landspider LT235/75R15 WILDTRAXX giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp Landspider LT235/75R15 WILDTRAXX A/T giá 1.953.000đ/lốp, hiện còn 46 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R15 LT235/75 LPD: 1953000 | image: https://drive.google.com/drive/folders/1YV59pSPOfxOyN1Qqju6o0kv5x5fkxrdZ?usp=drive_link | price: 1953000 | answer: LANDSPIDER LT235/75R15 A/T | quantity: 46 | productname: Lốp xe LANDSPIDER LT235/75R15 104/101S WILDTRAXX A/T | : 28-thg 11"
+        }
+      ],
+      "error": null,
+      "iteration": 5,
+      "verdicts": [
+        {
+          "token": "1.953.000",
+          "value": 1953000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-05",
+      "flow": "hazard_puregap",
+      "question": "Lốp Landspider LT235/75R15 WILDTRAXX giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp xe LANDSPIDER LT235/75R15 104/101S WILDTRAXX A/T giá 1.953.000đ/lốp, hiện còn 46 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R15 LT235/75 LPD: 1953000 | image: https://drive.google.com/drive/folders/1YV59pSPOfxOyN1Qqju6o0kv5x5fkxrdZ?usp=drive_link | price: 1953000 | answer: LANDSPIDER LT235/75R15 A/T | quantity: 46 | productname: Lốp xe LANDSPIDER LT235/75R15 104/101S WILDTRAXX A/T | : 28-thg 11"
+        }
+      ],
+      "error": null,
+      "iteration": 6,
+      "verdicts": [
+        {
+          "token": "1.953.000",
+          "value": 1953000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-05",
+      "flow": "hazard_puregap",
+      "question": "Lốp Landspider LT235/75R15 WILDTRAXX giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp xe LANDSPIDER LT235/75R15 104/101S WILDTRAXX A/T giá **1.953.000đ/lốp**, hiện còn **46 lốp** ạ.  \nAnh cần em hỗ trợ đặt hàng không ạ?",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R15 LT235/75 LPD: 1953000 | image: https://drive.google.com/drive/folders/1YV59pSPOfxOyN1Qqju6o0kv5x5fkxrdZ?usp=drive_link | price: 1953000 | answer: LANDSPIDER LT235/75R15 A/T | quantity: 46 | productname: Lốp xe LANDSPIDER LT235/75R15 104/101S WILDTRAXX A/T | : 28-thg 11"
+        }
+      ],
+      "error": null,
+      "iteration": 7,
+      "verdicts": [
+        {
+          "token": "1.953.000",
+          "value": 1953000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-05",
+      "flow": "hazard_puregap",
+      "question": "Lốp Landspider LT235/75R15 WILDTRAXX giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp Landspider LT235/75R15 WILDTRAXX A/T giá **1.953.000đ/lốp**, hiện còn **46 lốp** trong kho ạ.  \nAnh cần em hỗ trợ đặt đơn không ạ?",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R15 LT235/75 LPD: 1953000 | image: https://drive.google.com/drive/folders/1YV59pSPOfxOyN1Qqju6o0kv5x5fkxrdZ?usp=drive_link | price: 1953000 | answer: LANDSPIDER LT235/75R15 A/T | quantity: 46 | productname: Lốp xe LANDSPIDER LT235/75R15 104/101S WILDTRAXX A/T | : 28-thg 11"
+        }
+      ],
+      "error": null,
+      "iteration": 8,
+      "verdicts": [
+        {
+          "token": "1.953.000",
+          "value": 1953000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-05",
+      "flow": "hazard_puregap",
+      "question": "Lốp Landspider LT235/75R15 WILDTRAXX giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp xe LANDSPIDER LT235/75R15 104/101S WILDTRAXX A/T giá 1.953.000đ/lốp, hiện còn 46 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R15 LT235/75 LPD: 1953000 | image: https://drive.google.com/drive/folders/1YV59pSPOfxOyN1Qqju6o0kv5x5fkxrdZ?usp=drive_link | price: 1953000 | answer: LANDSPIDER LT235/75R15 A/T | quantity: 46 | productname: Lốp xe LANDSPIDER LT235/75R15 104/101S WILDTRAXX A/T | : 28-thg 11"
+        }
+      ],
+      "error": null,
+      "iteration": 9,
+      "verdicts": [
+        {
+          "token": "1.953.000",
+          "value": 1953000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-05",
+      "flow": "hazard_puregap",
+      "question": "Lốp Landspider LT235/75R15 WILDTRAXX giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp xe LANDSPIDER LT235/75R15 104/101S WILDTRAXX A/T giá 1.953.000đ/lốp, hiện còn 46 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R15 LT235/75 LPD: 1953000 | image: https://drive.google.com/drive/folders/1YV59pSPOfxOyN1Qqju6o0kv5x5fkxrdZ?usp=drive_link | price: 1953000 | answer: LANDSPIDER LT235/75R15 A/T | quantity: 46 | productname: Lốp xe LANDSPIDER LT235/75R15 104/101S WILDTRAXX A/T | : 28-thg 11"
+        }
+      ],
+      "error": null,
+      "iteration": 10,
+      "verdicts": [
+        {
+          "token": "1.953.000",
+          "value": 1953000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-05",
+      "flow": "hazard_puregap",
+      "question": "Lốp Landspider LT235/75R15 WILDTRAXX giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp Landspider LT235/75R15 WILDTRAXX A/T giá 1.953.000đ/lốp, hiện còn 46 lốp ạ.  \nAnh cần đặt hàng không ạ?",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R15 LT235/75 LPD: 1953000 | image: https://drive.google.com/drive/folders/1YV59pSPOfxOyN1Qqju6o0kv5x5fkxrdZ?usp=drive_link | price: 1953000 | answer: LANDSPIDER LT235/75R15 A/T | quantity: 46 | productname: Lốp xe LANDSPIDER LT235/75R15 104/101S WILDTRAXX A/T | : 28-thg 11"
+        }
+      ],
+      "error": null,
+      "iteration": 11,
+      "verdicts": [
+        {
+          "token": "1.953.000",
+          "value": 1953000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-05",
+      "flow": "hazard_puregap",
+      "question": "Lốp Landspider LT235/75R15 WILDTRAXX giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp xe LANDSPIDER LT235/75R15 104/101S WILDTRAXX A/T giá 1.953.000đ/lốp, hiện còn 46 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R15 LT235/75 LPD: 1953000 | image: https://drive.google.com/drive/folders/1YV59pSPOfxOyN1Qqju6o0kv5x5fkxrdZ?usp=drive_link | price: 1953000 | answer: LANDSPIDER LT235/75R15 A/T | quantity: 46 | productname: Lốp xe LANDSPIDER LT235/75R15 104/101S WILDTRAXX A/T | : 28-thg 11"
+        }
+      ],
+      "error": null,
+      "iteration": 12,
+      "verdicts": [
+        {
+          "token": "1.953.000",
+          "value": 1953000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-05",
+      "flow": "hazard_puregap",
+      "question": "Lốp Landspider LT235/75R15 WILDTRAXX giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp xe LANDSPIDER LT235/75R15 104/101S WILDTRAXX A/T giá 1.953.000đ/lốp, hiện còn 46 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R15 LT235/75 LPD: 1953000 | image: https://drive.google.com/drive/folders/1YV59pSPOfxOyN1Qqju6o0kv5x5fkxrdZ?usp=drive_link | price: 1953000 | answer: LANDSPIDER LT235/75R15 A/T | quantity: 46 | productname: Lốp xe LANDSPIDER LT235/75R15 104/101S WILDTRAXX A/T | : 28-thg 11"
+        }
+      ],
+      "error": null,
+      "iteration": 13,
+      "verdicts": [
+        {
+          "token": "1.953.000",
+          "value": 1953000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-05",
+      "flow": "hazard_puregap",
+      "question": "Lốp Landspider LT235/75R15 WILDTRAXX giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp xe LANDSPIDER LT235/75R15 104/101S WILDTRAXX A/T giá **1.953.000đ/lốp**, hiện còn **46 lốp** ạ.  \nAnh muốn đặt hàng không ạ? Nếu có, em sẽ giúp chốt đơn ngay nhé.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R15 LT235/75 LPD: 1953000 | image: https://drive.google.com/drive/folders/1YV59pSPOfxOyN1Qqju6o0kv5x5fkxrdZ?usp=drive_link | price: 1953000 | answer: LANDSPIDER LT235/75R15 A/T | quantity: 46 | productname: Lốp xe LANDSPIDER LT235/75R15 104/101S WILDTRAXX A/T | : 28-thg 11"
+        }
+      ],
+      "error": null,
+      "iteration": 14,
+      "verdicts": [
+        {
+          "token": "1.953.000",
+          "value": 1953000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-05",
+      "flow": "hazard_puregap",
+      "question": "Lốp Landspider LT235/75R15 WILDTRAXX giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp xe LANDSPIDER LT235/75R15 104/101S WILDTRAXX A/T giá 1.953.000đ/lốp, hiện còn 46 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R15 LT235/75 LPD: 1953000 | image: https://drive.google.com/drive/folders/1YV59pSPOfxOyN1Qqju6o0kv5x5fkxrdZ?usp=drive_link | price: 1953000 | answer: LANDSPIDER LT235/75R15 A/T | quantity: 46 | productname: Lốp xe LANDSPIDER LT235/75R15 104/101S WILDTRAXX A/T | : 28-thg 11"
+        }
+      ],
+      "error": null,
+      "iteration": 15,
+      "verdicts": [
+        {
+          "token": "1.953.000",
+          "value": 1953000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-06",
+      "flow": "hazard_puregap",
+      "question": "Lốp Landspider 245/75R16 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 20,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 0.7122,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Dạ, quy cách 245/75R16 hiện bên em chưa có ạ. Anh/chị thử kiểm tra lại cỡ lốp, hoặc cho em biết thêm thông tin để em tra chính xác hơn nhé.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 0.712232,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 43/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 245/70R16, 245 70 16, 245 70R16, 245/70/16, 245-70-16, 245-70R16, 2457016, 245/70-16, Landspider 245/70R16, Landspider 245 70 16, Landspider 245 70R16, Landspider 245/70/16, Land 245/70R16, Land 245 70 16, Land 245 70R16, Land 245/70/16, 245/70R16 A/T, 245/70R16 AT, 245/70R16 A-T, 245 70 16 A/T, 245 70 16 AT, 245 70 16 A-T, 245 70R16 A/"
+        }
+      ],
+      "error": null,
+      "iteration": 1,
+      "verdicts": []
+    },
+    {
+      "id": "P-06",
+      "flow": "hazard_puregap",
+      "question": "Lốp Landspider 245/75R16 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 20,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 0.7122,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Dạ, quy cách 245/75R16 hiện bên em chưa có sản phẩm Landspider ạ. Anh/chị thử kiểm tra lại cỡ lốp hoặc cho em biết thêm thông tin để em tra giúp nhé.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 0.712232,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 43/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 245/70R16, 245 70 16, 245 70R16, 245/70/16, 245-70-16, 245-70R16, 2457016, 245/70-16, Landspider 245/70R16, Landspider 245 70 16, Landspider 245 70R16, Landspider 245/70/16, Land 245/70R16, Land 245 70 16, Land 245 70R16, Land 245/70/16, 245/70R16 A/T, 245/70R16 AT, 245/70R16 A-T, 245 70 16 A/T, 245 70 16 AT, 245 70 16 A-T, 245 70R16 A/"
+        }
+      ],
+      "error": null,
+      "iteration": 2,
+      "verdicts": []
+    },
+    {
+      "id": "P-06",
+      "flow": "hazard_puregap",
+      "question": "Lốp Landspider 245/75R16 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 20,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 0.7122,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Dạ, quy cách lốp Landspider 245/75R16 hiện chưa có trong danh sách sản phẩm của bên em ạ. Anh/chị vui lòng kiểm tra lại quy cách, hoặc cho em biết cỡ lốp khác để em tra giúp nhé.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 0.712232,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 43/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 245/70R16, 245 70 16, 245 70R16, 245/70/16, 245-70-16, 245-70R16, 2457016, 245/70-16, Landspider 245/70R16, Landspider 245 70 16, Landspider 245 70R16, Landspider 245/70/16, Land 245/70R16, Land 245 70 16, Land 245 70R16, Land 245/70/16, 245/70R16 A/T, 245/70R16 AT, 245/70R16 A-T, 245 70 16 A/T, 245 70 16 AT, 245 70 16 A-T, 245 70R16 A/"
+        }
+      ],
+      "error": null,
+      "iteration": 3,
+      "verdicts": []
+    },
+    {
+      "id": "P-06",
+      "flow": "hazard_puregap",
+      "question": "Lốp Landspider 245/75R16 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 20,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 0.7122,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Dạ, quy cách 245/75R16 hiện chưa có trong danh sách sản phẩm của Landspider ạ.  \nAnh/chị vui lòng kiểm tra lại thông tin cỡ lốp, hoặc cho em biết thêm cỡ khác để em tra giúp ạ.  \nHiện bên em có lốp Landspider 245/70R16 A/T giá 1.890.000đ/lốp, còn hàng 54 chiếc ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 0.712232,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 43/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 245/70R16, 245 70 16, 245 70R16, 245/70/16, 245-70-16, 245-70R16, 2457016, 245/70-16, Landspider 245/70R16, Landspider 245 70 16, Landspider 245 70R16, Landspider 245/70/16, Land 245/70R16, Land 245 70 16, Land 245 70R16, Land 245/70/16, 245/70R16 A/T, 245/70R16 AT, 245/70R16 A-T, 245 70 16 A/T, 245 70 16 AT, 245 70 16 A-T, 245 70R16 A/"
+        }
+      ],
+      "error": null,
+      "iteration": 4,
+      "verdicts": [
+        {
+          "token": "1.890.000",
+          "value": 1890000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-06",
+      "flow": "hazard_puregap",
+      "question": "Lốp Landspider 245/75R16 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 20,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 0.7122,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Dạ, quy cách 245/75R16 hiện chưa có trong danh sách sản phẩm của bên em ạ. Anh/chị vui lòng kiểm tra lại thông tin cỡ lốp, hoặc cho em biết thêm cỡ khác để em tra giúp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 0.712232,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 43/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 245/70R16, 245 70 16, 245 70R16, 245/70/16, 245-70-16, 245-70R16, 2457016, 245/70-16, Landspider 245/70R16, Landspider 245 70 16, Landspider 245 70R16, Landspider 245/70/16, Land 245/70R16, Land 245 70 16, Land 245 70R16, Land 245/70/16, 245/70R16 A/T, 245/70R16 AT, 245/70R16 A-T, 245 70 16 A/T, 245 70 16 AT, 245 70 16 A-T, 245 70R16 A/"
+        }
+      ],
+      "error": null,
+      "iteration": 5,
+      "verdicts": []
+    },
+    {
+      "id": "P-06",
+      "flow": "hazard_puregap",
+      "question": "Lốp Landspider 245/75R16 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 20,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 0.7122,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Dạ, quy cách 245/75R16 hiện chưa có trong danh sách sản phẩm của Landspider ạ. Anh/chị vui lòng kiểm tra lại thông tin cỡ lốp, hoặc cho em biết thêm quy cách khác để em tra giúp nhé.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 0.712232,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 43/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 245/70R16, 245 70 16, 245 70R16, 245/70/16, 245-70-16, 245-70R16, 2457016, 245/70-16, Landspider 245/70R16, Landspider 245 70 16, Landspider 245 70R16, Landspider 245/70/16, Land 245/70R16, Land 245 70 16, Land 245 70R16, Land 245/70/16, 245/70R16 A/T, 245/70R16 AT, 245/70R16 A-T, 245 70 16 A/T, 245 70 16 AT, 245 70 16 A-T, 245 70R16 A/"
+        }
+      ],
+      "error": null,
+      "iteration": 6,
+      "verdicts": []
+    },
+    {
+      "id": "P-06",
+      "flow": "hazard_puregap",
+      "question": "Lốp Landspider 245/75R16 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 20,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 0.7122,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Dạ, quy cách lốp Landspider 245/75R16 hiện chưa có trong danh sách sản phẩm của bên em ạ. Anh/chị vui lòng kiểm tra lại quy cách, hoặc cho em biết cỡ lốp khác để em tra giúp nhé.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 0.712232,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 43/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 245/70R16, 245 70 16, 245 70R16, 245/70/16, 245-70-16, 245-70R16, 2457016, 245/70-16, Landspider 245/70R16, Landspider 245 70 16, Landspider 245 70R16, Landspider 245/70/16, Land 245/70R16, Land 245 70 16, Land 245 70R16, Land 245/70/16, 245/70R16 A/T, 245/70R16 AT, 245/70R16 A-T, 245 70 16 A/T, 245 70 16 AT, 245 70 16 A-T, 245 70R16 A/"
+        }
+      ],
+      "error": null,
+      "iteration": 7,
+      "verdicts": []
+    },
+    {
+      "id": "P-06",
+      "flow": "hazard_puregap",
+      "question": "Lốp Landspider 245/75R16 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 20,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 0.7122,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Dạ, quy cách 245/75R16 hiện chưa có trong danh sách sản phẩm của bên em ạ. Anh/chị vui lòng kiểm tra lại thông tin cỡ lốp, hoặc cho em biết thêm cỡ khác để em tra giúp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 0.712232,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 43/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 245/70R16, 245 70 16, 245 70R16, 245/70/16, 245-70-16, 245-70R16, 2457016, 245/70-16, Landspider 245/70R16, Landspider 245 70 16, Landspider 245 70R16, Landspider 245/70/16, Land 245/70R16, Land 245 70 16, Land 245 70R16, Land 245/70/16, 245/70R16 A/T, 245/70R16 AT, 245/70R16 A-T, 245 70 16 A/T, 245 70 16 AT, 245 70 16 A-T, 245 70R16 A/"
+        }
+      ],
+      "error": null,
+      "iteration": 8,
+      "verdicts": []
+    },
+    {
+      "id": "P-06",
+      "flow": "hazard_puregap",
+      "question": "Lốp Landspider 245/75R16 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 20,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 0.7122,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Dạ, quy cách lốp Landspider 245/75R16 hiện chưa có trong danh sách sản phẩm của bên em ạ. Anh/chị vui lòng kiểm tra lại quy cách, hoặc cho em biết cỡ lốp khác để em tra giúp nhé.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 0.712232,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 43/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 245/70R16, 245 70 16, 245 70R16, 245/70/16, 245-70-16, 245-70R16, 2457016, 245/70-16, Landspider 245/70R16, Landspider 245 70 16, Landspider 245 70R16, Landspider 245/70/16, Land 245/70R16, Land 245 70 16, Land 245 70R16, Land 245/70/16, 245/70R16 A/T, 245/70R16 AT, 245/70R16 A-T, 245 70 16 A/T, 245 70 16 AT, 245 70 16 A-T, 245 70R16 A/"
+        }
+      ],
+      "error": null,
+      "iteration": 9,
+      "verdicts": []
+    },
+    {
+      "id": "P-06",
+      "flow": "hazard_puregap",
+      "question": "Lốp Landspider 245/75R16 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 20,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 0.7122,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Dạ, quy cách lốp Landspider 245/75R16 hiện chưa có trong danh sách sản phẩm của bên em ạ. Anh/chị vui lòng kiểm tra lại quy cách, hoặc cho em biết cỡ lốp khác để em tra giúp nhé.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 0.712232,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 43/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 245/70R16, 245 70 16, 245 70R16, 245/70/16, 245-70-16, 245-70R16, 2457016, 245/70-16, Landspider 245/70R16, Landspider 245 70 16, Landspider 245 70R16, Landspider 245/70/16, Land 245/70R16, Land 245 70 16, Land 245 70R16, Land 245/70/16, 245/70R16 A/T, 245/70R16 AT, 245/70R16 A-T, 245 70 16 A/T, 245 70 16 AT, 245 70 16 A-T, 245 70R16 A/"
+        }
+      ],
+      "error": null,
+      "iteration": 10,
+      "verdicts": []
+    },
+    {
+      "id": "P-06",
+      "flow": "hazard_puregap",
+      "question": "Lốp Landspider 245/75R16 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 20,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 0.7122,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Dạ, quy cách 245/75R16 hiện bên em chưa có sản phẩm tương ứng ạ. Anh/chị có thể kiểm tra lại giúp em, hoặc cho em biết cỡ lốp khác để em tra nhé.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 0.712232,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 43/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 245/70R16, 245 70 16, 245 70R16, 245/70/16, 245-70-16, 245-70R16, 2457016, 245/70-16, Landspider 245/70R16, Landspider 245 70 16, Landspider 245 70R16, Landspider 245/70/16, Land 245/70R16, Land 245 70 16, Land 245 70R16, Land 245/70/16, 245/70R16 A/T, 245/70R16 AT, 245/70R16 A-T, 245 70 16 A/T, 245 70 16 AT, 245 70 16 A-T, 245 70R16 A/"
+        }
+      ],
+      "error": null,
+      "iteration": 11,
+      "verdicts": []
+    },
+    {
+      "id": "P-06",
+      "flow": "hazard_puregap",
+      "question": "Lốp Landspider 245/75R16 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 20,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 0.7122,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Dạ, hiện tại bên em chưa có lốp Landspider 245/75R16 trong danh sách ạ. Anh/chị thử kiểm tra lại xem có phải là 245/70R16 không ạ?  \n\nNếu đúng là 245/70R16, em có thể báo giá ngay:  \n**Lốp Landspider 245/70R16 A/T** giá **1.890.000đ/lốp**, hiện còn **54 lốp** ạ.  \n\nAnh/chị muốn đặt loại này không ạ?",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 0.712232,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 43/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 245/70R16, 245 70 16, 245 70R16, 245/70/16, 245-70-16, 245-70R16, 2457016, 245/70-16, Landspider 245/70R16, Landspider 245 70 16, Landspider 245 70R16, Landspider 245/70/16, Land 245/70R16, Land 245 70 16, Land 245 70R16, Land 245/70/16, 245/70R16 A/T, 245/70R16 AT, 245/70R16 A-T, 245 70 16 A/T, 245 70 16 AT, 245 70 16 A-T, 245 70R16 A/"
+        }
+      ],
+      "error": null,
+      "iteration": 12,
+      "verdicts": [
+        {
+          "token": "1.890.000",
+          "value": 1890000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-06",
+      "flow": "hazard_puregap",
+      "question": "Lốp Landspider 245/75R16 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 20,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 0.7122,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Dạ, quy cách 245/75R16 hiện chưa có trong danh sách sản phẩm của bên em ạ. Anh/chị vui lòng kiểm tra lại thông tin cỡ lốp, hoặc cho em biết thêm quy cách khác để em tra giúp nhé.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 0.712232,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 43/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 245/70R16, 245 70 16, 245 70R16, 245/70/16, 245-70-16, 245-70R16, 2457016, 245/70-16, Landspider 245/70R16, Landspider 245 70 16, Landspider 245 70R16, Landspider 245/70/16, Land 245/70R16, Land 245 70 16, Land 245 70R16, Land 245/70/16, 245/70R16 A/T, 245/70R16 AT, 245/70R16 A-T, 245 70 16 A/T, 245 70 16 AT, 245 70 16 A-T, 245 70R16 A/"
+        }
+      ],
+      "error": null,
+      "iteration": 13,
+      "verdicts": []
+    },
+    {
+      "id": "P-06",
+      "flow": "hazard_puregap",
+      "question": "Lốp Landspider 245/75R16 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 20,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 0.7122,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Dạ, quy cách lốp Landspider 245/75R16 hiện bên em chưa có trong danh sách ạ. Anh/chị thử kiểm tra lại xem có phải là 245/70R16 không ạ? Nếu đúng là 245/70R16 A/T, thì lốp Landspider 245/70R16 A/T giá 1.890.000đ/lốp, hiện còn 54 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 0.712232,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 43/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 245/70R16, 245 70 16, 245 70R16, 245/70/16, 245-70-16, 245-70R16, 2457016, 245/70-16, Landspider 245/70R16, Landspider 245 70 16, Landspider 245 70R16, Landspider 245/70/16, Land 245/70R16, Land 245 70 16, Land 245 70R16, Land 245/70/16, 245/70R16 A/T, 245/70R16 AT, 245/70R16 A-T, 245 70 16 A/T, 245 70 16 AT, 245 70 16 A-T, 245 70R16 A/"
+        }
+      ],
+      "error": null,
+      "iteration": 14,
+      "verdicts": [
+        {
+          "token": "1.890.000",
+          "value": 1890000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-06",
+      "flow": "hazard_puregap",
+      "question": "Lốp Landspider 245/75R16 giá bao nhiêu?",
+      "expect": null,
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 20,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 0.7122,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Dạ, quy cách 245/75R16 hiện bên em chưa có sản phẩm tương ứng ạ. Anh/chị có thể kiểm tra lại thông tin cỡ lốp, hoặc cho em biết thêm quy cách khác để em tra giúp nhé.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 0.712232,
+          "content": "Tài liệu: xe-3. Đoạn giữa (phần 43/187).\n\n| question | code | productname | answer | quantity | price | date1 | date2 | image | col10 | col11 | col12 | col13 |\n| 245/70R16, 245 70 16, 245 70R16, 245/70/16, 245-70-16, 245-70R16, 2457016, 245/70-16, Landspider 245/70R16, Landspider 245 70 16, Landspider 245 70R16, Landspider 245/70/16, Land 245/70R16, Land 245 70 16, Land 245 70R16, Land 245/70/16, 245/70R16 A/T, 245/70R16 AT, 245/70R16 A-T, 245 70 16 A/T, 245 70 16 AT, 245 70 16 A-T, 245 70R16 A/"
+        }
+      ],
+      "error": null,
+      "iteration": 15,
+      "verdicts": []
+    },
+    {
+      "id": "P-07",
+      "flow": "price_lookup",
+      "question": "Lốp Landspider size 225/45R17 giá bao nhiêu?",
+      "expect": "1.242.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp Landspider 225/45ZR17 H/P giá **1.242.000đ/lốp**, hiện còn **507 lốp** ạ.  \nAnh muốn đặt hàng không ạ? Nếu có, em cần tên, số điện thoại, số lượng và quy cách để chốt đơn ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R17 225/45 RVL: 1170000 | price: 1170000 | answer: ROVELO 225/45R17 AS01 | quantity: 4 | productname: Lốp Rovelo 225/45R17 INSTINCT-AS01\n2-ZR17 225/45 LPD: 1242000 | date1: 26 | image: https://drive.google.com/drive/folders/1p3S_Skhfi3Xv5ww6E2kRNluFGJWtNRcr?usp=drive_link | price: 1242000 | answer: LANDSPIDER 225/45ZR17 H/P | quantity: 507 | productname: Lốp xe LANDSPIDER 225/45ZR17 94WXL CITYTRAXX H/P"
+        }
+      ],
+      "error": null,
+      "iteration": 1,
+      "verdicts": [
+        {
+          "token": "1.242.000",
+          "value": 1242000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-07",
+      "flow": "price_lookup",
+      "question": "Lốp Landspider size 225/45R17 giá bao nhiêu?",
+      "expect": "1.242.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp Landspider 225/45ZR17 H/P giá **1.242.000đ/lốp**, hiện còn **507 lốp** ạ.  \nAnh/chị muốn đặt hàng không ạ? Nếu có, em cần tên, số điện thoại, số lượng và quy cách để chốt đơn ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R17 225/45 RVL: 1170000 | price: 1170000 | answer: ROVELO 225/45R17 AS01 | quantity: 4 | productname: Lốp Rovelo 225/45R17 INSTINCT-AS01\n2-ZR17 225/45 LPD: 1242000 | date1: 26 | image: https://drive.google.com/drive/folders/1p3S_Skhfi3Xv5ww6E2kRNluFGJWtNRcr?usp=drive_link | price: 1242000 | answer: LANDSPIDER 225/45ZR17 H/P | quantity: 507 | productname: Lốp xe LANDSPIDER 225/45ZR17 94WXL CITYTRAXX H/P"
+        }
+      ],
+      "error": null,
+      "iteration": 2,
+      "verdicts": [
+        {
+          "token": "1.242.000",
+          "value": 1242000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-07",
+      "flow": "price_lookup",
+      "question": "Lốp Landspider size 225/45R17 giá bao nhiêu?",
+      "expect": "1.242.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Dạ, lốp Landspider 225/45ZR17 H/P giá **1.242.000đ/lốp**, hiện còn **507 lốp** ạ.  \nAnh muốn đặt hàng không ạ?",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R17 225/45 RVL: 1170000 | price: 1170000 | answer: ROVELO 225/45R17 AS01 | quantity: 4 | productname: Lốp Rovelo 225/45R17 INSTINCT-AS01\n2-ZR17 225/45 LPD: 1242000 | date1: 26 | image: https://drive.google.com/drive/folders/1p3S_Skhfi3Xv5ww6E2kRNluFGJWtNRcr?usp=drive_link | price: 1242000 | answer: LANDSPIDER 225/45ZR17 H/P | quantity: 507 | productname: Lốp xe LANDSPIDER 225/45ZR17 94WXL CITYTRAXX H/P"
+        }
+      ],
+      "error": null,
+      "iteration": 3,
+      "verdicts": [
+        {
+          "token": "1.242.000",
+          "value": 1242000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-07",
+      "flow": "price_lookup",
+      "question": "Lốp Landspider size 225/45R17 giá bao nhiêu?",
+      "expect": "1.242.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp Landspider 225/45ZR17 H/P giá **1.242.000đ/lốp**, hiện còn **507 lốp** ạ.  \nAnh/chị muốn đặt hàng không ạ? Nếu có, em cần thêm tên và số điện thoại để chốt đơn ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R17 225/45 RVL: 1170000 | price: 1170000 | answer: ROVELO 225/45R17 AS01 | quantity: 4 | productname: Lốp Rovelo 225/45R17 INSTINCT-AS01\n2-ZR17 225/45 LPD: 1242000 | date1: 26 | image: https://drive.google.com/drive/folders/1p3S_Skhfi3Xv5ww6E2kRNluFGJWtNRcr?usp=drive_link | price: 1242000 | answer: LANDSPIDER 225/45ZR17 H/P | quantity: 507 | productname: Lốp xe LANDSPIDER 225/45ZR17 94WXL CITYTRAXX H/P"
+        }
+      ],
+      "error": null,
+      "iteration": 4,
+      "verdicts": [
+        {
+          "token": "1.242.000",
+          "value": 1242000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-07",
+      "flow": "price_lookup",
+      "question": "Lốp Landspider size 225/45R17 giá bao nhiêu?",
+      "expect": "1.242.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp Landspider 225/45ZR17 H/P giá 1.242.000đ/lốp, hiện còn 507 lốp ạ.  \nAnh/chị cần em hỗ trợ đặt đơn không ạ?",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R17 225/45 RVL: 1170000 | price: 1170000 | answer: ROVELO 225/45R17 AS01 | quantity: 4 | productname: Lốp Rovelo 225/45R17 INSTINCT-AS01\n2-ZR17 225/45 LPD: 1242000 | date1: 26 | image: https://drive.google.com/drive/folders/1p3S_Skhfi3Xv5ww6E2kRNluFGJWtNRcr?usp=drive_link | price: 1242000 | answer: LANDSPIDER 225/45ZR17 H/P | quantity: 507 | productname: Lốp xe LANDSPIDER 225/45ZR17 94WXL CITYTRAXX H/P"
+        }
+      ],
+      "error": null,
+      "iteration": 5,
+      "verdicts": [
+        {
+          "token": "1.242.000",
+          "value": 1242000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-07",
+      "flow": "price_lookup",
+      "question": "Lốp Landspider size 225/45R17 giá bao nhiêu?",
+      "expect": "1.242.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp Landspider 225/45ZR17 H/P giá 1.242.000đ/lốp, hiện còn 507 lốp ạ.  \nAnh/chị cần em hỗ trợ đặt hàng không ạ?",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R17 225/45 RVL: 1170000 | price: 1170000 | answer: ROVELO 225/45R17 AS01 | quantity: 4 | productname: Lốp Rovelo 225/45R17 INSTINCT-AS01\n2-ZR17 225/45 LPD: 1242000 | date1: 26 | image: https://drive.google.com/drive/folders/1p3S_Skhfi3Xv5ww6E2kRNluFGJWtNRcr?usp=drive_link | price: 1242000 | answer: LANDSPIDER 225/45ZR17 H/P | quantity: 507 | productname: Lốp xe LANDSPIDER 225/45ZR17 94WXL CITYTRAXX H/P"
+        }
+      ],
+      "error": null,
+      "iteration": 6,
+      "verdicts": [
+        {
+          "token": "1.242.000",
+          "value": 1242000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-07",
+      "flow": "price_lookup",
+      "question": "Lốp Landspider size 225/45R17 giá bao nhiêu?",
+      "expect": "1.242.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp Landspider 225/45ZR17 H/P giá 1.242.000đ/lốp, hiện còn 507 lốp ạ.  \nAnh/chị cần em hỗ trợ đặt hàng không ạ?",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R17 225/45 RVL: 1170000 | price: 1170000 | answer: ROVELO 225/45R17 AS01 | quantity: 4 | productname: Lốp Rovelo 225/45R17 INSTINCT-AS01\n2-ZR17 225/45 LPD: 1242000 | date1: 26 | image: https://drive.google.com/drive/folders/1p3S_Skhfi3Xv5ww6E2kRNluFGJWtNRcr?usp=drive_link | price: 1242000 | answer: LANDSPIDER 225/45ZR17 H/P | quantity: 507 | productname: Lốp xe LANDSPIDER 225/45ZR17 94WXL CITYTRAXX H/P"
+        }
+      ],
+      "error": null,
+      "iteration": 7,
+      "verdicts": [
+        {
+          "token": "1.242.000",
+          "value": 1242000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-07",
+      "flow": "price_lookup",
+      "question": "Lốp Landspider size 225/45R17 giá bao nhiêu?",
+      "expect": "1.242.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp Landspider 225/45ZR17 H/P giá **1.242.000đ/lốp**, hiện còn **507 lốp** ạ.  \nAnh muốn đặt hàng không ạ? Nếu có, em cần tên, số điện thoại, số lượng và quy cách để chốt đơn ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R17 225/45 RVL: 1170000 | price: 1170000 | answer: ROVELO 225/45R17 AS01 | quantity: 4 | productname: Lốp Rovelo 225/45R17 INSTINCT-AS01\n2-ZR17 225/45 LPD: 1242000 | date1: 26 | image: https://drive.google.com/drive/folders/1p3S_Skhfi3Xv5ww6E2kRNluFGJWtNRcr?usp=drive_link | price: 1242000 | answer: LANDSPIDER 225/45ZR17 H/P | quantity: 507 | productname: Lốp xe LANDSPIDER 225/45ZR17 94WXL CITYTRAXX H/P"
+        }
+      ],
+      "error": null,
+      "iteration": 8,
+      "verdicts": [
+        {
+          "token": "1.242.000",
+          "value": 1242000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-07",
+      "flow": "price_lookup",
+      "question": "Lốp Landspider size 225/45R17 giá bao nhiêu?",
+      "expect": "1.242.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Dạ, lốp Landspider 225/45ZR17 H/P giá **1.242.000đ/lốp**, hiện còn **507 lốp** ạ.  \nAnh/chị muốn đặt hàng không ạ? Nếu có, em cần thêm tên và số điện thoại để chốt đơn ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R17 225/45 RVL: 1170000 | price: 1170000 | answer: ROVELO 225/45R17 AS01 | quantity: 4 | productname: Lốp Rovelo 225/45R17 INSTINCT-AS01\n2-ZR17 225/45 LPD: 1242000 | date1: 26 | image: https://drive.google.com/drive/folders/1p3S_Skhfi3Xv5ww6E2kRNluFGJWtNRcr?usp=drive_link | price: 1242000 | answer: LANDSPIDER 225/45ZR17 H/P | quantity: 507 | productname: Lốp xe LANDSPIDER 225/45ZR17 94WXL CITYTRAXX H/P"
+        }
+      ],
+      "error": null,
+      "iteration": 9,
+      "verdicts": [
+        {
+          "token": "1.242.000",
+          "value": 1242000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-07",
+      "flow": "price_lookup",
+      "question": "Lốp Landspider size 225/45R17 giá bao nhiêu?",
+      "expect": "1.242.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp Landspider 225/45ZR17 H/P giá 1.242.000đ/lốp, hiện còn 507 lốp ạ.  \nAnh/chị cần em hỗ trợ đặt hàng không ạ?",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R17 225/45 RVL: 1170000 | price: 1170000 | answer: ROVELO 225/45R17 AS01 | quantity: 4 | productname: Lốp Rovelo 225/45R17 INSTINCT-AS01\n2-ZR17 225/45 LPD: 1242000 | date1: 26 | image: https://drive.google.com/drive/folders/1p3S_Skhfi3Xv5ww6E2kRNluFGJWtNRcr?usp=drive_link | price: 1242000 | answer: LANDSPIDER 225/45ZR17 H/P | quantity: 507 | productname: Lốp xe LANDSPIDER 225/45ZR17 94WXL CITYTRAXX H/P"
+        }
+      ],
+      "error": null,
+      "iteration": 10,
+      "verdicts": [
+        {
+          "token": "1.242.000",
+          "value": 1242000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-07",
+      "flow": "price_lookup",
+      "question": "Lốp Landspider size 225/45R17 giá bao nhiêu?",
+      "expect": "1.242.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Dạ, lốp Landspider 225/45ZR17 H/P giá **1.242.000đ/lốp**, hiện còn **507 lốp** ạ.  \nAnh muốn đặt hàng không ạ?",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R17 225/45 RVL: 1170000 | price: 1170000 | answer: ROVELO 225/45R17 AS01 | quantity: 4 | productname: Lốp Rovelo 225/45R17 INSTINCT-AS01\n2-ZR17 225/45 LPD: 1242000 | date1: 26 | image: https://drive.google.com/drive/folders/1p3S_Skhfi3Xv5ww6E2kRNluFGJWtNRcr?usp=drive_link | price: 1242000 | answer: LANDSPIDER 225/45ZR17 H/P | quantity: 507 | productname: Lốp xe LANDSPIDER 225/45ZR17 94WXL CITYTRAXX H/P"
+        }
+      ],
+      "error": null,
+      "iteration": 11,
+      "verdicts": [
+        {
+          "token": "1.242.000",
+          "value": 1242000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-07",
+      "flow": "price_lookup",
+      "question": "Lốp Landspider size 225/45R17 giá bao nhiêu?",
+      "expect": "1.242.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp Landspider 225/45ZR17 H/P giá **1.242.000đ/lốp**, hiện còn **507 lốp** ạ.  \nAnh muốn đặt hàng không ạ? Nếu có, em cần tên, số điện thoại, số lượng và quy cách để chốt đơn ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R17 225/45 RVL: 1170000 | price: 1170000 | answer: ROVELO 225/45R17 AS01 | quantity: 4 | productname: Lốp Rovelo 225/45R17 INSTINCT-AS01\n2-ZR17 225/45 LPD: 1242000 | date1: 26 | image: https://drive.google.com/drive/folders/1p3S_Skhfi3Xv5ww6E2kRNluFGJWtNRcr?usp=drive_link | price: 1242000 | answer: LANDSPIDER 225/45ZR17 H/P | quantity: 507 | productname: Lốp xe LANDSPIDER 225/45ZR17 94WXL CITYTRAXX H/P"
+        }
+      ],
+      "error": null,
+      "iteration": 12,
+      "verdicts": [
+        {
+          "token": "1.242.000",
+          "value": 1242000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-07",
+      "flow": "price_lookup",
+      "question": "Lốp Landspider size 225/45R17 giá bao nhiêu?",
+      "expect": "1.242.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp Landspider 225/45ZR17 H/P giá 1.242.000đ/lốp, hiện còn 507 lốp ạ.  \nAnh/chị cần em hỗ trợ đặt hàng không ạ?",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R17 225/45 RVL: 1170000 | price: 1170000 | answer: ROVELO 225/45R17 AS01 | quantity: 4 | productname: Lốp Rovelo 225/45R17 INSTINCT-AS01\n2-ZR17 225/45 LPD: 1242000 | date1: 26 | image: https://drive.google.com/drive/folders/1p3S_Skhfi3Xv5ww6E2kRNluFGJWtNRcr?usp=drive_link | price: 1242000 | answer: LANDSPIDER 225/45ZR17 H/P | quantity: 507 | productname: Lốp xe LANDSPIDER 225/45ZR17 94WXL CITYTRAXX H/P"
+        }
+      ],
+      "error": null,
+      "iteration": 13,
+      "verdicts": [
+        {
+          "token": "1.242.000",
+          "value": 1242000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-07",
+      "flow": "price_lookup",
+      "question": "Lốp Landspider size 225/45R17 giá bao nhiêu?",
+      "expect": "1.242.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp Landspider 225/45ZR17 H/P giá **1.242.000đ/lốp**, hiện còn **507 lốp** ạ.  \nAnh muốn đặt hàng không ạ? Nếu có, em cần thêm tên và số điện thoại để chốt đơn ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R17 225/45 RVL: 1170000 | price: 1170000 | answer: ROVELO 225/45R17 AS01 | quantity: 4 | productname: Lốp Rovelo 225/45R17 INSTINCT-AS01\n2-ZR17 225/45 LPD: 1242000 | date1: 26 | image: https://drive.google.com/drive/folders/1p3S_Skhfi3Xv5ww6E2kRNluFGJWtNRcr?usp=drive_link | price: 1242000 | answer: LANDSPIDER 225/45ZR17 H/P | quantity: 507 | productname: Lốp xe LANDSPIDER 225/45ZR17 94WXL CITYTRAXX H/P"
+        }
+      ],
+      "error": null,
+      "iteration": 14,
+      "verdicts": [
+        {
+          "token": "1.242.000",
+          "value": 1242000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-07",
+      "flow": "price_lookup",
+      "question": "Lốp Landspider size 225/45R17 giá bao nhiêu?",
+      "expect": "1.242.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp Landspider 225/45ZR17 H/P (mã 2-ZR17 225/45 LPD) hiện có giá 1.242.000đ/lốp, còn 507 lốp ạ.  \nAnh cần em hỗ trợ đặt hàng không ạ?",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R17 225/45 RVL: 1170000 | price: 1170000 | answer: ROVELO 225/45R17 AS01 | quantity: 4 | productname: Lốp Rovelo 225/45R17 INSTINCT-AS01\n2-ZR17 225/45 LPD: 1242000 | date1: 26 | image: https://drive.google.com/drive/folders/1p3S_Skhfi3Xv5ww6E2kRNluFGJWtNRcr?usp=drive_link | price: 1242000 | answer: LANDSPIDER 225/45ZR17 H/P | quantity: 507 | productname: Lốp xe LANDSPIDER 225/45ZR17 94WXL CITYTRAXX H/P"
+        }
+      ],
+      "error": null,
+      "iteration": 15,
+      "verdicts": [
+        {
+          "token": "1.242.000",
+          "value": 1242000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-08",
+      "flow": "price_lookup",
+      "question": "Lốp Davanti DX640 215/60R17 giá bao nhiêu?",
+      "expect": "1.485.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp Davanti DX640 215/60R17 giá 1.485.000đ/lốp, hiện còn 196 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R17 215/60 DVT: 1485000 | date1: 26 | image: https://drive.google.com/drive/folders/1LyZyZvRtehbhzUMdoM1-G_2jz-7ztcg_?usp=drive_link | price: 1485000 | answer: DAVANTI 215/60R17 DX640 | quantity: 196 | productname: Lốp xe DAVANTI 215/60R17 96H DX640"
+        }
+      ],
+      "error": null,
+      "iteration": 1,
+      "verdicts": [
+        {
+          "token": "1.485.000",
+          "value": 1485000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-08",
+      "flow": "price_lookup",
+      "question": "Lốp Davanti DX640 215/60R17 giá bao nhiêu?",
+      "expect": "1.485.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp Davanti DX640 215/60R17 giá 1.485.000đ/lốp, hiện còn 196 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R17 215/60 DVT: 1485000 | date1: 26 | image: https://drive.google.com/drive/folders/1LyZyZvRtehbhzUMdoM1-G_2jz-7ztcg_?usp=drive_link | price: 1485000 | answer: DAVANTI 215/60R17 DX640 | quantity: 196 | productname: Lốp xe DAVANTI 215/60R17 96H DX640"
+        }
+      ],
+      "error": null,
+      "iteration": 2,
+      "verdicts": [
+        {
+          "token": "1.485.000",
+          "value": 1485000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-08",
+      "flow": "price_lookup",
+      "question": "Lốp Davanti DX640 215/60R17 giá bao nhiêu?",
+      "expect": "1.485.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp Davanti DX640 215/60R17 giá 1.485.000đ/lốp, hiện còn 196 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R17 215/60 DVT: 1485000 | date1: 26 | image: https://drive.google.com/drive/folders/1LyZyZvRtehbhzUMdoM1-G_2jz-7ztcg_?usp=drive_link | price: 1485000 | answer: DAVANTI 215/60R17 DX640 | quantity: 196 | productname: Lốp xe DAVANTI 215/60R17 96H DX640"
+        }
+      ],
+      "error": null,
+      "iteration": 3,
+      "verdicts": [
+        {
+          "token": "1.485.000",
+          "value": 1485000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-08",
+      "flow": "price_lookup",
+      "question": "Lốp Davanti DX640 215/60R17 giá bao nhiêu?",
+      "expect": "1.485.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp Davanti DX640 215/60R17 giá 1.485.000đ/lốp, hiện còn 196 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R17 215/60 DVT: 1485000 | date1: 26 | image: https://drive.google.com/drive/folders/1LyZyZvRtehbhzUMdoM1-G_2jz-7ztcg_?usp=drive_link | price: 1485000 | answer: DAVANTI 215/60R17 DX640 | quantity: 196 | productname: Lốp xe DAVANTI 215/60R17 96H DX640"
+        }
+      ],
+      "error": null,
+      "iteration": 4,
+      "verdicts": [
+        {
+          "token": "1.485.000",
+          "value": 1485000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-08",
+      "flow": "price_lookup",
+      "question": "Lốp Davanti DX640 215/60R17 giá bao nhiêu?",
+      "expect": "1.485.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp Davanti DX640 215/60R17 giá 1.485.000đ/lốp, hiện còn 196 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R17 215/60 DVT: 1485000 | date1: 26 | image: https://drive.google.com/drive/folders/1LyZyZvRtehbhzUMdoM1-G_2jz-7ztcg_?usp=drive_link | price: 1485000 | answer: DAVANTI 215/60R17 DX640 | quantity: 196 | productname: Lốp xe DAVANTI 215/60R17 96H DX640"
+        }
+      ],
+      "error": null,
+      "iteration": 5,
+      "verdicts": [
+        {
+          "token": "1.485.000",
+          "value": 1485000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-08",
+      "flow": "price_lookup",
+      "question": "Lốp Davanti DX640 215/60R17 giá bao nhiêu?",
+      "expect": "1.485.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp Davanti DX640 215/60R17 giá 1.485.000đ/lốp, hiện còn 196 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R17 215/60 DVT: 1485000 | date1: 26 | image: https://drive.google.com/drive/folders/1LyZyZvRtehbhzUMdoM1-G_2jz-7ztcg_?usp=drive_link | price: 1485000 | answer: DAVANTI 215/60R17 DX640 | quantity: 196 | productname: Lốp xe DAVANTI 215/60R17 96H DX640"
+        }
+      ],
+      "error": null,
+      "iteration": 6,
+      "verdicts": [
+        {
+          "token": "1.485.000",
+          "value": 1485000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-08",
+      "flow": "price_lookup",
+      "question": "Lốp Davanti DX640 215/60R17 giá bao nhiêu?",
+      "expect": "1.485.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp Davanti DX640 215/60R17 giá 1.485.000đ/lốp, hiện còn 196 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R17 215/60 DVT: 1485000 | date1: 26 | image: https://drive.google.com/drive/folders/1LyZyZvRtehbhzUMdoM1-G_2jz-7ztcg_?usp=drive_link | price: 1485000 | answer: DAVANTI 215/60R17 DX640 | quantity: 196 | productname: Lốp xe DAVANTI 215/60R17 96H DX640"
+        }
+      ],
+      "error": null,
+      "iteration": 7,
+      "verdicts": [
+        {
+          "token": "1.485.000",
+          "value": 1485000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-08",
+      "flow": "price_lookup",
+      "question": "Lốp Davanti DX640 215/60R17 giá bao nhiêu?",
+      "expect": "1.485.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp Davanti DX640 215/60R17 giá 1.485.000đ/lốp, hiện còn 196 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R17 215/60 DVT: 1485000 | date1: 26 | image: https://drive.google.com/drive/folders/1LyZyZvRtehbhzUMdoM1-G_2jz-7ztcg_?usp=drive_link | price: 1485000 | answer: DAVANTI 215/60R17 DX640 | quantity: 196 | productname: Lốp xe DAVANTI 215/60R17 96H DX640"
+        }
+      ],
+      "error": null,
+      "iteration": 8,
+      "verdicts": [
+        {
+          "token": "1.485.000",
+          "value": 1485000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-08",
+      "flow": "price_lookup",
+      "question": "Lốp Davanti DX640 215/60R17 giá bao nhiêu?",
+      "expect": "1.485.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp Davanti DX640 215/60R17 giá 1.485.000đ/lốp, hiện còn 196 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R17 215/60 DVT: 1485000 | date1: 26 | image: https://drive.google.com/drive/folders/1LyZyZvRtehbhzUMdoM1-G_2jz-7ztcg_?usp=drive_link | price: 1485000 | answer: DAVANTI 215/60R17 DX640 | quantity: 196 | productname: Lốp xe DAVANTI 215/60R17 96H DX640"
+        }
+      ],
+      "error": null,
+      "iteration": 9,
+      "verdicts": [
+        {
+          "token": "1.485.000",
+          "value": 1485000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-08",
+      "flow": "price_lookup",
+      "question": "Lốp Davanti DX640 215/60R17 giá bao nhiêu?",
+      "expect": "1.485.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp Davanti DX640 215/60R17 giá 1.485.000đ/lốp, hiện còn 196 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R17 215/60 DVT: 1485000 | date1: 26 | image: https://drive.google.com/drive/folders/1LyZyZvRtehbhzUMdoM1-G_2jz-7ztcg_?usp=drive_link | price: 1485000 | answer: DAVANTI 215/60R17 DX640 | quantity: 196 | productname: Lốp xe DAVANTI 215/60R17 96H DX640"
+        }
+      ],
+      "error": null,
+      "iteration": 10,
+      "verdicts": [
+        {
+          "token": "1.485.000",
+          "value": 1485000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-08",
+      "flow": "price_lookup",
+      "question": "Lốp Davanti DX640 215/60R17 giá bao nhiêu?",
+      "expect": "1.485.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp Davanti DX640 215/60R17 giá 1.485.000đ/lốp, hiện còn 196 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R17 215/60 DVT: 1485000 | date1: 26 | image: https://drive.google.com/drive/folders/1LyZyZvRtehbhzUMdoM1-G_2jz-7ztcg_?usp=drive_link | price: 1485000 | answer: DAVANTI 215/60R17 DX640 | quantity: 196 | productname: Lốp xe DAVANTI 215/60R17 96H DX640"
+        }
+      ],
+      "error": null,
+      "iteration": 11,
+      "verdicts": [
+        {
+          "token": "1.485.000",
+          "value": 1485000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-08",
+      "flow": "price_lookup",
+      "question": "Lốp Davanti DX640 215/60R17 giá bao nhiêu?",
+      "expect": "1.485.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp Davanti DX640 215/60R17 giá 1.485.000đ/lốp, hiện còn 196 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R17 215/60 DVT: 1485000 | date1: 26 | image: https://drive.google.com/drive/folders/1LyZyZvRtehbhzUMdoM1-G_2jz-7ztcg_?usp=drive_link | price: 1485000 | answer: DAVANTI 215/60R17 DX640 | quantity: 196 | productname: Lốp xe DAVANTI 215/60R17 96H DX640"
+        }
+      ],
+      "error": null,
+      "iteration": 12,
+      "verdicts": [
+        {
+          "token": "1.485.000",
+          "value": 1485000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-08",
+      "flow": "price_lookup",
+      "question": "Lốp Davanti DX640 215/60R17 giá bao nhiêu?",
+      "expect": "1.485.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp Davanti DX640 215/60R17 giá 1.485.000đ/lốp, hiện còn 196 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R17 215/60 DVT: 1485000 | date1: 26 | image: https://drive.google.com/drive/folders/1LyZyZvRtehbhzUMdoM1-G_2jz-7ztcg_?usp=drive_link | price: 1485000 | answer: DAVANTI 215/60R17 DX640 | quantity: 196 | productname: Lốp xe DAVANTI 215/60R17 96H DX640"
+        }
+      ],
+      "error": null,
+      "iteration": 13,
+      "verdicts": [
+        {
+          "token": "1.485.000",
+          "value": 1485000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-08",
+      "flow": "price_lookup",
+      "question": "Lốp Davanti DX640 215/60R17 giá bao nhiêu?",
+      "expect": "1.485.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp Davanti DX640 215/60R17 giá 1.485.000đ/lốp, hiện còn 196 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R17 215/60 DVT: 1485000 | date1: 26 | image: https://drive.google.com/drive/folders/1LyZyZvRtehbhzUMdoM1-G_2jz-7ztcg_?usp=drive_link | price: 1485000 | answer: DAVANTI 215/60R17 DX640 | quantity: 196 | productname: Lốp xe DAVANTI 215/60R17 96H DX640"
+        }
+      ],
+      "error": null,
+      "iteration": 14,
+      "verdicts": [
+        {
+          "token": "1.485.000",
+          "value": 1485000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-08",
+      "flow": "price_lookup",
+      "question": "Lốp Davanti DX640 215/60R17 giá bao nhiêu?",
+      "expect": "1.485.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp Davanti DX640 215/60R17 giá 1.485.000đ/lốp, hiện còn 196 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-R17 215/60 DVT: 1485000 | date1: 26 | image: https://drive.google.com/drive/folders/1LyZyZvRtehbhzUMdoM1-G_2jz-7ztcg_?usp=drive_link | price: 1485000 | answer: DAVANTI 215/60R17 DX640 | quantity: 196 | productname: Lốp xe DAVANTI 215/60R17 96H DX640"
+        }
+      ],
+      "error": null,
+      "iteration": 15,
+      "verdicts": [
+        {
+          "token": "1.485.000",
+          "value": 1485000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-09",
+      "flow": "price_lookup",
+      "question": "Lốp Davanti 275/40ZR21 giá bao nhiêu?",
+      "expect": "3.240.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp DAVANTI 275/40ZR21 DX640 giá 3.240.000đ/lốp, hiện còn 251 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-ZR21 275/40 DVT: 3240000 | date1: 26 | image: https://drive.google.com/drive/folders/1VXRvv2Ii08sKO-UqLF-sbRTbUtB1HtyB?usp=drive_link | price: 3240000 | answer: DAVANTI 275/40ZR21 DX640 | quantity: 251 | productname: Lốp xe DAVANTI 275/40ZR21 107Y XL DX640"
+        }
+      ],
+      "error": null,
+      "iteration": 1,
+      "verdicts": [
+        {
+          "token": "3.240.000",
+          "value": 3240000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-09",
+      "flow": "price_lookup",
+      "question": "Lốp Davanti 275/40ZR21 giá bao nhiêu?",
+      "expect": "3.240.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp DAVANTI 275/40ZR21 DX640 giá 3.240.000đ/lốp, hiện còn 251 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-ZR21 275/40 DVT: 3240000 | date1: 26 | image: https://drive.google.com/drive/folders/1VXRvv2Ii08sKO-UqLF-sbRTbUtB1HtyB?usp=drive_link | price: 3240000 | answer: DAVANTI 275/40ZR21 DX640 | quantity: 251 | productname: Lốp xe DAVANTI 275/40ZR21 107Y XL DX640"
+        }
+      ],
+      "error": null,
+      "iteration": 2,
+      "verdicts": [
+        {
+          "token": "3.240.000",
+          "value": 3240000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-09",
+      "flow": "price_lookup",
+      "question": "Lốp Davanti 275/40ZR21 giá bao nhiêu?",
+      "expect": "3.240.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp DAVANTI 275/40ZR21 DX640 giá 3.240.000đ/lốp, hiện còn 251 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-ZR21 275/40 DVT: 3240000 | date1: 26 | image: https://drive.google.com/drive/folders/1VXRvv2Ii08sKO-UqLF-sbRTbUtB1HtyB?usp=drive_link | price: 3240000 | answer: DAVANTI 275/40ZR21 DX640 | quantity: 251 | productname: Lốp xe DAVANTI 275/40ZR21 107Y XL DX640"
+        }
+      ],
+      "error": null,
+      "iteration": 3,
+      "verdicts": [
+        {
+          "token": "3.240.000",
+          "value": 3240000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-09",
+      "flow": "price_lookup",
+      "question": "Lốp Davanti 275/40ZR21 giá bao nhiêu?",
+      "expect": "3.240.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp DAVANTI 275/40ZR21 DX640 giá 3.240.000đ/lốp, hiện còn 251 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-ZR21 275/40 DVT: 3240000 | date1: 26 | image: https://drive.google.com/drive/folders/1VXRvv2Ii08sKO-UqLF-sbRTbUtB1HtyB?usp=drive_link | price: 3240000 | answer: DAVANTI 275/40ZR21 DX640 | quantity: 251 | productname: Lốp xe DAVANTI 275/40ZR21 107Y XL DX640"
+        }
+      ],
+      "error": null,
+      "iteration": 4,
+      "verdicts": [
+        {
+          "token": "3.240.000",
+          "value": 3240000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-09",
+      "flow": "price_lookup",
+      "question": "Lốp Davanti 275/40ZR21 giá bao nhiêu?",
+      "expect": "3.240.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp DAVANTI 275/40ZR21 DX640 giá 3.240.000đ/lốp, hiện còn 251 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-ZR21 275/40 DVT: 3240000 | date1: 26 | image: https://drive.google.com/drive/folders/1VXRvv2Ii08sKO-UqLF-sbRTbUtB1HtyB?usp=drive_link | price: 3240000 | answer: DAVANTI 275/40ZR21 DX640 | quantity: 251 | productname: Lốp xe DAVANTI 275/40ZR21 107Y XL DX640"
+        }
+      ],
+      "error": null,
+      "iteration": 5,
+      "verdicts": [
+        {
+          "token": "3.240.000",
+          "value": 3240000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-09",
+      "flow": "price_lookup",
+      "question": "Lốp Davanti 275/40ZR21 giá bao nhiêu?",
+      "expect": "3.240.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp DAVANTI 275/40ZR21 DX640 giá 3.240.000đ/lốp, hiện còn 251 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-ZR21 275/40 DVT: 3240000 | date1: 26 | image: https://drive.google.com/drive/folders/1VXRvv2Ii08sKO-UqLF-sbRTbUtB1HtyB?usp=drive_link | price: 3240000 | answer: DAVANTI 275/40ZR21 DX640 | quantity: 251 | productname: Lốp xe DAVANTI 275/40ZR21 107Y XL DX640"
+        }
+      ],
+      "error": null,
+      "iteration": 6,
+      "verdicts": [
+        {
+          "token": "3.240.000",
+          "value": 3240000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-09",
+      "flow": "price_lookup",
+      "question": "Lốp Davanti 275/40ZR21 giá bao nhiêu?",
+      "expect": "3.240.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp DAVANTI 275/40ZR21 DX640 giá 3.240.000đ/lốp, hiện còn 251 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-ZR21 275/40 DVT: 3240000 | date1: 26 | image: https://drive.google.com/drive/folders/1VXRvv2Ii08sKO-UqLF-sbRTbUtB1HtyB?usp=drive_link | price: 3240000 | answer: DAVANTI 275/40ZR21 DX640 | quantity: 251 | productname: Lốp xe DAVANTI 275/40ZR21 107Y XL DX640"
+        }
+      ],
+      "error": null,
+      "iteration": 7,
+      "verdicts": [
+        {
+          "token": "3.240.000",
+          "value": 3240000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-09",
+      "flow": "price_lookup",
+      "question": "Lốp Davanti 275/40ZR21 giá bao nhiêu?",
+      "expect": "3.240.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp DAVANTI 275/40ZR21 DX640 giá 3.240.000đ/lốp, hiện còn 251 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-ZR21 275/40 DVT: 3240000 | date1: 26 | image: https://drive.google.com/drive/folders/1VXRvv2Ii08sKO-UqLF-sbRTbUtB1HtyB?usp=drive_link | price: 3240000 | answer: DAVANTI 275/40ZR21 DX640 | quantity: 251 | productname: Lốp xe DAVANTI 275/40ZR21 107Y XL DX640"
+        }
+      ],
+      "error": null,
+      "iteration": 8,
+      "verdicts": [
+        {
+          "token": "3.240.000",
+          "value": 3240000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-09",
+      "flow": "price_lookup",
+      "question": "Lốp Davanti 275/40ZR21 giá bao nhiêu?",
+      "expect": "3.240.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp DAVANTI 275/40ZR21 DX640 giá 3.240.000đ/lốp, hiện còn 251 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-ZR21 275/40 DVT: 3240000 | date1: 26 | image: https://drive.google.com/drive/folders/1VXRvv2Ii08sKO-UqLF-sbRTbUtB1HtyB?usp=drive_link | price: 3240000 | answer: DAVANTI 275/40ZR21 DX640 | quantity: 251 | productname: Lốp xe DAVANTI 275/40ZR21 107Y XL DX640"
+        }
+      ],
+      "error": null,
+      "iteration": 9,
+      "verdicts": [
+        {
+          "token": "3.240.000",
+          "value": 3240000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-09",
+      "flow": "price_lookup",
+      "question": "Lốp Davanti 275/40ZR21 giá bao nhiêu?",
+      "expect": "3.240.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp DAVANTI 275/40ZR21 DX640 giá 3.240.000đ/lốp, hiện còn 251 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-ZR21 275/40 DVT: 3240000 | date1: 26 | image: https://drive.google.com/drive/folders/1VXRvv2Ii08sKO-UqLF-sbRTbUtB1HtyB?usp=drive_link | price: 3240000 | answer: DAVANTI 275/40ZR21 DX640 | quantity: 251 | productname: Lốp xe DAVANTI 275/40ZR21 107Y XL DX640"
+        }
+      ],
+      "error": null,
+      "iteration": 10,
+      "verdicts": [
+        {
+          "token": "3.240.000",
+          "value": 3240000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-09",
+      "flow": "price_lookup",
+      "question": "Lốp Davanti 275/40ZR21 giá bao nhiêu?",
+      "expect": "3.240.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp DAVANTI 275/40ZR21 DX640 giá 3.240.000đ/lốp, hiện còn 251 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-ZR21 275/40 DVT: 3240000 | date1: 26 | image: https://drive.google.com/drive/folders/1VXRvv2Ii08sKO-UqLF-sbRTbUtB1HtyB?usp=drive_link | price: 3240000 | answer: DAVANTI 275/40ZR21 DX640 | quantity: 251 | productname: Lốp xe DAVANTI 275/40ZR21 107Y XL DX640"
+        }
+      ],
+      "error": null,
+      "iteration": 11,
+      "verdicts": [
+        {
+          "token": "3.240.000",
+          "value": 3240000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-09",
+      "flow": "price_lookup",
+      "question": "Lốp Davanti 275/40ZR21 giá bao nhiêu?",
+      "expect": "3.240.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp DAVANTI 275/40ZR21 DX640 giá 3.240.000đ/lốp, hiện còn 251 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-ZR21 275/40 DVT: 3240000 | date1: 26 | image: https://drive.google.com/drive/folders/1VXRvv2Ii08sKO-UqLF-sbRTbUtB1HtyB?usp=drive_link | price: 3240000 | answer: DAVANTI 275/40ZR21 DX640 | quantity: 251 | productname: Lốp xe DAVANTI 275/40ZR21 107Y XL DX640"
+        }
+      ],
+      "error": null,
+      "iteration": 12,
+      "verdicts": [
+        {
+          "token": "3.240.000",
+          "value": 3240000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-09",
+      "flow": "price_lookup",
+      "question": "Lốp Davanti 275/40ZR21 giá bao nhiêu?",
+      "expect": "3.240.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp DAVANTI 275/40ZR21 DX640 giá 3.240.000đ/lốp, hiện còn 251 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-ZR21 275/40 DVT: 3240000 | date1: 26 | image: https://drive.google.com/drive/folders/1VXRvv2Ii08sKO-UqLF-sbRTbUtB1HtyB?usp=drive_link | price: 3240000 | answer: DAVANTI 275/40ZR21 DX640 | quantity: 251 | productname: Lốp xe DAVANTI 275/40ZR21 107Y XL DX640"
+        }
+      ],
+      "error": null,
+      "iteration": 13,
+      "verdicts": [
+        {
+          "token": "3.240.000",
+          "value": 3240000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-09",
+      "flow": "price_lookup",
+      "question": "Lốp Davanti 275/40ZR21 giá bao nhiêu?",
+      "expect": "3.240.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp DAVANTI 275/40ZR21 DX640 giá 3.240.000đ/lốp, hiện còn 251 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-ZR21 275/40 DVT: 3240000 | date1: 26 | image: https://drive.google.com/drive/folders/1VXRvv2Ii08sKO-UqLF-sbRTbUtB1HtyB?usp=drive_link | price: 3240000 | answer: DAVANTI 275/40ZR21 DX640 | quantity: 251 | productname: Lốp xe DAVANTI 275/40ZR21 107Y XL DX640"
+        }
+      ],
+      "error": null,
+      "iteration": 14,
+      "verdicts": [
+        {
+          "token": "3.240.000",
+          "value": 3240000,
+          "class": "grounded"
+        }
+      ]
+    },
+    {
+      "id": "P-09",
+      "flow": "price_lookup",
+      "question": "Lốp Davanti 275/40ZR21 giá bao nhiêu?",
+      "expect": "3.240.000",
+      "intent": "factoid",
+      "rewritten": null,
+      "retrieve_mode": null,
+      "retrieve_candidates_topk": 1,
+      "chunks_to_llm": 1,
+      "chunks_graded_pass": 1,
+      "score_max": 1.0,
+      "cache_status": "bypassed",
+      "numeric_fidelity": null,
+      "answer": "Lốp DAVANTI 275/40ZR21 DX640 giá 3.240.000đ/lốp, hiện còn 251 lốp ạ.",
+      "answer_type": "answered",
+      "chunks": [
+        {
+          "score": 1.0,
+          "content": "2-ZR21 275/40 DVT: 3240000 | date1: 26 | image: https://drive.google.com/drive/folders/1VXRvv2Ii08sKO-UqLF-sbRTbUtB1HtyB?usp=drive_link | price: 3240000 | answer: DAVANTI 275/40ZR21 DX640 | quantity: 251 | productname: Lốp xe DAVANTI 275/40ZR21 107Y XL DX640"
+        }
+      ],
+      "error": null,
+      "iteration": 15,
+      "verdicts": [
+        {
+          "token": "3.240.000",
+          "value": 3240000,
+          "class": "grounded"
+        }
+      ]
+    }
+  ]
+}

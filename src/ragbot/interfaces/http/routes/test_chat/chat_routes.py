@@ -583,6 +583,9 @@ async def test_chat(req: TestChatRequest, request: Request) -> dict:
             1 for c in _retrieved_chunks if c.get("is_parent_expanded")
         ),
         "guardrail_flags": final_state.get("guardrail_flags") or [],
+        # Numeric-fidelity observe verdict (truth-audit Phase 4) — counts +
+        # capped unsupported tokens; consumed by the trace harness.
+        "numeric_fidelity": final_state.get("numeric_fidelity"),
         # Cache status — "bypassed" when bypass_cache=True, else "hit" or "miss"
         # (inferred from answer_type since check_cache node doesn't expose a
         # separate state key for the non-bypass path).

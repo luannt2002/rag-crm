@@ -116,6 +116,7 @@ def _record(q: dict, resp: dict) -> dict:
         "chunks_graded_pass": dbg.get("chunks_graded"),              # survived CRAG grading
         "score_max": dbg.get("score_max"),
         "cache_status": dbg.get("cache_status"),
+        "numeric_fidelity": dbg.get("numeric_fidelity"),
         "answer": resp.get("answer") or "",
         "answer_type": resp.get("answer_type"),
         "chunks": trimmed,

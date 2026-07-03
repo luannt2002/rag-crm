@@ -55,3 +55,23 @@
 - Rollback: revert commit (gate là additive condition, không đổi schema).
 - Blast-radius: ingest-time extraction mọi bot; serve-time không đổi; pin =
   test_stats_extract_noise.py + 816 stats/chunk suite.
+
+## Step 4 — CODE: numeric-fidelity gate OBSERVE (2026-07-03)
+- Change (ONE): shared/numeric_fidelity.classify_answer_numbers (pure; tokenizer SSoT
+  chung với find_dropped_numbers) + guard_output tính 1 lần trên answer GỐC trước mọi
+  branch block + structlog NUMERIC_FIDELITY_EVENT + debug.numeric_fidelity + harness field.
+  OBSERVE-ONLY: sacred-#10 pin test cấm verdict gate answer.
+- RED→GREEN: test_numeric_fidelity_gate.py 9/9 (fail trước vì module absent);
+  regression 22+109 pass incl. AST state-key pin.
+- T042 metrics (N=15 probe batch, journal server-side):
+  * CATCH: 9/9 fabrication events flagged đúng token ["26.000.000"] — 100%
+  * FALSE-POSITIVE: 0/82 events sạch trên mọi control/lệch runs — 0%
+  * Lệch (P-02/03/04) flagged 0/15 mỗi probe — ĐÚNG THIẾT KẾ (số thật, gate mù với
+    wrong-entity → attribution-check là lớp riêng, Step 5 design)
+- Bug tìm thấy khi đo: in-place state write bị LangGraph drop qua node boundary →
+  fix: cả 6 return dict của guard_output mang "numeric_fidelity"; smoke end-to-end:
+  FAB flag đúng, CTRL sạch.
+- OWNER GATE chờ: blocking-mode chỉ được bàn với 2 số trên (FR-010) — khuyến nghị:
+  đủ điều kiện kỹ thuật (FP=0) nhưng chờ thêm pinned-60 observe trước khi đề xuất.
+- Blast-radius: guard_output mọi bot (observe, không đổi answer); pin =
+  test_numeric_fidelity_gate + grounding_confirmed_action + graphstate_key_pin.

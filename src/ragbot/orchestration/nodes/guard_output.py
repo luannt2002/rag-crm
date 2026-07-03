@@ -46,7 +46,9 @@ from ragbot.shared.constants import (
     DEFAULT_PIPELINE_PARALLEL_OUTPUT_GUARDS_ENABLED,
     GROUNDING_FAILURE_MODE_FAIL_OPEN,
 )
+from ragbot.shared.constants import NUMERIC_FIDELITY_EVENT
 from ragbot.shared.errors import InvariantViolation
+from ragbot.shared.numeric_fidelity import classify_answer_numbers
 
 logger = structlog.get_logger(__name__)
 
@@ -63,6 +65,34 @@ async def guard_output(
 ) -> dict:
     async with state["step_tracker"].step("guard_output") as guard_ctx:
         flags = list(state.get("guardrail_flags", []))
+
+        # ── Numeric-fidelity OBSERVE (truth-audit Phase 4) ─────────────────
+        # Deterministic, model-independent: classify every significant number
+        # in the ORIGINAL answer against the served context (graded chunks).
+        # Computed ONCE, before any guard branch — so a later block/substitute
+        # still records what the LLM actually emitted (catch-rate honesty).
+        # OBSERVE-ONLY: the verdict never gates the answer (sacred #10);
+        # blocking is a separate owner-gated step after false-positive/catch
+        # rates are reviewed (spec FR-010).
+        _nf_answer = str(state.get("answer") or "")
+        _nf_ctx = [
+            str(c.get("text") or c.get("content") or "")
+            for c in (state.get("graded_chunks") or [])
+        ]
+        _nf = classify_answer_numbers(_nf_answer, _nf_ctx)
+        state["numeric_fidelity"] = _nf
+        if _nf["n_numbers"]:
+            logger.info(
+                NUMERIC_FIDELITY_EVENT,
+                record_bot_id=str(state.get("record_bot_id") or ""),
+                trace_id=str(state.get("trace_id") or ""),
+                n_numbers=_nf["n_numbers"],
+                n_grounded=_nf["n_grounded"],
+                n_derived_valid=_nf["n_derived_valid"],
+                n_unsupported=_nf["n_unsupported"],
+                unsupported_tokens=_nf["unsupported_tokens"],
+                context_source=str(state.get("retrieve_mode") or ""),
+            )
 
         # Numeric / citation grounding is the bot owner's responsibility via
         # `system_prompt` (anti-fabricate rules) — the LLM self-checks. The
@@ -381,6 +411,7 @@ async def guard_output(
             )
             return {
                 "guardrail_flags": flags,
+                "numeric_fidelity": _nf,
                 "answer": _oos_template,
                 "answer_type": "blocked",
                 "answer_reason": "Grounding unavailable (fail_closed)",
@@ -473,6 +504,7 @@ async def guard_output(
                     )
                 return {
                     "guardrail_flags": flags,
+                    "numeric_fidelity": _nf,
                     "answer": _oos_template,
                     "answer_type": "blocked",
                     "answer_reason": "Output guardrail blocked",
@@ -538,11 +570,12 @@ async def guard_output(
                     flags[-1]["blocked"] = True
                     return {
                         "guardrail_flags": flags,
+                        "numeric_fidelity": _nf,
                         "answer": _oos_template,
                         "answer_type": "blocked",
                         "answer_reason": "Grounding judge confirmed ungrounded answer",
                     }
-            return {"guardrail_flags": flags}
+            return {"guardrail_flags": flags, "numeric_fidelity": _nf}
 
         try:
             hits = await guardrail.check_output(
@@ -586,7 +619,7 @@ async def guard_output(
                 )
 
 
-            return {"guardrail_flags": flags}
+            return {"guardrail_flags": flags, "numeric_fidelity": _nf}
         except GuardrailBlocked as exc:
             for h in exc.hits:
                 flags.append(
@@ -600,6 +633,7 @@ async def guard_output(
                 )
             return {
                 "guardrail_flags": flags,
+                "numeric_fidelity": _nf,
                 # Output guardrail blocked: substitute bot's oos_answer_template (regen would be unsafe).
                 "answer": _oos_template,
                 "answer_type": "blocked", "answer_reason": "Output guardrail blocked",
