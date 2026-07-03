@@ -27,7 +27,7 @@ from uuid import UUID
 
 import httpx
 import structlog
-from redis.exceptions import RedisError  # audit O5: redis-py raises its OWN hierarchy
+from redis.exceptions import RedisError  # redis-py raises its OWN exception hierarchy, not the builtins
 
 from ragbot.application.dto.notify_channel import NotifyChannelConfig
 from ragbot.application.services.notify_channel_resolver import (

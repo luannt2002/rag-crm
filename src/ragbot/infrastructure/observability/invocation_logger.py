@@ -241,7 +241,7 @@ class InvocationLogger:
                     "cached": stmt.excluded.cached,
                 },
             )
-            # Audit O4: the LLM answer has ALREADY succeeded by the time we get
+            # the LLM answer has ALREADY succeeded by the time we get
             # here — a DB blip on this best-effort audit INSERT must NOT propagate
             # (it would discard a successful turn AND leak the tracing span, which
             # closes below). Observability is an aux sink; degrade, never break the

@@ -58,7 +58,7 @@ async def graph_retrieve(
         async with session_factory() as session:
             triples = await kg_service.query_graph(
                 query=query_text,
-                record_bot_id=record_bot_id,  # audit L2-4: was bot_id= → TypeError → graph query always 0
+                record_bot_id=record_bot_id,  # a bot_id= kwarg raises TypeError → graph query always 0
                 session=session,
                 max_hops=max_hops,
             )
@@ -80,7 +80,7 @@ async def graph_retrieve(
                 "text": text_repr,
                 "score": 0.5,  # neutral score — let reranker decide relevance
                 "document_name": source_doc,
-                # Audit Q18: a synthetic non-null id — generate() drops chunks with a
+                # a synthetic non-null id — generate() drops chunks with a
                 # falsy chunk_id from the <documents> block, so chunk_id=None meant
                 # graph triples never reached the prompt (mirrors the stats route's
                 # synthetic sentinel id).

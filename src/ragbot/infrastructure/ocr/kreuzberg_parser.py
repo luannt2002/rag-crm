@@ -235,7 +235,7 @@ class KreuzbergParser(OCRPort):
         # Local import — preserves registry fail-soft path when dep missing.
         import kreuzberg  # type: ignore[import-not-found]
 
-        # Audit I2: this method runs in a THREAD executor (sync context), so it
+        # this method runs in a THREAD executor (sync context), so it
         # must call the SYNC variant. kreuzberg>=4.9's ``extract_bytes`` is a
         # COROUTINE — calling it here returned an un-awaited coroutine whose
         # ``.elements`` is None → 0 blocks for EVERY document that reached this
@@ -324,7 +324,7 @@ class KreuzbergParser(OCRPort):
                 ),
             )
 
-        # Audit I2 (layer 2): kreuzberg 4.9.7 populates ``.elements`` only for
+        # kreuzberg populates ``.elements`` only for
         # layout/OCR extraction. A plain text-layer extraction returns
         # elements=None but a populated ``.content`` — without this fallback a
         # content-bearing document still yielded 0 blocks → "empty document text"

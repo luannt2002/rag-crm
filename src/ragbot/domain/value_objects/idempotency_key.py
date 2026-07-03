@@ -47,8 +47,7 @@ def for_ingest_document(
 ) -> IdempotencyKey:
     """Idempotency key for a document ingestion job.
 
-    Audit SEC-4 (2026-07-03): ``record_bot_id`` (+ ``workspace_id``) added to the
-    key parts. Without the bot, a second bot in the same tenant ingesting the same
+    ``record_bot_id`` (+ ``workspace_id``) are part of the key. Without the bot, a second bot in the same tenant ingesting the same
     ``source_url`` within the 24h TTL collided and was silently swallowed —
     ``for_chat_message`` already scoped by bot, this mirrors it. 4-key identity.
     """

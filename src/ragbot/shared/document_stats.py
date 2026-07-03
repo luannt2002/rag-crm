@@ -388,7 +388,7 @@ def _is_header_row(
 
 
 def _is_shape_header(lines: list[str], li: int, cols: list[str]) -> bool:
-    """SHAPE-ONLY header rescue (audit I5/S3): promote a headerless first row when
+    """SHAPE-ONLY header rescue: promote a headerless first row when
     the block is unmistakably TABULAR by FORM — no vocabulary, no separator.
 
     Fires only when ALL hold (tight gate so prose never over-promotes):

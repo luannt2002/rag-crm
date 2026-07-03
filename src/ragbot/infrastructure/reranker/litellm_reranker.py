@@ -65,7 +65,7 @@ class LiteLLMReranker:
 
         effective_model = model or self._model
 
-        # Extract text from chunks. Audit Q13: keep a passage→chunk index map.
+        # Extract text from chunks; keep a passage→chunk index map.
         # Empty-content chunks are dropped from the reranker input, which SHIFTS
         # the reranker's returned `index` relative to the original `chunks` list —
         # mapping the score back with the shifted index assigned scores to the
@@ -101,7 +101,7 @@ class LiteLLMReranker:
             for result in response.results:
                 idx = result.get("index", result.get("document", {}).get("index", 0))
                 score = result.get("relevance_score", 0.0)
-                # Q13: `idx` indexes the FILTERED passages list → translate back to
+                # `idx` indexes the FILTERED passages list → translate back to
                 # the original chunk index via the map (was `chunks[idx]`, misaligned
                 # whenever any chunk had empty content).
                 if 0 <= idx < len(passage_chunk_idx):

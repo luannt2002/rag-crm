@@ -686,7 +686,7 @@ class _IngestMixin(
                 )
             )
             if _diff_flag:
-                # Audit I17: the diff-reingest telemetry helpers
+                # the diff-reingest telemetry helpers
                 # (_diff_reingest_compute / _diff_reingest_log_event) were never
                 # implemented (shared/diff_reingest.py is a commented-out shell), so
                 # calling them raised NameError AFTER the doc row was committed —
@@ -792,7 +792,7 @@ class _IngestMixin(
                         self._sf, record_tenant_id=record_tenant_id,
                     ) as session:
                         inserted = await kg_service.store_triples(
-                            record_bot_id=bot_uuid,  # audit L2-4: was bot_id= → TypeError → triples discarded
+                            record_bot_id=bot_uuid,  # a bot_id= kwarg raises TypeError → triples silently discarded
                             triples=triples,
                             session=session,
                             source_chunk_id=source_chunk_id,

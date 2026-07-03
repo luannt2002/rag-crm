@@ -444,9 +444,9 @@ class Container(containers.DeclarativeContainer):
     # ``plan_limits.pii_redaction_enabled`` AND ``system_config`` selects
     # a real provider (e.g. ``vn_regex``). Wiring lives in chat_worker and
     # DocumentService.ingest — see Master Finding #4.
-    # Audit I4: was frozen to the compile-time constant, so system_config selection
-    # had zero effect and redaction was null/passthrough even with both opt-in gates
-    # on. Resolve the provider from system_config like crag_grader above.
+    # Was frozen to the compile-time constant, so system_config selection had zero
+    # effect (redaction stayed null/passthrough even with both opt-in gates on).
+    # Resolve the provider from system_config per-call like crag_grader above.
     pii = providers.Singleton(
         build_pii_redactor,
         provider=providers.Callable(

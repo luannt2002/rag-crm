@@ -273,8 +273,8 @@ from ragbot.shared.i18n import LanguagePack, get_pack, language_pack_from_dict
 # CRAG grade vocabulary + pure chunk/grade filters live in retrieval_filter
 # (strangler Phase 2). Re-exported here so existing call sites + test imports
 # (`from ragbot.orchestration.query_graph import _cliff_detect_filter`) are
-# unchanged. RESTORED 2026-07-03 (audit F2): commit 24f2451 deleted this block but
-# left the comment, breaking 5 pin-test files at collection. Guarded by
+# unchanged. The names live in retrieval_filter (strangler split); dropping this
+# re-export breaks the pin-test files that import them at collection. Guarded by
 # tests/unit/test_audit_pass2_repro.py::TestF2ReExportBreak.
 from ragbot.orchestration.retrieval_filter import (  # noqa: E402
     CRAG_GRADE_AMBIGUOUS,

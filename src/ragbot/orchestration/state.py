@@ -203,8 +203,8 @@ class GraphState(TypedDict, total=False):
     # Absent on the normal vector-retrieve path (None / missing key).
     stats_entities: list[dict]
 
-    # ─── S1 fix (audit 2026-07-03) — keys formerly USED cross-node but NOT
-    # declared here, so langgraph 1.2.4's reducer dropped them, silently killing
+    # ─── Cross-node keys — written in one node / the initial input and read in
+    # another. They MUST be declared here or langgraph's reducer drops them, silently killing
     # the feature. Declaring restores the hand-off. Each is written in one node /
     # the initial input and read in another. Guarded by
     # tests/unit/test_audit_pass2_repro.py::TestS1StateKeyDrop + the AST pin test.

@@ -99,11 +99,10 @@ async def guard_output(
         # Stats/aggregation route answers come from the authoritative structured
         # index (exact price/quantity/date SQL). Skipping grounding on them
         # reformats-friendly BUT let a HALLU breach through once (a stock number
-        # leaked from history cited on a stats answer, git 062d6fa). So grounding
+        # leaked from history cited on a stats answer). So grounding
         # STAYS ON for stats by default (DEFAULT_STATS_ROUTE_SKIP_GROUNDING=False,
         # HALLU-safe); a bot that hits the reformat false-block can opt out via
-        # plan_limits.stats_route_skip_grounding. Restored 2026-07-03 (audit
-        # L2-2/L2-3): commit 3097755 had reverted this to an UNCONDITIONAL skip.
+        # plan_limits.stats_route_skip_grounding.
         _stats_skip_grounding = bool(
             _pcfg(state, "stats_route_skip_grounding", DEFAULT_STATS_ROUTE_SKIP_GROUNDING)
         )
