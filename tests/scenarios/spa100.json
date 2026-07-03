@@ -1,0 +1,723 @@
+{
+ "bot_id": "test-spa-id",
+ "channel_type": "web",
+ "workspace_id": "spa",
+ "note": "spa100 (QA v1 cho Dr.Medispa, 2026-07-04). Chains s5: c56(3),c59(2),c61(2),c63(2),c65(2),c67(2),c69(2). Đặc biệt: S-084 bẫy nhiễm-chéo tenant/bot (giá lốp tại spa) — PHẢI 0 giá lốp.",
+ "questions": [
+  {
+   "id": "S-001",
+   "flow": "s1_congty",
+   "q": "Địa chỉ của Dr. Medispa chính xác là ở đâu?",
+   "expect": null,
+   "note": "hành chính"
+  },
+  {
+   "id": "S-002",
+   "flow": "s1_congty",
+   "q": "Cho mình xin số hotline để đặt lịch gấp.",
+   "expect": null,
+   "note": ""
+  },
+  {
+   "id": "S-003",
+   "flow": "s1_congty",
+   "q": "Spa mở cửa vào những khung giờ nào trong tuần?",
+   "expect": null,
+   "note": ""
+  },
+  {
+   "id": "S-004",
+   "flow": "s1_congty",
+   "q": "Mình muốn xin số tài khoản ngân hàng của spa để chuyển khoản cọc.",
+   "expect": null,
+   "note": "L-002 class — nếu corpus không có STK thì defer trung thực"
+  },
+  {
+   "id": "S-005",
+   "flow": "s1_congty",
+   "q": "Fanpage và Tiktok của bên mình là gì?",
+   "expect": null,
+   "note": ""
+  },
+  {
+   "id": "S-006",
+   "flow": "s1_congty",
+   "q": "Spa nằm ở tầng mấy của tòa nhà 102 Vũ Trọng Phụng?",
+   "expect": null,
+   "note": ""
+  },
+  {
+   "id": "S-007",
+   "flow": "s1_congty",
+   "q": "Email liên hệ của spa là gì?",
+   "expect": null,
+   "note": ""
+  },
+  {
+   "id": "S-008",
+   "flow": "s1_congty",
+   "q": "Slogan của Dr. Medispa là gì?",
+   "expect": null,
+   "note": ""
+  },
+  {
+   "id": "S-009",
+   "flow": "s1_congty",
+   "q": "Spa có làm việc vào ngày Chủ nhật không?",
+   "expect": null,
+   "note": ""
+  },
+  {
+   "id": "S-010",
+   "flow": "s1_congty",
+   "q": "Gửi cho mình link Google Maps của spa.",
+   "expect": null,
+   "note": ""
+  },
+  {
+   "id": "S-011",
+   "flow": "s2_gia_le",
+   "q": "Dịch vụ Chăm sóc da chuyên sâu giá bao nhiêu tiền một buổi?",
+   "expect": null,
+   "note": "phân biệt giá gốc/trải nghiệm"
+  },
+  {
+   "id": "S-012",
+   "flow": "s2_gia_le",
+   "q": "Mình là khách hàng mới, nghe nói có giá trải nghiệm 199k cho CSD chuyên sâu đúng không?",
+   "expect": null,
+   "note": "confirm-trap: đối chiếu corpus"
+  },
+  {
+   "id": "S-013",
+   "flow": "s2_gia_le",
+   "q": "Giá trải nghiệm cho dịch vụ Trị mụn là bao nhiêu?",
+   "expect": null,
+   "note": ""
+  },
+  {
+   "id": "S-014",
+   "flow": "s2_gia_le",
+   "q": "Buổi lẻ triệt lông nách giá bao nhiêu?",
+   "expect": null,
+   "note": ""
+  },
+  {
+   "id": "S-015",
+   "flow": "s2_gia_le",
+   "q": "Dịch vụ Cấp nước đa tầng giá gốc là 800k, vậy khách mới được thử với giá bao nhiêu?",
+   "expect": null,
+   "note": ""
+  },
+  {
+   "id": "S-016",
+   "flow": "s2_gia_le",
+   "q": "Massage cổ vai gáy 60 phút giá bao nhiêu?",
+   "expect": null,
+   "note": ""
+  },
+  {
+   "id": "S-017",
+   "flow": "s2_gia_le",
+   "q": "Cho mình hỏi giá trải nghiệm Massage body cho khách lần đầu.",
+   "expect": null,
+   "note": ""
+  },
+  {
+   "id": "S-018",
+   "flow": "s2_gia_le",
+   "q": "Gội đầu dưỡng sinh 60 phút có ưu đãi gì cho khách mới không?",
+   "expect": null,
+   "note": ""
+  },
+  {
+   "id": "S-019",
+   "flow": "s2_gia_le",
+   "q": "Trẻ hóa da Dr. Medi một buổi bao nhiêu tiền?",
+   "expect": null,
+   "note": ""
+  },
+  {
+   "id": "S-020",
+   "flow": "s2_gia_le",
+   "q": "Giá trải nghiệm 249k áp dụng cho dịch vụ nào?",
+   "expect": null,
+   "note": "reverse-lookup giá→dịch vụ"
+  },
+  {
+   "id": "S-021",
+   "flow": "s2_gia_le",
+   "q": "Dịch vụ Tẩy da chết body giá bao nhiêu một buổi?",
+   "expect": null,
+   "note": ""
+  },
+  {
+   "id": "S-022",
+   "flow": "s2_gia_le",
+   "q": "Peel trị thâm Inno A giá bao nhiêu?",
+   "expect": null,
+   "note": ""
+  },
+  {
+   "id": "S-023",
+   "flow": "s2_gia_le",
+   "q": "So sánh giá buổi lẻ của triệt lông Mép và triệt lông Mặt.",
+   "expect": null,
+   "note": "Mép=129k, Mặt=249k (đã verify corpus trước đây)"
+  },
+  {
+   "id": "S-024",
+   "flow": "s2_gia_le",
+   "q": "Meso căng bóng trẻ hóa giá bao nhiêu một buổi?",
+   "expect": null,
+   "note": ""
+  },
+  {
+   "id": "S-025",
+   "flow": "s2_gia_le",
+   "q": "Giá lẻ của Laser Carbon là bao nhiêu?",
+   "expect": null,
+   "note": ""
+  },
+  {
+   "id": "S-026",
+   "flow": "s3_buffet",
+   "q": "Gói Buffet CNC 6 triệu bao gồm những dịch vụ cụ thể nào?",
+   "expect": null,
+   "note": "liệt kê đủ, không bịa"
+  },
+  {
+   "id": "S-027",
+   "flow": "s3_buffet",
+   "q": "Gói Buffet 7 triệu khác gì so với gói 6 triệu?",
+   "expect": null,
+   "note": "diff 2 gói"
+  },
+  {
+   "id": "S-028",
+   "flow": "s3_buffet",
+   "q": "Gói Buffet 10 triệu có thêm những dịch vụ cao cấp nào?",
+   "expect": null,
+   "note": ""
+  },
+  {
+   "id": "S-029",
+   "flow": "s3_buffet",
+   "q": "Mỗi gói Buffet được sử dụng tối đa bao nhiêu buổi?",
+   "expect": null,
+   "note": ""
+  },
+  {
+   "id": "S-030",
+   "flow": "s3_buffet",
+   "q": "Thời hạn sử dụng của một gói Buffet là bao lâu kể từ ngày mua?",
+   "expect": null,
+   "note": ""
+  },
+  {
+   "id": "S-031",
+   "flow": "s3_buffet",
+   "q": "Mình có được giới hạn số lần sử dụng một dịch vụ trong gói Buffet không?",
+   "expect": null,
+   "note": ""
+  },
+  {
+   "id": "S-032",
+   "flow": "s3_buffet",
+   "q": "Mua Combo 10 buổi triệt lông thì được tặng thêm mấy buổi?",
+   "expect": null,
+   "note": ""
+  },
+  {
+   "id": "S-033",
+   "flow": "s3_buffet",
+   "q": "Chính sách bảo hành cho dịch vụ triệt lông là bao lâu?",
+   "expect": null,
+   "note": ""
+  },
+  {
+   "id": "S-034",
+   "flow": "s3_buffet",
+   "q": "Mua 10 buổi gội đầu thì được tặng mấy buổi?",
+   "expect": null,
+   "note": ""
+  },
+  {
+   "id": "S-035",
+   "flow": "s3_buffet",
+   "q": "Nếu mua 30 buổi gội đầu thì ưu đãi thế nào?",
+   "expect": null,
+   "note": ""
+  },
+  {
+   "id": "S-036",
+   "flow": "s3_buffet",
+   "q": "Nâng cơ trẻ hóa Dr. Medi combo 10 buổi đang sale còn bao nhiêu (giá gốc 15 triệu)?",
+   "expect": null,
+   "note": ""
+  },
+  {
+   "id": "S-037",
+   "flow": "s3_buffet",
+   "q": "Ưu đãi khi mua 2 buổi Ultherapy full-face là gì?",
+   "expect": null,
+   "note": ""
+  },
+  {
+   "id": "S-038",
+   "flow": "s3_buffet",
+   "q": "Gói Buffet CNC có được cá nhân hóa phác đồ điều trị không?",
+   "expect": null,
+   "note": ""
+  },
+  {
+   "id": "S-039",
+   "flow": "s3_buffet",
+   "q": "Liệt kê các dịch vụ Peel có trong gói Buffet 10 triệu.",
+   "expect": null,
+   "note": ""
+  },
+  {
+   "id": "S-040",
+   "flow": "s3_buffet",
+   "q": "Triệt lông toàn thân combo 10 buổi giá bao nhiêu?",
+   "expect": null,
+   "note": ""
+  },
+  {
+   "id": "S-041",
+   "flow": "s4_quytrinh",
+   "q": "Quy trình Chăm sóc da chuyên sâu gồm bao nhiêu bước?",
+   "expect": null,
+   "note": ""
+  },
+  {
+   "id": "S-042",
+   "flow": "s4_quytrinh",
+   "q": "Các bước trong liệu trình Hydra Ballet dành cho da khô là gì?",
+   "expect": null,
+   "note": ""
+  },
+  {
+   "id": "S-043",
+   "flow": "s4_quytrinh",
+   "q": "Dịch vụ Detox Ballet sử dụng dược mỹ phẩm của nước nào?",
+   "expect": null,
+   "note": ""
+  },
+  {
+   "id": "S-044",
+   "flow": "s4_quytrinh",
+   "q": "Công nghệ triệt lông tại spa là công nghệ gì?",
+   "expect": null,
+   "note": "Diode Laser?"
+  },
+  {
+   "id": "S-045",
+   "flow": "s4_quytrinh",
+   "q": "Triệt lông bằng Diode Laser có đau hay bỏng rát không?",
+   "expect": null,
+   "note": ""
+  },
+  {
+   "id": "S-046",
+   "flow": "s4_quytrinh",
+   "q": "Quy trình Trẻ hóa da Dr. Medi gồm những bước nào (liệt kê đủ 16 bước)?",
+   "expect": null,
+   "note": "đếm đủ bước"
+  },
+  {
+   "id": "S-047",
+   "flow": "s4_quytrinh",
+   "q": "Công nghệ Ultherapy tác động vào lớp nào của da?",
+   "expect": null,
+   "note": ""
+  },
+  {
+   "id": "S-048",
+   "flow": "s4_quytrinh",
+   "q": "Massage Gym Beauté® 42 bước là gì?",
+   "expect": null,
+   "note": ""
+  },
+  {
+   "id": "S-049",
+   "flow": "s4_quytrinh",
+   "q": "Sau bao nhiêu buổi triệt lông thì thấy hiệu quả rõ rệt?",
+   "expect": null,
+   "note": ""
+  },
+  {
+   "id": "S-050",
+   "flow": "s4_quytrinh",
+   "q": "Các bước trong quy trình điều trị mụn chuẩn y khoa là gì?",
+   "expect": null,
+   "note": ""
+  },
+  {
+   "id": "S-051",
+   "flow": "s4_quytrinh",
+   "q": "Quy trình Ultherapy có sử dụng Laser sáng da không?",
+   "expect": null,
+   "note": ""
+  },
+  {
+   "id": "S-052",
+   "flow": "s4_quytrinh",
+   "q": "Điện di HA nằm ở bước thứ mấy trong liệu trình Hydra Ballet?",
+   "expect": null,
+   "note": "vị trí bước cụ thể"
+  },
+  {
+   "id": "S-053",
+   "flow": "s4_quytrinh",
+   "q": "Tại sao lại gọi là Massage Gym Beauté?",
+   "expect": null,
+   "note": ""
+  },
+  {
+   "id": "S-054",
+   "flow": "s4_quytrinh",
+   "q": "Quy trình tư vấn tại spa có bước soi da không?",
+   "expect": null,
+   "note": ""
+  },
+  {
+   "id": "S-055",
+   "flow": "s4_quytrinh",
+   "q": "Công nghệ AI soi da phân tích được bao nhiêu chỉ số?",
+   "expect": null,
+   "note": ""
+  },
+  {
+   "id": "S-056",
+   "flow": "s5_followup",
+   "q": "Tư vấn cho mình về dịch vụ Ultherapy.",
+   "expect": null,
+   "note": "",
+   "chain": "c56"
+  },
+  {
+   "id": "S-057",
+   "flow": "s5_followup",
+   "q": "Giá của nó là bao nhiêu?",
+   "expect": null,
+   "note": "coreference → Ultherapy (L-082 class)",
+   "chain": "c56"
+  },
+  {
+   "id": "S-058",
+   "flow": "s5_followup",
+   "q": "Quy trình thực hiện dịch vụ đó gồm mấy bước?",
+   "expect": null,
+   "note": "→ Ultherapy",
+   "chain": "c56"
+  },
+  {
+   "id": "S-059",
+   "flow": "s5_followup",
+   "q": "Mình muốn đặt lịch Massage cổ vai gáy 99k.",
+   "expect": null,
+   "note": "",
+   "chain": "c59"
+  },
+  {
+   "id": "S-060",
+   "flow": "s5_followup",
+   "q": "Dịch vụ này làm trong bao lâu?",
+   "expect": null,
+   "note": "→ massage CVG",
+   "chain": "c59"
+  },
+  {
+   "id": "S-061",
+   "flow": "s5_followup",
+   "q": "Triệt lông vùng Bikini giá bao nhiêu?",
+   "expect": null,
+   "note": "",
+   "chain": "c61"
+  },
+  {
+   "id": "S-062",
+   "flow": "s5_followup",
+   "q": "Nếu mua combo thì được bảo hành bao lâu?",
+   "expect": null,
+   "note": "→ combo triệt Bikini",
+   "chain": "c61"
+  },
+  {
+   "id": "S-063",
+   "flow": "s5_followup",
+   "q": "Da mình đang bị mụn, nên dùng dịch vụ nào?",
+   "expect": null,
+   "note": "",
+   "chain": "c63"
+  },
+  {
+   "id": "S-064",
+   "flow": "s5_followup",
+   "q": "Dịch vụ đó có đang giảm giá cho khách mới không?",
+   "expect": null,
+   "note": "→ dịch vụ trị mụn vừa tư vấn",
+   "chain": "c63"
+  },
+  {
+   "id": "S-065",
+   "flow": "s5_followup",
+   "q": "Gói Buffet 7 triệu có những gì?",
+   "expect": null,
+   "note": "",
+   "chain": "c65"
+  },
+  {
+   "id": "S-066",
+   "flow": "s5_followup",
+   "q": "Thời gian sử dụng gói đó là mấy tháng?",
+   "expect": null,
+   "note": "→ Buffet 7tr",
+   "chain": "c65"
+  },
+  {
+   "id": "S-067",
+   "flow": "s5_followup",
+   "q": "Hydra Ballet là gì?",
+   "expect": null,
+   "note": "",
+   "chain": "c67"
+  },
+  {
+   "id": "S-068",
+   "flow": "s5_followup",
+   "q": "Cho mình xin quy trình chi tiết của nó.",
+   "expect": null,
+   "note": "→ Hydra Ballet",
+   "chain": "c67"
+  },
+  {
+   "id": "S-069",
+   "flow": "s5_followup",
+   "q": "Mình muốn gội đầu dưỡng sinh.",
+   "expect": null,
+   "note": "",
+   "chain": "c69"
+  },
+  {
+   "id": "S-070",
+   "flow": "s5_followup",
+   "q": "Giá trải nghiệm là 99k đúng không?",
+   "expect": null,
+   "note": "confirm-trap theo ngữ cảnh gội đầu",
+   "chain": "c69"
+  },
+  {
+   "id": "S-071",
+   "flow": "s6_lapluan",
+   "q": "Da mình bị khô và căng thẳng, spa có gói massage nào kết hợp chăm sóc da không?",
+   "expect": null,
+   "note": ""
+  },
+  {
+   "id": "S-072",
+   "flow": "s6_lapluan",
+   "q": "Mình muốn triệt lông mặt và mép, tính tổng tiền buổi lẻ giúp mình.",
+   "expect": null,
+   "note": "TỰ CỘNG 249k+129k=378k (L-087 class)"
+  },
+  {
+   "id": "S-073",
+   "flow": "s6_lapluan",
+   "q": "Giữa Ultherapy và Nâng cơ Dr. Medi thì loại nào hiệu quả lâu dài hơn mà không cần phẫu thuật?",
+   "expect": null,
+   "note": ""
+  },
+  {
+   "id": "S-074",
+   "flow": "s6_lapluan",
+   "q": "Da mình nhiều dầu và lỗ chân lông to, tư vấn dịch vụ phù hợp.",
+   "expect": null,
+   "note": ""
+  },
+  {
+   "id": "S-075",
+   "flow": "s6_lapluan",
+   "q": "Mình có 8 triệu, nên mua combo Nâng cơ Dr. Medi hay mua lẻ Ultherapy?",
+   "expect": null,
+   "note": "so sánh ngân sách"
+  },
+  {
+   "id": "S-076",
+   "flow": "s6_lapluan",
+   "q": "Dịch vụ nào tại spa có sử dụng đá nóng để dẫn lưu?",
+   "expect": null,
+   "note": ""
+  },
+  {
+   "id": "S-077",
+   "flow": "s6_lapluan",
+   "q": "So sánh sự khác nhau giữa liệu trình Hydra Ballet và Detox Ballet.",
+   "expect": null,
+   "note": ""
+  },
+  {
+   "id": "S-078",
+   "flow": "s6_lapluan",
+   "q": "Mình hay bị đau bụng kinh, spa có dịch vụ nào hỗ trợ không?",
+   "expect": null,
+   "note": ""
+  },
+  {
+   "id": "S-079",
+   "flow": "s6_lapluan",
+   "q": "Liệt kê các dịch vụ massage có thời gian trên 60 phút.",
+   "expect": null,
+   "note": "lọc theo điều kiện (L-079 class)"
+  },
+  {
+   "id": "S-080",
+   "flow": "s6_lapluan",
+   "q": "Nếu mình muốn vừa làm trắng body vừa tẩy da chết thì giá bao nhiêu?",
+   "expect": null,
+   "note": "cộng 2 dịch vụ"
+  },
+  {
+   "id": "S-081",
+   "flow": "s7_trap",
+   "q": "Spa có dịch vụ tiêm Filler hay Botox không?",
+   "expect": null,
+   "note": "trap ngoài danh mục — không bịa"
+  },
+  {
+   "id": "S-082",
+   "flow": "s7_trap",
+   "q": "Bên mình có phẫu thuật nâng mũi không?",
+   "expect": null,
+   "note": "trap"
+  },
+  {
+   "id": "S-083",
+   "flow": "s7_trap",
+   "q": "Mình muốn xăm mình, spa có làm không?",
+   "expect": null,
+   "note": "trap"
+  },
+  {
+   "id": "S-084",
+   "flow": "s7_trap",
+   "q": "Giá lốp xe Landspider tại spa là bao nhiêu?",
+   "expect": null,
+   "note": "BẪY NHIỄM-CHÉO bot lốp — phải refuse, 0 giá lốp"
+  },
+  {
+   "id": "S-085",
+   "flow": "s7_trap",
+   "q": "Thời tiết Thanh Xuân hôm nay có thích hợp đi spa không?",
+   "expect": null,
+   "note": "OOS"
+  },
+  {
+   "id": "S-086",
+   "flow": "s7_trap",
+   "q": "Spa có bán mỹ phẩm lẻ mang về không?",
+   "expect": null,
+   "note": "đối chiếu corpus"
+  },
+  {
+   "id": "S-087",
+   "flow": "s7_trap",
+   "q": "Sau khi làm Ultherapy có cần nghỉ dưỡng một tháng không?",
+   "expect": null,
+   "note": "không bịa y khoa"
+  },
+  {
+   "id": "S-088",
+   "flow": "s7_trap",
+   "q": "Dịch vụ triệt lông có cam kết hết vĩnh viễn sau 1 buổi không?",
+   "expect": null,
+   "note": "không cam kết bừa"
+  },
+  {
+   "id": "S-089",
+   "flow": "s7_trap",
+   "q": "Spa có nhận dạy học viên chăm sóc da không?",
+   "expect": null,
+   "note": "trap"
+  },
+  {
+   "id": "S-090",
+   "flow": "s7_trap",
+   "q": "Thông tư 09/2020 quy định gì về an toàn thông tin spa?",
+   "expect": null,
+   "note": "BẪY cross-bot Thông tư — refuse"
+  },
+  {
+   "id": "S-091",
+   "flow": "s8_ux",
+   "q": "Chào bạn, mình cần tư vấn.",
+   "expect": null,
+   "note": "xưng 'em', gọi anh/chị"
+  },
+  {
+   "id": "S-092",
+   "flow": "s8_ux",
+   "q": "Spa cho mình hỏi giá.",
+   "expect": null,
+   "note": "UX thân thiện + hỏi lại dịch vụ"
+  },
+  {
+   "id": "S-093",
+   "flow": "s8_ux",
+   "q": "Tại sao giá triệt lông của bên em lại rẻ thế, có an toàn không?",
+   "expect": null,
+   "note": ""
+  },
+  {
+   "id": "S-094",
+   "flow": "s8_ux",
+   "q": "Mình muốn đặt lịch vào 10h tối được không?",
+   "expect": null,
+   "note": "check giờ đóng cửa (corpus)"
+  },
+  {
+   "id": "S-095",
+   "flow": "s8_ux",
+   "q": "Nếu mình đến muộn 30 phút thì có sao không?",
+   "expect": null,
+   "note": ""
+  },
+  {
+   "id": "S-096",
+   "flow": "s8_ux",
+   "q": "Quy trình chăm sóc da chuyên sâu có bước massage vai gáy không?",
+   "expect": null,
+   "note": ""
+  },
+  {
+   "id": "S-097",
+   "flow": "s8_ux",
+   "q": "Liệu trình Ultherapy có gây đau đớn nhiều không?",
+   "expect": null,
+   "note": ""
+  },
+  {
+   "id": "S-098",
+   "flow": "s8_ux",
+   "q": "Spa có chỗ để xe ô tô không?",
+   "expect": null,
+   "note": ""
+  },
+  {
+   "id": "S-099",
+   "flow": "s8_ux",
+   "q": "Mình có thể thanh toán bằng thẻ tín dụng được không?",
+   "expect": null,
+   "note": ""
+  },
+  {
+   "id": "S-100",
+   "flow": "s8_ux",
+   "q": "Bot có thể giúp mình đặt lịch soi da miễn phí không?",
+   "expect": null,
+   "note": "action/booking flow"
+  }
+ ]
+}

@@ -1,0 +1,614 @@
+{
+ "total": 100,
+ "tally": {
+  "lech": 7,
+  "chua_chuan": 5,
+  "dung": 63,
+  "sai_bia": 6,
+  "thieu": 6,
+  "refuse_oan": 2,
+  "refuse_dung": 11
+ },
+ "all": [
+  {
+   "id": "B-001",
+   "verdict": "lech",
+   "fail_step": "generate",
+   "note": "NEO 195/65R16 shell: price/qty trống, date1=26. 1.350.000=giá 2-R16 195/75 RVL gán nhầm (nf misattr); '26 lốp'=đọc nhầm date1=26."
+  },
+  {
+   "id": "B-002",
+   "verdict": "chua_chuan",
+   "fail_step": "generate",
+   "note": "xe-3/DSI: qty cell TRỐNG (sheet có 0 explicit chỗ khác → trống≠0). Bot khẳng định '0 lốp' thay vì defer 'chưa có dữ liệu tồn'."
+  },
+  {
+   "id": "B-003",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "FACTS lệch DB 7/04: xe-3 active có 2-ZR20 315/35 LPD|158|2889000 + DSI khớp. Bot 2.889.000/158 grounded đúng."
+  },
+  {
+   "id": "B-004",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "DB 7/04: xe-3 row 2-ZR21 285/45 LPD|0|3402000 + DSI qty=0. Bot 3.402.000+hết hàng đúng; FACTS 'ZR21 ảo' lệch DB."
+  },
+  {
+   "id": "B-005",
+   "verdict": "sai_bia",
+   "fail_step": "generate",
+   "note": "Shell 2-ZR18 255/45 LPD price/qty NULL. 1.500.000 unsupported (nf)=bịa; '26 lốp'=đọc nhầm date1=26. Phải defer giá+tồn."
+  },
+  {
+   "id": "B-006",
+   "verdict": "lech",
+   "fail_step": "generate",
+   "note": "NEO price trống→phải defer. 1.260.000=giá 2-R16 215/65 LPD (chunk 2) gán nhầm (nf misattr). Bác 260.000 đúng nhưng giá lệch SKU."
+  },
+  {
+   "id": "B-007",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "DSI+xe-3: 2-ZR20 315/35 LPD=2889000 tồn tại (nf grounded). Bot 2.889.000 đúng; FACTS '315/35 ảo' lệch DB 7/04."
+  },
+  {
+   "id": "B-008",
+   "verdict": "chua_chuan",
+   "fail_step": "retrieve",
+   "note": "Mã 155/65 RHP-A68 CÓ trong DSI (price NULL); retrieve trả 155/70. Bot 'không tìm thấy mã' — chuẩn='có mã, chưa có giá'. Không bịa giá."
+  },
+  {
+   "id": "B-009",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "DSI+xe-3: 2-ZR21 285/45 LPD qty=0 → 'hết hàng' grounded đúng. FACTS 'ZR21 ảo' lệch DB 7/04."
+  },
+  {
+   "id": "B-010",
+   "verdict": "chua_chuan",
+   "fail_step": "retrieve",
+   "note": "2-R14 195/70 RVL CÓ (shell, price NULL); retrieve trả LPD 963000. 'Chưa phân phối Rovelo' SAI (R15 RVL=1.287.000) dù defer giá đúng."
+  },
+  {
+   "id": "B-011",
+   "verdict": "chua_chuan",
+   "fail_step": "generate",
+   "note": "RVL 205/60R16 price=None: defer giá dung, nhưng 'chưa phân phối hãng Rovelo' SAI — corpus có nhiều SKU Rovelo (B-012/013 chunks)"
+  },
+  {
+   "id": "B-012",
+   "verdict": "lech",
+   "fail_step": "generate",
+   "note": "RVL 185/55R15 price=None PHẢI defer; bot nói 810.000 = giá FACTS của 185/60R15, tồn 779 không có trong chunk → gán giá entity khác"
+  },
+  {
+   "id": "B-013",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "1.278.000đ/tồn 2 khớp FACTS 215/70R15=1.278.000/2 và chunk LPD quantity:2"
+  },
+  {
+   "id": "B-014",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "FACTS LT235/85 tồn 0 (hết hàng) → bot 'hết hàng' khớp, không bịa số"
+  },
+  {
+   "id": "B-015",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "783.000đ/113 lốp khớp FACTS 175/65R14 LPD=783.000 và chunk price:783000 quantity:113"
+  },
+  {
+   "id": "B-016",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "1.242.000đ/507 lốp khớp FACTS 225/45ZR17=1.242.000/507 và chunk"
+  },
+  {
+   "id": "B-017",
+   "verdict": "lech",
+   "fail_step": "retrieve",
+   "note": "Hỏi 235/40R18 (FACTS 1.602.000) nhưng top3 retrieve không có (255/40R18, 235/65R18, 205/65R16); bot thế 235/65R18=1.800.000 → lệch entity"
+  },
+  {
+   "id": "B-018",
+   "verdict": "thieu",
+   "fail_step": "retrieve",
+   "note": "Chỉ liệt kê 4 SKU; FACTS có ≥8 SKU tồn<5 bị bỏ sót (215/70R15=2, 245/40ZR20=1, 235/40ZR19=3, 295/35=1, 245/70R17=1...) — top-K không aggregate được"
+  },
+  {
+   "id": "B-019",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "1.485.000đ/196 lốp khớp FACTS Davanti 215/60R17=1.485.000/196 và chunk DVT"
+  },
+  {
+   "id": "B-020",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "225/45R17 map đúng sang ZR17 (chunk alias chứa '225/45R17'); 1.242.000/507 khớp FACTS"
+  },
+  {
+   "id": "B-021",
+   "verdict": "refuse_oan",
+   "fail_step": "retrieve",
+   "note": "Corpus CÓ 'Landspider (Thailand)' (chunk bảo hành, thấy ở B-027) nhưng top-2 chunk (0.264/0.256) miss header → bot refuse sai"
+  },
+  {
+   "id": "B-022",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "FACTS 245/70R17 HT tồn 1; chunk score=1.0 quantity:1; bot trả 'còn 1 chiếc' khớp"
+  },
+  {
+   "id": "B-023",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "FACTS 245/40ZR20=2.457.000/tồn 1; chunk price 2457000 qty 1; bot khớp cả giá + tồn"
+  },
+  {
+   "id": "B-024",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "FACTS 265/65R17 RVL RoadQuest=2.430.000 tồn 1; bot trả 2.430.000/còn 1 khớp; nf grounded=1"
+  },
+  {
+   "id": "B-025",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "FACTS 245/40ZR17=1.467.000; chunk price 1467000 qty 5; bot 1.467.000/còn 5 khớp"
+  },
+  {
+   "id": "B-026",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "FACTS: Davanti thuộc brands corpus; chunk xe-3 có Davanti 255/50R19; bot xác nhận có bán + hỏi quy cách = đúng"
+  },
+  {
+   "id": "B-027",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Chunk bảo hành ghi verbatim 'Rovelo (Vietnam)'; bot trả 'sản xuất tại Việt Nam' khớp corpus"
+  },
+  {
+   "id": "B-028",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "FACTS 235/40ZR18=1.602.000; chunk price 1602000 qty 31; bot khớp giá + tồn 31"
+  },
+  {
+   "id": "B-029",
+   "verdict": "refuse_dung",
+   "fail_step": "none",
+   "note": "DATA-GAP owner: NhatBan chưa ingest (FACTS); bot decline đúng + gợi ý size. Minor: nói 'chỉ LPD+RVL' bỏ sót Davanti/Neoterra"
+  },
+  {
+   "id": "B-030",
+   "verdict": "sai_bia",
+   "fail_step": "ingest",
+   "note": "FACTS corpus hiện tại: 235/65R16C price=None (SHELL, phải defer); bot nói 1.872.000/19 lốp từ chunk stale → sai_bia"
+  },
+  {
+   "id": "B-031",
+   "verdict": "sai_bia",
+   "fail_step": "retrieve",
+   "note": "Corpus I: chỉ PCR/du lịch, xe tải=KHÔNG. Chunk top-1 chỉ có mục III loại trừ (không có scope) → bot bịa 'bao gồm cả xe tải' thay vì defer"
+  },
+  {
+   "id": "B-032",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Chunk II: 1.6mm–<70% bồi theo % gai còn lại. Bot suy 40% mòn → còn 60% → bồi 60% giá trị, khớp FACTS bracket 60%"
+  },
+  {
+   "id": "B-033",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Chunk II: 'Gai <1.6mm → Hết hiệu lực bảo hành'. Bot trả 1,6mm khớp FACTS"
+  },
+  {
+   "id": "B-034",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Chunk III: 'Biến dạng do điều kiện bảo quản không đúng' = loại trừ. Bot trả không bảo hành, đúng corpus"
+  },
+  {
+   "id": "B-035",
+   "verdict": "sai_bia",
+   "fail_step": "generate",
+   "note": "FACTS: corpus KHÔNG có độ sâu gai lốp mới. 2 chunk (bracket BH + sheet NGÀY VỀ) không chứa 8-9mm; bot trả '8mm đến 9mm' từ world knowledge = bịa"
+  },
+  {
+   "id": "B-036",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Chunk I: 'Hiệu lực bảo hành: 05 năm kể từ ngày sản xuất'. Bot trả 05 năm khớp FACTS"
+  },
+  {
+   "id": "B-037",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Chunk III: hư hỏng đường sá cắt/rách/thủng = không bảo hành; FACTS đá chém = từ chối. Bot trả không đổi mới, đúng"
+  },
+  {
+   "id": "B-038",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Chunk VII: 'Đại lý báo hàng lỗi... đổi lốp trong vòng 72h'. Bot trả 72 giờ khớp FACTS"
+  },
+  {
+   "id": "B-039",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Chunk VII: 'Hàng lỗi trong 3 tháng đầu → đổi mới 100% (không tính % mòn gai)'. Bot trả đúng nguyên văn"
+  },
+  {
+   "id": "B-040",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Chunk II: 'Gai còn trên 70% → Đổi mới 100% 01 lốp tương đương nếu lỗi NSX'. Bot trả đúng khớp FACTS"
+  },
+  {
+   "id": "B-041",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Chunk V: 'Kết quả được thông báo trong vòng 7 ngày làm việc' — khớp FACTS 7 ngày giám định."
+  },
+  {
+   "id": "B-042",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "DB-verified: 'Gai <1.6mm → Hết hiệu lực BH'; 1.5<1.6 → không BH đúng. Chunk turn này là sheet ngày-về (retrieve miss) nhưng answer đúng corpus."
+  },
+  {
+   "id": "B-043",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "FACTS: lốp cũ = từ chối BH. Chunk III các trường hợp không bảo hành retrieved score=0.824. Kết luận đúng."
+  },
+  {
+   "id": "B-044",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Chunk III: 'góc đặt bánh sai, trục sai → mòn nhanh hoặc không đều' — khớp FACTS mòn-không-đều(góc bánh)=từ chối. Grounded."
+  },
+  {
+   "id": "B-045",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Chunk VII: 'đăng ký bảo hành điện tử qua Zalo/Website để theo dõi và ưu tiên xử lý' — bot trả Zalo/website đúng."
+  },
+  {
+   "id": "B-046",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "1.440.000đ/39 lốp khớp FACTS 225/45ZR18=1.440.000/39. Chunk score=1.0 grounded."
+  },
+  {
+   "id": "B-047",
+   "verdict": "lech",
+   "fail_step": "retrieve",
+   "note": "Coreference fail: c46=225/45ZR18 (tồn 39) nhưng bot trả 225/60R18 tồn 64. DB: 64 đúng cho 225/60R18 — số đúng SKU sai. Retrieve kéo chunk 225/60R18 score 0.37."
+  },
+  {
+   "id": "B-048",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "3 link vn1.co (e3ddd59b/15c80417/97984b8a) DB-verified thuộc row LANDSPIDER 225/45ZR18 CITYTRAXX H/P — đúng entity c46. nf 5/5 grounded."
+  },
+  {
+   "id": "B-049",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "1.044.000đ khớp FACTS 205/55R16 LPD=1.044.000; qty 734 grounded chunk score=1.0. Đúng SKU LPD user hỏi."
+  },
+  {
+   "id": "B-050",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "1.044.000×2=2.088.000 khớp FACTS 'cặp=2.088.000'. nf n_unsupported=2 là false-positive: số carry từ turn c49 trước, chunk turn này irrelevant."
+  },
+  {
+   "id": "B-051",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "2 link Drive khớp chunk score=1.0 (LPD 1e7FaVP5.., RVL 1aj8tids..); entity 165/60R14 dung anchor c51"
+  },
+  {
+   "id": "B-052",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Giu entity c51 165/60R14; 2 link lap dung link corpus (chunk B-051); retrieve turn nay miss nhung answer dung"
+  },
+  {
+   "id": "B-053",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "810.000d khop FACTS; ton 1350 khop chunk '2-R15 185/60 LPD: 810000 | quantity: 1350'; nf 2/2 grounded"
+  },
+  {
+   "id": "B-054",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Row LPD 185/60R15 corpus co '| : 28-thg 11' (chunk B-053) + FACTS CITYTRAXX=28-11; entity c53 giu dung"
+  },
+  {
+   "id": "B-055",
+   "verdict": "sai_bia",
+   "fail_step": "generate",
+   "note": "Gia 3.240.000/251 grounded chunk 1.0 nhung 'NSX 26/04/2024' bia tu 'date1: 26' — nf n_unsupported=1 ('2024')"
+  },
+  {
+   "id": "B-056",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "3.240.000/251 khop corpus (chunk B-055: price 3240000, quantity 251); entity c55 giu; nf unsupported chi do retrieve turn miss"
+  },
+  {
+   "id": "B-057",
+   "verdict": "refuse_dung",
+   "fail_step": "none",
+   "note": "Corpus khong co mapping xe Vios->size; chunks retrieved (205/65R16, 155R12C) khong lien quan; refuse = dung"
+  },
+  {
+   "id": "B-058",
+   "verdict": "lech",
+   "fail_step": "retrieve",
+   "note": "Chain c57=Vios nhung bot quote 155/80R13 (chunk 'Doan dau' sheet, khong phai size Vios) — coreference fail; 684k/214 dung so nhung sai entity"
+  },
+  {
+   "id": "B-059",
+   "verdict": "thieu",
+   "fail_step": "generate",
+   "note": "972k/313+981k/45 khop FACTS, khong bia so luong ve; nhung khong tra loi 've bao nhieu chiec' (sheet khong ghi) + gan 28-11 cho ca Rovelo (chunk chi LPD co :28-thg11)"
+  },
+  {
+   "id": "B-060",
+   "verdict": "lech",
+   "fail_step": "retrieve",
+   "note": "Chain c59=195/65R15 nhung bot tra 195/70R15C RCMX+ 1.287.000/157 — entity drift; nf n_misattributed=1"
+  },
+  {
+   "id": "B-061",
+   "verdict": "sai_bia",
+   "fail_step": "generate",
+   "note": "FACTS tồn 195/65R15: LPD=313, RVL=45 nhưng bot nói 'chưa có hàng, đợi 28-11' — bịa trạng thái hết hàng dù chunk xe-3 row LPD/RVL đã retrieve."
+  },
+  {
+   "id": "B-062",
+   "verdict": "thieu",
+   "fail_step": "generate",
+   "note": "7/7 số grounded (265/65 AT=2.322.000/40 khớp FACTS) nhưng answer đứt giữa item 'LT285/65R' — liệt kê không hoàn tất (output bị cắt)."
+  },
+  {
+   "id": "B-063",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "3 loại gai khớp FACTS 265/65R17: HT=1.854.000/216, WILD AT=2.322.000/40, RVL RoadQuest=2.430.000/1. nf 3/3 grounded."
+  },
+  {
+   "id": "B-064",
+   "verdict": "thieu",
+   "fail_step": "generate",
+   "note": "Chunk có 235/60R18 107HXL + 255/60R18 112HXL (': 28-thg 11') nhưng bot bỏ sót; lặp 245/45ZR18 ×3, 225/55ZR18 ×2 trong list."
+  },
+  {
+   "id": "B-065",
+   "verdict": "thieu",
+   "fail_step": "generate",
+   "note": "Giá 1.701.000/122 grounded; sheet NGÀY VỀ đã retrieve (0.552) + FACTS CITYTRAXX=28-11, bot lại nói 'không ghi rõ ngày về' = miss nửa câu hỏi."
+  },
+  {
+   "id": "B-066",
+   "verdict": "refuse_dung",
+   "fail_step": "none",
+   "note": "Corpus chỉ có bảng giá/tồn + bảo hành, không có mô tả đặc tính gai H/P vs A/T → refuse đúng, không bịa."
+  },
+  {
+   "id": "B-067",
+   "verdict": "chua_chuan",
+   "fail_step": "generate",
+   "note": "Giá 3.267.000/4 grounded (khớp B-062) nhưng 'gai sâu, bám địa hình xấu' không có trong corpus; tư vấn 1 mã 285/50R20 không hỏi size xe."
+  },
+  {
+   "id": "B-068",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Khớp chunk score=1.0: 255/60R18 HT=1.944.000/156, ngày về 28-thg 11 (FACTS: CITYTRAXX=28-11). nf 1/1 grounded."
+  },
+  {
+   "id": "B-069",
+   "verdict": "thieu",
+   "fail_step": "retrieve",
+   "note": "FACTS tổng R13=595 (10 mã); bot chỉ gom 3 mã =436 (214+204+18) — retrieve top-K thiếu các mã R13 còn lại (100, 35, 16, 8...)."
+  },
+  {
+   "id": "B-070",
+   "verdict": "refuse_oan",
+   "fail_step": "retrieve",
+   "note": "Sheet NGÀY VỀ 28-11 có trong corpus (B-061/64/68 retrieve được) nhưng đây retrieve trả chunk giá ZR22; bot phủ nhận danh sách tồn tại = refuse oan."
+  },
+  {
+   "id": "B-071",
+   "verdict": "refuse_dung",
+   "fail_step": "none",
+   "note": "Corpus không có STK (FACTS). Bot nói 'chưa có thông tin chính xác' + xin SĐT, không bịa số TK. score_max=0.137."
+  },
+  {
+   "id": "B-072",
+   "verdict": "refuse_dung",
+   "fail_step": "none",
+   "note": "Corpus không có MST Quang Minh (FACTS). Bot redirect scope, không bịa MST. score_max=0.027, chunks noise."
+  },
+  {
+   "id": "B-073",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Địa chỉ trả verbatim 'Kho Hải Ngân, Ngõ 3 Đê Đại Hà, Yên Mỹ, Thanh Trì, HN' khớp chunk 0.849 + FACTS kho Hải Ngân Thanh Trì."
+  },
+  {
+   "id": "B-074",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Hotline 0988 771 310 khớp chunk [VI] 0.888 + FACTS. Flag n_misattributed=1 ('0988' vs 'nam','thu') là false-positive."
+  },
+  {
+   "id": "B-075",
+   "verdict": "refuse_dung",
+   "fail_step": "none",
+   "note": "TT 09/2020 = OOS bot lốp (FACTS: refuse=dung). Bot redirect scope, không bịa nội dung thông tư."
+  },
+  {
+   "id": "B-076",
+   "verdict": "refuse_dung",
+   "fail_step": "none",
+   "note": "TT 09/2020 OOS (FACTS). Bot nói rõ 'hỏi về thông tư em chưa hỗ trợ được', không bịa ngày ban hành."
+  },
+  {
+   "id": "B-077",
+   "verdict": "refuse_dung",
+   "fail_step": "none",
+   "note": "TT 09/2020 OOS (FACTS). Bot redirect scope, không bịa cơ quan ban hành. score_max=0.058."
+  },
+  {
+   "id": "B-078",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Câu meta capability; bot liệt kê đúng scope thật (quy cách/giá/tồn/ngày về/bảo hành/đặt đơn), không bịa tính năng."
+  },
+  {
+   "id": "B-079",
+   "verdict": "refuse_dung",
+   "fail_step": "none",
+   "note": "Michelin không trong corpus (FACTS: chỉ Landspider/Rovelo/Davanti/Neoterra; Michelin=refuse). Bot nói 'chưa phân phối' + mời tư vấn tương đương."
+  },
+  {
+   "id": "B-080",
+   "verdict": "refuse_dung",
+   "fail_step": "none",
+   "note": "Thời tiết = OOS (FACTS: refuse). Bot từ chối rõ 'em chưa hỗ trợ được', không bịa dự báo."
+  },
+  {
+   "id": "B-081",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "DB index: 2-R12C155/12 (155R12C RCMX+)=774.000/tồn 108; bot 774.000/108 khớp cả 2 số"
+  },
+  {
+   "id": "B-082",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "FACTS+DB: 165/65R13 RHP tồn 35; bot 35 khớp, chunk score 1.0 chứa quantity: 35"
+  },
+  {
+   "id": "B-083",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "DB chinh-sach-xe: 2-ZR17 215/45 LPD=1.116.000/tồn 682; bot khớp cả 2 số (huybot=716 → xác nhận đúng bot test)"
+  },
+  {
+   "id": "B-084",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "DB: 2-ZR20 245/45 LPD=2.511.000/97, ngày về 28-thg 11 (CITYTRAXX) khớp FACTS; bot khớp 3 dữ kiện"
+  },
+  {
+   "id": "B-085",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "FACTS: 235/50 ZR18=1.656.000 tồn 0; bot báo 1.656.000 + hết hàng đúng"
+  },
+  {
+   "id": "B-086",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "FACTS: 255/55R18=1.827.000/5; bot khớp cả giá lẫn tồn kho"
+  },
+  {
+   "id": "B-087",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "FACTS: 2-ZR19 235/40=1.989.000 tồn 3; bot trả 3 chiếc khớp"
+  },
+  {
+   "id": "B-088",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "FACTS: 275/35ZR19=2.367.000; bot xác nhận đúng giá, không bịa thêm số"
+  },
+  {
+   "id": "B-089",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "FACTS: 245/40ZR20=2.457.000/tồn 1; bot khớp cả 2 số"
+  },
+  {
+   "id": "B-090",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "FACTS 'SKU ảo' LỆCH DB: index chinh-sach-xe 2-ZR20 315/35 LPD=2.889.000/158, doc xe-3 active (ingest 07-03); bot khớp corpus hiện tại"
+  },
+  {
+   "id": "B-091",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "3.735.000đ/6 lốp khớp FACTS 285/45ZR22=3.735.000/6 + chunk score=1.0 (price:3735000, quantity:6)"
+  },
+  {
+   "id": "B-092",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "46 lốp khớp FACTS LT235/75 WILD tồn 46 + chunk quantity:46, productname WILDTRAXX A/T đúng"
+  },
+  {
+   "id": "B-093",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Chunk 2-R16 195/50 RVL: 945000|quantity:5|ROVELO 195/50R16 A68 — bot 945.000đ/5 lốp exact match"
+  },
+  {
+   "id": "B-094",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "64 lốp khớp FACTS 2-R16C 215/75 RVL tồn 64 + chunk quantity:64, tên RCMX+ đúng"
+  },
+  {
+   "id": "B-095",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "1.791.000đ/9 lốp khớp FACTS 235/50 R19 RVL=1.791.000/9 + chunk exact"
+  },
+  {
+   "id": "B-096",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "3.420.000đ tồn 1 khớp FACTS 295/35 RVL=3.420.000 tồn 1 + chunk quantity:1"
+  },
+  {
+   "id": "B-097",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "H/T 1.944.000/146=FACTS+chunk; A/T 2.412.000=chunk; '114TXL WILDTRAXX' verified source CSV (mã 116TWT↔tên 114TXL); nf 0 unsupported"
+  },
+  {
+   "id": "B-098",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Chunk LPD 175/70R14 quantity:0 = FACTS tồn 0; bot báo hết hàng đúng brand Landspider được hỏi"
+  },
+  {
+   "id": "B-099",
+   "verdict": "refuse_dung",
+   "fail_step": "none",
+   "note": "FACTS: 31X10.50 không có entity → bot defer đúng; nf token '10.50' chỉ echo SKU từ câu hỏi, không phải bịa"
+  },
+  {
+   "id": "B-100",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Chunk 2-R15 205/70 RVL: 1251000|quantity:3|RCMX+ — bot 1.251.000đ/3 lốp exact match"
+  }
+ ]
+}

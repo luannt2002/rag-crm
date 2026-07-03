@@ -1,0 +1,285 @@
+[
+ {
+  "cluster": "A — COREFERENCE MULTI-TURN (g6_followup, 3 lệch + 1 refuse-oan / 10 câu nhóm 6)",
+  "bug_gi": "Cả 3 record lệch đều là TURN-2 (follow-up ĐẦU TIÊN) của chain: (1) L-082 'Vậy nó còn hàng không?' sau L-081 hỏi 225/45ZR18 (đáp đúng: còn 39 lốp, đã nằm ngay trong answer L-081) → bot trả '235/65R17 còn 48 lốp' — chunk top score=0.364 là size 235/65R17; (2) L-085 'Link drive chi tiết của nó?' sau L-084 hỏi 165/60R14 (link đúng: folders/1e7FaVP5..., có trong chunk L-084 score 1.0) → bot trả link + giá LT285/65R18 3.267.000đ — chunk top score=0.237 là LT285/65R18; (3) L-087 'Giá 1 cặp (2 chiếc)?' sau L-086 hỏi 205/55R16 (đúng: 1.044.000×2=2.088.000 LPD hoặc 963.000×2=1.926.000 RVL) → bot nhân 205/65R16 RVL 1.143.000×2=2.286.000 — 2 chunk tới LLM là 155/80R13 + 205/65R16. Điểm chung: cả 3 có retrieve_candidates_topk=20, score thấp (0.24–0.48), request_steps.retrieve.source='speculative_hit', prompt_build.history_msgs=2. ĐỐI CHỨNG: L-083 (turn-3 cùng chain c81, history_msgs=4) resolve 'nó'=225/45ZR18 ĐÚNG, retrieve source='vector_store', chunk 2 là đúng row 225/45. Record refuse-oan L-088 ('Lốp Landspider xuất xứ từ đâu?') là CHAIN-HEAD không có đại từ — cơ chế fail KHÁC (BM25/semantic miss: corpus chỉ có 1 chunk ghi 'Landspider (Thailand)' trong header chính sách bảo hành, câu hỏi 'xuất xứ' không match; score_max=0, 20 chunk toàn bảng giá) — KHÔNG thuộc bug coreference này.",
+  "nguyen_nhan_truc_tiep": "Layer: orchestration — condense gate trong node understand_query (merged condense+router). File: src/ragbot/orchestration/nodes/understand.py:168-173 — `has_meaningful_history = history and len(history) > DEFAULT_CONDENSE_MIN_HISTORY_TURNS and sum(chars) >= DEFAULT_CONDENSE_MIN_HISTORY_CHARS`. Với TURNS=2 (shared/constants/_10_rbac.py:223) và turn-2 có history đúng 2 message: `2 > 2 = False` → block `<history>` KHÔNG được đưa vào prompt understand (understand.py:186 chỉ gửi `<question>` trần) → LLM không thể resolve 'nó' → condensed_query = câu gốc → state['query'] giữ nguyên đại từ. Số liệu: char-sum turn-1 của c81=101, c84=275, c86=276 — đều ≥ 100 chars (điều kiện chars PASS), CHỈ điều kiện turns fail. History ĐÃ được load đúng (chat_histories ghi turn-1 lúc 10:38:39-41, turn-2 chạy lúc 10:38:46-50; request_steps.prompt_build metadata: history_msgs=2 cho cả 3 request) — tức KHÔNG phải lỗi nạp history, mà là gate cắt history khỏi prompt condense.",
+  "goc_re_chain": "L1 (answer lệch size) ← L2 (generate grounded vào <documents> chỉ chứa chunk sai size; history 2 msg CÓ trong prompt generate — token_opt_enabled=false, token_opt_history_skipped=false — nhưng sysprompt docs-grounding khiến LLM trả theo documents) ← L3 (retrieve trả chunk lạc: source='speculative_hit' — speculative retrieve (speculative_retrieve_enabled=true, system_config) chạy hybrid_search trên CÂU GỐC CÓ ĐẠI TỪ song song với understand [query_graph.py:1709-1748]; vì understand không đổi query nên cosine(raw_embed, rewritten_embed)=1.0 ≥ threshold → decide_keep_speculative giữ nguyên kết quả câu-đại-từ [retrieve.py:631-660, speculative_retrieve.py:56-73]; grade pass chunk sai vì 'còn hàng không?' khớp ngữ nghĩa với MỌI row tồn kho — L-087 còn grade_path='timeout_fallback') ← L4 (understand không condense vì history bị gate cắt: understand.py:170 dùng `>` — cần ≥3 message) ← L5 IMMUTABLE ROOT CAUSE: DRIFT so-sánh giữa 2 bản cài đặt cùng một gate. Fix 2026-05-27 hạ ngưỡng để 'first follow-up triggers condense' CHỈ được áp vào node legacy condense_question.py:55 (`len(history) < TURNS` → skip, tức CHẠY tại ≥2; docstring dòng 33-37 ghi rõ 'Threshold lowered 2026-05-27... Now `< 2` so the first follow-up triggers condense'), còn node merged understand.py:170 vẫn giữ so-sánh strict `>` pre-fix. Production chạy đường merged (system_config `pipeline_merge_condense_router=true`, evidence steps không có condense_question) → fix 2026-05-27 KHÔNG BAO GIỜ có hiệu lực production → follow-up đầu tiên của MỌI hội thoại luôn mất history tại condense — đúng chỗ coreference cần nhất theo chính docstring của fix cũ.",
+  "evidence": [
+   {
+    "kind": "evidence_json",
+    "ref": "specs/001-rag-truth-audit/evidence/luannt100_run.json L-082/L-085/L-087",
+    "detail": "rewritten=null cả 3; L-082 chunk top score=0.364 content '235/65R17...'; L-085 score=0.237 'LT285/65R18'; L-087 chunks '155/80R13'+'205/65R16'; steps không có condense_question, multi_query_fanout order 3 status=running (parallel wrapper active)"
+   },
+   {
+    "kind": "evidence_json",
+    "ref": "luannt100_run.json L-083 + luannt100_verdicts.json",
+    "detail": "L-083 turn-3 (history 4 msg) verdict=dung, resolve 'nó'=225/45ZR18 đúng; verdicts chấm L-082/L-085/L-087 = lech/fail_step=retrieve, L-088 = refuse_oan (cơ chế khác)"
+   },
+   {
+    "kind": "db_row",
+    "ref": "request_steps (record_request_id d93aa688/369ba7f1/6508b93c vs 34f0d6a0)",
+    "detail": "3 request fail: retrieve metadata {source:'speculative_hit', candidates:20}, prompt_build {history_msgs:2, token_opt_enabled:false, token_opt_history_skipped:false}; L-083 OK: retrieve {source:'vector_store'}, prompt_build {history_msgs:4}; L-087 grade {grade_path:'timeout_fallback'}"
+   },
+   {
+    "kind": "db_row",
+    "ref": "chat_histories connect_id=trace-c81/c84/c86",
+    "detail": "turn-1 committed 10:38:39-41, turn-2 answered 10:38:46-50 → history CÓ SẴN khi turn-2 chạy; char-sum turn-1 = 101/275/276 ≥ DEFAULT_CONDENSE_MIN_HISTORY_CHARS=100 → chỉ điều kiện turns fail"
+   },
+   {
+    "kind": "code",
+    "ref": "src/ragbot/orchestration/nodes/understand.py:168-186",
+    "detail": "`len(history) > DEFAULT_CONDENSE_MIN_HISTORY_TURNS` (strict >, cần ≥3 msg); else-branch gửi prompt understand KHÔNG có <history>"
+   },
+   {
+    "kind": "code",
+    "ref": "src/ragbot/orchestration/nodes/condense_question.py:33-37,55",
+    "detail": "Node legacy dùng `< 2` skip (chạy tại ≥2) + docstring 'Threshold lowered 2026-05-27... Now `< 2` so the first follow-up triggers condense' — chứng minh drift so với understand.py"
+   },
+   {
+    "kind": "code",
+    "ref": "src/ragbot/shared/constants/_10_rbac.py:223-224",
+    "detail": "DEFAULT_CONDENSE_MIN_HISTORY_TURNS=2, DEFAULT_CONDENSE_MIN_HISTORY_CHARS=100"
+   },
+   {
+    "kind": "db_row",
+    "ref": "system_config",
+    "detail": "pipeline_merge_condense_router=true (đường merged active), pipeline_parallel_cache_understand_enabled=true, speculative_retrieve_enabled=true, chat_max_history=10"
+   },
+   {
+    "kind": "code",
+    "ref": "src/ragbot/orchestration/query_graph.py:1709-1748 + nodes/retrieve.py:624-660 + nodes/speculative_retrieve.py:56-73",
+    "detail": "Speculative hybrid_search chạy trên raw query song song understand; query không đổi → cosine=1.0 ≥ threshold → keep → source='speculative_hit' (cơ chế khuếch đại, không phải gốc rễ — L-083 condense đổi query → speculative miss → vector_store)"
+   },
+   {
+    "kind": "code",
+    "ref": "src/ragbot/shared/i18n.py:424-448 + scripts/rag_trace_capture.py:242-266",
+    "detail": "prompt_understand chỉ resolve đại từ khi CÓ block history; harness gửi chain tuần tự cùng connect_id trace-cXX qua POST /api/ragbot/test/chat → history mechanism đúng"
+   },
+   {
+    "kind": "db_row",
+    "ref": "document_chunks bot c6e1fc56 ILIKE '%thailand%'",
+    "detail": "1 chunk 'Landspider (Thailand)' trong header chính sách bảo hành — L-088 refuse-oan là retrieval keyword-miss riêng, không phải coreference"
+   }
+  ],
+  "expert_solution": {
+   "tang_fix": "Orchestration — condense gate của node understand_query (retrieval-input layer). KHÔNG fix ở sysprompt (anti-pattern 2026-06-03: chunk đúng không vào top-K thì LLM muốn quote cũng không thấy), KHÔNG fix ở generate, KHÔNG tắt speculative (nó chỉ khuếch đại — khi condense chạy đúng, decide_keep_speculative tự discard như L-083 đã chứng minh).",
+   "pattern": "Conversational-RAG chuẩn: 'contextualize/condense question BEFORE retrieval' (Rewrite-Retrieve-Read, Ma et al. 2023; LangChain contextualize-q pattern) — follow-up đầu tiên là ca coreference phổ biến nhất nên gate phải fire tại history=2 msg. Kèm bài học policy-drift: 2 bản cài đặt của cùng 1 predicate phải chia sẻ MỘT pure function (đúng pattern policy-layer thuần đã dùng ở speculative_retrieve.py).",
+   "short_term": "(a) Sửa understand.py:170 `>` thành `>=` để khớp semantics node legacy; (b) DRY hoá: extract predicate `has_meaningful_history(history, min_turns, min_chars) -> bool` thành pure helper dùng chung cho understand.py + condense_question.py (một nguồn sự thật, giết class bug drift); thresholds vẫn từ constants — zero-hardcode, domain-neutral, không đụng Port/DI; (c) bơm metadata `had_history`/`condensed` vào step context understand_query (hiện metadata_json chỉ có step_kind — gap observability buộc phải khảo cổ DB như phiên này).",
+   "red_test_design": "RED test PHẢI FAIL trước fix: tests/unit/test_understand_condense_first_followup.py — (1) dựng GraphState với conversation_history = ĐÚNG 2 message tổng >100 chars (fixture domain-neutral: user 'Sản phẩm mã A100 giá bao nhiêu?', assistant trả giá + tồn kho ~80 chars — mirror shape thật của c81: 29+72=101 chars; câu hỏi thật giữ trong tests/scenarios/luannt100.json per-bot theo rule golden-test), query turn-2 = 'Vậy nó còn hàng không?'; inject fake _invoke_structured_llm_node capture messages; ASSERT user_content chứa '<history>' — hiện tại FAIL vì 2>2=False; (2) fake LLM trả condensed_query khác câu gốc → assert update['query']==condensed và update['original_query']==câu gốc; (3) drift-pin test parametrize len(history)∈{0,1,2,3} assert cả 2 node cùng skip/skip/run/run qua shared helper (mirror style test_sysprompt_assembler_pin). VERIFY sau fix: re-run scripts/rag_trace_capture.py --scenario tests/scenarios/luannt100.json, gate = 3 record turn-2 có retrieve source != 'speculative_hit' + chunk top chứa đúng size của turn-1 + verdict lech→dung; Coverage nhóm 6 phải tăng, HALLU=0 giữ nguyên.",
+   "long_term": "(i) Đưa multi-turn chain g6-style vào loadtest gate CI với metric Coverage per CLAUDE.md (Coverage <0.95 = blocker); (ii) coref-guard config-driven: nếu query chứa pronoun-token theo language_pack (data per-locale, không hardcode word-list) và history không rỗng → force condense bất kể turn-count; (iii) audit các cặp merged/legacy node khác (merge_condense_router registers CẢ 2 đường — query_graph.py:2798-2800) tìm drift tương tự."
+  },
+  "claudemd_compliance": "Rule #0 CẤM ĐOÁN: mọi mắt xích có evidence (file:line + DB row + evidence JSON); 1 sub-claim gắn nhãn GIẢ THUYẾT bên dưới. Đúng tầng: fix tại condense gate (retrieval-input) khớp gốc rễ — không vá sysprompt (khớp lesson 2026-06-03), không frame 'lệch size' thành lỗi LLM. Zero-hardcode: fix chỉ đổi operator + extract helper, thresholds vẫn DEFAULT_CONDENSE_MIN_HISTORY_* trong shared/constants — không magic number mới. Domain-neutral + no per-bot literal: helper generic mọi bot; fixture unit test dùng chuỗi trung tính, câu hỏi thật ở tests/scenarios/luannt100.json (file per-bot đúng rule golden-test). No app-inject/no app-override answer (sacred #10): không đụng answer-path, condense là query-rewrite trước retrieval — cơ chế sẵn có, prompt từ language_packs. Strategy+DI/Port: không đổi registry/port nào. 4-key identity: không đụng — test_chat resolve 4-key sẵn. No version-ref: helper đặt tên theo PURPOSE (has_meaningful_history). Broad-except: không thêm. Test rules: RED test assertion thật (assert '<history>' in prompt, assert query==condensed), không assert True. T-tier: [T1-Smartness] — bot trả lời đúng hơn ở multi-turn, 3-5 câu/10 nhóm 6 flip. Model tier: phiên này read-only diagnosis bởi subagent Fable 5 theo program override, KHÔNG ghi src/, KHÔNG UPDATE DB. Điểm chưa verify (GIẢ THUYẾT, ghi rõ): (1) nội dung verbatim condensed_query của L-083 không được log (audit_log không có event pipeline trong window; understand metadata_json chỉ có step_kind) — suy ra condense đã chạy đúng ở L-083 từ 2 evidence gián tiếp: retrieve source='vector_store' (speculative bị discard vì query đổi) + chunk 2 là đúng row 225/45; cần fix (c) observability để log trực tiếp. (2) Claim 'fix xong sẽ flip 3 record' CHƯA verify — phải chạy lại rag_trace_capture sau fix theo red_test_design, không tuyên bố pass trước khi có số.",
+  "label": "SU_THAT"
+ },
+ {
+  "cluster": "B — SKU-không-tồn-tại → dựng sản phẩm ảo (L-009, L-032)",
+  "bug_gi": "PREMISE CỦA CLUSTER SAI — đây là FALSE-POSITIVE VERDICT, không phải bot fabrication. L-009 'SKU 2-ZR20 315/35 LPD giá?': corpus CÓ row này (documents.raw_content xe-1 pos 100163: '| 2-ZR20 315/35 LPD | Lốp xe LANDSPIDER 315/35ZR20 110WXL CITYTRAXX H/P |'; document_service_index: price_primary=2889000, quantity=158, productname verbatim) — bot trả '315/35ZR20 110WXL CITYTRAXX H/P giá 2.889.000đ, còn 158 lốp' = ĐÚNG từng token. L-032 '2-ZR21 285/45 LPD có sẵn?': corpus CÓ row (index price=3402000, quantity=0, productname 'Lốp xe LANDSPIDER 285/45ZR21 113WXL CITYTRAXX H/P') — bot trả 'hết hàng' = ĐÚNG (qty=0). Verdict 'lech'/'sai_bia' với note 'SKU KHONG ton tai'/'corpus chỉ có ZR22 114WXL' mâu thuẫn trực tiếp DB + raw corpus, và mâu thuẫn cả numeric_fidelity của chính harness (L-009: n_unsupported=0, n_misattributed=0). Docs ingest 2026-07-03 10:08 TRƯỚC run (evidence mtime 2026-07-04 00:37) — không phải corpus-drift.",
+  "nguyen_nhan_truc_tiep": "Layer fail = EVAL/VERDICT (grading), không phải generate. Grader phán từ evidence file trong đó chunk content bị cắt đúng 500 chars (scripts/rag_trace_capture.py:100 'content[:500]'; đo thật: len=500 cho cả 2 record). Synthetic chunk thật (stats path: retrieve 20/26ms, score=1.0, không có rerank/grade step) chứa 11 rows (L-009) / 3 rows (L-032) ORDER BY priced DESC + entity_name ASC — exact-SKU row nằm ở vị trí [10]/[2], NGOÀI cửa sổ 500 chars → grader chỉ thấy sibling rows 245/40+245/45 (L-009) / 275/40+275/45 (L-032) và kết luận 'bot dựng sản phẩm ảo'. LLM thật thấy full chunk (generate in_tok=7013/6084) nên chọn đúng row. SQL reproduce khớp verbatim: row[0] '2-ZR20 245/40 LPD' 2457000 qty=1 = dòng đầu chunk evidence.",
+  "goc_re_chain": "L1 verdict sai ('lech'/'sai_bia' cho answer đúng) ← L2 evidence capture cắt chunk còn 500 chars (rag_trace_capture.py:100) trong khi comment dòng 95-97 tự nhận mục đích là 'grader sees exactly what the LLM saw' — cap phản bội chính intent đó ← L3 exact-SKU row bị đẩy xuống cuối chunk vì keyword bị cắt cụt: parse_code_query (query_range_parser.py:489-505, _CODE_QUERY_RE) split SKU tại space đầu → keyword='2-ZR20'/'2-ZR21' (chạy thật, confirmed) → query_by_name_keyword (stats_index_repository.py:548+) group-dump 11/3 rows thay vì fold-match 1 row exact (docstring 469-474 đã thừa nhận lỗi này cho unquoted SKU — chỉ vá cho QUOTED span) ← L4 IMMUTABLE CAUSE: audit harness không có deterministic ground-truth join — scenario luannt100.json expect=null cho cả 2 câu; premise 'SKU không tồn tại' được khẳng định lúc grading mà không có SQL existence-check vào document_service_index; đồng thời verdict không đối chiếu numeric_fidelity (all-grounded) đã nằm sẵn trong cùng record. LATENT RISK thật kèm theo (mechanism=SỰ THẬT, LLM behavior=GIẢ THUYẾT cần live test): với size thật sự vắng mặt, group-dump serve sibling score=1.0 KHÔNG kèm tín hiệu 'asked-code không khớp row nào' → cơ chế cho LLM synthesize tồn tại.",
+  "evidence": [
+   {
+    "kind": "db-row",
+    "ref": "documents.raw_content xe-1 pos 100163 + 101886; document_service_index bot c6e1fc56",
+    "detail": "Verbatim: '| 2-ZR20 315/35 LPD | Lốp xe LANDSPIDER 315/35ZR20 110WXL CITYTRAXX H/P |' và '| 2-ZR21 285/45 LPD | ...285/45ZR21 113WXL CITYTRAXX H/P |'. Index rows: 315/35 price=2889000 qty=158; 285/45ZR21 price=3402000 qty=0; productname khớp answer từng token. Docs created 2026-07-03 10:08 (trước run)."
+   },
+   {
+    "kind": "evidence-json",
+    "ref": "specs/001-rag-truth-audit/evidence/luannt100_run.json records L-009/L-032",
+    "detail": "chunks_to_llm=1, score=1.0, retrieve 20/26ms, không rerank/grade step (stats fast-path); chunk content len=500 đúng bằng cap; L-009 numeric_fidelity n_numbers=1 n_grounded=1 n_unsupported=0 n_misattributed=0 (server-side, full context) — mâu thuẫn verdict fabrication."
+   },
+   {
+    "kind": "code+runtime",
+    "ref": "src/ragbot/shared/query_range_parser.py:489-505 (parse_code_query)",
+    "detail": "Chạy thật: 'SKU 2-ZR20 315/35 LPD giá bao nhiêu?' → keyword='2-ZR20'; 'Mã hàng 2-ZR21 285/45 LPD có sẵn hàng không?' → keyword='2-ZR21'. _CODE_QUERY_RE split tại space đầu; docstring dòng 469-474 tự thừa nhận truncated-prefix over-match, chỉ vá cho quoted span."
+   },
+   {
+    "kind": "sql-repro",
+    "ref": "query_by_name_keyword forward SQL (stats_index_repository.py:629-641) chạy lại trên DB live",
+    "detail": "kw='2-ZR20' → 11 rows ORDER BY priced DESC, entity_name ASC: row[0]=245/40 LPD 2457000 qty=1, row[1]=245/45 LPD 2511000 qty=97 (khớp verbatim 500 chars đầu chunk evidence), row[10]=EXACT '2-ZR20 315/35 LPD' 2889000 qty=158 (trong chunk, dưới cap DEFAULT_STATS_INDEX_LIMIT=100). kw='2-ZR21' → 3 rows, row[2]=EXACT 285/45 qty=0."
+   },
+   {
+    "kind": "code",
+    "ref": "scripts/rag_trace_capture.py:100",
+    "detail": "'content': (ch.get('content') or ch.get('text') or '')[:500] — evidence chunk bị cắt 500 chars; comment dòng 95-97 'so the grader sees exactly what the LLM saw' mâu thuẫn với cap. Exact-SKU row nằm ngoài cửa sổ → grader kết luận sai."
+   },
+   {
+    "kind": "verdict+scenario",
+    "ref": "specs/001-rag-truth-audit/evidence/luannt100_verdicts.json + tests/scenarios/luannt100.json",
+    "detail": "L-009 verdict='lech' note 'SKU 315/35 KHONG ton tai'; L-032 verdict='sai_bia' note 'corpus chỉ có ZR22 114WXL' — cả 2 premise sai so với DB. Scenario expect=null cho cả 2 câu: không có pinned ground truth, premise trap không được SQL-verify."
+   }
+  ],
+  "expert_solution": {
+   "tang_fix": "PRIMARY = tầng EVAL-HARNESS/VERDICT (không phải generate, không phải sysprompt — bot đã trả đúng): (1) scripts/rag_trace_capture.py — capture full synthetic-chunk content hoặc cap qua constant config-driven + bắt buộc flag {'truncated': true, 'full_len': N} để grader không bao giờ coi prefix là toàn bộ context; (2) grading protocol — mọi verdict 'sai_bia'/'lech' cho entity-lookup PHẢI kèm SQL existence-check vào document_service_index làm evidence, và PHẢI đối chiếu numeric_fidelity đã có sẵn trong record (n_unsupported=0 → không được phán fabrication nếu không chỉ ra số nào bịa); re-grade L-009/L-032 → 'dung'. SECONDARY = tầng QUERY-PARSING (hardening cho latent risk): (3) parse_code_query ưu tiên LONGEST code-span — mở rộng logic quoted-span (dòng 469-488) sang chuỗi token code-shaped liên tiếp không quote ('2-ZR20 315/35 LPD' → keyword đầy đủ, fold-match 1 row exact); (4) deterministic requested-code-match signal: sau group-dump, fold-compare (digit-shape, domain-neutral, tái dùng _fold hiện có) asked-code vs entity_name các row trả về; khi KHÔNG row nào khớp full code → append 1 dòng DATA marker vào synthetic chunk (vd 'requested_code_match: none' — cùng precedent với label 'count:' đã có tại query_graph.py:2311-2317, là retrieved data chứ không phải instruction/override) + structlog event để observe.",
+   "pattern": "LLM-as-judge faithfulness eval yêu cầu judge thấy FULL retrieved context (RAGAS faithfulness / TruLens groundedness đều định nghĩa trên toàn bộ context — judge trên context cắt xén tạo đúng loại false positive này); deterministic ground-truth pinning qua structured-index join thay vì grader belief; longest-match tokenization cho code/SKU entity (chuẩn lexer maximal-munch); 'no-match signal as retrieved data' — đưa tín hiệu vào context cho LLM tự quyết, giữ sacred #10 không override answer (tinh thần Contextual Retrieval: metadata đi kèm chunk, không sửa đáp án).",
+   "short_term": "(a) Thêm truncated-flag + nâng cap capture (constant mới trong shared/constants, zero-hardcode); (b) re-grade 2 record với full-chunk + SQL existence check, sửa tally verdicts (70 dung → 72); (c) audit các verdict 'sai_bia'/'lech' còn lại của luannt100 cùng phương pháp — bất kỳ verdict nào dựa trên chunk 500-char + premise 'không tồn tại' chưa SQL-verify đều là nghi phạm false positive.",
+   "long_term": "(a) Harness tự động join document_service_index cho mọi câu code/entity-lookup để pin expect trước khi grade (scenario expect=null → auto-fill từ index); (b) longest-span code extraction + requested-code-match signal ship như FIX-P3 mở rộng của B-CODETOK/B-TRUNC đã catalogue trong plans/20260630-stage2b/plan.md; (c) A/B đo behavior LLM trên synthetic chunk có/không marker với SKU thật sự vắng mặt (latent risk hiện là GIẢ THUYẾT — cấm claim lift trước khi đo).",
+   "red_test_design": "3 RED tests, fixture THẬT nhưng neutralized-shape trong unit test chung (domain-neutral rule — brand literal 'LANDSPIDER' chỉ được nằm trong per-bot scenario/evidence files đã có): TEST-A (capture integrity): dựng synthetic chunk từ fixture 11 rows cùng shape thật (codes '9-XY20 245/40 ABC'…'9-XY20 315/35 ABC', giá/qty thật của cluster), chạy _record() của rag_trace_capture — assert row answering (vị trí [10], ngoài 500 chars) còn trong captured content HOẶC record có truncated=true+full_len; hiện RED (row mất, không flag). TEST-B (keyword extraction): parse_code_query('SKU 9-XY20 315/35 ABC giá bao nhiêu?').keyword == '9-XY20 315/35 ABC'; hiện RED (trả '9-XY20'). TEST-C (not-found signal, latent risk): fixture stats-index chỉ có 11 rows nhóm 9-XY20 KHÔNG có size 205/40; gọi _do_stats_lookup với code '9-XY20 205/40 ABC' — assert synthetic chunk/state mang deterministic marker 'requested_code_match: none' (fold-compare không row nào khớp); hiện RED (chunk = 11 sibling rows, zero signal). Replay integration: 2 câu verbatim L-009/L-032 giữ trong specs/001-rag-truth-audit làm regression — expect pinned = giá/qty từ index join, verdict phải 'dung'."
+  },
+  "claudemd_compliance": "Tự audit: (1) Rule #0 CẤM ĐOÁN ✅ — mọi kết luận kèm evidence chạy thật (SQL live-DB, parse_code_query runtime, file:line, evidence-JSON field); latent-risk LLM behavior gắn nhãn GIẢ THUYẾT rõ. (2) READ-ONLY mandate ✅ — không sửa src/, DB chỉ SELECT (asyncpg), không psql UPDATE. (3) Fix đúng tầng ✅ — không đề xuất sysprompt/generate patch (anti-pattern 'patch sai tầng'); tầng fix = eval-harness + query-parsing khớp gốc rễ; không 'frame xoa dịu' — nói thẳng verdict sai chứ không bào chữa bot. (4) Sacred #10 no app-inject/no app-override ✅ — marker 'requested_code_match: none' là retrieved DATA vào context theo precedent 'count:' label (query_graph.py:2311-2317 đã document là data-not-instruction), LLM tự quyết đáp án, không regex-replace answer. (5) Zero-hardcode ✅ — capture cap → constant mới shared/constants + config override; code pattern đã overridable qua system_config 'code_query_pattern'. (6) Domain-neutral ✅ — fold-compare digit-shape không tire/brand vocab; RED-test fixture dùng neutral-shape codes, brand literal chỉ ở per-bot scenario/evidence files sẵn có. (7) No per-bot logic in core ✅ — mọi đề xuất shape-based, per-bot opt-out qua plan_limits nếu cần. (8) No version-ref ✅ — không đặt tên _v2/_new. (9) T-tier: fix này = T1-Smartness (verdict integrity + anti-fabricate signal) kèm T2 (harness observability). (10) No-guess-must-measure ✅ — long_term yêu cầu A/B đo trước khi claim lift; re-grade phải chạy lại thật. (11) Naming/4-key/RBAC/tenant-isolation: không đụng — queries scoped record_bot_id đúng convention.",
+  "label": "SU_THAT"
+ },
+ {
+  "cluster": "CLUSTER C — Câu phức → retrieval lạc (L-072, L-088, L-014, L-028, L-005)",
+  "bug_gi": "5 case, reproduce từ evidence luannt100_run.json + DB: (1) L-088 \"Lốp Landspider xuất xứ từ đâu?\" — corpus CÓ đáp án tại xe-4 chunk_index=0 (\"Áp dụng cho thương hiệu Landspider (Thailand) và Rovelo (Vietnam)\", embedding NOT NULL), nhưng 12 chunks vào LLM = 0 chunk chứa Thailand (kiểm tra từng chunk), score_max=0, 2 vòng grade (n_relevant=0, n_irrelevant=2) + retry với chunk SET GIỐNG HỆT (top_score_in=0.264055 cả 2 vòng) → refuse oan \"tài liệu chưa có thông tin về xuất xứ\". (2) L-014 \"So sánh giá 225/45ZR17 và 225/50ZR17\" — đáp án đúng: 1.242.000 vs 1.278.000 (document_service_index, đo được); bot chỉ nhận 1 chunk (xe-1:81 KHÔNG có giá — xe-1 không có cột giá), refuse \"chưa có thông tin giá 225/45ZR17\". (3) L-072 so sánh Landspider Citytraxx G/P vs Davanti DX640 215/60R17 — corpus CÓ Davanti (xe-1 chunks 193-199 \"DAVANTI 215/60R17 96H DX640\"; stats row 2-R17 215/60 DVT price=1.485.000 answer=\"DAVANTI 215/60R17 DX640\"); bot chỉ nhận 1 chunk (score 0.229, chunk Landspider 155/80R13 lạc đề) và BỊA premise \"bên em chưa phân phối hãng Davanti\". (4) L-005 so sánh L/R 195/65R15 — đáp án đúng: LPD 972.000 vs RVL 981.000 (cùng 1 keyword lookup ra CẢ HAI); bot nhận 4 chunks không chứa giá 195/65R15, grade bị skip (skip_high_score 0.5968≥0.55), bịa \"1.050.000đ\" — số này KHÔNG tồn tại trong bất kỳ chunk nào (đo: 0 rows ILIKE '%1.050.000%'/'%1050000%'), numeric gate flag n_unsupported=1 nhưng answer vẫn được serve; đồng thời nói sai \"Rovelo không có trong dữ liệu\". (5) L-028 \"tồn kho dưới 5 chiếc\" — đáp án thật TỒN TẠI: 29 entities quantity<5 trong document_service_index.attributes_json (đo); bot nhận 6 chunks xe-1 không có semantic quantity, grade timeout_fallback (2s), trả lời rỗng \"anh/chị cho em biết quy cách cụ thể\".",
+  "nguyen_nhan_truc_tiep": "Layer fail = ORCHESTRATION ROUTING (retrieve node), không phải LLM/sysprompt. Số liệu: cả 5 request đều có request_steps.retrieve metadata `source=\"speculative_hit\"` — node retrieve early-return kết quả speculative single-shot hybrid (raw query, top-20) tại src/ragbot/orchestration/nodes/retrieve.py:631-660, TRƯỚC điểm fan-out sub-queries (retrieve.py:1127-1181) và trước tiêu thụ MQ variants. Trong khi đó adaptive_decompose ĐÃ chạy và tách được: journal `adaptive_router_decomposed` L-005 sub_count=3, L-014 sub_count=2, L-072 sub_count=2; multi_query_fanout L-088 n_variants=2, L-028 n_variants=3 (chạy 2 lần) — toàn bộ output này bị VỨT. Lý do hit: các câu 1-turn có rewritten==raw (evidence rewritten=None) → cosine(raw,rewritten)=1.0 ≥ DEFAULT_SPECULATIVE_SIMILARITY_THRESHOLD=0.85 (shared/constants/_20_cag_mode_cache_augmented_gen.py:152) → luôn keep. Nhánh stats: (a) câu so sánh bị guard `_decompose_active` (retrieve.py:293-306) TẮT stats route đúng lúc cần nhất; (b) L-028 parse_list_query trả op=\"count\" keyword=NGUYÊN CÂU \"Những lốp số lượng tồn kho dưới 5 chiếc\" (đo bằng chạy parser thật) → count_by_name_keyword=0 (đo) → query_graph.py:2309-2310 return None → silent fallback hybrid; (c) L-088 không route stats (đúng — nhưng hybrid không với tới: BM25 websearch_to_tsquery AND-semantics match 0 chunks toàn corpus cho query đã tokenize 'Lốp Landspider xuất_xứ từ đâu ?' — đo trực tiếp trên search_vector).",
+  "goc_re_chain": "L1 (answer sai/refuse oan/bịa) ← L2 (chunk set = top-K của MỘT lần hybrid raw-query) ← L3a speculative-hit gate vứt decompose/MQ (cosine raw-vs-rewritten=1.0≥0.85, không xét sub_queries; retrieve.py:642-660 return trước fan-out 1127) + L3b stats route bị TẮT khi decompose active (guard 293-306 — fix triệu chứng first-code-only bằng disable thay vì compose per-sub-query) + L3c stats DSL đơn-chiều giá (RangeFilter không có measure/attribute; op set = count/keyword/max/min/price-range) ← L4 IMMUTABLE: (i) mọi structured shortcut xây trên giả định SINGLE-ENTITY (re.search code đầu ở _parse_code_query lẫn _extract_symbol_phrase; 1 synthetic chunk short-circuit) và khi gặp multi-entity hệ thống chọn TẮT thay vì LẶP; contract giữa các node bị vỡ — node sau được phép silently drop artifact node trước đã trả tiền LLM để tạo; (ii) ingest: xe-1 nguồn CSV không có header/cột giá → 0 stats rows + pseudo-header data-row trên mọi chunk; fact xuất xứ chỉ là \"(Thailand)\" parenthetical không được extract thành attribute lúc ingest.",
+  "evidence": [
+   {
+    "kind": "evidence_json",
+    "ref": "specs/001-rag-truth-audit/evidence/luannt100_run.json (L-088)",
+    "detail": "12 chunks vào LLM: 0 chunk chứa Thailand/Thái Lan (kiểm từng chunk); score_max=0; steps: grade→rewrite_retry→retrieve→grade 2 vòng đều fail; answer refuse oan"
+   },
+   {
+    "kind": "db_row",
+    "ref": "document_chunks xe-4 chunk_index=0",
+    "detail": "'Áp dụng cho thương hiệu Landspider (Thailand) và Rovelo (Vietnam)' — embedding NOT NULL, đáp án L-088 tồn tại trong corpus"
+   },
+   {
+    "kind": "db_measurement",
+    "ref": "search_vector @@ websearch_to_tsquery('simple', 'Lốp Landspider xuất_xứ từ đâu ?')",
+    "detail": "0 chunks match toàn corpus (AND-semantics, 'xuất_xứ' không có trong chunk nào) → BM25 arm chết hoàn toàn cho L-088; 269 chunks chứa 'landspider' đè dense arm"
+   },
+   {
+    "kind": "request_steps",
+    "ref": "request_steps của 5 request (L-072 eac3cc2c…, L-014 635b3678…, L-005 1b956ee0…, L-088 3d9a5337…, L-028 6445d654…)",
+    "detail": "TẤT CẢ retrieve metadata source=\"speculative_hit\", candidates=20; L-072 grade n_chunks_input=1; L-014 n_chunks_input=1; L-005 grade_path=skip_high_score (0.5968≥0.55); L-028 grade_path=timeout_fallback 2s; L-088 top_score_in=0.264055 GIỐNG HỆT 2 vòng retry"
+   },
+   {
+    "kind": "journal_log",
+    "ref": "journalctl 2026-07-04 00:34-00:36 event=adaptive_router_decomposed",
+    "detail": "L-005 sub_count=3, L-014 sub_count=2, L-072 sub_count=2 — decompose ĐÃ tách sub-queries nhưng bị speculative-hit vứt bỏ"
+   },
+   {
+    "kind": "code",
+    "ref": "src/ragbot/orchestration/nodes/retrieve.py:631-660 vs 1127-1181",
+    "detail": "speculative keep early-return TRƯỚC fan-out sub_queries/MQ variants; keep = cosine(raw_embed, rewritten_embed) ≥ 0.85; rewritten==raw → cosine=1.0 → luôn hit; không có điều kiện nào xét sub_queries"
+   },
+   {
+    "kind": "code",
+    "ref": "src/ragbot/orchestration/nodes/retrieve.py:293-306",
+    "detail": "guard _decompose_active ≥2 sub_queries → SKIP stats route cho chính các câu so sánh cần structured lookup nhất"
+   },
+   {
+    "kind": "db_counterfactual",
+    "ref": "StatsIndexRepository.query_by_name_keyword (stats_index_repository.py:548)",
+    "detail": "chạy thật: '195/65R15'→[LPD 972000, RVL 981000] (trả lời trọn L-005); '225/45ZR17'→1242000; '225/50ZR17'→1278000 (L-014); '215/60R17'→2-R17 215/60 DVT 1485000 = DAVANTI DX640 (L-072). Stats index CÓ đủ đáp án cho cả 3 câu so sánh"
+   },
+   {
+    "kind": "parser_measurement",
+    "ref": "shared/query_range_parser.py — chạy parser thật trên 5 câu",
+    "detail": "L-072: parse_code_query bắt 'G/P' (code đầu tiên, rác); L-014: chỉ '225/45ZR17'; L-028: parse_list_query → op='count' keyword='Những lốp số lượng tồn kho dưới 5 chiếc' (nguyên câu) → count_by_name_keyword=0 (đo) → None → silent hybrid fallback (query_graph.py:2309-2310)"
+   },
+   {
+    "kind": "db_measurement",
+    "ref": "document_service_index attributes_json->>'quantity'",
+    "detail": "173/187 rows xe-3 có quantity; 29 rows quantity<5 (đáp án thật L-028 TỒN TẠI); nhưng _do_stats_lookup (query_graph.py:2297-2369) không có op lọc attribute, RangeFilter (query_range_parser.py:97-104) chỉ có price_min/price_max"
+   },
+   {
+    "kind": "db_measurement",
+    "ref": "document_chunks xe-1 (205 chunks)",
+    "detail": "0 chunk có pattern giá [0-9]{3}[.,][0-9]{3}; nguồn CSV không có cột giá; data row 155/80R13 bị re-attach làm pseudo-header mọi chunk (nguồn 'Tên kho…' + không header row); xe-1 đóng góp 0/242 rows stats index; giá chỉ có ở xe-3 (172 rows priced)"
+   },
+   {
+    "kind": "db_measurement",
+    "ref": "document_chunks ILIKE '%1.050.000%' OR '%1050000%'",
+    "detail": "0 rows — số 1.050.000 trong answer L-005 là FABRICATE thuần (gate flag unsupported_tokens=['1.050.000'] nhưng answer vẫn serve)"
+   },
+   {
+    "kind": "code_measurement",
+    "ref": "src/ragbot/infrastructure/vector/pgvector_store.py:468-488 _extract_symbol_phrase",
+    "detail": "chỉ extract symbol ĐẦU TIÊN: L-005→'195/65R15', L-014→'225/45ZR17' (thiếu 225/50ZR17), L-072→'G/P' (rác, 215/60R17 không bao giờ được boost)"
+   }
+  ],
+  "expert_solution": {
+   "tang_fix": "ORCHESTRATION (retrieve routing) là tầng chính cho L-072/L-014/L-005/L-028; INGEST/INDEXING cho L-088 và một phần L-028. KHÔNG sửa sysprompt — LLM đã hành xử đúng với context nó thấy (trừ L-005 fabricate, mà gate đã bắt được nhưng không chặn).",
+   "pattern": "Adaptive-RAG / plan-then-execute (Jeong et al. 2024): plan của router (decompose thành sub-queries) là BINDING — latency shortcut (speculative) không được override plan. Table-RAG / TAG (structured+unstructured hybrid): câu multi-entity so sánh = N structured point-lookups + merge, không phải 1 lần dense top-K. Self-RAG/CRAG đã có (grade) nhưng vô dụng khi retry re-retrieve deterministic cùng kết quả — cần retry ĐỔI CHIẾN LƯỢC (rewrite bị skip per_intent_disabled cho factoid).",
+   "short_term": "(1) retrieve.py:642 — speculative keep thêm điều kiện composition-aware: `keep = keep and not _decompose_active and not _mq_variants_present` (2 biến đã tính sẵn trong node; zero hardcode, per-bot gate qua pipeline_config có sẵn). Sub-queries/variants được tạo ra thì PHẢI được retrieve. (2) retrieve.py:293-306 — thay guard disable-stats bằng LOOP: khi _decompose_active, chạy _parse_code_query trên TỪNG sub_query (hoặc re.finditer mọi code token trên raw query), gọi _do_stats_lookup per-code, merge entities; sub-query nào miss stats mới rơi xuống hybrid. Counterfactual đã đo: fix này trả lời đúng L-005 (972k vs 981k), L-014 (1.242k vs 1.278k), L-072 (DVT 1.485k). (3) pgvector_store.py _extract_symbol_phrase → finditer TẤT CẢ code tokens, OR nhiều phraseto_tsquery branches (capped bằng constant), để mỗi entity reachable lexically. (4) L-028: thêm op 'attr_filter' vào stats DSL — RangeFilter thêm field `measure` (key attribute, resolve từ routing signals của language_pack — cùng chỗ below_tokens đang sống, KHÔNG hardcode 'tồn kho'→'quantity' trong engine); _do_stats_lookup map sang JSONB numeric filter `(attributes_json->>:key)::numeric < :bound` trong stats_index_repository (Port+Registry giữ nguyên, chỉ thêm method). Bound '5' lấy từ query (hiện _MIN_BARE_PRICE_VND=1000 chặn bare number cho PRICE — đúng; attribute filter là measure khác nên không đụng).",
+   "red_test_design": "RED tests với fixture THẬT, không per-bot literal: (T1) test_speculative_not_override_decompose — build GraphState với sub_queries=['giá của <code-A>','giá của <code-B>'] + _speculative_chunks/_speculative_raw_embed seeded + FakeVectorStore đếm hybrid_search calls; assert retrieve KHÔNG trả retrieve_mode='speculative' và hybrid_search được gọi ≥2 lần (per sub-query) — hiện FAIL vì early-return 656. (T2) test_stats_multi_code_comparison — seed document_service_index fixture 2 rows (entity codes tổng hợp '9-X1 111/22 AAA' price 100000, '9-X1 333/44 BBB' price 200000) + state sub_queries 2 câu chứa 2 code; assert retrieved graded_chunks chứa CẢ HAI giá — hiện FAIL vì guard skip stats. (T3) test_stats_attr_filter_lt — seed 3 fixture rows attributes_json {'quantity':'2'/'7'/'0'}; parse 'X nào <below-token> 5 <unit>' với signals fixture có measure-token map; assert stats trả đúng 2 rows quantity<5 và synthetic chunk label không phải price — hiện FAIL vì op không tồn tại. (T4) test_symbol_phrase_all_codes — assert _extract_symbol_phrase('so sánh 111/22R33 và 444/55R66') trả cả 2 codes — hiện FAIL (chỉ code đầu). (T5) L-088 class, ingest-tier: fixture doc header 'Brand Alpha (CountryX) và Brand Beta (CountryY)'; assert ingest enrichment/stats extraction emit attribute row {origin: CountryX} cho Brand Alpha, và eval câu '<brand> xuất xứ từ đâu' (qua routing-signal attribute-ask) surface được row đó — hiện FAIL vì không có extraction. Mỗi test = real behavioral assertion, chạy được trước fix (RED) và sau fix (GREEN).",
+   "long_term": "(a) Node-contract invariant: artifact do node trả LLM-tiền tạo ra (sub_queries, mq_variants, hyde_doc) phải có consumer được VERIFY — thêm pin test 'no orphan artifact' + structlog counter artifact_dropped để CI bắt drift kiểu này. (b) Ingest: table-header detect cho CSV không header row (skill table-header-detect-structural) để xe-1-class docs không sinh pseudo-header data-row; doc-level fact extraction (origin/brand metadata) vào attributes_json lúc enrich — generic shape-based, không vocab. (c) Retry-đổi-chiến-lược: vòng rewrite_retry phải đổi ít nhất 1 biến (query/mode/arm weights) — retry với input y hệt là vòng lặp chết đã đo được ở L-088. (d) Numeric-fidelity gate từ FLAG sang BLOCK+regenerate cho unsupported price tokens (L-005) — guard-layer, không override answer text, chỉ re-generate."
+  },
+  "claudemd_compliance": "Tự audit theo CLAUDE.md: (1) Rule #0 CẤM ĐOÁN — mọi claim chính đều kèm measurement thật: request_steps rows, journalctl events, parser chạy thật, SQL counterfactual, grep DB 0-rows cho 1.050.000. Điểm GIẢ THUYẾT được gắn nhãn: 'dense arm xếp catalog chunks trên xe-4:0 do LANDSPIDER lặp 269 chunks' là suy luận từ kết quả cuối (chưa re-embed đo cosine từng chunk — cần chạy embed API để verify, không làm vì read-only + cost); 'fix T1-T3 nâng PASS' chưa đo — phải chạy RED→GREEN + re-run luannt100 mới được claim. (2) Đúng tầng — fix ở orchestration/ingest, KHÔNG vá sysprompt cho retrieval bug (tránh đúng anti-pattern 2026-06-03 spa-07). (3) Sacred #10 — không app-inject/override answer: stats synthetic chunk là DATA aggregate (đã có tiền lệ QG#10 trong code), đề xuất numeric gate là re-generate không phải text-replace. (4) Zero-hardcode — measure-token map đặt vào language_pack routing signals / system_config, threshold giữ trong shared/constants; không số magic mới. (5) Domain-neutral — không literal 'lốp/tồn kho/Landspider' trong engine; test fixtures dùng code tổng hợp. (6) Strategy+DI — chỉ thêm method vào StatsIndexRepository + op vào DSL, Port/Registry nguyên vẹn. (7) 4-key identity + tenant isolation — mọi query đo đều scope record_bot_id; fix không đụng identity. (8) T-tier: [T1-Smartness] — Coverage: 5/5 case corpus CÓ đáp án mà bot trả sai/refuse = Coverage bug, đúng ưu tiên T1. (9) Read-only mandate tuân thủ: không sửa src/, không UPDATE DB, chỉ SELECT + chạy parser thuần. (10) Broad-except/no-version-ref: không đụng. (11) Test rules — RED tests thiết kế với behavioral assertions thật, không assert True.",
+  "label": "SU_THAT"
+ },
+ {
+  "cluster": "D — BẢO HÀNH: suy luận số sai chiều + nói thêm (L-080, L-060, L-056, L-068, L-090, L-077) · bot chinh-sach-xe (record_bot_id c6e1fc56-d070-439d-99a6-c8b4964b4d2d)",
+  "bug_gi": "6 case, 3 lớp lỗi. [L-080 — SAI CHIỀU SỐ] Q: \"lỗi SX, chạy 1 năm, MÒN 40% gai\" → đúng: gai CÒN 60% → bồi 60%. Bot trả verbatim: \"mòn còn 40% gai (tức là gai còn từ 1,6mm đến dưới 70%)… bồi thường tương ứng 40% giá trị lốp\". Chunk LLM thấy = xe-4 idx2 [II. Điều kiện bảo hành] ĐỦ cả 3 bậc bảng % (chunk duy nhất, 236 chars, position 1/1, context_chars=356 → không có yếu tố LITM/truncate); LLM đảo chiều mòn↔còn dù data đầy đủ. numeric_fidelity n_numbers=0 — gate MÙ với token % (min_digits=4). [L-060 — BỊA SCOPE] Q: \"áp dụng cho lốp xe tải không?\" → corpus chỉ có 1 chunk chứa \"du lịch\" (xe-4 idx1 [I. Phạm vi]: \"lốp xe du lịch (PCR)\"), \"xe tải\" = 0 hits toàn corpus. Bot bịa: \"áp dụng cho tất cả các loại lốp xe, bao gồm cả lốp xe tải\". LLM chỉ thấy 1 chunk = mục III (loại trừ), mục I bị giết ở mmr_dedup (before=6→after=1). [L-077 — SUY DIỄN TỒN KHO] Q: \"mua 195/65R15 hôm nay có hàng sẵn không hay đợi 28/11?\" → corpus xe-3 idx19 có row \"Lốp xe LANDSPIDER 195/65R15 91H CITYTRAXX G/P | … | 313 | 972000\" (tồn 313) + Rovelo A68 tồn 45. Bot trả \"chưa có hàng sẵn… về 28-thg 11\" = NGƯỢC corpus. Trace: rerank giữ 4 chunks (schedule + 2 stock rows + kho), nhưng prompt_build context_cap=2900 drop 3/4 chunks (context_chunks_dropped=3, context_chars_dropped=2843) — LLM CHỈ thấy chunk lịch-về-hàng 3110 chars, 2 row tồn kho không bao giờ vào prompt. [L-056/068/090 — NÓI THÊM] kết luận đúng chunk nhưng chèn kiến thức ngoài corpus: L-056 \"độ sâu gai mới thường là 8mm hoặc 9mm\" (0 hits corpus, số <4 digits nên numeric gate không bắt); L-068 \"quá nóng, ẩm\" (0 hits); L-090 \"gai thường/phù hợp đường thành phố, gai sâu/địa hình hỗn hợp\" = gloss H/T,A/T từ world-knowledge (3/3 số grounded).",
+  "nguyen_nhan_truc_tiep": "2 điểm fail khác tầng. (1) TẦNG RETRIEVAL-POSTPROCESS — mmr_dedup node (src/ragbot/orchestration/nodes/mmr_dedup.py:46-51 gọi shared/mmr.py::mmr_filter:182 \"if max_sim_to_selected > similarity_threshold: continue\"): với factoid, mmr_similarity_threshold_by_intent.factoid=0.88 (system_config) — request_steps cho L-060/L-080/L-056/L-068 đều ghi mmr_dedup before=5-6 → after=1. Cosine thật giữa 8 chunk xe-4 (zembed-1 1280-dim, đo từ DB) = 0.882–0.979, TẤT CẢ cặp > 0.88 → mọi section anh em của cùng doc chính sách bị coi là \"duplicate\", chỉ đúng 1 section sống sót. L-060: mục I (chunk duy nhất trả lời được câu xe tải) bị loại → LLM đói data, tự bịa scope. (2) TẦNG PROMPT-BUILD — generate.py:574 apply_context_char_cap (shared/context_utils.py:40) với generate_context_chars_cap_by_intent.factoid=2900: L-077 chunk lịch-về đứng đầu 3110 chars > 2900 một mình → giữ 1 (luật keep-≥1), drop 3 chunk còn lại gồm CẢ 2 row tồn kho; prompt_compression bypass chunk tabular by-design (prompt_compression.py:344 _looks_tabular → skip) nên 5953 chars không nén được. (3) TẦNG LLM-REASONING — L-080: data đủ 100% trong prompt, LLM anchor vào \"40%\" của user và map thẳng vào bậc \"%\" của bảng, không làm phép bù 100−40; bảng corpus chỉ có nhãn 1 chiều \"Gai còn…\". L-056/068/090: starved-context 1 chunk + câu hỏi mở → LLM lấp bằng world-knowledge.",
+  "goc_re_chain": "CHAIN A (L-060 + đói-context L-056/068): bot bịa scope ← LLM chỉ thấy 1 section (mục III) ← mmr_dedup collapse 6→1 ← MỌI cặp chunk cùng-doc có cosine 0.882–0.979 > threshold 0.88 ← IMMUTABLE: threshold 0.88 là hằng calibrate cho distribution model embedding CŨ, không recalibrate khi swap sang ZE zembed-1 1280-dim (đúng bài học feedback_threshold_drift_post_migration); bằng chứng thiết kế: config đã vá per-intent aggregation=0.98/multi_hop=0.95 (Bug #10 260525 — CSV rows dedup nhầm) = vá symptom từng intent thay vì recalibrate gốc; mmr_filter dùng HARD similarity cutoff — MMR nguyên bản (Carbonell-Goldstein 1998) là rank-based, cutoff cứng trong không gian embedding anisotropic (baseline same-doc ~0.9) là anti-pattern. CHAIN B (L-077): 'chưa có hàng' ← prompt_build drop 2 row tồn kho ← cap factoid 2900 < 1 chunk lịch 3110 chars ← chunk stock phình 1.1–1.4k chars ← IMMUTABLE: cột alias mega-cell ('question': ~50 biến thể quy cách ≈1000 chars/row) được render vào content LLM-visible thay vì chỉ ở search_vector/content_segmented — alias phục vụ retrieval nhưng nuốt 70-80% char budget; cộng hưởng: câu 'tồn VS lịch về' bản chất multi_hop (cap 6000 thì đủ: 5953<6000) nhưng intent classifier gán factoid. CHAIN C (L-080, L-090, phần nói-thêm): số sai chiều/gloss ← LLM reasoning trên bảng 1-chiều ← IMMUTABLE: corpus render bậc bồi thường CHỈ theo chiều 'gai CÒN X%', câu khách theo chiều 'MÒN X%' — phép bù 100−X không có nhãn 2 chiều trong data, không có rule quy đổi trong sysprompt owner (sysprompt 8887 chars có rule bảng giá/tồn chi tiết nhưng zero rule mòn↔còn); đồng thời gate numeric_fidelity min_digits=4 mù với token %/mm → lớp lỗi này vô hình với harness (n_numbers=0) nên tồn tại không bị đo suốt các round.",
+  "evidence": [
+   {
+    "kind": "evidence_json",
+    "ref": "specs/001-rag-truth-audit/evidence/luannt100_run.json → record L-080",
+    "detail": "answer verbatim 'bồi thường tương ứng 40% giá trị lốp'; chunks=[{score:0.892, content:'[II. Điều kiện bảo hành] 1. Gai còn trên 70%→Đổi mới 100%… 2. Gai còn từ 1.6mm đến <70%→Bồi thường theo tỷ lệ %… 3. Gai <1.6mm→Hết hiệu lực'}] — bảng % ĐỦ 3 bậc, chunk duy nhất; numeric_fidelity n_numbers=0"
+   },
+   {
+    "kind": "db_row",
+    "ref": "request_steps record_request_id=892bd37b (L-060)",
+    "detail": "rerank input=20 reranked=7 top=0.776; filter_min_score n_kept=7; mmr_dedup {before:6, after:1, intent:factoid, similarity_threshold:0.88, intent_override:true}; prompt_build context_chunks=1"
+   },
+   {
+    "kind": "db_row",
+    "ref": "request_steps record_request_id=b0215564 (L-077)",
+    "detail": "prompt_build {context_cap:2900, context_chars:3237, context_chunks:1, context_chunks_dropped:3, context_chars_dropped:2843}; prompt_compression {chars_before:5953, chars_after:5953, max_chars_per_chunk:2000} — tabular bypass, không nén"
+   },
+   {
+    "kind": "db_row",
+    "ref": "document_chunks xe-3 idx19 + document_service_index",
+    "detail": "tail chunk: '…| 2-R15 195/65 LPD | Lốp xe LANDSPIDER 195/65R15 91H CITYTRAXX G/P | LANDSPIDER 195/65R15 G/P | 313 | 972000 |…' — tồn 313; Rovelo A68 quantity=45; alias mega-cell chiếm ~1000/1422 chars đầu chunk"
+   },
+   {
+    "kind": "measurement",
+    "ref": "pairwise cosine 8 embedding xe-4 (đo trực tiếp từ document_chunks.embedding, 1280-dim)",
+    "detail": "min=0.882 max=0.979; sim(I,III)=0.897, sim(II,I)=0.928 — MỌI cặp section > threshold 0.88"
+   },
+   {
+    "kind": "replay",
+    "ref": "offline replay shared/mmr.py::mmr_filter với embedding + code THẬT",
+    "detail": "pool 6 section xe-4 (III top 0.776) @ threshold 0.88 → kept=1 of 6, chỉ mục III sống — tái hiện chính xác mmr_dedup before=6→after=1 của L-060"
+   },
+   {
+    "kind": "db_row",
+    "ref": "system_config",
+    "detail": "mmr_similarity_threshold=0.88; mmr_similarity_threshold_by_intent={factoid:0.88, multi_hop:0.95, aggregation:0.98}; generate_context_chars_cap_by_intent={factoid:2900, multi_hop:6000}"
+   },
+   {
+    "kind": "code",
+    "ref": "src/ragbot/shared/mmr.py:182 + orchestration/nodes/mmr_dedup.py:46-51",
+    "detail": "hard cutoff 'if max_sim_to_selected > similarity_threshold: continue' + 'if best_pos<0: break — all remaining candidates exceed similarity threshold'"
+   },
+   {
+    "kind": "code",
+    "ref": "src/ragbot/shared/context_utils.py:40-67 + orchestration/nodes/generate.py:574",
+    "detail": "apply_context_char_cap giữ prefix theo score-desc, drop nguyên chunk, keep-≥1 — chunk lịch 3110>2900 một mình vẫn giữ, 3 chunk sau drop hết"
+   },
+   {
+    "kind": "code",
+    "ref": "src/ragbot/shared/numeric_fidelity.py:68 + shared/constants/_00_app_env_taxonomy.py:58",
+    "detail": "iter_significant_number_tokens(min_digits=4) → '40%','70%','1.6mm','8mm','9mm','3mm' đều <4 digits = vô hình với gate; xác nhận n_numbers=0 ở L-080/L-056"
+   },
+   {
+    "kind": "db_query",
+    "ref": "corpus grep",
+    "detail": "'xe tải'=0 chunks, '8mm|9mm|8 mm|9 mm'=0, 'quá nóng'=0, 'du lịch'=1 chunk (xe-4 idx1) — các chi tiết nói-thêm KHÔNG có trong corpus"
+   },
+   {
+    "kind": "db_row",
+    "ref": "bots.system_prompt (8887 chars)",
+    "detail": "có rule 'TỒN KHO — CHÂN LÝ DUY NHẤT = cột quantity, KHÔNG suy luận tồn kho từ ngữ cảnh' (L-077 vi phạm vì không thấy quantity) nhưng KHÔNG có rule quy đổi mòn↔còn cho bảo hành"
+   },
+   {
+    "kind": "evidence_json",
+    "ref": "luannt100_verdicts.json",
+    "detail": "L-080/L-060=sai_bia, L-056/068/077/090=chua_chuan; lưu ý verdict gán L-077 fail_step=generate nhưng trace request_steps chứng minh fail thật ở prompt_build (context cap) — thượng nguồn của generate"
+   }
+  ],
+  "expert_solution": {
+   "tang_fix": "Fix ĐÚNG 3 tầng theo 3 chain, KHÔNG đụng answer-path. A) RETRIEVAL-POSTPROCESS (mmr_dedup): recalibrate threshold theo distribution zembed-1 + bỏ hard-cutoff-only. B) PROMPT-BUILD/DATA (L-077): tách alias mega-cell khỏi content LLM-visible (ingest render layer) — KHÔNG nới cap mù. C) DATA/OWNER (L-080/090): bảng % 2 chiều trong corpus + rule quy đổi trong bots.system_prompt (owner-owned); application chỉ thêm OBSERVE-metric (percent-aware numeric_fidelity), tuyệt đối không math_lockdown/override (sacred #2).",
+   "pattern": "(1) MMR rank-based selection (Carbonell-Goldstein 1998; LangChain/LlamaIndex production MMR không dùng hard sim-cutoff) + embedding-anisotropy calibration (Ethayarajh 2019: cosine baseline cao đồng đều trong contextual embeddings → threshold tuyệt đối phải calibrate per-model, lý tưởng là adaptive theo pool: threshold=max(floor_cfg, pool_median+k·MAD) hoặc mmr_min_keep floor). (2) Retrieval-payload vs LLM-payload separation (multi-vector/ColBERT-style: field để match ≠ field để đọc) cho alias mega-cell. (3) Bidirectional labeling cho bảng bậc thang — chuẩn table-QA: mỗi bracket render kèm cả 2 chiều ('còn ≥70% ⇄ mòn ≤30%') để LLM khỏi làm phép bù ngầm. (4) Observe-don't-override numeric gate (đúng triết lý sacred #2, mirror contract specs/001 numeric-fidelity-event).",
+   "short_term": "Config-only qua alembic/admin UI (CẤM psql hotfix): (a) mmr_similarity_threshold_by_intent.factoid 0.88→0.95-0.97 — chọn bằng ĐO: replay 100Q luannt + đo cosine same-doc-distinct-section baseline (0.882-0.979) và true-duplicate baseline trước khi chốt số; (b) thêm key mmr_min_keep (floor ≥3) đọc trong mmr_dedup — 1 dòng config + ~10 dòng node; (c) cân nhắc generate_context_chars_cap_by_intent.factoid 2900→4500 CHỈ sau khi đo token-cost delta trên 100Q (rule no-guess: chưa chạy chưa claim); (d) owner sysprompt thêm 2 rule: 'khách nói MÒN X% → gai còn lại = 100−X, áp bảng theo gai còn' + 'chỉ mô tả đặc tính gai nếu có trong tài liệu'. Verify: rerun luannt100 → kỳ vọng đo lại L-060/L-077 (KHÔNG claim trước số).",
+   "long_term": "(1) Governance threshold-drift: calibration set pinned per embedding-model; mọi swap embedding provider bắt buộc chạy scripts recalibrate toàn bộ hằng similarity-space (mmr, semantic_cache, cliff gap, rerank floor) và lưu system_config keyed theo model — biến bài học feedback_threshold_drift_post_migration thành gate CI. (2) Ingest: alias/synonym mega-cell đi vào content_segmented + search_vector only; content LLM-visible render cột giá trị có nhãn (productname/quantity/price/ngày về) — stock chunk 1.4k→~250 chars, cap factoid tự khớp. (3) numeric_fidelity percent-aware mode (config-gated): đếm token %/mm (min_digits riêng cho suffix % và đơn vị đo) + lớp derived complement (100−x) — observe-only, emit event, không chặn answer. (4) Loadtest gate thêm Coverage per-cluster + direction-trap questions (mòn↔còn, tồn↔lịch-về) vào golden file per-bot. (5) Policy NÓI-THÊM (câu e): 3 grade — (i) FACT bịa trình bày như corpus-fact (L-060 xe tải, L-056 8mm/9mm): không chấp nhận, nhưng root là retrieval-starvation + thiếu rule owner, KHÔNG app-block; (ii) GLOSS world-knowledge trên thuật ngữ corpus (L-090 H/T='gai thường'): chấp nhận là UX trade-off mặc định, owner opt-out bằng 1 dòng sysprompt nếu cần strict; (iii) SUY DIỄN kết luận khi corpus im lặng (L-077 'chưa có hàng'): không chấp nhận — nhưng sysprompt bot ĐÃ có rule đúng ('không suy luận tồn từ ngữ cảnh'), bot vi phạm vì bị đói data → fix ở B là đủ; đo bằng unsupported-claim rate observe-metric, enforcement duy nhất qua sysprompt owner + data đầy đủ. KHÔNG bao giờ math_lockdown/regex-override (sacred #2).",
+   "red_test_design": "RED-1 (deterministic, tái hiện chain A — chạy fail NGAY hôm nay): tests/unit/test_mmr_same_doc_collapse.py + fixture tests/fixtures/mmr_policy_sections_embeddings.json = 8 vector 1280-dim THẬT dump từ document_chunks.embedding của xe-4 (fixture chỉ chứa số + nhãn generic 'section_1..8', zero brand literal — domain-neutral OK). Test: pool 6 section score-desc (section_3 top 0.776, còn lại 0.70-0.50), gọi mmr_filter(lambda_param=DEFAULT_MMR_LAMBDA, similarity_threshold=DEFAULT_MMR_SIMILARITY_THRESHOLD); assert len(out)>=3 AND section_1 (scope) in out. Hiện tại FAIL (out==1, đã replay xác nhận) → GREEN sau fix min_keep/recalibrate. RED-2 (deterministic, chain C observe-gap): tests/unit/test_numeric_fidelity_percent.py — fixture = answer L-080 verbatim + content chunk xe-4 idx2 verbatim (từ evidence JSON, giữ nguyên vì là golden per-bot data trong file test riêng); assert classify_answer_numbers(...percent_mode=True)['n_numbers']>0 và giá trị 60 được nhận là derived complement của grounded 40/70/100. Hiện FAIL (n_numbers==0). RED-3 (deterministic, chain B): tests/unit/test_context_cap_drops_stock_rows.py — fixture 4 chunk THẬT của L-077 (lengths 3110/1102/1422/319, content từ DB) + cap 2900; assert sau pipeline compress→cap, tập giữ lại chứa ÍT NHẤT 1 chunk có cột quantity — hiện FAIL (chỉ giữ chunk lịch); GREEN sau fix alias-strip (chunk stock co còn ~250 chars) hoặc cap policy mới. RED-4 (E2E, LLM-judge, golden file per-bot KHÔNG trong code chung): thêm vào scenario luannt câu L-080 verbatim, judge assert answer chứa '60%' và KHÔNG chứa pattern 'bồi thường ~40%' — chạy trong rag-loadtest gate, đo Coverage cluster-D trước/sau."
+  },
+  "claudemd_compliance": "Tự audit theo 5-step mandate: [Rule #0 CẤM ĐOÁN] ✅ — mọi claim gắn evidence: evidence JSON verbatim, request_steps rows (mmr before/after, prompt_build dropped=3), pairwise cosine ĐO từ embedding DB thật, offline replay mmr_filter bằng code production + embedding thật (kept=1/6), corpus grep 0-hits cho từng chi tiết bịa; 2 điểm chưa verify được gắn nhãn GIẢ THUYẾT: (i) mục I có nằm trong rerank-7 của L-060 không (log không ghi chunk ids — nhưng cơ chế MMR-kill đã chứng minh độc lập: sim(I,III)=0.897>0.88 nên CÓ trong pool cũng chết; L-056 dropped_chunk_ids chứa xe-4 idx0+idx4 chứng minh pool warranty chứa nhiều section xe-4), (ii) mức giảm nói-thêm khi context đủ 2-3 section — cần A/B sau fix, chưa claim %. [Sacred #2/#10 no app-inject/override] ✅ — không đề xuất math_lockdown/regex-override/template inject; rule quy đổi mòn↔còn đặt ở bots.system_prompt (owner-owned) + data corpus 2 chiều; application chỉ observe-metric. [Zero-hardcode] ✅ — mọi số đề xuất (mmr_min_keep, threshold mới, cap) qua system_config/shared constants, chọn giá trị bằng đo distribution chứ không magic number. [Domain-neutral/no per-bot logic] ✅ — fix ở mmr/cap/ingest-render là generic; fixture test dùng nhãn section generic, câu golden L-080 nằm file per-bot; zero brand literal vào src/. [No psql hotfix] ✅ — config change chỉ qua alembic tracked/admin UI. [4-key identity/RBAC/tenant] ✅ không đụng. [T1/T2/T3] — cluster này là [T1-Smartness] (Coverage + sai-chiều số), fix B đồng thời lợi T2 (giảm ~1000 chars alias/chunk khỏi prompt). [READ-ONLY mandate] ✅ — session chỉ SELECT + replay in-memory, không sửa src/, không UPDATE DB. [Model tier] — subagent chạy theo program override Fable 5 (CLAUDE.md ACTIVE PROGRAM), READ+REPORT only. [Anti-pattern check] ✅ không patch sai tầng: L-080 KHÔNG đề xuất fix bằng retrieval (data đủ rồi), L-060/077 KHÔNG đề xuất fix bằng sysprompt (retrieval/prompt-build starve là gốc); không frame 'honest' cho L-060/L-077 — corpus CÓ đáp án, bot trả sai = silent failure.",
+  "label": "SU_THAT"
+ }
+]
