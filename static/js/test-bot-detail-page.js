@@ -137,7 +137,11 @@ async function loadHistory() {
     addMsg('system', 'Bắt đầu cuộc trò chuyện mới');
     return;
   }
-  msgs.forEach(function (m) { addMsg(m.role, m.content); });
+  msgs.forEach(function (m) {
+    // served_chunks (truth-audit): chunks the LLM saw for this stored turn —
+    // render an expandable audit block under each assistant message.
+    addMsg(m.role, m.content, m.served_chunks ? { served_chunks: m.served_chunks } : undefined);
+  });
 }
 
 async function loadBotInfo() {
@@ -164,6 +168,23 @@ function addMsg(role, content, meta) {
   const div = document.createElement('div');
   div.className = 'msg ' + (role === 'user' ? 'user' : role === 'system' ? 'system' : 'bot');
   div.innerHTML = role === 'user' ? esc(content) : UI.formatMd(content || '');
+  if (meta && meta.served_chunks && role !== 'user') {
+    const sc = meta.served_chunks;
+    const box = document.createElement('details');
+    box.className = 'cited';
+    const head = document.createElement('summary');
+    head.innerHTML = '<b>\ud83d\udccc Chunks \u0111\u00e3 \u0111\u01b0a qua LLM (' + sc.length + ')</b>';
+    box.appendChild(head);
+    sc.forEach(function (c, i) {
+      const d = document.createElement('div');
+      d.className = 'cited-item';
+      const scoreTxt = (c.score === null || c.score === undefined) ? '' : ' \u00b7 score ' + Number(c.score).toFixed(3);
+      d.innerHTML = '<div><b>#' + (i + 1) + '</b> ' + esc(c.source || '') + ' ' + esc(c.document_name || '') + scoreTxt + '</div>'
+        + '<div class="cited-text">' + esc(c.content || '') + '</div>';
+      box.appendChild(d);
+    });
+    div.appendChild(box);
+  }
   if (meta && role === 'bot') {
     const m = document.createElement('div');
     m.className = 'meta';

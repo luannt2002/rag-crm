@@ -48,7 +48,10 @@ from ragbot.shared.constants import (
 )
 from ragbot.shared.constants import NUMERIC_FIDELITY_EVENT
 from ragbot.shared.errors import InvariantViolation
-from ragbot.shared.numeric_fidelity import classify_answer_numbers
+from ragbot.shared.numeric_fidelity import (
+    classify_answer_numbers,
+    detect_cross_row_misattribution,
+)
 
 logger = structlog.get_logger(__name__)
 
@@ -80,6 +83,9 @@ async def guard_output(
             for c in (state.get("graded_chunks") or [])
         ]
         _nf = classify_answer_numbers(_nf_answer, _nf_ctx)
+        # Step-5 lệch detector: real context number attributed to the wrong
+        # entity row (cross-row mix). Same observe-only discipline.
+        _nf.update(detect_cross_row_misattribution(_nf_answer, _nf_ctx))
         state["numeric_fidelity"] = _nf
         if _nf["n_numbers"]:
             logger.info(
@@ -91,6 +97,8 @@ async def guard_output(
                 n_derived_valid=_nf["n_derived_valid"],
                 n_unsupported=_nf["n_unsupported"],
                 unsupported_tokens=_nf["unsupported_tokens"],
+                n_misattributed=_nf["n_misattributed"],
+                misattributed=_nf["misattributed"],
                 context_source=str(state.get("retrieve_mode") or ""),
             )
 

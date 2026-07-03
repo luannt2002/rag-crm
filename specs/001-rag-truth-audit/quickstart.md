@@ -47,3 +47,24 @@ Same as step 2 with `--out specs/001-rag-truth-audit/evidence/step_<n>_runs.json
 delta table vs the previous step goes in `evidence/ladder.md`. One change per step;
 HALLU>0 or chuẩn regression beyond declared tolerance → execute the step's pre-declared
 rollback.
+
+## 6. GP-100 release gate (luồng check chi tiết)
+
+```bash
+# 1 lần chạy = 100 câu; release gate = --repeat 3 (300 answers)
+.venv/bin/python scripts/rag_trace_capture.py \
+  --scenario tests/scenarios/gate100.json \
+  --out specs/001-rag-truth-audit/evidence/gp100_run.json \
+  --repeat 3 --concurrency 5
+```
+
+Chấm (DB-anchored, không đoán):
+1. `numeric_fidelity` per-record (đã persist trong trace): `n_unsupported>0` = BỊA → FAIL cứng.
+2. `expect` substring: câu có expect phải chứa đúng giá trị (giá đã certified khớp file gốc).
+3. Trap (`trap_*`): answer KHÔNG được chứa số giá; phải defer → không thì FAIL.
+4. `multi_variant_listing`: expect = giá variant RẺ (dòng hay bị bỏ sót) — thiếu = coverage-loss.
+5. PASS bar (owner 2026-07-03): 0 sai + 0 bịa; 'thiếu' allowed, đếm riêng.
+
+Verify từng turn TRONG UI (không cần debug mode): mở lịch sử chat —
+mỗi câu trả lời có khối "📌 Chunks đã đưa qua LLM (N)" đọc từ
+`chat_histories.served_chunks` (alembic `served_chunks_260703`).

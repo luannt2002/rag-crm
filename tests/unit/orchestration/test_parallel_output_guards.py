@@ -363,7 +363,10 @@ async def test_both_succeed_state_merged(
     )
 
     out = await guard_output(_state_with_grounding_eligible())
-    assert out == {"guardrail_flags": []}
+    assert out["guardrail_flags"] == []
+    # numeric-fidelity observe verdict rides along on every clean exit
+    # (truth-audit Step 4) — dict-shaped, never gates the answer.
+    assert isinstance(out.get("numeric_fidelity"), dict)
     assert calls == ["grounding"], "grounding branch must have been awaited"
     assert len(guardrail.check_output_calls) == 1, (
         "regex branch must have been awaited via check_output"
@@ -441,7 +444,10 @@ async def test_flag_off_uses_serial_fallback(
         pipeline_config_override={"pipeline_parallel_output_guards_enabled": False}
     )
     out = await guard_output(state)
-    assert out == {"guardrail_flags": []}
+    assert out["guardrail_flags"] == []
+    # numeric-fidelity observe verdict rides along on every clean exit
+    # (truth-audit Step 4) — dict-shaped, never gates the answer.
+    assert isinstance(out.get("numeric_fidelity"), dict)
     # Legacy path: check_output ran once with grounding enabled and the
     # llm_complete_fn wired.
     assert len(guardrail.check_output_calls) == 1
@@ -483,7 +489,10 @@ async def test_grounding_ineligible_intent_uses_serial_path(
         },
     )
     out = await guard_output(state)
-    assert out == {"guardrail_flags": []}
+    assert out["guardrail_flags"] == []
+    # numeric-fidelity observe verdict rides along on every clean exit
+    # (truth-audit Step 4) — dict-shaped, never gates the answer.
+    assert isinstance(out.get("numeric_fidelity"), dict)
     assert called == [], (
         "ineligible intent must not invoke the standalone grounding judge"
     )

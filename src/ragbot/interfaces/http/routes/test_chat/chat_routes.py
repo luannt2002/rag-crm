@@ -7,6 +7,7 @@ production pipeline (query_graph) + demo extras, same SSE framing.
 from __future__ import annotations
 
 import asyncio
+import json
 import time
 import uuid
 from typing import Any
@@ -19,6 +20,7 @@ from sqlalchemy.exc import SQLAlchemyError  # noqa: F401 — used by carved hand
 from ragbot.infrastructure.repositories.history_reconcile import HistoryReconciler
 from ragbot.shared.bot_limits import resolve_bot_limit
 from ragbot.shared.hashing import content_hash_required
+from ragbot.shared.served_chunks import build_served_chunks
 from ragbot.shared.constants import (
     DEFAULT_CONNECT_ID,
     DEFAULT_LANGUAGE,
@@ -633,14 +635,21 @@ async def test_chat(req: TestChatRequest, request: Request) -> dict:
     async def _save_history():
         if not answer:
             return
+        # Truth-audit verification: persist the chunks the LLM actually saw
+        # with the assistant turn (auditable without debug mode).
+        _sc = json.dumps(
+            build_served_chunks(final_state.get("graded_chunks") or []),
+            ensure_ascii=False,
+        )
         async with sf() as session:
             # INSERT mới + TRIM cũ trong 1 transaction
             # Thêm đuôi (2 rows: user + assistant), cắt đầu (giữ max_history mới nhất)
             await session.execute(
                 text("""
                     WITH ins AS (
-                        INSERT INTO chat_histories (record_bot_id, channel_type, connect_id, role, content)
-                        VALUES (:bid, :ch, :cid, 'user', :q), (:bid, :ch, :cid, 'assistant', :a)
+                        INSERT INTO chat_histories (record_bot_id, channel_type, connect_id, role, content, served_chunks)
+                        VALUES (:bid, :ch, :cid, 'user', :q, NULL),
+                               (:bid, :ch, :cid, 'assistant', :a, CAST(:sc AS jsonb))
                     )
                     DELETE FROM chat_histories
                     WHERE id IN (
@@ -651,7 +660,7 @@ async def test_chat(req: TestChatRequest, request: Request) -> dict:
                     )
                 """),
                 {"bid": bot_cfg.id, "ch": req.channel_type, "cid": connect_id,
-                 "q": req.question, "a": answer, "keep": max_history},
+                 "q": req.question, "a": answer, "sc": _sc, "keep": max_history},
             )
             await session.commit()
 
@@ -1005,16 +1014,22 @@ async def test_chat_stream(req: TestChatRequest, request: Request) -> StreamingR
                 error_type=type(exc).__name__,
             )
 
-    async def _save_history(answer: str):
+    async def _save_history(answer: str, final_state: dict | None = None):
         if not answer:
             return
+        # Truth-audit verification: chunks the LLM saw ride with the turn.
+        _sc = json.dumps(
+            build_served_chunks((final_state or {}).get("graded_chunks") or []),
+            ensure_ascii=False,
+        )
         async with sf() as session:
             # INSERT mới + TRIM cũ trong 1 transaction
             await session.execute(
                 text("""
                     WITH ins AS (
-                        INSERT INTO chat_histories (record_bot_id, channel_type, connect_id, role, content)
-                        VALUES (:bid, :ch, :cid, 'user', :q), (:bid, :ch, :cid, 'assistant', :a)
+                        INSERT INTO chat_histories (record_bot_id, channel_type, connect_id, role, content, served_chunks)
+                        VALUES (:bid, :ch, :cid, 'user', :q, NULL),
+                               (:bid, :ch, :cid, 'assistant', :a, CAST(:sc AS jsonb))
                     )
                     DELETE FROM chat_histories
                     WHERE id IN (
@@ -1025,7 +1040,7 @@ async def test_chat_stream(req: TestChatRequest, request: Request) -> StreamingR
                     )
                 """),
                 {"bid": bot_cfg.id, "ch": req.channel_type, "cid": connect_id,
-                 "q": req.question, "a": answer, "keep": max_history},
+                 "q": req.question, "a": answer, "sc": _sc, "keep": max_history},
             )
             await session.commit()
 
@@ -1071,7 +1086,7 @@ async def test_chat_stream(req: TestChatRequest, request: Request) -> StreamingR
             err = final_state_holder.get("error")
             await asyncio.gather(
                 _finalize_log(final_state, answer, err),
-                _save_history(answer),
+                _save_history(answer, final_state),
             )
 
         _telemetry_extra = {
@@ -1130,7 +1145,7 @@ async def test_chat_stream(req: TestChatRequest, request: Request) -> StreamingR
 
     await asyncio.gather(
         _finalize_log(final_state, answer, llm_error),
-        _save_history(answer),
+        _save_history(answer, final_state),
     )
 
     if llm_error:
@@ -1177,7 +1192,7 @@ async def test_chat_history(
     async with sf() as session:
         rows = (await session.execute(
             text("""
-                SELECT role, content, created_at FROM chat_histories
+                SELECT role, content, created_at, served_chunks FROM chat_histories
                 WHERE record_bot_id = :bid AND channel_type = :ch AND connect_id = :cid
                 ORDER BY id ASC
             """),
@@ -1185,7 +1200,12 @@ async def test_chat_history(
         )).fetchall()
     return {
         "ok": True,
-        "messages": [{"role": r[0], "content": r[1], "created_at": r[2].isoformat() if r[2] else None} for r in rows],
+        "messages": [{
+            "role": r[0], "content": r[1],
+            "created_at": r[2].isoformat() if r[2] else None,
+            # chunks the LLM saw for this assistant turn (truth-audit verify)
+            "served_chunks": (json.loads(r[3]) if isinstance(r[3], str) else r[3]) if r[3] else None,
+        } for r in rows],
         "total": len(rows),
         "connect_id": resolved_cid,
     }

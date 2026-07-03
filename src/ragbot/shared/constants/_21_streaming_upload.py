@@ -243,3 +243,10 @@ DEFAULT_GROUNDING_CHECK_TRULY_PARALLEL: Final[bool] = True
 # (list — merged additively post-gather). Falls back to serial when flag is
 # False (default True post-validation).
 DEFAULT_GUARD_OUTPUT_PARALLEL_ENABLED: Final[bool] = True
+
+# --- Served-chunks persistence (truth-audit verification, alembic served_chunks_260703)
+# Cap the per-turn chunk list persisted with the assistant message so a fat
+# retrieval (top-20 wide net) cannot bloat chat_histories. Items = chunks the
+# LLM actually saw (post-grade), chars = content head per chunk.
+SERVED_CHUNKS_PERSIST_MAX_ITEMS: Final[int] = 12
+SERVED_CHUNKS_PERSIST_MAX_CHARS: Final[int] = 400
