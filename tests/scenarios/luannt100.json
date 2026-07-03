@@ -1,0 +1,617 @@
+{
+ "bot_id": "chinh-sach-xe",
+ "channel_type": "web",
+ "workspace_id": "xe",
+ "note": "luannt-100 (QA-authored 2026-07-04): 7 nhóm kịch bản, nhóm 6 = multi-turn chains (same connect_id, sequential). Grading = Claude deep-analysis trên trace + request_steps.",
+ "questions": [
+  {
+   "id": "L-001",
+   "flow": "g1_sku_gia",
+   "q": "Lốp Landspider size 185/55R16 83V giá bao nhiêu?",
+   "expect": null
+  },
+  {
+   "id": "L-002",
+   "flow": "g1_sku_gia",
+   "q": "Giá của lốp Rovelo 155/70R13 RHP-A68 là bao nhiêu?",
+   "expect": null
+  },
+  {
+   "id": "L-003",
+   "flow": "g1_sku_gia",
+   "q": "Lốp Davanti 215/60R17 DX640 hiện có giá thế nào?",
+   "expect": null
+  },
+  {
+   "id": "L-004",
+   "flow": "g1_sku_gia",
+   "q": "Tìm cho tôi giá của mã hàng 2-ZR18 225/40 LPD.",
+   "expect": null
+  },
+  {
+   "id": "L-005",
+   "flow": "g1_sku_gia",
+   "q": "Lốp Landspider 195/65R15 91H Citytraxx G/P đắt hơn hay rẻ hơn Rovelo cùng size?",
+   "expect": null
+  },
+  {
+   "id": "L-006",
+   "flow": "g1_sku_gia",
+   "q": "Cho tôi biết giá của lốp có mã 2-R16 215/70 LPD.",
+   "expect": null
+  },
+  {
+   "id": "L-007",
+   "flow": "g1_sku_gia",
+   "q": "Lốp xe Landspider 285/45ZR22 có giá trên 3 triệu không?",
+   "expect": null
+  },
+  {
+   "id": "L-008",
+   "flow": "g1_sku_gia",
+   "q": "Lốp Neoterra 195/65R16 hiện tại có giá chưa?",
+   "expect": null
+  },
+  {
+   "id": "L-009",
+   "flow": "g1_sku_gia",
+   "q": "SKU 2-ZR20 315/35 LPD giá bao nhiêu?",
+   "expect": null
+  },
+  {
+   "id": "L-010",
+   "flow": "g1_sku_gia",
+   "q": "Lốp nào đắt nhất trong dòng Landspider Citytraxx H/P?",
+   "expect": null
+  },
+  {
+   "id": "L-011",
+   "flow": "g1_sku_gia",
+   "q": "Lốp nào rẻ nhất trong bảng giá của Rovelo?",
+   "expect": null
+  },
+  {
+   "id": "L-012",
+   "flow": "g1_sku_gia",
+   "q": "Giá lốp 245/45ZR19 102WXL Citytraxx H/P là bao nhiêu?",
+   "expect": null
+  },
+  {
+   "id": "L-013",
+   "flow": "g1_sku_gia",
+   "q": "Lốp Davanti 275/40ZR21 DX640 có giá chính xác là bao nhiêu?",
+   "expect": null
+  },
+  {
+   "id": "L-014",
+   "flow": "g1_sku_gia",
+   "q": "So sánh giá lốp 225/45ZR17 và 225/50ZR17 của Landspider.",
+   "expect": null
+  },
+  {
+   "id": "L-015",
+   "flow": "g1_sku_gia",
+   "q": "Lốp xe NhatBan 235/60NB17 có giá bao nhiêu trong hệ thống?",
+   "expect": null
+  },
+  {
+   "id": "L-016",
+   "flow": "g1_sku_gia",
+   "q": "Lốp 185/60R14 82H Landspider giá bao nhiêu?",
+   "expect": null
+  },
+  {
+   "id": "L-017",
+   "flow": "g1_sku_gia",
+   "q": "Tìm giá cho tôi mã hàng 2-ZR19 245/45 LPD.",
+   "expect": null
+  },
+  {
+   "id": "L-018",
+   "flow": "g1_sku_gia",
+   "q": "Lốp Landspider 275/45ZR20 giá có phải là 2.628.000đ không?",
+   "expect": null
+  },
+  {
+   "id": "L-019",
+   "flow": "g1_sku_gia",
+   "q": "Cho tôi xin giá của lốp mã 2-R12C155/12.",
+   "expect": null
+  },
+  {
+   "id": "L-020",
+   "flow": "g1_sku_gia",
+   "q": "Lốp Davanti 215/45ZR18 hiện tại bán bao nhiêu một chiếc?",
+   "expect": null
+  },
+  {
+   "id": "L-021",
+   "flow": "g2_tonkho",
+   "q": "Lốp Landspider 155/80R13 79T còn bao nhiêu chiếc trong kho?",
+   "expect": null
+  },
+  {
+   "id": "L-022",
+   "flow": "g2_tonkho",
+   "q": "Mã hàng 2-R13 175/70 LPD còn hàng không?",
+   "expect": null
+  },
+  {
+   "id": "L-023",
+   "flow": "g2_tonkho",
+   "q": "Hiện tại trong kho còn bao nhiêu lốp Rovelo 165/65R13 RHP-A68?",
+   "expect": null
+  },
+  {
+   "id": "L-024",
+   "flow": "g2_tonkho",
+   "q": "Kiểm tra tồn kho của mã 2-ZR17 215/45 LPD.",
+   "expect": null
+  },
+  {
+   "id": "L-025",
+   "flow": "g2_tonkho",
+   "q": "Lốp Landspider 175/70R14 hiện tại còn hàng không?",
+   "expect": null
+  },
+  {
+   "id": "L-026",
+   "flow": "g2_tonkho",
+   "q": "Kho lốp Landspider có còn mã 2-ZR18 235/50 LPD không?",
+   "expect": null
+  },
+  {
+   "id": "L-027",
+   "flow": "g2_tonkho",
+   "q": "Tổng số lượng lốp Davanti 205/55ZR17 DX640 trong kho là bao nhiêu?",
+   "expect": null
+  },
+  {
+   "id": "L-028",
+   "flow": "g2_tonkho",
+   "q": "Những lốp nào có số lượng tồn kho dưới 5 chiếc?",
+   "expect": null
+  },
+  {
+   "id": "L-029",
+   "flow": "g2_tonkho",
+   "q": "Lốp 245/70R17 H/T còn đúng 1 chiếc phải không?",
+   "expect": null
+  },
+  {
+   "id": "L-030",
+   "flow": "g2_tonkho",
+   "q": "Cho tôi biết số lượng tồn của mã hàng 2-R16 225/60 LPD.",
+   "expect": null
+  },
+  {
+   "id": "L-031",
+   "flow": "g2_tonkho",
+   "q": "Lốp Rovelo 215/60R16 còn bao nhiêu sản phẩm?",
+   "expect": null
+  },
+  {
+   "id": "L-032",
+   "flow": "g2_tonkho",
+   "q": "Mã hàng 2-ZR21 285/45 LPD có sẵn hàng không?",
+   "expect": null
+  },
+  {
+   "id": "L-033",
+   "flow": "g2_tonkho",
+   "q": "SKU 2-ZR19 235/40 LPD còn bao nhiêu chiếc?",
+   "expect": null
+  },
+  {
+   "id": "L-034",
+   "flow": "g2_tonkho",
+   "q": "Lốp Landspider 215/70R15 98H còn hàng không?",
+   "expect": null
+  },
+  {
+   "id": "L-035",
+   "flow": "g2_tonkho",
+   "q": "Kiểm tra tồn kho mã 2-R15 195/70 RVL.",
+   "expect": null
+  },
+  {
+   "id": "L-036",
+   "flow": "g2_tonkho",
+   "q": "Có bao nhiêu lốp 235/55ZR18 104WXL trong kho Landspider?",
+   "expect": null
+  },
+  {
+   "id": "L-037",
+   "flow": "g2_tonkho",
+   "q": "Mã hàng 2-R16 235/60 LPD tồn kho bao nhiêu?",
+   "expect": null
+  },
+  {
+   "id": "L-038",
+   "flow": "g2_tonkho",
+   "q": "Lốp 255/55R18 109HXL còn bao nhiêu chiếc?",
+   "expect": null
+  },
+  {
+   "id": "L-039",
+   "flow": "g2_tonkho",
+   "q": "Kiểm tra tồn kho mã 2-R16 265/70 LPD.",
+   "expect": null
+  },
+  {
+   "id": "L-040",
+   "flow": "g2_tonkho",
+   "q": "Lốp 195/50R16 84V còn bao nhiêu sản phẩm về ngày 28/11?",
+   "expect": null
+  },
+  {
+   "id": "L-041",
+   "flow": "g3_ngayve",
+   "q": "Khi nào lốp Landspider 185/55R16 83V về hàng?",
+   "expect": null
+  },
+  {
+   "id": "L-042",
+   "flow": "g3_ngayve",
+   "q": "Lốp 225/45ZR19 có lịch về vào ngày nào không?",
+   "expect": null
+  },
+  {
+   "id": "L-043",
+   "flow": "g3_ngayve",
+   "q": "Ngày 28 tháng 11 có những size lốp Landspider nào về?",
+   "expect": null
+  },
+  {
+   "id": "L-044",
+   "flow": "g3_ngayve",
+   "q": "Lốp 235/65R17 108HXL khi nào có hàng lại?",
+   "expect": null
+  },
+  {
+   "id": "L-045",
+   "flow": "g3_ngayve",
+   "q": "Cho tôi biết ngày về của mã hàng 225/70R16 107HXL.",
+   "expect": null
+  },
+  {
+   "id": "L-046",
+   "flow": "g3_ngayve",
+   "q": "Lốp Landspider 245/45ZR20 có về trong tháng 11 không?",
+   "expect": null
+  },
+  {
+   "id": "L-047",
+   "flow": "g3_ngayve",
+   "q": "Lốp 265/65R17 112H dự kiến về ngày mấy?",
+   "expect": null
+  },
+  {
+   "id": "L-048",
+   "flow": "g3_ngayve",
+   "q": "Những mã lốp Wildtraxx A/T nào sẽ về vào ngày 28/11?",
+   "expect": null
+  },
+  {
+   "id": "L-049",
+   "flow": "g3_ngayve",
+   "q": "Lốp 165/80R13 có lịch về hàng không?",
+   "expect": null
+  },
+  {
+   "id": "L-050",
+   "flow": "g3_ngayve",
+   "q": "Kiểm tra ngày về của mã hàng 255/60R18 112HXL.",
+   "expect": null
+  },
+  {
+   "id": "L-051",
+   "flow": "g4_baohanh",
+   "q": "Chính sách bảo hành này áp dụng cho những thương hiệu lốp nào?",
+   "expect": null
+  },
+  {
+   "id": "L-052",
+   "flow": "g4_baohanh",
+   "q": "Thời hạn bảo hành tối đa là bao nhiêu năm kể từ ngày sản xuất?",
+   "expect": null
+  },
+  {
+   "id": "L-053",
+   "flow": "g4_baohanh",
+   "q": "Lốp xe của tôi bị cắt do đá chém trên đường có được bảo hành không?",
+   "expect": null
+  },
+  {
+   "id": "L-054",
+   "flow": "g4_baohanh",
+   "q": "Độ mòn gai tối thiểu để còn hiệu lực bảo hành là bao nhiêu mm?",
+   "expect": null
+  },
+  {
+   "id": "L-055",
+   "flow": "g4_baohanh",
+   "q": "Nếu gai lốp còn trên 70% và bị lỗi sản xuất thì tôi được đền bù thế nào?",
+   "expect": null
+  },
+  {
+   "id": "L-056",
+   "flow": "g4_baohanh",
+   "q": "Trường hợp gai lốp mòn còn 3mm thì tỉ lệ bồi thường tính ra sao?",
+   "expect": null
+  },
+  {
+   "id": "L-057",
+   "flow": "g4_baohanh",
+   "q": "Lốp bị nổ do hỏa hoạn có nằm trong phạm vi bảo hành không?",
+   "expect": null
+  },
+  {
+   "id": "L-058",
+   "flow": "g4_baohanh",
+   "q": "Tôi tự vá lốp sai quy trình dẫn đến hư hỏng, công ty có chịu trách nhiệm không?",
+   "expect": null
+  },
+  {
+   "id": "L-059",
+   "flow": "g4_baohanh",
+   "q": "Tại sao lốp bị mòn không đều do sai góc đặt bánh xe lại bị từ chối bảo hành?",
+   "expect": null
+  },
+  {
+   "id": "L-060",
+   "flow": "g4_baohanh",
+   "q": "Chính sách bảo hành này có áp dụng cho lốp xe tải không?",
+   "expect": null
+  },
+  {
+   "id": "L-061",
+   "flow": "g4_baohanh",
+   "q": "Tôi mua lốp cũ không do Nam Phát phân phối thì có được bảo hành theo bảng này không?",
+   "expect": null
+  },
+  {
+   "id": "L-062",
+   "flow": "g4_baohanh",
+   "q": "Quy trình gửi lốp lỗi về công ty cần những thông tin gì?",
+   "expect": null
+  },
+  {
+   "id": "L-063",
+   "flow": "g4_baohanh",
+   "q": "Sau bao lâu kể từ khi kiểm tra lốp, tôi sẽ nhận được kết quả giám định?",
+   "expect": null
+  },
+  {
+   "id": "L-064",
+   "flow": "g4_baohanh",
+   "q": "\"Chính sách 72h\" dành cho đại lý nghĩa là gì?",
+   "expect": null
+  },
+  {
+   "id": "L-065",
+   "flow": "g4_baohanh",
+   "q": "Trong 3 tháng đầu nếu hàng bị lỗi sản xuất thì đại lý được hỗ trợ gì đặc biệt?",
+   "expect": null
+  },
+  {
+   "id": "L-066",
+   "flow": "g4_baohanh",
+   "q": "Khách hàng cuối có được mượn lốp thay thế trong khi chờ giám định không?",
+   "expect": null
+  },
+  {
+   "id": "L-067",
+   "flow": "g4_baohanh",
+   "q": "Công ty khuyến khích đăng ký bảo hành qua kênh nào?",
+   "expect": null
+  },
+  {
+   "id": "L-068",
+   "flow": "g4_baohanh",
+   "q": "Lốp bị biến dạng do bảo quản trong kho sai cách có được đổi mới không?",
+   "expect": null
+  },
+  {
+   "id": "L-069",
+   "flow": "g4_baohanh",
+   "q": "Gai lốp dưới 1.6mm còn bảo hành không?",
+   "expect": null
+  },
+  {
+   "id": "L-070",
+   "flow": "g4_baohanh",
+   "q": "Hotline hỗ trợ kỹ thuật về bảo hành là số nào?",
+   "expect": null
+  },
+  {
+   "id": "L-071",
+   "flow": "g5_lapluan",
+   "q": "Tôi muốn mua lốp cho xe Vios size 185/60R15, tư vấn cho tôi giá và chính sách bảo hành của Landspider.",
+   "expect": null
+  },
+  {
+   "id": "L-072",
+   "flow": "g5_lapluan",
+   "q": "So sánh đặc điểm và giá của Landspider Citytraxx G/P và Davanti DX640 size 215/60R17.",
+   "expect": null
+  },
+  {
+   "id": "L-073",
+   "flow": "g5_lapluan",
+   "q": "Tôi cần lốp đi đường địa hình (A/T), hãy liệt kê các mã Landspider Wildtraxx A/T đang còn hàng và giá của chúng.",
+   "expect": null
+  },
+  {
+   "id": "L-074",
+   "flow": "g5_lapluan",
+   "q": "Giữa Landspider và Rovelo, thương hiệu nào có xuất xứ từ Thái Lan?",
+   "expect": null
+  },
+  {
+   "id": "L-075",
+   "flow": "g5_lapluan",
+   "q": "Tư vấn giúp tôi size lốp 225/45R17 loại nào êm ái, bám đường tốt và cho biết giá tồn kho.",
+   "expect": null
+  },
+  {
+   "id": "L-076",
+   "flow": "g5_lapluan",
+   "q": "Tôi là đại lý, nếu tôi báo lốp lỗi sản xuất thì bao lâu tôi được đổi lốp mới?",
+   "expect": null
+  },
+  {
+   "id": "L-077",
+   "flow": "g5_lapluan",
+   "q": "Nếu tôi mua lốp 195/65R15 hôm nay, size này có hàng sẵn không hay phải đợi đến 28/11?",
+   "expect": null
+  },
+  {
+   "id": "L-078",
+   "flow": "g5_lapluan",
+   "q": "Lốp Davanti DX640 được giới thiệu là lốp UHP, vậy nó có những ưu điểm gì vượt trội?",
+   "expect": null
+  },
+  {
+   "id": "L-079",
+   "flow": "g5_lapluan",
+   "q": "Tìm cho tôi tất cả các lốp có giá trên 2 triệu đồng và cho biết loại đó là H/T hay A/T.",
+   "expect": null
+  },
+  {
+   "id": "L-080",
+   "flow": "g5_lapluan",
+   "q": "Nếu lốp bị lỗi sản xuất nhưng tôi đã chạy được 1 năm và mòn 40% gai thì giải quyết thế nào?",
+   "expect": null
+  },
+  {
+   "id": "L-081",
+   "flow": "g6_followup",
+   "q": "Lốp 225/45ZR18 giá bao nhiêu?",
+   "expect": null,
+   "chain": "c81"
+  },
+  {
+   "id": "L-082",
+   "flow": "g6_followup",
+   "q": "Vậy nó còn hàng không?",
+   "expect": null,
+   "chain": "c81"
+  },
+  {
+   "id": "L-083",
+   "flow": "g6_followup",
+   "q": "Nó bảo hành mấy năm thế?",
+   "expect": null,
+   "chain": "c81"
+  },
+  {
+   "id": "L-084",
+   "flow": "g6_followup",
+   "q": "Cho mình xem ảnh lốp Landspider 165/60R14.",
+   "expect": null,
+   "chain": "c84"
+  },
+  {
+   "id": "L-085",
+   "flow": "g6_followup",
+   "q": "Link drive chi tiết của nó là gì?",
+   "expect": null,
+   "chain": "c84"
+  },
+  {
+   "id": "L-086",
+   "flow": "g6_followup",
+   "q": "Size 205/55R16 còn nhiều không em?",
+   "expect": null,
+   "chain": "c86"
+  },
+  {
+   "id": "L-087",
+   "flow": "g6_followup",
+   "q": "Giá 1 cặp (2 chiếc) là bao nhiêu?",
+   "expect": null,
+   "chain": "c86"
+  },
+  {
+   "id": "L-088",
+   "flow": "g6_followup",
+   "q": "Lốp Landspider xuất xứ từ đâu?",
+   "expect": null,
+   "chain": "c88"
+  },
+  {
+   "id": "L-089",
+   "flow": "g6_followup",
+   "q": "Nhà máy sản xuất có đạt chuẩn gì không?",
+   "expect": null,
+   "chain": "c88"
+  },
+  {
+   "id": "L-090",
+   "flow": "g6_followup",
+   "q": "Size 265/65R17 có những loại gai nào?",
+   "expect": null
+  },
+  {
+   "id": "L-091",
+   "flow": "g7_edge",
+   "q": "Cho mình xin thông tin số tài khoản công ty để chuyển khoản mua lốp.",
+   "expect": null
+  },
+  {
+   "id": "L-092",
+   "flow": "g7_edge",
+   "q": "Mã số thuế của Công ty TNHH CN CN Quang Minh là gì?",
+   "expect": null
+  },
+  {
+   "id": "L-093",
+   "flow": "g7_edge",
+   "q": "Địa chỉ kho lốp Nam Phát ở đâu?",
+   "expect": null
+  },
+  {
+   "id": "L-094",
+   "flow": "g7_edge",
+   "q": "Hiện tại bên em có bán lốp Michelin Pilot Sport 5 không?",
+   "expect": null
+  },
+  {
+   "id": "L-095",
+   "flow": "g7_edge",
+   "q": "Thời tiết ở Thanh Trì hôm nay thế nào?",
+   "expect": null
+  },
+  {
+   "id": "L-096",
+   "flow": "g7_edge",
+   "q": "Thông tư 09/2020/TT-NHNN quy định về cái gì?",
+   "expect": null
+  },
+  {
+   "id": "L-097",
+   "flow": "g7_edge",
+   "q": "Ngày ban hành Thông tư 09/2020 là ngày nào?",
+   "expect": null
+  },
+  {
+   "id": "L-098",
+   "flow": "g7_edge",
+   "q": "Lốp Neoterra 195/65R16 có giá 260.000đ đúng không?",
+   "expect": null
+  },
+  {
+   "id": "L-099",
+   "flow": "g7_edge",
+   "q": "Cho mình xin link ảnh của lốp mã 2-ZR22 285/45 LPD.",
+   "expect": null
+  },
+  {
+   "id": "L-100",
+   "flow": "g7_edge",
+   "q": "Bot hỗ trợ được những vấn đề gì cho khách hàng mua lốp?",
+   "expect": null
+  }
+ ]
+}

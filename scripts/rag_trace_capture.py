@@ -116,6 +116,7 @@ def _record(q: dict, resp: dict) -> dict:
         "chunks_graded_pass": dbg.get("chunks_graded"),              # survived CRAG grading
         "score_max": dbg.get("score_max"),
         "cache_status": dbg.get("cache_status"),
+        "request_id": resp.get("request_id") or dbg.get("request_id"),
         "numeric_fidelity": dbg.get("numeric_fidelity"),
         "answer": resp.get("answer") or "",
         "answer_type": resp.get("answer_type"),
@@ -238,8 +239,36 @@ async def main(scenario: str, out: str, concurrency: int, repeat: int) -> None:
                 rec["iteration"] = it
                 return rec
 
-        records = await asyncio.gather(
-            *[_one(q, it) for q in sc["questions"] for it in range(1, repeat + 1)])
+        # Multi-turn CHAIN support: questions sharing a "chain" id run
+        # SEQUENTIALLY in the SAME connect_id room (follow-up context turns);
+        # distinct chains + chainless questions still run concurrently.
+        async def _one_chain(chain_id: str, qs_in_chain: list, it: int):
+            out = []
+            for q in qs_in_chain:
+                async with sem:
+                    cid = (f"trace-{chain_id}" if repeat == 1
+                           else f"trace-{chain_id}-r{it:02d}")
+                    resp = await _ask(c, tok, bot, ch, ws, q["q"], cid)
+                    rec = _record(q, resp)
+                    rec["iteration"] = it
+                    rec["chain"] = chain_id
+                    out.append(rec)
+            return out
+
+        _chains: dict[str, list] = {}
+        _singles: list = []
+        for q in sc["questions"]:
+            if q.get("chain"):
+                _chains.setdefault(q["chain"], []).append(q)
+            else:
+                _singles.append(q)
+        _tasks = [ _one(q, it) for q in _singles for it in range(1, repeat + 1) ]
+        _ctasks = [ _one_chain(cid, qs, it) for cid, qs in _chains.items()
+                    for it in range(1, repeat + 1) ]
+        _res = await asyncio.gather(*_tasks, *_ctasks)
+        records = []
+        for r in _res:
+            records.extend(r) if isinstance(r, list) else records.append(r)
 
     if repeat > 1:
         # Contract §1 — every run must have bypassed the cache, else the batch
@@ -259,6 +288,35 @@ async def main(scenario: str, out: str, concurrency: int, repeat: int) -> None:
         for r in records:
             r["verdicts"] = classify_numbers(
                 r["answer"], [c["content"] for c in r["chunks"]], stats_values)
+
+    # Deep-flow enrichment: attach the per-step pipeline rows (request_steps)
+    # so every question carries its FULL phase log (step_name, order, duration,
+    # tokens, status, error) — the owner's all-step verification requirement.
+    _rids = [r["request_id"] for r in records if r.get("request_id")]
+    if _rids:
+        import asyncpg  # local import — single-pass runs without DB deps still work
+        _conn = await asyncpg.connect(_asyncpg_dsn())
+        try:
+            _steps = await _conn.fetch(
+                """SELECT record_request_id::text AS rid, step_name, step_order,
+                          duration_ms, input_tokens, output_tokens, cost_usd,
+                          status, error, model_used
+                   FROM request_steps WHERE record_request_id = ANY($1::uuid[])
+                   ORDER BY record_request_id, step_order""", _rids)
+        finally:
+            await _conn.close()
+        _by_rid: dict[str, list] = {}
+        for st in _steps:
+            _by_rid.setdefault(st["rid"], []).append({
+                "step": st["step_name"], "order": st["step_order"],
+                "ms": st["duration_ms"], "in_tok": st["input_tokens"],
+                "out_tok": st["output_tokens"],
+                "cost": float(st["cost_usd"]) if st["cost_usd"] is not None else None,
+                "status": st["status"], "error": st["error"],
+                "model": st["model_used"],
+            })
+        for r in records:
+            r["steps"] = _by_rid.get(str(r.get("request_id") or ""), [])
 
     payload = {"bot_id": bot, "scenario": scenario, "repeat": repeat,
                "corpus_version": cv_start, "n": len(records),
