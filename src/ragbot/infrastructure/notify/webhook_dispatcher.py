@@ -27,6 +27,7 @@ from uuid import UUID
 
 import httpx
 import structlog
+from redis.exceptions import RedisError  # audit O5: redis-py raises its OWN hierarchy
 
 from ragbot.application.dto.notify_channel import NotifyChannelConfig
 from ragbot.application.services.notify_channel_resolver import (
@@ -328,7 +329,7 @@ class WebhookNotifyDispatcher:
                 ex=self._dedup_window_s,
                 nx=True,
             )
-        except (OSError, ConnectionError, TimeoutError) as exc:
+        except (OSError, RedisError) as exc:
             # Cache outage — fail open (allow the alert through). The
             # rate limiter is the second layer that still bounds storms.
             logger.warning(
@@ -351,7 +352,7 @@ class WebhookNotifyDispatcher:
                 # First write to a fresh bucket — set a TTL so it expires
                 # naturally; the grace covers minor clock skew.
                 await self._redis.expire(key, _BUCKET_SIZE_S + _BUCKET_TTL_GRACE_S)
-        except (OSError, ConnectionError, TimeoutError) as exc:
+        except (OSError, RedisError) as exc:
             logger.warning(
                 "notify_rate_limit_check_failed",
                 error_type=type(exc).__name__,
