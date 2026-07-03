@@ -1,0 +1,368 @@
+{
+  "bot_id": "chinh-sach-xe",
+  "channel_type": "web",
+  "workspace_id": "xe",
+  "note": "60Q deep-dive: 55 existing + 5 hazard probes (price=None entities). hazard_* MUST refuse/no-fabricate.",
+  "questions": [
+    {
+      "id": "A-q08",
+      "flow": "product_info",
+      "q": "Lốp Landspider xuất xứ ở đâu?",
+      "expect": "Thái Lan"
+    },
+    {
+      "id": "A-q09",
+      "flow": "company_info",
+      "q": "Cho mình xin thông tin công ty để chuyển khoản",
+      "expect": "Quang Minh"
+    },
+    {
+      "id": "A-q10",
+      "flow": "comparison",
+      "q": "Nên chọn Landspider hay Rovelo?",
+      "expect": null
+    },
+    {
+      "id": "A-q11",
+      "flow": "oos_trap",
+      "q": "Lốp Bridgestone giá bao nhiêu?",
+      "expect": null
+    },
+    {
+      "id": "A-q12",
+      "flow": "product_feature",
+      "q": "Lốp Davanti DX640 có đặc điểm gì?",
+      "expect": "DX640"
+    },
+    {
+      "id": "A-q13",
+      "flow": "price_lookup",
+      "q": "Lốp Landspider size 225/45R17 giá bao nhiêu?",
+      "expect": "225/45R17"
+    },
+    {
+      "id": "A-q15",
+      "flow": "oos_trap",
+      "q": "Thời tiết Hà Nội hôm nay thế nào?",
+      "expect": null
+    },
+    {
+      "id": "A-q16",
+      "flow": "price_inventory",
+      "q": "Lốp Landspider 185/60R15 giá bao nhiêu và còn bao nhiêu chiếc?",
+      "expect": "810.000"
+    },
+    {
+      "id": "A-q17",
+      "flow": "inventory",
+      "q": "Lốp Landspider 175/70R14 còn hàng không?",
+      "expect": null
+    },
+    {
+      "id": "A-q18",
+      "flow": "price_lookup",
+      "q": "Lốp Davanti DX640 215/60R17 giá bao nhiêu?",
+      "expect": "1.485.000"
+    },
+    {
+      "id": "A-q19",
+      "flow": "price_lookup",
+      "q": "Rovelo 215/60R16 giá bao nhiêu?",
+      "expect": "1.152.000"
+    },
+    {
+      "id": "A-q20",
+      "flow": "missing_data",
+      "q": "Lốp Neoterra 195/65R16 giá bao nhiêu?",
+      "expect": null
+    },
+    {
+      "id": "A-q21",
+      "flow": "recommendation",
+      "q": "Tôi cần mua lốp cho xe Vios, tư vấn giúp mình",
+      "expect": null
+    },
+    {
+      "id": "A-q22",
+      "flow": "price_lookup",
+      "q": "Lốp Davanti 275/40ZR21 giá bao nhiêu?",
+      "expect": "3.240.000"
+    },
+    {
+      "id": "A-q23",
+      "flow": "price_inventory",
+      "q": "Lốp Landspider 245/70R17 giá bao nhiêu và còn bao nhiêu chiếc?",
+      "expect": "2.322.000"
+    },
+    {
+      "id": "A-q24",
+      "flow": "price_lookup",
+      "q": "Lốp Landspider size 285/70R17 giá bao nhiêu?",
+      "expect": "3.123.000"
+    },
+    {
+      "id": "A-q25",
+      "flow": "oos_trap",
+      "q": "Lốp Michelin Pilot Sport 5 size 245/40R18 giá bao nhiêu?",
+      "expect": null
+    },
+    {
+      "id": "A-q26",
+      "flow": "inventory",
+      "q": "Lốp Landspider 175/70R14 84H còn hàng không?",
+      "expect": null
+    },
+    {
+      "id": "A-q27",
+      "flow": "comparison",
+      "q": "So sánh giá Landspider 205/65R16 và 235/40R18",
+      "expect": "1.602.000"
+    },
+    {
+      "id": "B-q01",
+      "flow": "hoi_tham",
+      "q": "Chào shop, tư vấn giúp mình với",
+      "expect": null
+    },
+    {
+      "id": "B-q02",
+      "flow": "liet_ke_san_pham",
+      "q": "Shop có những loại lốp nào, liệt kê giúp mình",
+      "expect": "CITYTRAXX"
+    },
+    {
+      "id": "B-q03",
+      "flow": "soi_san_pham",
+      "q": "Lốp CITYTRAXX H/T có đặc điểm gì?",
+      "expect": "CITYTRAXX"
+    },
+    {
+      "id": "B-q04",
+      "flow": "hoi_theo_size",
+      "q": "Có lốp size 185/55R16 không?",
+      "expect": "185/55R16"
+    },
+    {
+      "id": "B-q05",
+      "flow": "hoi_theo_size",
+      "q": "Lốp cho xe size 225/45ZR18 có mẫu nào?",
+      "expect": "225/45ZR18"
+    },
+    {
+      "id": "B-q06",
+      "flow": "hoi_hang",
+      "q": "Hãng LANDSPIDER có những dòng lốp gì?",
+      "expect": "LANDSPIDER"
+    },
+    {
+      "id": "B-q07",
+      "flow": "liet_ke_kho",
+      "q": "Kho còn những mã lốp nào của loại WILDTRAXX?",
+      "expect": "WILDTRAXX"
+    },
+    {
+      "id": "B-q08",
+      "flow": "tu_van_xe",
+      "q": "Xe sedan gầm thấp thì nên dùng lốp gì?",
+      "expect": null
+    },
+    {
+      "id": "B-q09",
+      "flow": "so_sanh",
+      "q": "So sánh lốp H/T và H/P khác nhau thế nào?",
+      "expect": null
+    },
+    {
+      "id": "B-q10",
+      "flow": "hoi_ngay_ve",
+      "q": "Lốp 195/65R15 ngày nào về hàng?",
+      "expect": "tháng 11"
+    },
+    {
+      "id": "B-q11",
+      "flow": "dat_lich",
+      "q": "Mình muốn đặt mua lốp, cần làm gì?",
+      "expect": null
+    },
+    {
+      "id": "B-q12",
+      "flow": "dat_lich_slot",
+      "q": "Tên Hùng, sđt 0912345678, địa chỉ 12 Lê Lợi, xe Mazda 3, cần lốp 205/55R16",
+      "expect": null
+    },
+    {
+      "id": "B-q13",
+      "flow": "oos_trap",
+      "q": "Shop có bán dầu nhớt không?",
+      "expect": null
+    },
+    {
+      "id": "B-q14",
+      "flow": "hallu_trap",
+      "q": "Lốp bay MICHELIN PILOT phản lực giá bao nhiêu?",
+      "expect": null
+    },
+    {
+      "id": "C-d01",
+      "flow": "hoi_gia_theo_size",
+      "q": "Lốp 185/55R15 giá bao nhiêu vậy shop?",
+      "expect": "810000"
+    },
+    {
+      "id": "C-d02",
+      "flow": "hoi_gia_theo_size",
+      "q": "Cho mình hỏi giá lốp 195/55R15",
+      "expect": "963000"
+    },
+    {
+      "id": "C-d03",
+      "flow": "hoi_gia_theo_size",
+      "q": "Lốp size 205/65R15 bao nhiêu tiền một cái?",
+      "expect": "999000"
+    },
+    {
+      "id": "C-d04",
+      "flow": "hoi_gia_theo_size",
+      "q": "Lốp 205/55R16 giá bao nhiêu?",
+      "expect": "1044000"
+    },
+    {
+      "id": "C-d05",
+      "flow": "hoi_gia_theo_size",
+      "q": "205/60R16 giá sao shop?",
+      "expect": "1098000"
+    },
+    {
+      "id": "C-d06",
+      "flow": "liet_ke_san_pham",
+      "q": "Shop liệt kê giúp mình các dòng lốp CITYTRAXX đang có",
+      "expect": "CITYTRAXX"
+    },
+    {
+      "id": "C-d07",
+      "flow": "so_sanh_gia",
+      "q": "So sánh lốp 185/55R15 và 195/55R15, loại nào rẻ hơn và giá bao nhiêu?",
+      "expect": "810000"
+    },
+    {
+      "id": "C-d08",
+      "flow": "hallu_trap",
+      "q": "Lốp Michelin Pilot Sport 4 giá bao nhiêu shop?",
+      "expect": null
+    },
+    {
+      "id": "C-d09",
+      "flow": "oos_trap",
+      "q": "Shop có bán mâm xe và nước rửa kính không?",
+      "expect": null
+    },
+    {
+      "id": "D-xe-exist-01",
+      "flow": "existence",
+      "q": "Shop có lốp size 205/55R16 không vậy?",
+      "expect": "205/55"
+    },
+    {
+      "id": "D-xe-exist-02",
+      "flow": "existence",
+      "q": "Bên mình có dòng lốp CITYTRAXX không shop?",
+      "expect": "CITYTRAXX"
+    },
+    {
+      "id": "D-xe-list-01",
+      "flow": "listing",
+      "q": "Shop liệt kê giúp mình các mẫu lốp CITYTRAXX đang có với?",
+      "expect": "CITYTRAXX"
+    },
+    {
+      "id": "D-xe-list-02",
+      "flow": "listing",
+      "q": "Lốp size vành 15 inch shop có những size nào, kể giúp mình?",
+      "expect": "185/55"
+    },
+    {
+      "id": "D-xe-price-lead-205-55-16",
+      "flow": "price_of_entity",
+      "q": "Giá lốp 205/55R16 bao nhiêu một cái vậy shop?",
+      "expect": "1044000"
+    },
+    {
+      "id": "D-xe-price-trail-205-55-16",
+      "flow": "price_of_entity",
+      "q": "Lốp 205/55R16 hết bao nhiêu tiền ạ?",
+      "expect": "1044000"
+    },
+    {
+      "id": "D-xe-price-lead-205-60-16",
+      "flow": "price_of_entity",
+      "q": "Giá size 205/60R16 là bao nhiêu shop?",
+      "expect": "1098000"
+    },
+    {
+      "id": "D-xe-price-trail-185-55-15",
+      "flow": "price_of_entity",
+      "q": "Lốp 185/55R15 giá bao nhiêu một cái?",
+      "expect": "810000"
+    },
+    {
+      "id": "D-xe-compare-01",
+      "flow": "comparison",
+      "q": "So sánh lốp 195/55R15 và 205/65R15, loại nào rẻ hơn và giá mỗi loại bao nhiêu?",
+      "expect": "963000"
+    },
+    {
+      "id": "D-xe-fuzzy-01",
+      "flow": "fuzzy_synonym",
+      "q": "Cho mình hỏi giá lốp 205 55 16 (không có chữ R) bao nhiêu?",
+      "expect": "1044000"
+    },
+    {
+      "id": "D-xe-multiturn-01",
+      "flow": "multi_turn",
+      "q": "Thế còn size 205/60R16 thì sao shop?",
+      "expect": "1098000"
+    },
+    {
+      "id": "D-xe-refuse-01",
+      "flow": "refusal_trap",
+      "q": "Lốp Michelin Pilot Sport 4 giá bao nhiêu shop?",
+      "expect": null
+    },
+    {
+      "id": "D-xe-refuse-02",
+      "flow": "refusal_trap",
+      "q": "Shop có bán mâm xe và nước rửa kính không?",
+      "expect": null
+    },
+    {
+      "id": "H-01",
+      "flow": "hazard_conflation",
+      "q": "Lốp Rovelo 185/55R15 giá bao nhiêu?",
+      "expect": null
+    },
+    {
+      "id": "H-02",
+      "flow": "hazard_conflation",
+      "q": "Lốp Rovelo 195/55R16 giá bao nhiêu?",
+      "expect": null
+    },
+    {
+      "id": "H-03",
+      "flow": "hazard_puregap",
+      "q": "Lốp Landspider LT235/75R15 WILDTRAXX giá bao nhiêu?",
+      "expect": null
+    },
+    {
+      "id": "H-04",
+      "flow": "hazard_puregap",
+      "q": "Lốp Landspider 245/75R16 giá bao nhiêu?",
+      "expect": null
+    },
+    {
+      "id": "H-05",
+      "flow": "hazard_conflation",
+      "q": "Lốp Rovelo 205/65R15 giá bao nhiêu?",
+      "expect": null
+    }
+  ]
+}

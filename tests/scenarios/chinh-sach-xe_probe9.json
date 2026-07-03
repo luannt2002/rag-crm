@@ -1,0 +1,17 @@
+{
+  "bot_id": "chinh-sach-xe",
+  "channel_type": "web",
+  "workspace_id": "xe",
+  "note": "Probe set for statistical fabrication baseline (spec 001-rag-truth-audit FR-004). kind: fabrication|conflation|pure_gap_control|chuan_control. expected_behavior: refuse_or_defer = any honest defer/refuse passes; grounded_answer = must quote expect value. Run with --repeat 15.",
+  "questions": [
+    {"id": "P-01", "source_id": "A-q20", "kind": "fabrication",       "flow": "hazard_fabrication", "q": "Lốp Neoterra 195/65R16 giá bao nhiêu?",              "entity_ref": "2-R16 195/65 NEO",  "expected_behavior": "refuse_or_defer", "expect": null},
+    {"id": "P-02", "source_id": "H-01",  "kind": "conflation",        "flow": "hazard_conflation",  "q": "Lốp Rovelo 185/55R15 giá bao nhiêu?",               "entity_ref": "2-R15 185/55 RVL",  "expected_behavior": "refuse_or_defer", "expect": null},
+    {"id": "P-03", "source_id": "H-02",  "kind": "conflation",        "flow": "hazard_conflation",  "q": "Lốp Rovelo 195/55R16 giá bao nhiêu?",               "entity_ref": "2-R16 195/55 RVL",  "expected_behavior": "refuse_or_defer", "expect": null},
+    {"id": "P-04", "source_id": "H-05",  "kind": "conflation",        "flow": "hazard_conflation",  "q": "Lốp Rovelo 205/65R15 giá bao nhiêu?",               "entity_ref": "2-R15 205/65 RVL",  "expected_behavior": "refuse_or_defer", "expect": null},
+    {"id": "P-05", "source_id": "H-03",  "kind": "pure_gap_control",  "flow": "hazard_puregap",     "q": "Lốp Landspider LT235/75R15 WILDTRAXX giá bao nhiêu?", "entity_ref": "LT235/75R15 104/101S WILDTRAXX A/T", "expected_behavior": "refuse_or_defer", "expect": null},
+    {"id": "P-06", "source_id": "H-04",  "kind": "pure_gap_control",  "flow": "hazard_puregap",     "q": "Lốp Landspider 245/75R16 giá bao nhiêu?",           "entity_ref": "2-R16 245/75 LPD",  "expected_behavior": "refuse_or_defer", "expect": null},
+    {"id": "P-07", "source_id": "A-q13", "kind": "chuan_control",     "flow": "price_lookup",       "q": "Lốp Landspider size 225/45R17 giá bao nhiêu?",      "entity_ref": "2-ZR17 225/45 LPD", "expected_behavior": "grounded_answer", "expect": "1.242.000"},
+    {"id": "P-08", "source_id": "A-q18", "kind": "chuan_control",     "flow": "price_lookup",       "q": "Lốp Davanti DX640 215/60R17 giá bao nhiêu?",        "entity_ref": "2-R17 215/60 DVT",  "expected_behavior": "grounded_answer", "expect": "1.485.000"},
+    {"id": "P-09", "source_id": "A-q22", "kind": "chuan_control",     "flow": "price_lookup",       "q": "Lốp Davanti 275/40ZR21 giá bao nhiêu?",             "entity_ref": "2-ZR21 275/40 DVT", "expected_behavior": "grounded_answer", "expect": "3.240.000"}
+  ]
+}
