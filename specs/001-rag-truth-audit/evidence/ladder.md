@@ -75,3 +75,20 @@
   đủ điều kiện kỹ thuật (FP=0) nhưng chờ thêm pinned-60 observe trước khi đề xuất.
 - Blast-radius: guard_output mọi bot (observe, không đổi answer); pin =
   test_numeric_fidelity_gate + grounding_confirmed_action + graphstate_key_pin.
+
+## GP-100 lần đầu — corpus re-upload sạch (2026-07-04, evidence/gp100_run.json)
+- 100 câu × 3 run = 300 answers, exit 0 (cache bypassed, corpus stable md5=055392ff73).
+- PER-RUN: ĐÚNG 233 + refuse-đúng 43 = 276/300 (92%) · SAI 16 · LỆCH 6 · BỊA 2.
+- PER-QUESTION grader-v1: 90/100 chuẩn-trọn-3-run · 10 fail cứng.
+- AUTOPSY 10 fail (rule #0 — không nhận số đẹp không đổ oan số xấu):
+  * REAL 3 câu: G-075 bịa Neoterra 2/3 run (gate flag sống cả 2 — chờ blocking-mode);
+    G-090 LỆCH size (row R14 729k liệt kê thành variant R13 — detector TP#1);
+    G-097 LỆCH giá (195/60R15 thật 963k, bot 810k — detector TP#2, DB-confirmed).
+  * 6 câu arrival_date = LỖI THIẾT KẾ BỘ CÂU HỎI (size vừa có lịch-về vừa còn hàng;
+    bot trả in-stock+giá thật, 0 bịa ngày; G-064 2/3 run vẫn nói 28-thg-11) → THIẾU-ý.
+  * 1 câu G-070 = detector FP (token phone '0988' + 'kho') — hotline trả ĐÚNG;
+    tune: misattr chỉ xét value price-scale (min digits ≥5/6).
+- Misattr detector scoreboard GP-100: 2 TP / 1 FP — bắt được 2 lệch mà numeric-gate
+  mù (số thật sai chỗ), đúng mục đích thiết kế.
+- HONEST QA-COMPARABLE: 90 chuẩn + 6 chưa-đúng-ý + 1 oan-FP + 3 SAI THẬT
+  (baseline QA cũ: 30/100). HALLU=chỉ còn Neoterra class, bị flag 100%.
