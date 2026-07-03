@@ -20,6 +20,7 @@ from ragbot.shared.constants import (
     DEFAULT_GROUNDING_CHECK_ASYNC_INTENTS,
     DEFAULT_GROUNDING_CHECK_ASYNC_TOP_SCORE_THRESHOLD,
     DEFAULT_GROUNDING_CHECK_ENABLED,
+    DEFAULT_STATS_SERVE_REQUIRE_VALUE,
     DEFAULT_GROUNDING_CONFIRMED_ACTION,
     DEFAULT_HYDE_ENABLED,
     DEFAULT_MODALITY_RERANK_ENABLED,
@@ -62,6 +63,11 @@ PLAN_LIMIT_SCHEMA: dict[str, dict[str, Any]] = {
     # verifier on production traffic.
     "speculative_hallu_verify_enabled": {"type": "bool", "default": False},
     "grounding_check_enabled": {"type": "bool", "default": DEFAULT_GROUNDING_CHECK_ENABLED},
+    # Truth-audit option (b): customer-facing stats queries exclude SHELL rows
+    # (no price + identity-only attrs) — serving them next to a priced sibling
+    # produced 45/45 wrong-brand prices (baseline N=15). Per-bot opt-OUT knob;
+    # platform default ON per decision record (specs/001-rag-truth-audit).
+    "stats_serve_require_value": {"type": "bool", "default": DEFAULT_STATS_SERVE_REQUIRE_VALUE},
     # When True the stats/structured-index route SKIPS the grounding judge.
     # Default False = grounding applies to stats answers too (HALLU-safe; catches
     # an answer citing a value absent from the matched entity). Owners who hit

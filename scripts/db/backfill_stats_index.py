@@ -72,9 +72,13 @@ async def main() -> None:
                 _d["raw_chunk"] = _raw
             chunk_dicts.append(_d)
         entities = parse_table_chunks(chunk_dicts)
+        # Delete BEFORE the empty-check: the index must mirror the CURRENT
+        # extractor output. Skipping the delete when the extractor yields 0
+        # entities left stale rows alive forever for docs whose older-version
+        # extraction minted noise (truth-audit T013 finding).
+        await repo.delete_by_document(uuid.UUID(str(doc_id)))
         if not entities:
             continue
-        await repo.delete_by_document(uuid.UUID(str(doc_id)))
         await repo.bulk_insert(
             record_tenant_id=uuid.UUID(str(tenant_id)),
             workspace_id=workspace_id or str(tenant_id),

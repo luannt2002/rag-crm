@@ -57,6 +57,31 @@ logger = structlog.get_logger(__name__)
 _DOC_LIVE_JOIN = "JOIN documents AS d ON d.id = dsi.record_document_id"
 _DOC_LIVE_PREDICATE = "d.deleted_at IS NULL"
 
+# Attribute keys that carry entity IDENTITY (aliases, display name, media), not
+# an answerable VALUE. A row whose attributes are ONLY these keys and has no
+# price is a SHELL: serving it next to a priced same-size sibling made the LLM
+# copy the sibling's price onto the asked brand 45/45 times in the N=15 baseline
+# (specs/001-rag-truth-audit/evidence/baseline_report.md). SSoT shared by the
+# serve-side filter below; shape-only — no corpus/brand literal.
+STATS_NON_VALUE_ATTR_KEYS: tuple[str, ...] = (
+    "question", "image", "productname", "answer", "chunk_index", "variants",
+)
+
+
+def _value_bearing_predicate() -> str:
+    """SQL predicate keeping only VALUE-BEARING rows: a price on either column,
+    or at least one non-identity attribute with a non-blank value (an arrival
+    date / stock count / any owner column). Price-less rows that DO carry such
+    a value (e.g. a delivery-date sheet) are kept — date questions are answered
+    from them; only identity-only shells are excluded. Static SQL, no user
+    input interpolated (the key list is the module constant above)."""
+    keys = ", ".join(f"'{k}'" for k in STATS_NON_VALUE_ATTR_KEYS)
+    return (
+        "(dsi.price_primary IS NOT NULL OR dsi.price_secondary IS NOT NULL "
+        "OR EXISTS (SELECT 1 FROM jsonb_each_text(dsi.attributes_json) AS kv "
+        f"WHERE kv.key NOT IN ({keys}) AND btrim(kv.value) <> ''))"
+    )
+
 
 def _price_clauses(
     price_min: int | None,
@@ -412,6 +437,7 @@ class StatsIndexRepository:
         record_bot_id: uuid.UUID,
         keyword: str,
         synonyms: list[str] | None = None,
+        require_value: bool = False,
     ) -> int:
         """COUNT entities whose name/category/attributes match *keyword*.
 
@@ -455,10 +481,12 @@ class StatsIndexRepository:
             or_clauses.append(_clause)
             params[f"kw{i}"] = f"%{v}%"
         where_match = " OR ".join(f"({c})" for c in or_clauses)
+        _value_gate = f"AND {_value_bearing_predicate()} " if require_value else ""
         sql = (
             "SELECT COUNT(*) FROM document_service_index AS dsi "
             f"{_DOC_LIVE_JOIN} "
             f"WHERE dsi.record_bot_id = :bot_id AND {_DOC_LIVE_PREDICATE} "
+            f"{_value_gate}"
             f"AND ({where_match})"
         )
         async with self._sf() as session:
@@ -471,23 +499,28 @@ class StatsIndexRepository:
         *,
         record_bot_id: uuid.UUID,
         limit: int = DEFAULT_STATS_INDEX_QUERY_LIMIT,
+        require_value: bool = False,
     ) -> list[dict]:
         """Return all entities for a bot.
 
         Args:
             record_bot_id: bot UUID.
             limit: maximum rows (capped at ``DEFAULT_STATS_INDEX_QUERY_LIMIT``).
+            require_value: exclude shell rows (no price, identity-only attrs) —
+                customer-facing serve policy, see ``_value_bearing_predicate``.
 
         Returns:
             List of row dicts (same shape as ``query_by_price_range``).
         """
         effective_limit = min(limit, DEFAULT_STATS_INDEX_QUERY_LIMIT)
+        _value_gate = f"AND {_value_bearing_predicate()} " if require_value else ""
         sql = (
             "SELECT dsi.id, dsi.record_document_id, dsi.entity_name, "
             "dsi.entity_category, dsi.price_primary, dsi.price_secondary, "
             "dsi.record_chunk_id, dsi.attributes_json "
             f"FROM document_service_index AS dsi {_DOC_LIVE_JOIN} "
             f"WHERE dsi.record_bot_id = :bot_id AND {_DOC_LIVE_PREDICATE} "
+            f"{_value_gate}"
             "ORDER BY dsi.created_at ASC "
             "LIMIT :limit"
         )
@@ -519,6 +552,7 @@ class StatsIndexRepository:
         keyword: str,
         synonyms: list[str] | None = None,
         limit: int = DEFAULT_STATS_INDEX_QUERY_LIMIT,
+        require_value: bool = False,
     ) -> list[dict]:
         """SELECT every entity whose name OR category contains *keyword*.
 
@@ -591,12 +625,14 @@ class StatsIndexRepository:
             params[f"kw{i}"] = f"%{v}%"
             params[f"kwn{i}"] = v
         where_match = " OR ".join(f"({c})" for c in or_clauses)
+        _value_gate = f"AND {_value_bearing_predicate()} " if require_value else ""
         sql = (
             "SELECT dsi.id, dsi.record_document_id, dsi.record_chunk_id, "
             "dsi.entity_name, dsi.entity_category, dsi.price_primary, "
             "dsi.price_secondary, dsi.attributes_json "
             f"FROM document_service_index AS dsi {_DOC_LIVE_JOIN} "
             f"WHERE dsi.record_bot_id = :bot_id AND {_DOC_LIVE_PREDICATE} "
+            f"{_value_gate}"
             f"AND ({where_match}) "
             # Prefer a priced row: a price query must never surface a NULL-price
             # notation-variant when a priced sibling also matches the fold.
@@ -629,6 +665,7 @@ class StatsIndexRepository:
                     "dsi.price_secondary, dsi.attributes_json "
                     f"FROM document_service_index AS dsi {_DOC_LIVE_JOIN} "
                     f"WHERE dsi.record_bot_id = :bot_id AND {_DOC_LIVE_PREDICATE} "
+                    f"{_value_gate}"
                     "AND unaccent(:kwfull) ILIKE '%' || unaccent(entity_name) || '%' "
                     "AND (char_length(entity_name) >= :min_len "
                     "     OR (char_length(entity_name) >= :short_floor "

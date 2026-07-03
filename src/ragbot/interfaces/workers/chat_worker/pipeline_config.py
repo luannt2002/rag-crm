@@ -20,6 +20,7 @@ from ragbot.shared.constants import (
     DEFAULT_CR_ENHANCED_ENABLED,
     DEFAULT_GENERATE_SURFACE_VERBATIM_ENABLED,
     DEFAULT_GROUNDING_CONFIRMED_ACTION,
+    DEFAULT_STATS_SERVE_REQUIRE_VALUE,
     DEFAULT_GROUNDING_FAILURE_MODE,
     DEFAULT_GUARDRAIL_LEAK_MIN_MATCH_COUNT,
     DEFAULT_STATS_CODE_LOOKUP_ENABLED,
@@ -552,6 +553,11 @@ def _build_pipeline_config(_cfg: dict[str, Any], bot_cfg: Any) -> dict[str, Any]
         "grounding_confirmed_action": resolve_bot_limit(
             bot_cfg, "grounding_confirmed_action",
             system_default=DEFAULT_GROUNDING_CONFIRMED_ACTION,
+        ),
+        # Truth-audit option (b): serve-side shell filter (per-bot opt-out).
+        "stats_serve_require_value": resolve_bot_limit(
+            bot_cfg, "stats_serve_require_value",
+            system_default=DEFAULT_STATS_SERVE_REQUIRE_VALUE,
         ),
         "guardrail_leak_min_match_count": resolve_bot_limit(
             bot_cfg, "guardrail_leak_min_match_count",

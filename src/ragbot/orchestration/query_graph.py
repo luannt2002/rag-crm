@@ -263,6 +263,7 @@ from ragbot.shared.constants import (
     DEFAULT_STATS_ATTR_MAX_CHARS,
     DEFAULT_STATS_ATTR_MAX_WORDS,
     DEFAULT_STATS_INDEX_LIMIT,
+    DEFAULT_STATS_SERVE_REQUIRE_VALUE,
     DEFAULT_STATS_SUPERLATIVE_LIMIT,
     DEFAULT_STATS_SYNTHETIC_CHUNK_ID,
     DEFAULT_TOP_K,
@@ -2278,6 +2279,14 @@ def build_graph(
         try:
             _operation = getattr(range_filter, "operation", "")
             _cnt_kw = getattr(range_filter, "keyword", "") or ""
+            # Truth-audit option (b): customer answers must not be built from
+            # SHELL rows (no price + identity-only attrs) — served next to a
+            # priced same-size sibling they produced 45/45 wrong-brand prices
+            # in the N=15 baseline. Per-bot opt-out via plan_limits.
+            _require_value = bool(_pcfg(
+                state, "stats_serve_require_value",
+                DEFAULT_STATS_SERVE_REQUIRE_VALUE,
+            ))
             # B-AGG: a PURE keyword-count ("có bao nhiêu <keyword>", NO price range)
             # returns a COUNT NUMBER, not the priced-row dump (dumping 100+ priced
             # rows lets the LLM miscount / leak a price). A range+count ("dưới 2tr có
@@ -2295,6 +2304,7 @@ def build_graph(
                     record_bot_id=state["record_bot_id"],
                     keyword=_cnt_kw,
                     synonyms=_resolve_stats_keyword_synonyms(state, _cnt_kw),
+                    require_value=_require_value,
                 )
                 if _total <= 0:
                     return None
@@ -2327,6 +2337,7 @@ def build_graph(
                     keyword=_stats_kw,
                     synonyms=_resolve_stats_keyword_synonyms(state, _stats_kw),
                     limit=stats_limit,
+                    require_value=_require_value,
                 )
                 if not entities and not expect_price:
                     # "liệt kê tất cả / có những <generic category> nào" — the
@@ -2338,6 +2349,7 @@ def build_graph(
                     entities = await stats_index_repo.list_all_entities(
                         record_bot_id=state["record_bot_id"],
                         limit=stats_limit,
+                        require_value=_require_value,
                     )
             elif _operation in ("max", "min"):
                 # Superlative ("đắt nhất"/"rẻ nhất"): no bound → ORDER BY price.

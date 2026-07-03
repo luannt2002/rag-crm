@@ -48,6 +48,15 @@ DEFAULT_STATS_REVERSE_MATCH_LIMIT: Final[int] = 10
 # only when forward AND reverse matched nothing, and only for a keyword this long
 # so a short token can't over-match every row sharing a warehouse/category word.
 DEFAULT_STATS_ATTRS_MATCH_MIN_LEN: Final[int] = 5
+# Serve-side SHELL filter (truth-audit option (b), decision record
+# specs/001-rag-truth-audit/evidence/decision_shell_entities.md): customer-facing
+# stats queries exclude entities that carry NO price AND NO value-bearing
+# attribute — such "shell" rows (name+aliases only) served next to a priced
+# same-size sibling caused 45/45 wrong-brand price answers in the N=15 baseline.
+# Rows whose attributes hold a real value (arrival date, stock, ...) are KEPT —
+# date questions are answered from price-less rows. Per-bot opt-out via
+# plan_limits["stats_serve_require_value"].
+DEFAULT_STATS_SERVE_REQUIRE_VALUE: Final[bool] = True
 # Threshold below which a numeric token is ignored by the price extractor
 # (avoids treating article numbers like "Điều 12" → 12 as prices).
 DEFAULT_STATS_PRICE_MIN_DIGITS: Final[int] = 4
