@@ -2,6 +2,8 @@
 
 **Feature Branch**: `002-deepdebug-luannt`
 
+**Tier**: [T1-Smartness] — bot trả lời chính xác hơn (CORE MVP ưu tiên cao nhất).
+
 **Created**: 2026-07-04 · **Status**: Draft · **Constitution**: v1.0.0 (001 program) — kế thừa
 toàn bộ 10 nguyên tắc (EXISTS≠WORKS≠VERIFIED-GOOD, no-guess, statistical, deterministic-gate,
 red-test-first, one-change-per-step, platform-neutral, HALLU=0+Coverage, blast-radius, artifacts).

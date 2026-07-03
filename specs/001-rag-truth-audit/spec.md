@@ -2,6 +2,8 @@
 
 **Feature Branch**: `001-rag-truth-audit`
 
+**Tier**: [T1-Smartness] — bot trả lời chính xác hơn (CORE MVP ưu tiên cao nhất).
+
 **Created**: 2026-07-03
 
 **Status**: Draft

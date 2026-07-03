@@ -28,8 +28,8 @@ def _ctx(*texts: str) -> list[str]:
 
 def test_grounded_literal() -> None:
     r = classify_answer_numbers(
-        "Giá 1.242.000đ/lốp, còn 507 lốp ạ.",
-        _ctx("2-ZR17 225/45 LPD: 1.242.000 | quantity: 507"),
+        "Giá 1.242.000đ/sp, còn 507 sp ạ.",
+        _ctx("2-ZR17 225/45 AAA: 1.242.000 | quantity: 507"),
     )
     assert r["n_unsupported"] == 0
     assert r["n_grounded"] >= 1
@@ -43,7 +43,7 @@ def test_grounded_parsed_value_formatting_drift() -> None:
 
 def test_unsupported_the_q20_fabrication_verbatim() -> None:
     r = classify_answer_numbers(
-        "Lốp giá 26.000.000đ/lốp ạ. Hiện còn 26 lốp.",
+        "SP giá 26.000.000đ/sp ạ. Hiện còn 26 sp.",
         _ctx("| 195/65R16, 195 65 16 ... | | | 26 | | https://drive"),
     )
     assert r["n_unsupported"] == 1
@@ -61,7 +61,7 @@ def test_derived_valid_difference_and_sum() -> None:
 
 def test_min_digits_guard_ignores_small_tokens() -> None:
     # Sizes / ordinals / small stock counts stay out of the verdict set.
-    r = classify_answer_numbers("Lốp 205/55R16 còn 9 lốp.", _ctx("205/55R16 quantity: 9"))
+    r = classify_answer_numbers("SP 205/55R16 còn 9 sp.", _ctx("205/55R16 quantity: 9"))
     assert r["n_numbers"] == 0
 
 
@@ -123,17 +123,17 @@ from ragbot.shared.numeric_fidelity import detect_cross_row_misattribution
 
 
 _TWO_ROW_CTX = [
-    "2-R15 185/55 LPD: 810000 | price: 810000 | answer: LANDSPIDER 185/55R15 G/P "
-    "| quantity: 779 | productname: Lốp xe LANDSPIDER 185/55R15 82V CITYTRAXX G/P\n"
-    "2-R15 185/55 RVL | answer: ROVELO 185/55R15 A68 | productname: Lốp Rovelo 185/55R15 RHP-A68"
+    "2-R15 185/55 AAA: 810000 | price: 810000 | answer: BRANDA 185/55R15 G/P "
+    "| quantity: 779 | productname: SP BRANDA 185/55R15 82V SAMPLETRAXX G/P\n"
+    "2-R15 185/55 BBB | answer: BRANDB 185/55R15 B68 | productname: SP BrandB 185/55R15 MX-B68"
 ]
 
 
 def test_misattribution_h01_verbatim_conflation_flagged() -> None:
-    """H-01 class: answer attributes Landspider's 810.000 to Rovelo — the tokens
-    'rovelo'/'a68' live ONLY in the row WITHOUT the number → cross-row mix."""
+    """H-01 class: answer attributes BrandA's 810.000 to BrandB — the tokens
+    'brandb'/'b68' live ONLY in the row WITHOUT the number → cross-row mix."""
     r = detect_cross_row_misattribution(
-        "Dạ, lốp Rovelo 185/55R15 A68 hiện còn hàng, giá 810.000đ/lốp ạ.",
+        "Dạ, sp BrandB 185/55R15 B68 hiện còn hàng, giá 810.000đ/sp ạ.",
         _TWO_ROW_CTX,
     )
     assert r["n_misattributed"] == 1
@@ -142,7 +142,7 @@ def test_misattribution_h01_verbatim_conflation_flagged() -> None:
 
 def test_correct_brand_attribution_clean() -> None:
     r = detect_cross_row_misattribution(
-        "Dạ, lốp Landspider 185/55R15 G/P giá 810.000đ/lốp, còn 779 lốp ạ.",
+        "Dạ, sp BrandA 185/55R15 G/P giá 810.000đ/sp, còn 779 sp ạ.",
         _TWO_ROW_CTX,
     )
     assert r["n_misattributed"] == 0
@@ -153,13 +153,13 @@ def test_multi_line_listing_both_brands_clean() -> None:
     lines — line-scoping must keep it clean (whole-answer scoping would
     false-flag it)."""
     ctx = [
-        "2-R16 205/55 LPD: 1044000 | price: 1044000 | answer: LANDSPIDER 205/55R16 G/P\n"
-        "2-R16 205/55 RVL | price: 963000 | answer: ROVELO 205/55R16 A68"
+        "2-R16 205/55 AAA: 1044000 | price: 1044000 | answer: BRANDA 205/55R16 G/P\n"
+        "2-R16 205/55 BBB | price: 963000 | answer: BRANDB 205/55R16 B68"
     ]
     r = detect_cross_row_misattribution(
         "Dạ, quy cách 205/55R16 bên em có hai loại ạ:\n"
-        "- Lốp LANDSPIDER 205/55R16 G/P giá 1.044.000đ/lốp\n"
-        "- Lốp Rovelo 205/55R16 A68 giá 963.000đ/lốp",
+        "- SP BRANDA 205/55R16 G/P giá 1.044.000đ/sp\n"
+        "- SP BrandB 205/55R16 B68 giá 963.000đ/sp",
         ctx,
     )
     assert r["n_misattributed"] == 0
@@ -168,21 +168,21 @@ def test_multi_line_listing_both_brands_clean() -> None:
 def test_p07_wrong_row_pick_flagged() -> None:
     """P-07 class: asked-brand answer carries the OTHER row's price+stock."""
     ctx = [
-        "2-R17 225/45 RVL: 1170000 | price: 1170000 | quantity: 4 | answer: ROVELO 225/45R17 AS01\n"
-        "2-ZR17 225/45 LPD: 1242000 | price: 1242000 | quantity: 507 | answer: LANDSPIDER 225/45ZR17 H/P"
+        "2-R17 225/45 BBB: 1170000 | price: 1170000 | quantity: 4 | answer: BRANDB 225/45R17 BS01\n"
+        "2-ZR17 225/45 AAA: 1242000 | price: 1242000 | quantity: 507 | answer: BRANDA 225/45ZR17 H/P"
     ]
     r = detect_cross_row_misattribution(
-        "Dạ, lốp Landspider 225/45R17 hiện đang có giá 1.170.000đ/lốp, còn 4 lốp ạ.",
+        "Dạ, sp BrandA 225/45R17 hiện đang có giá 1.170.000đ/sp, còn 4 sp ạ.",
         ctx,
     )
     assert r["n_misattributed"] >= 1
 
 
 def test_generic_tokens_do_not_flag() -> None:
-    """Tokens present in EVERY row ('lốp', 'price', 'answer') are not
+    """Tokens present in EVERY row ('sp', 'price', 'answer') are not
     row-discriminative — they must never create a flag."""
     r = detect_cross_row_misattribution(
-        "Giá lốp là 810.000đ ạ.",  # no entity tokens at all
+        "Giá sp là 810.000đ ạ.",  # no entity tokens at all
         _TWO_ROW_CTX,
     )
     assert r["n_misattributed"] == 0

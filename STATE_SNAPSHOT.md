@@ -3,7 +3,19 @@
 > Always-updated current state. Git history was reset on 2026-06-14 (fresh start);
 > commit-SHA anchors no longer apply — this file is the source of truth.
 
-## Session 2026-07-01 — Tabular-ingest brittleness (col_N) + multi-turn analytical HALLU: 3-layer fix, ALL LIVE-VERIFIED  ⟵ LATEST
+## Session 2026-07-03/04 — TRUTH-AUDIT program (spec-kit 001+002): 5-ladder-fix + 3×100Q agent-graded + 4 root-cause locked  ⟵ LATEST
+
+**Anchor**: `5b11b62` (+ commit nợ-compliance kế tiếp) · Branch `fix-260623-ingest-expert` (chưa push)
+
+- **Spec-kit cài + 2 program**: constitution v1.0.0 (EXISTS≠WORKS≠VERIFIED-GOOD, 10 nguyên tắc) · 001-rag-truth-audit (truth-table 12 stage, baseline N=15, decision-record option (b)) · 002-deepdebug-luannt (4 root-cause file:line).
+- **Ladder đã ship+đo (mỗi step 1 commit)**: Step1 purge rác stats bot 111/123 (garbage→0) · Step2 serve-filter shell `stats_serve_require_value` (lệch-giá 45/45→10/45, -78%) · Step3 T012 positive-table-evidence gate (prose→0 entity; 123: 19→0) · Step4 numeric-fidelity observe (catch bịa 100%, FP 0/82) · Step5 cross-row misattribution detector (bắt lệch P-01 7/7, GP-100 TP 2/1FP).
+- **served_chunks**: alembic `served_chunks_260703` — mỗi assistant turn lưu chunk-qua-LLM (DB+history API+UI test-harness). Harness v3: --repeat, cache-assert, corpus-stamp, retry-429, chains multi-turn, request_steps enrichment.
+- **Điểm agent-graded (đã hiệu-chỉnh oan-sai)**: GP-100 = 90/100 (3 sai thật) · luannt-100 v1 = 81/100 · luannt100b = 75+/100 · spa100 đang chấm. 4 verdict oan được minh oan bằng SQL (315/35, 285/45ZR21, 235/65R16C tồn tại thật — hại bởi capture-cap 500 chars).
+- **4 root-cause 002 (chờ fix theo ladder)**: A `understand.py:170` policy-drift `>` vs `>=` (fix 26-05-27 chưa từng hiệu lực prod — coreference chết turn-2) · B eval-harness cap oan bot · C `retrieve.py:642` speculative vứt decompose/MQ + stats-disable-under-decompose · D mmr threshold 0.88 chưa recalibrate sau swap zembed-1 (collapse 6→1).
+- **Sysprompt chinh-sach-xe v2 (owner duyệt)**: bỏ hardcode 2-brand → data-driven; Davanti/Neoterra nhận đúng. Quota: 6 bot bypass_token_check=true (owner order; token vẫn log). Sự cố oan: QUOTA_EXHAUSTED trả lời như thiếu-data (issue); admin PATCH silent-ignore field (issue).
+- **Nợ đã trả**: brand-literal 2 unit-test neutralized (SAMPLETRAXX/BRANDA-B), T1-tags 4 file spec, STATE_SNAPSHOT này. Nợ legacy: 7 test file cũ còn brand (issue riêng).
+
+## Session 2026-07-01 — Tabular-ingest brittleness (col_N) + multi-turn analytical HALLU: 3-layer fix, ALL LIVE-VERIFIED
 
 > **Trigger** (user, xe/tire bot): "có bao nhiêu loại Landspider" + "155/80R13 còn bao nhiêu" trả sai/bịa. Đào sâu → tabular ingest brittle ("sửa format 1 cái là lỗi"), col_N tràn stats-index, giá bịa. Mandate: "duyệt là chạy code done all → test lại 1 lần" + "làm hết".
 >

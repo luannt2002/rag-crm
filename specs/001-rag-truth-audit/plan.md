@@ -2,6 +2,8 @@
 
 **Branch**: `001-rag-truth-audit` | **Date**: 2026-07-03 | **Spec**: [spec.md](spec.md)
 
+**Tier**: [T1-Smartness] — bot trả lời chính xác hơn (CORE MVP ưu tiên cao nhất).
+
 **Input**: Feature specification from `/specs/001-rag-truth-audit/spec.md`
 
 ## Summary

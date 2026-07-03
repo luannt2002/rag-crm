@@ -1,6 +1,8 @@
 # Implementation Plan: 002 Deep-Debug luannt — 4 cluster fixes
 
 **Date**: 2026-07-04 · **Spec**: [spec.md](spec.md) · **Findings**: [evidence/debug_findings.json](evidence/debug_findings.json)
+
+**Tier**: [T1-Smartness] — bot trả lời chính xác hơn (CORE MVP ưu tiên cao nhất).
 (4-agent workflow, 203 tool-calls, 5-step protocol; mọi root-cause = SỰ THẬT có file:line + DB/trace)
 
 ## Root-cause map (đã chốt)
