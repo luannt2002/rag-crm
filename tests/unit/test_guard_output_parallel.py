@@ -144,6 +144,11 @@ class TestGuardOutputParallelFlagPipelineConfig:
         assert "guard_output_parallel_enabled" in content, (
             "orchestration must reference 'guard_output_parallel_enabled' pipeline_config key"
         )
-        assert "DEFAULT_GUARD_OUTPUT_PARALLEL_ENABLED" in content, (
-            "orchestration must import DEFAULT_GUARD_OUTPUT_PARALLEL_ENABLED"
+        # guard_output reads the new `guard_output_parallel_enabled` key (default
+        # None) then falls back to the backward-compat `pipeline_parallel_output_guards_enabled`
+        # key whose default IS the constant below — so THIS is the constant the
+        # orchestration imports (DEFAULT_GUARD_OUTPUT_PARALLEL_ENABLED is only the
+        # test-chat builder's coercion default, not read by the graph).
+        assert "DEFAULT_PIPELINE_PARALLEL_OUTPUT_GUARDS_ENABLED" in content, (
+            "orchestration must import the parallel-output-guards default constant"
         )

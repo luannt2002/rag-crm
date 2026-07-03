@@ -22,6 +22,16 @@ from ragbot.shared.constants import (
     DEFAULT_CRAG_SKIP_RETRY_ABOVE_SCORE,
     DEFAULT_GENERATION_TEMPERATURE,
     DEFAULT_GROUNDING_CHECK_ENABLED,
+    DEFAULT_GROUNDING_FAILURE_MODE,
+    DEFAULT_GUARDRAIL_LEAK_MIN_MATCH_COUNT,
+    DEFAULT_GENERATE_SURFACE_VERBATIM_ENABLED,
+    DEFAULT_STATS_CODE_LOOKUP_ENABLED,
+    DEFAULT_STATS_PRICE_OF_ENTITY_ENABLED,
+    DEFAULT_STATS_ROUTE_SKIP_GROUNDING,
+    DEFAULT_STATS_SUPERLATIVE_ENABLED,
+    DEFAULT_SYSPROMPT_LEAK_SKIP_INTENTS,
+    DEFAULT_SYSPROMPT_LEAK_SKIP_STATS_ROUTE,
+    DEFAULT_XML_WRAP_ENABLED,
     DEFAULT_MAX_HISTORY,
     DEFAULT_MULTI_QUERY_COMPLEXITY_MIN,
     DEFAULT_MULTI_QUERY_ENABLED,
@@ -842,6 +852,54 @@ async def _build_pipeline_config(cfg_svc: SystemConfigService, bot_cfg: Any) -> 
         "pipeline_pre_retrieval_parallel_enabled": _coerce_bool(
             raw.get("pipeline_pre_retrieval_parallel_enabled"),
             DEFAULT_PIPELINE_PRE_RETRIEVAL_PARALLEL_ENABLED,
+        ),
+        # Per-bot knobs formerly READ by _pcfg but populated by NEITHER builder
+        # (mirage knobs: read, never configurable). Provided here with the SAME
+        # default as the constant so behaviour is unchanged — this only lets a bot
+        # owner actually override them via plan_limits (the config-parity guard
+        # test_pipeline_cfg_keys_parity pins this).
+        "bot_custom_vocabulary": getattr(bot_cfg, "custom_vocabulary", None) or {},
+        "cross_doc_reconcile_enabled": resolve_bot_limit(
+            bot_cfg, "cross_doc_reconcile_enabled", system_default=True,
+        ),
+        "xml_wrap_enabled": resolve_bot_limit(
+            bot_cfg, "xml_wrap_enabled", system_default=DEFAULT_XML_WRAP_ENABLED,
+        ),
+        "stats_route_skip_grounding": resolve_bot_limit(
+            bot_cfg, "stats_route_skip_grounding",
+            system_default=DEFAULT_STATS_ROUTE_SKIP_GROUNDING,
+        ),
+        "stats_code_lookup_enabled": resolve_bot_limit(
+            bot_cfg, "stats_code_lookup_enabled",
+            system_default=DEFAULT_STATS_CODE_LOOKUP_ENABLED,
+        ),
+        "stats_price_of_entity_enabled": resolve_bot_limit(
+            bot_cfg, "stats_price_of_entity_enabled",
+            system_default=DEFAULT_STATS_PRICE_OF_ENTITY_ENABLED,
+        ),
+        "stats_superlative_enabled": resolve_bot_limit(
+            bot_cfg, "stats_superlative_enabled",
+            system_default=DEFAULT_STATS_SUPERLATIVE_ENABLED,
+        ),
+        "generate_surface_verbatim_enabled": resolve_bot_limit(
+            bot_cfg, "generate_surface_verbatim_enabled",
+            system_default=DEFAULT_GENERATE_SURFACE_VERBATIM_ENABLED,
+        ),
+        "grounding_failure_mode": resolve_bot_limit(
+            bot_cfg, "grounding_failure_mode",
+            system_default=DEFAULT_GROUNDING_FAILURE_MODE,
+        ),
+        "guardrail_leak_min_match_count": resolve_bot_limit(
+            bot_cfg, "guardrail_leak_min_match_count",
+            system_default=DEFAULT_GUARDRAIL_LEAK_MIN_MATCH_COUNT,
+        ),
+        "sysprompt_leak_skip_intents": resolve_bot_limit(
+            bot_cfg, "sysprompt_leak_skip_intents",
+            system_default=DEFAULT_SYSPROMPT_LEAK_SKIP_INTENTS,
+        ),
+        "sysprompt_leak_skip_stats_route": resolve_bot_limit(
+            bot_cfg, "sysprompt_leak_skip_stats_route",
+            system_default=DEFAULT_SYSPROMPT_LEAK_SKIP_STATS_ROUTE,
         ),
     }
 

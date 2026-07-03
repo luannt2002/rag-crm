@@ -290,12 +290,30 @@ from ragbot.orchestration.retrieval_filter import (  # noqa: E402
 from ragbot.orchestration.query_graph_helpers import (  # noqa: E402
     parse_decomposed_sub_queries,
 )
+# Orchestration helpers/constants that moved to node modules in the strangler
+# split but are still consumed by the graph — the wire-pin tests assert they
+# remain importable from the orchestration entry module so a dropped import
+# (which would silently default a feature flag OFF / inline an untested branch)
+# is caught. Guarded by test_speculative_retrieve / test_query_graph_cascade_wire
+# / test_grounding_check_factoid_enabled.
+from ragbot.orchestration.nodes.speculative_retrieve import (  # noqa: E402
+    decide_keep_speculative as _decide_keep_speculative,
+)
+from ragbot.orchestration.nodes.cascade_router_helper import (  # noqa: E402
+    apply_cascade_routing,
+)
+from ragbot.shared.constants import (  # noqa: E402
+    DEFAULT_GROUNDING_CHECK_ENABLED,
+    DEFAULT_SPECULATIVE_SIMILARITY_THRESHOLD,
+)
 
 # Re-export surface (keeps the names importable + silences unused-import lint).
 _RETRIEVAL_FILTER_REEXPORTS = (
     CRAG_GRADE_AMBIGUOUS, CRAG_GRADE_IRRELEVANT, CRAG_GRADE_RELEVANT,
     _CRAG_VALID_GRADES, _autocut, _cliff_detect_filter, _is_retrieval_adequate,
     _remap_grade_for_intent, _rerank_threshold_gate, parse_decomposed_sub_queries,
+    _decide_keep_speculative, apply_cascade_routing, DEFAULT_GROUNDING_CHECK_ENABLED,
+    DEFAULT_SPECULATIVE_SIMILARITY_THRESHOLD,
 )
 
 _CITATION_RE = re.compile(r"\[chunk:([0-9a-f\-]+)\]", re.IGNORECASE)
