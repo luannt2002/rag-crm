@@ -92,3 +92,20 @@
   mù (số thật sai chỗ), đúng mục đích thiết kế.
 - HONEST QA-COMPARABLE: 90 chuẩn + 6 chưa-đúng-ý + 1 oan-FP + 3 SAI THẬT
   (baseline QA cũ: 30/100). HALLU=chỉ còn Neoterra class, bị flag 100%.
+
+## Step 6 (002-A) — CODE: condense-gate drift fix (2026-07-04)
+- Change (ONE): shared/condense_gate.has_meaningful_history (pure, semantics 2026-05-27
+  `>= min_turns`) + wire understand.py (bỏ hand-rolled `>` — bug: turn-2 mất history) +
+  condense_question.py dùng chung; pin cũ update sang drift-proof (assert 2 node gọi helper).
+- RED→GREEN: test_condense_gate_parity 3 fail trước → pass; regression 113 pass
+  (1 pin cũ pin literal string được update có chú thích — behavior giữ nguyên).
+- ĐO N=10 × 3 chain từng fail (step1_chains_n10.json):
+  * Turn-2 coreference: K-462 9/10 (baseline 0), K-492 8/10 (baseline 0),
+    K-512 đúng-size 10/10 → CLASS A FIXED (~90-95% vs 0%).
+  * Residual class KHÁC: bịa-link URL turn-3 (K-463) — numeric-fidelity gate flag 10/10
+    (deterministic catch ✓) → issue mới "link-fidelity" vào Phase-4 scope;
+    1 primacy 155/80R13 (cluster C); K-512 expect quá hẹp (lỗi bộ đo, không phải bot).
+- Blast-radius: understand_query mọi bot (condense giờ FIRE ở turn-2 — thêm 1 LLM call
+  condense cho first-follow-up: đúng thiết kế 05-27, cost đã được chấp nhận từ fix cũ);
+  pin = test_condense_gate_parity + test_condense_rewrite_multi_turn.
+- Rollback: revert commit (helper additive).

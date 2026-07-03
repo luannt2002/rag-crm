@@ -1,0 +1,615 @@
+{
+ "total": 100,
+ "tally": {
+  "dung": 70,
+  "data_gap": 6,
+  "sai_bia": 9,
+  "thieu": 3,
+  "refuse_oan": 1,
+  "chua_chuan": 2,
+  "lech": 1,
+  "refuse_dung": 8
+ },
+ "all": [
+  {
+   "id": "S-001",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Verbatim corpus 'Quy trình tư vấn' Bước 4 row 'Khách hỏi địa chỉ' (102 Vũ Trọng Phụng+tầng 2+hotline+9-21h+maps); nf n_unsupported=0"
+  },
+  {
+   "id": "S-002",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Hotline 0926.559.268 grounded (corpus Bước 4 + sysprompt); nf misattributed conflicting_token 'vui' = verifier noise, không phải số xung đột"
+  },
+  {
+   "id": "S-003",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Corpus Bước 4: 'Giờ mở cửa: 9-21h, từ T2-CN' — bot trả 9h-21h thứ 2→CN khớp; n_unsupported=0"
+  },
+  {
+   "id": "S-004",
+   "verdict": "data_gap",
+   "fail_step": "none",
+   "note": "Corpus 0 hits 'tài khoản/STK/chuyển khoản' (dump 4 docs); bot refuse trung thực + redirect hotline — owner cần bổ sung"
+  },
+  {
+   "id": "S-005",
+   "verdict": "data_gap",
+   "fail_step": "none",
+   "note": "Fanpage/Tiktok 0 hits corpus (chỉ có trong template Thông tin spa.csv CHƯA ingest); bot refuse trung thực"
+  },
+  {
+   "id": "S-006",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Corpus chunk_index 118: '(Chị đi thang bộ lên tầng 2 nhé ạ)' — bot trả tầng 2 đúng grounded"
+  },
+  {
+   "id": "S-007",
+   "verdict": "data_gap",
+   "fail_step": "none",
+   "note": "Email 0 hits corpus (Drmedispa.vn@gmail chỉ trong template chưa ingest); bot refuse email trung thực, hotline kèm theo grounded"
+  },
+  {
+   "id": "S-008",
+   "verdict": "data_gap",
+   "fail_step": "none",
+   "note": "Slogan 'Nơi sắc đẹp thăng hoa' 0 hits corpus (chỉ trong Thông tin spa.csv chưa ingest); bot refuse trung thực"
+  },
+  {
+   "id": "S-009",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Corpus 'Giờ mở cửa: 9-21h, từ T2-CN' — bot xác nhận mở CN 9h-21h đúng; n_unsupported=0"
+  },
+  {
+   "id": "S-010",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Maps link https://maps.app.goo.gl/Vo5sw3iHtZZWbVN9A khớp exact corpus chunk 121-122 + địa chỉ/hotline/giờ đều grounded"
+  },
+  {
+   "id": "S-011",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Bảng giá corpus: Chăm sóc da chuyên sâu 700.000/buổi (chunk score 1.0); bot trả 700.000đ khớp, nf 1/1 grounded."
+  },
+  {
+   "id": "S-012",
+   "verdict": "sai_bia",
+   "fail_step": "retrieve",
+   "note": "Corpus [Bước 1] CÓ promo 199k/buổi (gốc 700K) cho CSD chuyên sâu (DB verify); retrieve chỉ đưa chunk triệt lông (Nách 199k) → bot phủ nhận promo = sai."
+  },
+  {
+   "id": "S-013",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Script trị mụn corpus: 'giá chỉ 299k/buổi (giá gốc 700K/buổi)' — bot trả verbatim đúng."
+  },
+  {
+   "id": "S-014",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Fact-pack Nách=199000 buổi lẻ; bot trả 199.000đ khớp, nf 1/1 grounded."
+  },
+  {
+   "id": "S-015",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "DB script 'Cấp nước đa tầng' = 299k (gốc 800K/buổi); bot 299k/gốc 800k khớp (chunk trace bị cắt, DB xác nhận)."
+  },
+  {
+   "id": "S-016",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Bảng dưỡng sinh: Massage CVG 60 phút = 400000; bot 400.000đ khớp, nf 1/1 grounded."
+  },
+  {
+   "id": "S-017",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "DB script 'body/massage body' = 299K (gốc 600k, 60 phút); bot khớp cả 3 giá trị."
+  },
+  {
+   "id": "S-018",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "DB script 'Gội đầu dưỡng sinh' = 99K (gốc 350k, 60 phút) verbatim; chunk trace cắt mất đoạn 99K nhưng DB xác nhận grounded."
+  },
+  {
+   "id": "S-019",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "DB script trẻ hóa = 299k (gốc 1500K) + bảng 'Nâng cơ trẻ hóa Dr. Medi' 1.500.000đ/buổi; cả 2 số grounded, misattributed flag là false-positive heuristic."
+  },
+  {
+   "id": "S-020",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "DB chunk [3. Căng bóng da tráng gương kim cương]: 'Giá trải nghiệm... lần đầu tiên: 249K' — bot đúng entity + điều kiện lần đầu."
+  },
+  {
+   "id": "S-021",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "450.000d khop fact Tay da chet body=450000; chunk score=1.0; nf n_unsupported=0"
+  },
+  {
+   "id": "S-022",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "2.500.000d khop fact Peel tri tham Inno A=2500000; nf clean"
+  },
+  {
+   "id": "S-023",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Mep 129k / Mat 249k khop fact-pack; diff 120k dung so hoc (derived_valid=1); misattributed la false-positive cung bang"
+  },
+  {
+   "id": "S-024",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "3.000.000d khop fact Meso cang bong tre hoa=3000000; nf clean"
+  },
+  {
+   "id": "S-025",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "1.200.000 khop fact Laser Carbon=1200000; chunk 'Laser carbon — 1.200.000d'"
+  },
+  {
+   "id": "S-026",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "12/12 dich vu khop verbatim row 1 bang buffet trong DB chunk (goi 6tr)"
+  },
+  {
+   "id": "S-027",
+   "verdict": "thieu",
+   "fail_step": "generate",
+   "note": "Corpus goi 7tr them 3 DV (peel dieu tri mun, vikim medic, peel Tretinoin) — bot chi neu 2, sot Tretinoin du chunk full trong prompt (bot quote dung 3thang/10buoi cuoi chunk)"
+  },
+  {
+   "id": "S-028",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "3 DV them (Ribo/Nano collagen/Meso) khop row 3 corpus; gia 2.5tr/2.5tr/3tr khop fact-pack; n_unsupported=0"
+  },
+  {
+   "id": "S-029",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "'Moi goi su dung toi da 10 buoi' verbatim trong chunk buffet DB"
+  },
+  {
+   "id": "S-030",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Corpus: '3 thang (tinh tu ngay dau tien su dung dich vu)' — bot tra dung + correct premise 'khong phai tu ngay mua'"
+  },
+  {
+   "id": "S-031",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Chunk 019f12da-9638: 'không giới hạn số lần sử dụng, tối đa 10 buổi, 3 tháng từ ngày đầu dùng' — bot khớp toàn bộ, nf clean."
+  },
+  {
+   "id": "S-032",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Chunk 019f12da-aff2: 'mua combo 10 buổi sẽ được tặng thêm 5 buổi' — bot trả 5 buổi đúng literal corpus."
+  },
+  {
+   "id": "S-033",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Chunk 019f12da-aff2: 'tặng thêm 5 buổi và được bảo hành 2 năm' (combo 10 buổi triệt lông) — bot trả 2 năm đúng."
+  },
+  {
+   "id": "S-034",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Chunk gội đầu 019f12da-9642: 'Mua 10 buổi tặng 1 buổi' — bot trả tặng 1 buổi đúng."
+  },
+  {
+   "id": "S-035",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Mua 30 tặng 5 grounded; 350.000đ dưỡng sinh đúng bảng; 35=30+5 derive hợp lệ. nf misattr '/bu' = artifact '/buổi', n_unsupported=0."
+  },
+  {
+   "id": "S-036",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Chunk Nâng cơ Dr. Medi: 'Sale chỉ còn 8 triệu 1 combo 10 buổi (Giá gốc 15 triệu)' — bot trả 8 triệu đúng literal."
+  },
+  {
+   "id": "S-037",
+   "verdict": "refuse_oan",
+   "fail_step": "retrieve",
+   "note": "Corpus CÓ đáp án (chunk 019f12da-963c: mua 2 buổi full-face tặng 1 buổi Ultherapy cổ) nhưng chỉ 1 chunk matrix sai tới LLM → bot refuse oan."
+  },
+  {
+   "id": "S-038",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Chunk buffet 019f12da-9638: 'Cá nhân hoá phác đồ điều trị theo từng khách hàng' — bot trả có, grounded."
+  },
+  {
+   "id": "S-039",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Matrix 019f12da-8b69 gói 10 triệu có đúng 4 peel (Inno A, mụn chuyên sâu, Tretinoin, Ribo) — bot liệt kê đủ 4/4."
+  },
+  {
+   "id": "S-040",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Bảng triệt lông: 'Toàn thân | 2.499.000 | 11999000' — bot trả combo 11.999.000 grounded, nf n_grounded=1."
+  },
+  {
+   "id": "S-041",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Khớp verbatim chunk 2 DB: '10 bước chuẩn y khoa: tẩy trang... massage vai gáy'. Corpus tự ghi 10 nhưng liệt kê 11 mục — bot faithful."
+  },
+  {
+   "id": "S-042",
+   "verdict": "thieu",
+   "fail_step": "retrieve",
+   "note": "Bot nói 21 bước nhưng chỉ liệt kê 16. List corpus bị cắt giữa chunk 16/17; chunk 17 (kem mắt, adaptogen, xịt thơm...) không được retrieve."
+  },
+  {
+   "id": "S-043",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Chunk 18 DB: Detox Ballet 'sử dụng dược mỹ phẩm Pháp PAYOT' — khớp verbatim."
+  },
+  {
+   "id": "S-044",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Chunk 21 DB: 'Diode Laser lạnh hiện đại của Hàn Quốc, không đau, không bỏng rát, 3-5 buổi' — bot khớp verbatim."
+  },
+  {
+   "id": "S-045",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Core grounded chunk 21: 'không đau, không bỏng rát'. Câu 'khách thấy thoải mái dễ chịu' là thêm mềm, không bịa số/fact cứng."
+  },
+  {
+   "id": "S-046",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Chunk 8 DB liệt kê đúng 16 bước Trẻ hóa Dr. Medi; bot match 16/16 verbatim (tẩy trang→kem chống nắng)."
+  },
+  {
+   "id": "S-047",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Chunk '[2. Trẻ hóa da Ultherapy]': 'tác động chính xác đến lớp cân cơ SMAS' — bot khớp verbatim."
+  },
+  {
+   "id": "S-048",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Mô tả GB42 grounded chunk 16 (độc quyền, PAYOT, cấp ẩm đa tầng, nâng cơ). Chỉ nêu Hydra Ballet, bỏ Detox Ballet — minor, câu hỏi 'là gì' vẫn đúng."
+  },
+  {
+   "id": "S-049",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Verbatim chunk 21: 'hiệu quả rõ rệt chỉ sau từ 3-5 buổi'. Corpus còn câu 'giảm lông rõ rệt sau 1-2 buổi' (mệnh đề khác) — bot chọn đúng câu khớp hỏi."
+  },
+  {
+   "id": "S-050",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Chunk 6 DB: 10 bước trị mụn (tẩy trang, vỗ toner, ủ hút dầu mụn... kem chống nắng da mụn) — bot match 10/10 verbatim."
+  },
+  {
+   "id": "S-051",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Corpus 16 bước Ultherapy: '...máy Ultherapy, điện di VTM DNA, laser sáng da, laser se khít...' — bot đúng: có laser sáng da, thứ tự chuẩn"
+  },
+  {
+   "id": "S-052",
+   "verdict": "sai_bia",
+   "fail_step": "generate",
+   "note": "Corpus Hydra Ballet 21 bước, điện di HA ở vị trí ~14 (sau massage GB 42 bước + toner); 'bước thứ 18' không tồn tại trong list → bịa ordinal"
+  },
+  {
+   "id": "S-053",
+   "verdict": "chua_chuan",
+   "fail_step": "generate",
+   "note": "Corpus chỉ có 'Gym Beauté® 42 bước độc quyền', không giải thích tên; bot suy diễn etymology + 'nguyên lý vận động thể thao' không grounded"
+  },
+  {
+   "id": "S-054",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Corpus: 'soi da bằng công nghệ AI phân tích 17 chỉ số và tư vấn phác đồ điều trị riêng hoàn toàn miễn phí' — khớp đầy đủ"
+  },
+  {
+   "id": "S-055",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "'17 chỉ số' grounded verbatim chunk top-1 (score 0.87)"
+  },
+  {
+   "id": "S-056",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "16 bước khớp verbatim corpus; 8.000.000đ = corpus '8 triệu/buổi (gốc 20 triệu)' → nf FP đơn vị; answer bị cắt đuôi '(giá gốc 20'"
+  },
+  {
+   "id": "S-057",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Coreference Ultherapy đúng; corpus 'Giảm còn 8 triệu/buổi, gốc 20tr, mua 2 full-face tặng 1 buổi cổ' — nf FP '8.000.000'='8 triệu' (DB verified)"
+  },
+  {
+   "id": "S-058",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Coreference Ultherapy giữ đúng; 16 bước list khớp verbatim chunk chào-khách Ultherapy trong DB"
+  },
+  {
+   "id": "S-059",
+   "verdict": "sai_bia",
+   "fail_step": "retrieve",
+   "note": "Corpus CÓ promo CVG 99K/buổi (gốc 400k, 60', khách mới) section III — bot phủ nhận 'không có mức 99.000đ' = SAI; chỉ 1 chunk entity-list tới LLM"
+  },
+  {
+   "id": "S-060",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Coreference CVG giữ; 60'=400.000, 90'=500.000 khớp bảng corpus; nf misattributed ('cung'/'000') là noise parser"
+  },
+  {
+   "id": "S-061",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "499k le/2.999k combo khop Bikini fact-pack; 'tang 5 buoi+bao hanh 2 nam' co nguyen van template triet long; nf misattr = noise token"
+  },
+  {
+   "id": "S-062",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "'Bao hanh 2 nam' dung nguyen van template combo triet long trong corpus; coreference c61 (combo triet Bikini) giu dung"
+  },
+  {
+   "id": "S-063",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Tri mun CS + CSD chuyen sau dung corpus; Buffet 6tr co tri mun CS, '10 buoi/3 thang/sale 50%' khop chunk buffet"
+  },
+  {
+   "id": "S-064",
+   "verdict": "lech",
+   "fail_step": "retrieve",
+   "note": "'Dich vu do'=tri mun (c63) nhung bot tra Massage body 299K/600K (chunk massage top 0.916); so dung nhung lech entity"
+  },
+  {
+   "id": "S-065",
+   "verdict": "sai_bia",
+   "fail_step": "retrieve",
+   "note": "Goi 7tr=6tr+PeelDTmun+VikimMedic+Tretinoin; bot them Ribo/Meso/NanoCollagen (chi goi 10tr), sot tri mun CS/nano kim cuong/IPL"
+  },
+  {
+   "id": "S-066",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "'3 thang tinh tu ngay dau su dung' dung nguyen van chunk buffet; giu dung goi 7tr (c65)"
+  },
+  {
+   "id": "S-067",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Mo ta khop gan verbatim chunk Hydra Ballet (da kho, PAYOT, Gym Beaute 42 buoc, cap am da tang)"
+  },
+  {
+   "id": "S-068",
+   "verdict": "sai_bia",
+   "fail_step": "retrieve",
+   "note": "Corpus co quy trinh 21 buoc (chunk 16 Hydra) nhung retrieve miss; bot bia '42 buoc' + tron step tri mun (vo toner, u hut...)"
+  },
+  {
+   "id": "S-069",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "99K/buoi (goc 350k) 60 phut dung nguyen van row 'Goi dau duong sinh' chunk [III/ goi dau]"
+  },
+  {
+   "id": "S-070",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Xac nhan 99K goc 350K dung corpus; coreference c69 giu dung du top chunk la massage CVG (cung 99k)"
+  },
+  {
+   "id": "S-071",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Hydra Ballet đúng cho da khô+căng thẳng; '699k/buổi (giá gốc 2 triệu)' literal trong full chunk DB (trace bị cắt). nf 0 unsupported."
+  },
+  {
+   "id": "S-072",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Mặt 249.000 + Mép 129.000 = 378.000 đúng corpus; nf: 2 grounded + 1 derived_valid, 0 unsupported."
+  },
+  {
+   "id": "S-073",
+   "verdict": "sai_bia",
+   "fail_step": "generate",
+   "note": "Bịa duration '1–2 năm' vs 'vài tháng–1 năm': DB 0 chunk chứa; '2 năm' duy nhất = bảo hành triệt lông. Giá 8tr/gốc 20tr grounded."
+  },
+  {
+   "id": "S-074",
+   "verdict": "sai_bia",
+   "fail_step": "generate",
+   "note": "Detox Ballet grounded ✓ nhưng 'CSD thải độc da 299k ưu đãi' bịa: DB 0 chunk 'thải độc da'+'ưu đãi'; 299K/800k là promo Thải độc đầu."
+  },
+  {
+   "id": "S-075",
+   "verdict": "sai_bia",
+   "fail_step": "generate",
+   "note": "Bịa nội dung combo Dr.Medi: 'nâng cơ 7 điểm vàng, ô xi tươi'=gói Buffet CNC; 'laser se khít, điện di tinh chất'=quy trình Ultherapy. Corpus combo chỉ có giá."
+  },
+  {
+   "id": "S-076",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "'kích thích dẫn lưu với đá nóng' có literal trong full chunk Detox Ballet (DB) — trace truncate che mất. Answer đúng."
+  },
+  {
+   "id": "S-077",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "'21 bước chuẩn y khoa' + 699k/gốc 2tr literal trong cả 2 full chunk Hydra & Detox (DB). So sánh da khô vs da dầu mụn đúng corpus."
+  },
+  {
+   "id": "S-078",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Ấm nóng CTC (&thải độc bi) 'giảm đau bụng kinh' đúng corpus. Chunk trace lệch (bảng CSD score 1.0) nhưng answer grounded."
+  },
+  {
+   "id": "S-079",
+   "verdict": "thieu",
+   "fail_step": "generate",
+   "note": "3 dịch vụ nêu đúng bảng (CVG 90p/500k, thải độc đầu 90p/800k, CTC&bi 120p/3tr) nhưng thiếu Massage chân 70 phút/350k (>60p)."
+  },
+  {
+   "id": "S-080",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "nf FALSE-POSITIVE: chunk DB có literal '299K/buổi (giá gốc: 550k/buổi) trong vòng 60 phút' — checker miss k-notation. Cả 2 số grounded."
+  },
+  {
+   "id": "S-081",
+   "verdict": "refuse_dung",
+   "fail_step": "none",
+   "note": "Filler/Botox không có trong 107 entity fact-pack; bot nói 'chưa thấy trong danh mục' + redirect trẻ hóa da — đúng trap, nf sạch."
+  },
+  {
+   "id": "S-082",
+   "verdict": "refuse_dung",
+   "fail_step": "none",
+   "note": "Phẫu thuật nâng mũi không có trong corpus (58 dịch vụ 5 nhóm); bot refuse trung thực 'chưa có thông tin', không bịa, nf sạch."
+  },
+  {
+   "id": "S-083",
+   "verdict": "refuse_dung",
+   "fail_step": "none",
+   "note": "Xăm mình không thuộc 58 dịch vụ trong corpus; bot 'chưa có dịch vụ xăm mình' + redirect CSD/triệt lông — đúng trap."
+  },
+  {
+   "id": "S-084",
+   "verdict": "refuse_dung",
+   "fail_step": "none",
+   "note": "BẪY cross-tenant PASS: bot refuse, KHÔNG trả giá lốp nào. Chunks 100% spa (score_max 0.074); corpus lốp Landspider ở bot khác không leak."
+  },
+  {
+   "id": "S-085",
+   "verdict": "refuse_dung",
+   "fail_step": "none",
+   "note": "OOS thời tiết: bot từ chối 'chưa hỗ trợ thông tin thời tiết' + redirect dịch vụ spa — đúng trap, không bịa dự báo."
+  },
+  {
+   "id": "S-086",
+   "verdict": "refuse_dung",
+   "fail_step": "none",
+   "note": "Corpus không đề cập bán mỹ phẩm lẻ mang về (fact-pack + chunks); bot refuse trung thực + redirect — đúng trap."
+  },
+  {
+   "id": "S-087",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Sửa đúng tiền đề sai: chunk Ultherapy ghi 'KHÔNG cần phẫu thuật hay nghỉ dưỡng, KHÔNG đau' — bot trả không cần nghỉ dưỡng, grounded."
+  },
+  {
+   "id": "S-088",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Bác đúng 'vĩnh viễn sau 1 buổi'. DB verify chunk đầy đủ: '3-5 buổi', 'mua combo 10 buổi tặng thêm 5 buổi, bảo hành 2 năm' — tất cả grounded."
+  },
+  {
+   "id": "S-089",
+   "verdict": "refuse_dung",
+   "fail_step": "none",
+   "note": "Corpus không có chương trình đào tạo học viên; bot refuse trung thực + redirect dịch vụ — đúng trap, nf sạch."
+  },
+  {
+   "id": "S-090",
+   "verdict": "refuse_dung",
+   "fail_step": "none",
+   "note": "OOS Thông tư: bot refuse đúng mandate. nf '2020' unsupported = echo số từ câu hỏi trong câu từ chối, không phải fact bịa; không leak corpus legal."
+  },
+  {
+   "id": "S-091",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Chào đúng script [Bước 1: Chào khách] (chunk 0.861); hỏi lại nhu cầu, liệt kê nhóm dịch vụ đúng corpus. Không số liệu, nf_unsup=0."
+  },
+  {
+   "id": "S-092",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "18 giá khớp 100% fact-pack (700k/800k/1.5tr/1.2tr/2.5tr/1.8tr/3tr...); nf_unsup=0; 'misattributed' chỉ là noise token '000'."
+  },
+  {
+   "id": "S-093",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Khớp verbatim corpus [II/triệt lông]: 'Diode Laser lạnh Hàn Quốc, không đau, không bỏng rát, 3-5 buổi'. Grounded, trả lời đúng ý an toàn."
+  },
+  {
+   "id": "S-094",
+   "verdict": "chua_chuan",
+   "fail_step": "generate",
+   "note": "Nhận lịch 10h tối (22h) không cảnh báo giờ mở cửa 9h-21h (bot biết giờ — S-001 trả grounded). Theo template chốt lịch nhưng thiếu check giờ."
+  },
+  {
+   "id": "S-095",
+   "verdict": "sai_bia",
+   "fail_step": "generate",
+   "note": "Corpus không có policy đến muộn; bot không refuse mà bịa cam kết 'sẽ cố gắng sắp xếp' + glitch chữ Trung '建议'. Chuẩn phải refuse như S-098."
+  },
+  {
+   "id": "S-096",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Khớp verbatim chunk CSD chuyên sâu (score 0.927): '10 bước... massage vai gáy' — trả lời Có đúng corpus."
+  },
+  {
+   "id": "S-097",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "Grounded chunk Ultherapy (0.799): 'KHÔNG đau, cực an toàn, chuyên viên theo sát, không xâm lấn, không cần nghỉ dưỡng'."
+  },
+  {
+   "id": "S-098",
+   "verdict": "data_gap",
+   "fail_step": "none",
+   "note": "Corpus + fact-pack không có info đỗ xe ô tô (score_max 0.189, chunks lạc đề); bot refuse trung thực + hotline grounded. Owner bổ sung data."
+  },
+  {
+   "id": "S-099",
+   "verdict": "data_gap",
+   "fail_step": "none",
+   "note": "Corpus không có info thanh toán/thẻ tín dụng (score_max 0.214, chunks lạc đề); bot refuse trung thực + hotline grounded. Owner bổ sung data."
+  },
+  {
+   "id": "S-100",
+   "verdict": "dung",
+   "fail_step": "none",
+   "note": "'Soi da miễn phí' có trong corpus; thu thập Họ tên/SĐT/Thời gian đúng [Bước 4: Chốt lịch]. Hint format SĐT 10-11 số vô hại, không bịa số."
+  }
+ ]
+}

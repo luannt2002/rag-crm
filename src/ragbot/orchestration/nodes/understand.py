@@ -25,6 +25,7 @@ from ragbot.application.services.heuristic_intent_classifier import (
     classify_heuristic as _classify_heuristic,
 )
 from ragbot.orchestration.state import GraphState
+from ragbot.shared.condense_gate import has_meaningful_history
 from ragbot.shared.bootstrap_config import get_boot_config as _get_boot_config
 from ragbot.shared.constants import (
     DEFAULT_CONDENSE_HISTORY_LIMIT,
@@ -165,14 +166,17 @@ async def understand_query(
             raise InvariantViolation("LLM runtime not configured for node=understand_query")
 
         history = state.get("conversation_history", [])
-        has_meaningful_history = (
-            history
-            and len(history) > DEFAULT_CONDENSE_MIN_HISTORY_TURNS
-            and sum(len(m.get("content", "")) for m in history)
-            >= DEFAULT_CONDENSE_MIN_HISTORY_CHARS
+        # Shared predicate (drift-proof): the first follow-up (history == 2
+        # messages) MUST trigger condense — see shared/condense_gate.py; the
+        # old hand-rolled strict `>` here silently skipped it in production
+        # (truth-audit 002 cluster A).
+        _history_meaningful = has_meaningful_history(
+            history,
+            min_turns=DEFAULT_CONDENSE_MIN_HISTORY_TURNS,
+            min_chars=DEFAULT_CONDENSE_MIN_HISTORY_CHARS,
         )
 
-        if has_meaningful_history:
+        if _history_meaningful:
             _u_pack = _lang(state)
             history_text = "\n".join(
                 f"{_u_pack.condense_user_role if m.get('role') == 'user' else _u_pack.condense_bot_role}: {m.get('content', '')}"

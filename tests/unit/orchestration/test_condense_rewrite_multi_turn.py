@@ -32,17 +32,26 @@ def test_condense_threshold_is_less_than_two_not_less_equal_two() -> None:
     src = inspect.getsource(_condense_question_node)
     # Find the condense_question definition body
     assert "async def condense_question" in src
-    # 2026-06-13 zero-hardcode: the literal ``2`` was lifted into
-    # ``DEFAULT_CONDENSE_MIN_HISTORY_TURNS`` (= 2). The contract is unchanged —
-    # the runtime gate must still use ``<`` (strict) so the FIRST follow-up
-    # (len==2) triggers, never ``<=`` (which would swallow it). Pin both the
-    # operator+constant form AND the constant value.
+    # 2026-07-04 (truth-audit 002 cluster A): the predicate moved into the
+    # SHARED pure helper ``shared/condense_gate.has_meaningful_history`` —
+    # the same 2026-05-27 semantics (skip only when len(history) < min_turns,
+    # so the FIRST follow-up with len==2 triggers), now drift-proof because
+    # the merged understand node consumes the SAME helper (the old hand-rolled
+    # strict `>` copy there is what killed turn-2 coreference in production).
+    # Pin: node must call the shared helper; helper must keep `< min_turns`.
+    from ragbot.shared.condense_gate import has_meaningful_history
     from ragbot.shared.constants import DEFAULT_CONDENSE_MIN_HISTORY_TURNS
-    assert DEFAULT_CONDENSE_MIN_HISTORY_TURNS == 2
-    assert "len(history) < DEFAULT_CONDENSE_MIN_HISTORY_TURNS" in src, (
-        "condense_question threshold reverted from `< MIN_HISTORY_TURNS`; "
-        "first follow-up loses standalone-question rewriting again."
+    assert "has_meaningful_history(" in src
+    helper_src = inspect.getsource(has_meaningful_history)
+    assert "len(history) < min_turns" in helper_src, (
+        "shared gate reverted: first follow-up (len==2) would lose condense"
     )
+    # behavioral pin: 2-message history (>=100 chars) MUST fire
+    assert has_meaningful_history(
+        [{"role": "user", "content": "x" * 60}, {"role": "assistant", "content": "y" * 60}],
+        min_turns=DEFAULT_CONDENSE_MIN_HISTORY_TURNS, min_chars=100,
+    ) is True
+    assert DEFAULT_CONDENSE_MIN_HISTORY_TURNS == 2
     # The strict runtime gate must NOT use `<=` (would swallow the first
     # follow-up). Docstring may mention `<= 2` once as historical context.
     assert src.count("len(history) <= DEFAULT_CONDENSE_MIN_HISTORY_TURNS") == 0, (

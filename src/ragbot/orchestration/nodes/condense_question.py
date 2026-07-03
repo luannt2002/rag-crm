@@ -13,6 +13,7 @@ import structlog
 from ragbot.orchestration.query_graph_helpers import _pcfg
 from ragbot.orchestration.state import GraphState
 from ragbot.shared.chunking import normalize_vn_section_numerals
+from ragbot.shared.condense_gate import has_meaningful_history
 from ragbot.shared.constants import (
     DEFAULT_CONDENSE_HISTORY_LIMIT,
     DEFAULT_CONDENSE_MIN_HISTORY_CHARS,
@@ -52,10 +53,13 @@ async def condense_question(
         _query_patch["query"] = _norm_q
         state["query"] = _norm_q
     history = state.get("conversation_history", [])
-    if not history or len(history) < DEFAULT_CONDENSE_MIN_HISTORY_TURNS:
-        return _query_patch
-    total_chars = sum(len(m.get("content", "")) for m in history)
-    if total_chars < DEFAULT_CONDENSE_MIN_HISTORY_CHARS:
+    # Shared predicate with the merged understand node (drift-proof — the
+    # 2026-05-27 threshold semantics live in ONE place now).
+    if not has_meaningful_history(
+        history,
+        min_turns=DEFAULT_CONDENSE_MIN_HISTORY_TURNS,
+        min_chars=DEFAULT_CONDENSE_MIN_HISTORY_CHARS,
+    ):
         return _query_patch
     # Wave M3.7-G1 — name the step context so the post-LLM payload
     # (model + tokens + cost) can be recorded onto request_steps.
