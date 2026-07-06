@@ -1,0 +1,1647 @@
+{
+ "gate": {
+  "score": 91,
+  "tally": {
+   "dung": 78,
+   "sai_bia": 7,
+   "thieu": 2,
+   "refuse_dung": 13
+  },
+  "fixmix": {
+   "ingest": 5,
+   "grounding-nonnumeric": 3,
+   "retrieve": 1
+  }
+ },
+ "trap": {
+  "score": 74,
+  "tally": {
+   "refuse_dung": 15,
+   "sai_bia": 9,
+   "dung": 59,
+   "lech": 6,
+   "refuse_oan": 7,
+   "thieu": 4
+  },
+  "fixmix": {
+   "block-gate": 3,
+   "grounding-nonnumeric": 8,
+   "coreference": 3,
+   "retrieve": 12
+  }
+ },
+ "fails": [
+  {
+   "id": "G-063",
+   "verdict": "sai_bia",
+   "fixable": "ingest",
+   "root_cause": "Cột 'NGÀY VỀ' (arrival date) mất tên header khi ingest → lưu dưới key rỗng trong document_service_index: row entity_name='205/55R16 91V CITYTRAXX G/P' có attributes_json={\"\": \"28-thg 11\", \"chunk_index\": 0} (DB xác nhận 55 rows có key '' value '28-thg 11', header row value 'NGÀY VỀ'). Chunk gửi LLM CÓ chứa '| : 28-thg 11' (retrieval OK) nhưng field không tên → LLM không nhận ra đó là ngày về hàng → bỏ qua giá trị expect 28-thg 11 và BỊA claim phi-số 'hiện đang còn hàng, không cần chờ về thêm' (mâu thuẫn dữ liệu có lịch về hàng). Số grounded đúng (giá 1.044.000, qty 734) nên block-gate numeric không bắt."
+  },
+  {
+   "id": "G-064",
+   "verdict": "sai_bia",
+   "fixable": "ingest",
+   "root_cause": "Cùng gốc rễ G-063: arrival date '28-thg 11' của 195/65R15 nằm dưới key rỗng '' trong document_service_index (entity_name='195/65R15 91H CITYTRAXX G/P', attributes_json={\"\": \"28-thg 11\", \"chunk_index\": 0}). Chunk CÓ '| : 28-thg 11' nhưng vô danh → LLM bỏ qua expect và bịa 'không cần chờ về thêm'. Numeric grounded (972.000, 313) nên gate không block."
+  },
+  {
+   "id": "G-065",
+   "verdict": "thieu",
+   "fixable": "ingest",
+   "root_cause": "Arrival date '28-thg 11' của 225/45ZR18 tồn tại trong corpus dưới key rỗng '' (entity_name='225/45ZR18 95WXL CITYTRAXX H/P', attributes_json={\"\": \"28-thg 11\", \"chunk_index\": 0}) và CÓ trong chunk gửi LLM. Bot chỉ trả 'hiện đang có hàng rồi ạ' + giá/qty đúng nhưng BỎ SÓT giá trị expect 28-thg 11 (field vô danh nên LLM không surface). Khác G-063/064: không kèm claim sai 'không cần chờ về thêm' nên chỉ là thiếu, không bịa."
+  },
+  {
+   "id": "G-066",
+   "verdict": "sai_bia",
+   "fixable": "ingest",
+   "root_cause": "Cùng gốc rễ: '28-thg 11' của 235/60R18 dưới key rỗng '' (entity_name='235/60R18 107HXL CITYTRAXX H/T'). Chunk CÓ '| : 28-thg 11' nhưng vô danh → bot bịa 'hiện đang còn hàng, không cần chờ về thêm' (phủ nhận có lịch về hàng, mâu thuẫn corpus) và bỏ qua expect. Số grounded (1.755.000, 191) → gate không block."
+  },
+  {
+   "id": "G-067",
+   "verdict": "sai_bia",
+   "fixable": "grounding-nonnumeric",
+   "root_cause": "Bot ĐÃ surface đúng expect '28-thg 11' (arrival date từ key rỗng '') NHƯNG bịa thêm claim ngày phi-số không grounded: 'đã có sẵn từ ngày 26/11' — LLM biến field thô date1='26' (bare number, không có ngữ nghĩa tháng trong DB) thành ngày '26/11'. numeric_fidelity n_grounded=1 nên block-gate không bắt (28-thg 11 và 26 đều trace được về chunk), nhưng phép biến đổi '26'→'26/11' là bịa ngữ nghĩa ngày → cần lớp grounding claim phi-số. Arrival value đúng nhưng câu chứa hallucination ngày."
+  },
+  {
+   "id": "G-068",
+   "verdict": "sai_bia",
+   "fixable": "ingest",
+   "root_cause": "Cùng gốc rễ: '28-thg 11' của 215/65R16 dưới key rỗng '' (entity_name='215/65R16 98H CITYTRAXX G/P'). Chunk CÓ '| : 28-thg 11' vô danh → bot bịa 'hiện đang còn hàng, không cần chờ về thêm ạ' (phủ nhận lịch về hàng) + bỏ qua expect. Số grounded (1.260.000, 28) → gate không block."
+  },
+  {
+   "id": "G-077",
+   "verdict": "sai_bia",
+   "fixable": "grounding-nonnumeric",
+   "root_cause": "Corpus DB xác nhận 2-R16 195/55 RVL price=NULL (trap hợp lệ) NHƯNG Rovelo LÀ hãng có phân phối (document_service_index có 33 entry RVL có giá, vd 2-R14 175/70 RVL=729000; G-099 expect Rovelo là brand chính). Retrieve topk_cand=1 chỉ trả về chunk sai-hãng '2-R16 195/55 LPD: 1044000' (LANDSPIDER cùng size), KHÔNG có dòng '195/55 RVL | price: —'. LLM không thấy dòng Rovelo nào nên bịa phủ nhận phi-số 'bên em chưa phân phối hãng Rovelo' — sai sự thật scope. numeric_fidelity n_numbers=0 nên block-gate (chỉ soi số) không bắt được. Đúng ra phải defer 'chưa có giá size này' như G-076/G-079 (nơi chunk CÓ dòng RVL price=—)."
+  },
+  {
+   "id": "G-078",
+   "verdict": "sai_bia",
+   "fixable": "grounding-nonnumeric",
+   "root_cause": "Corpus DB xác nhận 2-R15 205/65 RVL price=NULL (trap hợp lệ) NHƯNG Rovelo LÀ hãng có phân phối (33 entry RVL có giá trong document_service_index). Retrieve topk_cand=1 chỉ trả chunk sai-hãng '2-R15 205/65 LPD: 999000' (LANDSPIDER cùng size), KHÔNG có dòng '205/65 RVL | price: —'. LLM bịa phủ nhận phi-số 'bên em chưa phân phối hãng Rovelo' — trái corpus. n_numbers=0 nên block-gate không chặn. Đúng ra phải defer như G-076/G-079 (chunk có dòng RVL price=—)."
+  },
+  {
+   "id": "G-099",
+   "verdict": "thieu",
+   "fixable": "retrieve",
+   "root_cause": "Câu hỏi liệt kê thương hiệu phân phối; corpus có 4 brand đang bán trong document_service_index (LPD 129sp, RVL 39sp, DVT 7sp giá 1.152.000-3.240.000 còn hàng qty 92-528, NEO 1sp price=None). Answer chỉ nêu 'hai thương hiệu chính là Landspider và Rovelo', SÓT Davanti (và Neoterra). Root: existence/brand-list intent chỉ retrieve 3 chunk, chunk score-anchor là doc chính sách bảo hành xe-1 ghi literal 'Áp dụng cho thương hiệu Landspider (Thailand) và Rovelo (Vietnam)' → LLM neo theo câu 2-brand đó. Corpus KHÔNG có 1 chunk canonical liệt kê toàn bộ brand; tập brand nằm rải trong product index. Cùng run G-100 lại khẳng định bot BÁN Davanti DX640 còn hàng → mâu thuẫn nội tại, chứng minh Davanti là brand phân phối thật, không phải bịa. Bot không sai/bịa, chỉ thiếu item."
+  },
+  {
+   "id": "B-002",
+   "verdict": "sai_bia",
+   "fixable": "block-gate",
+   "root_cause": "Corpus row 2-ZR... '2-R16 195/65 NEO' has NO quantity key (attributes_json ? 'quantity' = false) and price NULL (document_service_index doc 1e394215). Retrieved chunk (score 1.0) did NOT contain the 2-R16 195/65 NEO row at all (chỉ có 185/55,195/50,195/55,195/60,195/75,205/55,205/60,205/65). Bot lại khẳng định 'hiện đang còn 0 lốp trong kho' — bịa số tồn cho SKU có quantity null. Numeric gate không bắt vì '0 lốp' bị coi là non-claim (0 = disabled), numeric_fidelity n_numbers=0."
+  },
+  {
+   "id": "B-011",
+   "verdict": "sai_bia",
+   "fixable": "grounding-nonnumeric",
+   "root_cause": "Corpus PHÂN PHỐI Rovelo rõ ràng: 50 SKU RVL (42 có giá) trong document_service_index; riêng '2-R16 205/60 RVL' (ROVELO 205/60R16 A68) tồn tại nhưng price_primary=NULL → đáng lẽ defer về GIÁ. Nhưng bot phủ nhận cả THƯƠNG HIỆU: 'Dạ bên em chưa phân phối hãng Rovelo ạ' — bịa scope phi-số, mâu thuẫn corpus. Chunk-to-LLM chỉ có dòng LANDSPIDER 2-R16 205/60 LPD (1098000), dòng RVL không được retrieve → LLM không thấy Rovelo nên bịa 'không phân phối'. Block-gate không bắt vì đây là claim phi-số (không có token số sai)."
+  },
+  {
+   "id": "B-012",
+   "verdict": "lech",
+   "fixable": "coreference",
+   "root_cause": "Hỏi '2-R15 185/55 RVL' (Rovelo). Corpus: dòng RVL '2-R15 185/55 RVL' (ROVELO 185/55R15 A68) có price_primary=NULL/quantity trống; dòng LANDSPIDER '2-R15 185/55 LPD' = 810000/quantity 779. Bot trả 'Rovelo 185/55R15 RHP-A68 giá 810.000đ, còn 779 lốp' — lấy giá+tồn của dòng LANDSPIDER gán cho tên sản phẩm ROVELO → trộn entity LPD↔RVL. Số 810000/779 là số THẬT nhưng của dòng khác thương hiệu. numeric_fidelity báo n_grounded=1, n_misattributed=0 nên block-gate không chặn (số có tồn tại trong ngữ cảnh, chỉ sai chủ thể)."
+  },
+  {
+   "id": "B-017",
+   "verdict": "refuse_oan",
+   "fixable": "retrieve",
+   "root_cause": "Corpus CÓ đủ đáp án: '2-R16 205/65 LPD'=1170000, '2-ZR18 235/40 LPD'=1602000 → 235/40R18 đắt hơn. Nhưng chunks-to-LLM chỉ chứa dòng-có-giá của 205/65 (chunk 2: 1170000) còn 235/40 chỉ là chunk synonym-header (part 74/187) KHÔNG kèm giá; dòng '2-ZR18 235/40 LPD:1602000' không lọt vào 13 chunk. LLM thiếu giá 235/40 nên vơ 1.800.000 (giá của SKU lân cận 235/65 hoặc 235/55) gán cho 235/40r18 → block-gate bắt đúng token misattributed 1.800.000 và defer. Block-gate hoạt động đúng (ngăn 1 lỗi lệch), nhưng câu vốn TRẢ LỜI ĐƯỢC → refuse oan; gốc là retrieve miss dòng-có-giá của 235/40."
+  },
+  {
+   "id": "B-018",
+   "verdict": "refuse_oan",
+   "fixable": "retrieve",
+   "root_cause": "Corpus CÓ dữ liệu: ~29 SKU quantity<5 (vd 2-R15 215/70 LPD=2, 2-ZR20 245/40 LPD=1, 2-R17 245/70 LPD HT=1...). Đây là truy vấn AGGREGATION toàn bảng nhưng retrieve chunk-based chỉ mang về vài chunk synonym-header rời rạc, không enumerate được toàn bộ dòng tồn<5. LLM cố liệt kê từ chunk lẻ → gán sai 1.287.000 cho '195/65r15 rhp-a68' → block-gate bắt misattributed và defer (đúng chức năng chống bịa). Nhưng câu là answerable-in-principle (dữ liệu có trong index) → refuse oan; gốc là retrieval không phục vụ aggregation quét-bảng."
+  },
+  {
+   "id": "B-021",
+   "verdict": "refuse_oan",
+   "fixable": "retrieve",
+   "root_cause": "Corpus CÓ đáp án: đúng 1 chunk chứa 'Áp dụng cho thương hiệu Landspider (Thailand) và Rovelo (Vietnam)' (warranty policy header, verified psql: count=1 chunk chứa 'Thailand'). Chunk này chính là chunk0 mà B-027 (Rovelo origin) retrieve được ở score 0.3501. Nhưng với query B-021 'Lốp Landspider xuất xứ từ đâu?', retrieval trả score_max=0.2726 và KHÔNG có chunk origin trong top-3 (chỉ lấy warranty §I 'Phạm vi áp dụng' + 2 chunk bảng inventory xe-1). Bot vì thế trả 'không có thông tin về xuất xứ' → refuse SAI (silent retrieval miss). Đối xứng với B-027 cùng nguồn chunk: query 'Rovelo sản xuất ở đâu' surface được chunk, 'Landspider xuất xứ' thì không — chênh lệch embedding cross-phrasing khiến chunk 0.35 rớt khỏi top-K của B-021."
+  },
+  {
+   "id": "B-031",
+   "verdict": "sai_bia",
+   "fixable": "grounding-nonnumeric",
+   "root_cause": "Corpus [I. Phạm vi áp dụng] (document_chunks chunk_index=1) giới hạn RÕ 'lốp xe du lịch (PCR) Landspider và Rovelo'; 'xe tải' xuất hiện 0 lần trong toàn bộ warranty doc (6 hit 'xe tải/TBR/LTR' chỉ nằm trong bảng tồn kho SP, không phải chính sách). Bot trả 'chính sách bảo hành CÓ áp dụng cho lốp xe tải' — bịa mở rộng scope phi-số. Đúng bẫy note L-060 (chỉ PCR/du lịch — không bịa 'có'). Block-gate không bắt vì đây là claim phi-số (n_numbers=0)."
+  },
+  {
+   "id": "B-032",
+   "verdict": "lech",
+   "fixable": "block-gate",
+   "root_cause": "Corpus [II.2] (chunk_index=2) nói 'Bồi thường theo tỷ lệ % gai CÒN LẠI so với gai mới' — là công thức theo % gai, KHÔNG phải '% giá trị lốp'. Bot suy 40% mòn → 60% gai còn (đúng), nhưng khẳng định 'được bồi thường 60% GIÁ TRỊ lốp' — gán con số 60% sang đại lượng sai (giá trị thay vì tỷ lệ gai). Corpus không hề nói 60% giá trị. numeric_fidelity n_numbers=0 chứng minh gate không trích được '60%' để chấm grounding → block mode bật nhưng không chặn con số bịa. Đáng lẽ theo note: chỉ nói rơi vào bracket còn-60% + bồi theo tỷ lệ gai, KHÔNG chốt '60% giá trị'."
+  },
+  {
+   "id": "B-034",
+   "verdict": "sai_bia",
+   "fixable": "grounding-nonnumeric",
+   "root_cause": "Corpus [III] (chunk_index=3) chỉ ghi 'Biến dạng do điều kiện bảo quản không đúng'; các từ 'nhiệt độ (cao)/ẩm ướt/ánh nắng/nóng' = 0 hit trong corpus. Bot đúng verdict 'không được bảo hành' NHƯNG chèn thêm chi tiết bịa '(như nhiệt độ cao, ẩm ướt, ánh nắng trực tiếp)' — đúng bẫy note L-068 (tài liệu chỉ nói 'bảo quản sai' — không thêm 'nóng ẩm'). Đây là fabricate phi-số (specifics không có nguồn), cần lớp grounding claim phi-số bắt."
+  },
+  {
+   "id": "B-035",
+   "verdict": "sai_bia",
+   "fixable": "block-gate",
+   "root_cause": "Corpus KHÔNG có thông tin độ sâu gai lốp mới: 'độ sâu gai'/'8mm'/'9mm'/'lốp mới' = 0 hit (chỉ có ngưỡng 1.6mm/70% trong [II]). Bot bịa 'từ 8mm đến 9mm' = số world-knowledge ngoài corpus. Đúng bẫy note L-056 (corpus KHÔNG có → phải nói không có info). Block mode BẬT nhưng numeric_fidelity n_numbers=0 → gate không nhận diện '8mm/9mm' (số kèm đơn vị mm) là numeric claim để chặn → lọt câu bịa số thay vì defer."
+  },
+  {
+   "id": "B-047",
+   "verdict": "lech",
+   "fixable": "coreference",
+   "root_cause": "Chain c46 follow-up 'Vậy SKU đó còn hàng không?' — rewritten=None, không có bước rewrite nào chạy để resolve 'SKU đó' về 225/45ZR18 (đã hỏi ở B-046). Retrieve rơi vào SKU vô quan Rovelo 175R13C (top_score chỉ 0.4047). Bot trả tồn 0 của 2-R13C 175/13 (DB: price 954000/qty 0) thay vì 225/45ZR18 tồn 39 (DB: 2-ZR18 225/45 LPD price 1440000/qty 39). Đúng entity nhưng sai dòng vì mất coreference. Số bot đưa (954.000/0) là data thật của entity SAI."
+  },
+  {
+   "id": "B-048",
+   "verdict": "refuse_oan",
+   "fixable": "retrieve",
+   "root_cause": "Rewrite ĐÃ resolve đúng coreference: rewritten='link ảnh lốp 225/45ZR18 H/P'. Nhưng retrieve với query generic 'link ảnh' kéo về chunk 155/80R13 (top_score 0.8656) thay vì 225/45ZR18. LLM ghép số lạ '1.656.000' (không phải giá SKU nào đúng), numeric gate bắt n_unsupported=1 → block ra oos-template. Corpus CÓ đáp án (image links của 225/45ZR18 đã xuất hiện exact ở chunk B-046 score 1.0) nên block này là refuse_oan, không phải defer hợp lệ. Gate hoạt động đúng (chặn số bịa) nhưng gốc là retrieve miss entity đã được rewrite chuẩn."
+  },
+  {
+   "id": "B-050",
+   "verdict": "lech",
+   "fixable": "coreference",
+   "root_cause": "Chain c49 follow-up 'Tính giúp anh giá của 1 cặp (2 chiếc)' — rewritten=None, không carry entity 205/55R16 từ B-049. Retrieve chọn chunk 155/80R13 (top_score 0.5908) → bot tính cặp trên SKU SAI: 684.000×2=1.368.000. Đúng phải là 205/55R16 (DB: 2-R16 205/55 LPD price 1044000) → cặp 2.088.000. Phép tính đúng số học nhưng grounded vào entity sai dòng do đứt coreference. Giá 684.000 là data thật của 155/80R13 (DB confirm) nên không bịa số, chỉ sai entity."
+  },
+  {
+   "id": "B-052",
+   "verdict": "refuse_oan",
+   "fixable": "retrieve",
+   "root_cause": "Coreference follow-up 'link Drive của nó' = 165/60R14. Corpus CÓ link (DB: 2-R14 165/60 LPD image=1e7FaVP5..., RVL image=1aj8tidsu...). LLM nhớ đúng giá 684.000/648.000 từ history nhưng retrieve turn này miss entity — topK trả chunk sai (2-R12C155/12, 175/60R15) score 0.52, KHÔNG có 165/60R14. Numeric gate flag 684.000/648.000 = n_unsupported=2 (không ground trong chunk turn này) → block bằng OOS price template. Bot đáng lẽ trả link. Immutable cause: follow-up retrieval không re-fetch SKU antecedent 165/60R14."
+  },
+  {
+   "id": "B-055",
+   "verdict": "sai_bia",
+   "fixable": "grounding-nonnumeric",
+   "root_cause": "Corpus row 2-ZR21 275/40 DVT CHỈ có: productname 'Lốp xe DAVANTI 275/40ZR21 107Y XL DX640', price 3.240.000, quantity 251, image, model DX640 (verified DB attributes_json — không có trường mô tả/đặc điểm nào). Bot bịa nguyên list 5 gạch đầu dòng marketing phi-số: 'gai bám tối ưu công nghệ hình học đặc biệt', 'giảm tiếng ồn/rung động', 'vật liệu cao su tổng hợp đặc biệt', 'độ bền cao chống mài mòn', '300km/h' — world-knowledge/marketing KHÔNG có trong corpus. Chỉ 107Y/XL/251/3.240.000 là grounded. Numeric gate cho qua (n_grounded=1, n_unsupported=0) vì mọi SỐ đều đúng; gate không bắt bịa PHI-SỐ."
+  },
+  {
+   "id": "B-056",
+   "verdict": "refuse_oan",
+   "fixable": "retrieve",
+   "root_cause": "Coreference 'sản phẩm đó' = Davanti 275/40ZR21. Corpus CÓ giá 3.240.000 (DB: 2-ZR21 275/40 DVT price_primary=3240000). LLM nhớ đúng 3.240.000 từ history nhưng retrieve turn này trả chunk synonym-list sai (155/80R13, 195R15C, 225/45R17 xe-3) score 0.78-0.82, KHÔNG chứa giá Davanti. Numeric gate flag 3.240.000 = n_unsupported=1 → block OOS price template dù giá là thật. Immutable cause: follow-up retrieval miss SKU 2-ZR21 275/40 DVT."
+  },
+  {
+   "id": "B-059",
+   "verdict": "lech",
+   "fixable": "grounding-nonnumeric",
+   "root_cause": "Sheet lịch về hàng (attributes_json->>''='28-thg 11') CHỈ chứa LANDSPIDER/CITYTRAXX (54 dòng verified DB, KHÔNG có dòng ROVELO nào). 195/65R15 91H CITYTRAXX G/P (Landspider) CÓ trong sheet 28/11; Rovelo 195/65R15 A68 KHÔNG (chunk score 1.0: LPD row có ': 28-thg 11', RVL row date1=25 không có marker 28/11). Bot trả 'hai loại đang về ngày 28-thg 11' áp date 28/11 cho CẢ Rovelo = misattribution scope sang dòng sai. Giá/tồn (972.000/313, 981.000/45) grounded đúng; bot KHÔNG bịa số lượng về (dùng tồn hiện có 'hiện còn' — đúng note). Defect = claim '28/11' cho Rovelo (phi-số) không ground."
+  },
+  {
+   "id": "B-060",
+   "verdict": "refuse_oan",
+   "fixable": "retrieve",
+   "root_cause": "Coreference 'mã đó' = 195/65R15 (từ B-059). Corpus CÓ giá (DB: 2-R15 195/65 LPD=972000, 2-R15 195/65 RVL=981000). LLM nhớ đúng 972.000/981.000 nhưng retrieve turn này trả chunk sai (155/80R13, 195/75R16C, 195R15C xe-3) score 0.42-0.43, KHÔNG chứa giá 195/65R15. Numeric gate flag cả 2 số = n_unsupported=2 → block OOS price template dù giá là thật. Immutable cause: follow-up retrieval miss SKU 2-R15 195/65 LPD/RVL."
+  },
+  {
+   "id": "B-062",
+   "verdict": "thieu",
+   "fixable": "retrieve",
+   "root_cause": "Ground truth = 9 entity WILDTRAXX A/T giá >2tr (DB document_service_index, productname ILIKE '%WILDTRAXX%' AND price_primary>2000000): 255/70R16=2.079M, 265/70R16=2.133M, 245/65R17=2.268M(2-R17 245/65 LPD WILLTRAXX, qty 64), 265/65R17=2.322M, 265/60R18=2.412M, 265/50R20=2.601M, LT285/70R17=3.123M, LT285/65R18=3.267M, 285/50R20=3.267M. Bot liệt kê theo thứ tự giá tăng dần nhưng BỎ SÓT 245/65R17 (2.268.000/64) — item này nằm giữa 2.133 và 2.322 (cả hai đều có trong list bot) nên chắc chắn bị drop, không phải do truncate cuối. Chunk aggregation-card topk=1 score=1.0 nhưng row 245/65R17 không được đưa vào/LLM bỏ qua. n_grounded 7/7 (không bịa số) nhưng coverage thiếu."
+  },
+  {
+   "id": "B-063",
+   "verdict": "sai_bia",
+   "fixable": "grounding-nonnumeric",
+   "root_cause": "3 entity + giá ĐÚNG HẾT (DB: 265/65R17 H/T=1.854M/216, A/T Wildtraxx=2.322M/40, Rovelo A/T=2.430M/1; n_grounded 3/3). NHƯNG bot bịa mô tả gai không có trong corpus: 'gai dạng đường phố phù hợp đi thành phố và cao tốc', 'gai dạng địa hình chịu được đường đất địa hình xấu', 'bền bỉ phù hợp cả đường nhựa và off-road nhẹ'. Verify: SELECT count(*) trên document_service_index + document_chunks với ILIKE '%đường phố%'/'%địa hình%'/'%độ bám%' = 0 rows. Corpus CHỈ có productname/price/quantity/image, KHÔNG có bất kỳ mô tả tread nào. Đây là world-knowledge fabrication phi-số → block-gate (numeric) không bắt được vì n_numbers grounded. Note L-090 'không bịa mô tả gai' bị vi phạm."
+  },
+  {
+   "id": "B-064",
+   "verdict": "sai_bia",
+   "fixable": "grounding-nonnumeric",
+   "root_cause": "Date-sheet 28/11 (attributes_json->>''='28-thg 11') có ĐÚNG 10 size 18-inch: 225/45ZR18, 225/50ZR18, 225/55ZR18, 225/60R18, 235/40ZR18, 235/55ZR18, 235/60R18, 245/45ZR18, 255/55R18, 255/60R18. Bot BỊA 4 size 18-inch KHÔNG có trên sheet (verify on_sheet=0): 255/55ZR18, 275/45ZR18, 215/55ZR18, 205/50ZR18 — thực tế sheet có 255/55ZR20, 275/45ZR21, 215/55ZR17, 205/50ZR17 (bot corrupt inch). Đồng thời DUPLICATE nặng (245/45ZR18 ×4, 235/55ZR18 ×3) và SÓT 235/60R18 (có trên sheet). Chunk date-sheet topk=1 score=1.0 nhưng LLM đọc sai/nhân bản token từ 1 chunk dày. n_numbers=0 nên block-gate không chặn."
+  },
+  {
+   "id": "B-065",
+   "verdict": "thieu",
+   "fixable": "retrieve",
+   "root_cause": "Giá ĐÚNG (DB: 235/55ZR18 104WXL = 1.701.000/122, n_grounded 1/1). NHƯNG câu hỏi 2 phần 'khi nào về + giá'; 235/55ZR18 104WXL CITYTRAXX H/P CÓ trên date-sheet với ngày về = '28-thg 11' (verify attributes_json->>''='28-thg 11'). Bot trả 'tài liệu không ghi rõ ngày về cụ thể cho mã này' = CHỐI OAN dữ kiện corpus CÓ. score_max=0.6805, topk=15 nhưng chunk MARKS/date-sheet không lọt top-5 chunks_to_llm → LLM không thấy dòng ngày về của size này. Coverage thiếu phần ngày-về."
+  },
+  {
+   "id": "B-066",
+   "verdict": "sai_bia",
+   "fixable": "grounding-nonnumeric",
+   "root_cause": "Bot bịa nguyên khối kiến thức world-knowledge: H/P='High Performance... độ bám tốt đường nhựa khô ướt, ổn định tốc độ cao, xe thể thao động cơ mạnh'; A/T='All Terrain... gai sâu chịu địa hình hỗn hợp đường đất đá cát, độ bám nhựa kém hơn'. Verify corpus: 0 rows chứa 'High Performance'/'All Terrain'/'độ bám'/'địa hình' cả trong document_service_index lẫn document_chunks. Corpus KHÔNG có bất kỳ mô tả đặc điểm sản phẩm nào — chỉ có bảng giá/tồn. Bot tự thừa nhận 'CITYTRAXX A/T không được đề cập' nhưng VẪN bịa full mô tả A/T. n_numbers=0 → block-gate không chặn được bịa phi-số."
+  },
+  {
+   "id": "B-068",
+   "verdict": "thieu",
+   "fixable": "retrieve",
+   "root_cause": "Giá + tồn ĐÚNG (DB: 255/60R18 112HXL CITYTRAXX H/T = 1.944.000/156, n_grounded 1/1). Câu hỏi trực tiếp 'có lịch về hàng không' — 255/60R18 112HXL CITYTRAXX H/T CÓ trên date-sheet ngày về '28-thg 11' (verify attributes_json->>''='28-thg 11'). Bot trả 'hiện đang có hàng, không cần chờ về thêm' = né/bỏ dữ kiện lịch về hàng mà corpus CÓ. Chunk topk=1 score=1.0 chỉ là card giá/tồn, chunk date-sheet không được retrieve → LLM không biết mã này nằm trong lịch 28/11. Coverage thiếu phần lịch về."
+  },
+  {
+   "id": "B-069",
+   "verdict": "thieu",
+   "fixable": "retrieve",
+   "root_cause": "Ground truth 13-inch: 11 mã R13 (DB productname ILIKE '%R13%', quantity numeric), tổng tồn = 595 (155/70R13=100, 155/80R13=214, 165/65R13=35, 165/70R13=0, 165/80R13=204, 175/70R13 LPD=18, 175/70R13 RHP=16, 185/70R13=0, 155R13C=8, 165R13C=0, 175R13C=0). Bot chỉ liệt kê 4 mã (155/80=214, 165/80=204, 175/70=18, 175R13C=0) → tổng bịa 436. Bỏ sót 7 mã (100+35+0+16+0+8+0=159 tồn không tính). score_max=0.4739 (retrieval yếu nhất trong 10 câu), chunks_to_llm=5 chỉ phủ 4 R13 → LLM cộng trên tập thiếu. numeric_fidelity n_numbers=0/n_grounded=0 KHÔNG bắt được derived-sum sai (checker không validate phép cộng). Đây là lỗi coverage nghiêm trọng nhất trong lô."
+  },
+  {
+   "id": "B-070",
+   "verdict": "lech",
+   "fixable": "retrieve",
+   "root_cause": "Câu hỏi giới hạn scope 'danh sách hàng về ngày 28/11'. Bot trả 285/45ZR22 114WXL = 3.735.000 — nhưng 285/45ZR22 KHÔNG có trên date-sheet (verify entity_name ILIKE '%285/45ZR22%' AND ngày về = 0 rows; sheet max size là 275/45ZR21). Đáp án đúng trong scope: join 54 size date-sheet với bảng giá → max = 275/45ZR21 110WXL = 3.312.000 (2-ZR21 275/45 LPD). Số 3.735.000 là giá thật của 1 mã ngoài scope → n_grounded 1/1 (không bịa số) nhưng SAI ENTITY/SCOPE cho ràng buộc 'về 28/11'. topk=1 score=1.0 chỉ lấy chunk giá cao nhất toàn kho, không join với date-sheet → không lọc theo scope 28/11."
+  }
+ ],
+ "all": [
+  {
+   "id": "G-001",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-002",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-003",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-004",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-005",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-006",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-007",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-008",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-009",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-010",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-011",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-012",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-013",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-014",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-015",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-016",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-017",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-018",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-019",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-020",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-021",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-022",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-023",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-024",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-025",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-026",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-027",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-028",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-029",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-030",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-031",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-032",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-033",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-034",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-035",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-036",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-037",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-038",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-039",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-040",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-041",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-042",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-043",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-044",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-045",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-046",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-047",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-048",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-049",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-050",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-051",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-052",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-053",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-054",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-055",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-056",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-057",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-058",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-059",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-060",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-061",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-062",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-063",
+   "verdict": "sai_bia",
+   "fail_step": "generate/ingest",
+   "root_cause": "Cột 'NGÀY VỀ' (arrival date) mất tên header khi ingest → lưu dưới key rỗng trong document_service_index: row entity_name='205/55R16 91V CITYTRAXX G/P' có attributes_json={\"\": \"28-thg 11\", \"chunk_index\": 0} (DB xác nhận 55 rows có key '' value '28-thg 11', header row value 'NGÀY VỀ'). Chunk gửi LLM CÓ chứa '| : 28-thg 11' (retrieval OK) nhưng field không tên → LLM không nhận ra đó là ngày về hàng → bỏ qua giá trị expect 28-thg 11 và BỊA claim phi-số 'hiện đang còn hàng, không cần chờ về thêm' (mâu thuẫn dữ liệu có lịch về hàng). Số grounded đúng (giá 1.044.000, qty 734) nên block-gate numeric không bắt.",
+   "fixable": "ingest"
+  },
+  {
+   "id": "G-064",
+   "verdict": "sai_bia",
+   "fail_step": "generate/ingest",
+   "root_cause": "Cùng gốc rễ G-063: arrival date '28-thg 11' của 195/65R15 nằm dưới key rỗng '' trong document_service_index (entity_name='195/65R15 91H CITYTRAXX G/P', attributes_json={\"\": \"28-thg 11\", \"chunk_index\": 0}). Chunk CÓ '| : 28-thg 11' nhưng vô danh → LLM bỏ qua expect và bịa 'không cần chờ về thêm'. Numeric grounded (972.000, 313) nên gate không block.",
+   "fixable": "ingest"
+  },
+  {
+   "id": "G-065",
+   "verdict": "thieu",
+   "fail_step": "generate/ingest",
+   "root_cause": "Arrival date '28-thg 11' của 225/45ZR18 tồn tại trong corpus dưới key rỗng '' (entity_name='225/45ZR18 95WXL CITYTRAXX H/P', attributes_json={\"\": \"28-thg 11\", \"chunk_index\": 0}) và CÓ trong chunk gửi LLM. Bot chỉ trả 'hiện đang có hàng rồi ạ' + giá/qty đúng nhưng BỎ SÓT giá trị expect 28-thg 11 (field vô danh nên LLM không surface). Khác G-063/064: không kèm claim sai 'không cần chờ về thêm' nên chỉ là thiếu, không bịa.",
+   "fixable": "ingest"
+  },
+  {
+   "id": "G-066",
+   "verdict": "sai_bia",
+   "fail_step": "generate/ingest",
+   "root_cause": "Cùng gốc rễ: '28-thg 11' của 235/60R18 dưới key rỗng '' (entity_name='235/60R18 107HXL CITYTRAXX H/T'). Chunk CÓ '| : 28-thg 11' nhưng vô danh → bot bịa 'hiện đang còn hàng, không cần chờ về thêm' (phủ nhận có lịch về hàng, mâu thuẫn corpus) và bỏ qua expect. Số grounded (1.755.000, 191) → gate không block.",
+   "fixable": "ingest"
+  },
+  {
+   "id": "G-067",
+   "verdict": "sai_bia",
+   "fail_step": "grounding-nonnumeric",
+   "root_cause": "Bot ĐÃ surface đúng expect '28-thg 11' (arrival date từ key rỗng '') NHƯNG bịa thêm claim ngày phi-số không grounded: 'đã có sẵn từ ngày 26/11' — LLM biến field thô date1='26' (bare number, không có ngữ nghĩa tháng trong DB) thành ngày '26/11'. numeric_fidelity n_grounded=1 nên block-gate không bắt (28-thg 11 và 26 đều trace được về chunk), nhưng phép biến đổi '26'→'26/11' là bịa ngữ nghĩa ngày → cần lớp grounding claim phi-số. Arrival value đúng nhưng câu chứa hallucination ngày.",
+   "fixable": "grounding-nonnumeric"
+  },
+  {
+   "id": "G-068",
+   "verdict": "sai_bia",
+   "fail_step": "generate/ingest",
+   "root_cause": "Cùng gốc rễ: '28-thg 11' của 215/65R16 dưới key rỗng '' (entity_name='215/65R16 98H CITYTRAXX G/P'). Chunk CÓ '| : 28-thg 11' vô danh → bot bịa 'hiện đang còn hàng, không cần chờ về thêm ạ' (phủ nhận lịch về hàng) + bỏ qua expect. Số grounded (1.260.000, 28) → gate không block.",
+   "fixable": "ingest"
+  },
+  {
+   "id": "G-069",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-070",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-071",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-072",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-073",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-074",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-075",
+   "verdict": "refuse_dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-076",
+   "verdict": "refuse_dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-077",
+   "verdict": "sai_bia",
+   "fail_step": "generate",
+   "root_cause": "Corpus DB xác nhận 2-R16 195/55 RVL price=NULL (trap hợp lệ) NHƯNG Rovelo LÀ hãng có phân phối (document_service_index có 33 entry RVL có giá, vd 2-R14 175/70 RVL=729000; G-099 expect Rovelo là brand chính). Retrieve topk_cand=1 chỉ trả về chunk sai-hãng '2-R16 195/55 LPD: 1044000' (LANDSPIDER cùng size), KHÔNG có dòng '195/55 RVL | price: —'. LLM không thấy dòng Rovelo nào nên bịa phủ nhận phi-số 'bên em chưa phân phối hãng Rovelo' — sai sự thật scope. numeric_fidelity n_numbers=0 nên block-gate (chỉ soi số) không bắt được. Đúng ra phải defer 'chưa có giá size này' như G-076/G-079 (nơi chunk CÓ dòng RVL price=—).",
+   "fixable": "grounding-nonnumeric"
+  },
+  {
+   "id": "G-078",
+   "verdict": "sai_bia",
+   "fail_step": "generate",
+   "root_cause": "Corpus DB xác nhận 2-R15 205/65 RVL price=NULL (trap hợp lệ) NHƯNG Rovelo LÀ hãng có phân phối (33 entry RVL có giá trong document_service_index). Retrieve topk_cand=1 chỉ trả chunk sai-hãng '2-R15 205/65 LPD: 999000' (LANDSPIDER cùng size), KHÔNG có dòng '205/65 RVL | price: —'. LLM bịa phủ nhận phi-số 'bên em chưa phân phối hãng Rovelo' — trái corpus. n_numbers=0 nên block-gate không chặn. Đúng ra phải defer như G-076/G-079 (chunk có dòng RVL price=—).",
+   "fixable": "grounding-nonnumeric"
+  },
+  {
+   "id": "G-079",
+   "verdict": "refuse_dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-080",
+   "verdict": "refuse_dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-081",
+   "verdict": "refuse_dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-082",
+   "verdict": "refuse_dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-083",
+   "verdict": "refuse_dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-084",
+   "verdict": "refuse_dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-085",
+   "verdict": "refuse_dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-086",
+   "verdict": "refuse_dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-087",
+   "verdict": "refuse_dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-088",
+   "verdict": "refuse_dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-089",
+   "verdict": "refuse_dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-090",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-091",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-092",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-093",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-094",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-095",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-096",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-097",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-098",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "G-099",
+   "verdict": "thieu",
+   "fail_step": "retrieve",
+   "root_cause": "Câu hỏi liệt kê thương hiệu phân phối; corpus có 4 brand đang bán trong document_service_index (LPD 129sp, RVL 39sp, DVT 7sp giá 1.152.000-3.240.000 còn hàng qty 92-528, NEO 1sp price=None). Answer chỉ nêu 'hai thương hiệu chính là Landspider và Rovelo', SÓT Davanti (và Neoterra). Root: existence/brand-list intent chỉ retrieve 3 chunk, chunk score-anchor là doc chính sách bảo hành xe-1 ghi literal 'Áp dụng cho thương hiệu Landspider (Thailand) và Rovelo (Vietnam)' → LLM neo theo câu 2-brand đó. Corpus KHÔNG có 1 chunk canonical liệt kê toàn bộ brand; tập brand nằm rải trong product index. Cùng run G-100 lại khẳng định bot BÁN Davanti DX640 còn hàng → mâu thuẫn nội tại, chứng minh Davanti là brand phân phối thật, không phải bịa. Bot không sai/bịa, chỉ thiếu item.",
+   "fixable": "retrieve"
+  },
+  {
+   "id": "G-100",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-001",
+   "verdict": "refuse_dung",
+   "fail_step": "none",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-002",
+   "verdict": "sai_bia",
+   "fail_step": "generate+block-gate",
+   "root_cause": "Corpus row 2-ZR... '2-R16 195/65 NEO' has NO quantity key (attributes_json ? 'quantity' = false) and price NULL (document_service_index doc 1e394215). Retrieved chunk (score 1.0) did NOT contain the 2-R16 195/65 NEO row at all (chỉ có 185/55,195/50,195/55,195/60,195/75,205/55,205/60,205/65). Bot lại khẳng định 'hiện đang còn 0 lốp trong kho' — bịa số tồn cho SKU có quantity null. Numeric gate không bắt vì '0 lốp' bị coi là non-claim (0 = disabled), numeric_fidelity n_numbers=0.",
+   "fixable": "block-gate"
+  },
+  {
+   "id": "B-003",
+   "verdict": "dung",
+   "fail_step": "none",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-004",
+   "verdict": "dung",
+   "fail_step": "none",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-005",
+   "verdict": "refuse_dung",
+   "fail_step": "none",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-006",
+   "verdict": "refuse_dung",
+   "fail_step": "none",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-007",
+   "verdict": "dung",
+   "fail_step": "none",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-008",
+   "verdict": "refuse_dung",
+   "fail_step": "none",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-009",
+   "verdict": "dung",
+   "fail_step": "none",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-010",
+   "verdict": "refuse_dung",
+   "fail_step": "none",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-011",
+   "verdict": "sai_bia",
+   "fail_step": "generate",
+   "root_cause": "Corpus PHÂN PHỐI Rovelo rõ ràng: 50 SKU RVL (42 có giá) trong document_service_index; riêng '2-R16 205/60 RVL' (ROVELO 205/60R16 A68) tồn tại nhưng price_primary=NULL → đáng lẽ defer về GIÁ. Nhưng bot phủ nhận cả THƯƠNG HIỆU: 'Dạ bên em chưa phân phối hãng Rovelo ạ' — bịa scope phi-số, mâu thuẫn corpus. Chunk-to-LLM chỉ có dòng LANDSPIDER 2-R16 205/60 LPD (1098000), dòng RVL không được retrieve → LLM không thấy Rovelo nên bịa 'không phân phối'. Block-gate không bắt vì đây là claim phi-số (không có token số sai).",
+   "fixable": "grounding-nonnumeric"
+  },
+  {
+   "id": "B-012",
+   "verdict": "lech",
+   "fail_step": "generate",
+   "root_cause": "Hỏi '2-R15 185/55 RVL' (Rovelo). Corpus: dòng RVL '2-R15 185/55 RVL' (ROVELO 185/55R15 A68) có price_primary=NULL/quantity trống; dòng LANDSPIDER '2-R15 185/55 LPD' = 810000/quantity 779. Bot trả 'Rovelo 185/55R15 RHP-A68 giá 810.000đ, còn 779 lốp' — lấy giá+tồn của dòng LANDSPIDER gán cho tên sản phẩm ROVELO → trộn entity LPD↔RVL. Số 810000/779 là số THẬT nhưng của dòng khác thương hiệu. numeric_fidelity báo n_grounded=1, n_misattributed=0 nên block-gate không chặn (số có tồn tại trong ngữ cảnh, chỉ sai chủ thể).",
+   "fixable": "coreference"
+  },
+  {
+   "id": "B-013",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-014",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-015",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-016",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-017",
+   "verdict": "refuse_oan",
+   "fail_step": "retrieve",
+   "root_cause": "Corpus CÓ đủ đáp án: '2-R16 205/65 LPD'=1170000, '2-ZR18 235/40 LPD'=1602000 → 235/40R18 đắt hơn. Nhưng chunks-to-LLM chỉ chứa dòng-có-giá của 205/65 (chunk 2: 1170000) còn 235/40 chỉ là chunk synonym-header (part 74/187) KHÔNG kèm giá; dòng '2-ZR18 235/40 LPD:1602000' không lọt vào 13 chunk. LLM thiếu giá 235/40 nên vơ 1.800.000 (giá của SKU lân cận 235/65 hoặc 235/55) gán cho 235/40r18 → block-gate bắt đúng token misattributed 1.800.000 và defer. Block-gate hoạt động đúng (ngăn 1 lỗi lệch), nhưng câu vốn TRẢ LỜI ĐƯỢC → refuse oan; gốc là retrieve miss dòng-có-giá của 235/40.",
+   "fixable": "retrieve"
+  },
+  {
+   "id": "B-018",
+   "verdict": "refuse_oan",
+   "fail_step": "retrieve",
+   "root_cause": "Corpus CÓ dữ liệu: ~29 SKU quantity<5 (vd 2-R15 215/70 LPD=2, 2-ZR20 245/40 LPD=1, 2-R17 245/70 LPD HT=1...). Đây là truy vấn AGGREGATION toàn bảng nhưng retrieve chunk-based chỉ mang về vài chunk synonym-header rời rạc, không enumerate được toàn bộ dòng tồn<5. LLM cố liệt kê từ chunk lẻ → gán sai 1.287.000 cho '195/65r15 rhp-a68' → block-gate bắt misattributed và defer (đúng chức năng chống bịa). Nhưng câu là answerable-in-principle (dữ liệu có trong index) → refuse oan; gốc là retrieval không phục vụ aggregation quét-bảng.",
+   "fixable": "retrieve"
+  },
+  {
+   "id": "B-019",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-020",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-021",
+   "verdict": "refuse_oan",
+   "fail_step": "retrieve",
+   "root_cause": "Corpus CÓ đáp án: đúng 1 chunk chứa 'Áp dụng cho thương hiệu Landspider (Thailand) và Rovelo (Vietnam)' (warranty policy header, verified psql: count=1 chunk chứa 'Thailand'). Chunk này chính là chunk0 mà B-027 (Rovelo origin) retrieve được ở score 0.3501. Nhưng với query B-021 'Lốp Landspider xuất xứ từ đâu?', retrieval trả score_max=0.2726 và KHÔNG có chunk origin trong top-3 (chỉ lấy warranty §I 'Phạm vi áp dụng' + 2 chunk bảng inventory xe-1). Bot vì thế trả 'không có thông tin về xuất xứ' → refuse SAI (silent retrieval miss). Đối xứng với B-027 cùng nguồn chunk: query 'Rovelo sản xuất ở đâu' surface được chunk, 'Landspider xuất xứ' thì không — chênh lệch embedding cross-phrasing khiến chunk 0.35 rớt khỏi top-K của B-021.",
+   "fixable": "retrieve"
+  },
+  {
+   "id": "B-022",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-023",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-024",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-025",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-026",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-027",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-028",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-029",
+   "verdict": "refuse_dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-030",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-031",
+   "verdict": "sai_bia",
+   "fail_step": "grounding-nonnumeric (LLM khẳng định scope ngoài corpus)",
+   "root_cause": "Corpus [I. Phạm vi áp dụng] (document_chunks chunk_index=1) giới hạn RÕ 'lốp xe du lịch (PCR) Landspider và Rovelo'; 'xe tải' xuất hiện 0 lần trong toàn bộ warranty doc (6 hit 'xe tải/TBR/LTR' chỉ nằm trong bảng tồn kho SP, không phải chính sách). Bot trả 'chính sách bảo hành CÓ áp dụng cho lốp xe tải' — bịa mở rộng scope phi-số. Đúng bẫy note L-060 (chỉ PCR/du lịch — không bịa 'có'). Block-gate không bắt vì đây là claim phi-số (n_numbers=0).",
+   "fixable": "grounding-nonnumeric"
+  },
+  {
+   "id": "B-032",
+   "verdict": "lech",
+   "fail_step": "block-gate (số %/giá-trị suy diễn không bắt) + LLM gán sai đại lượng",
+   "root_cause": "Corpus [II.2] (chunk_index=2) nói 'Bồi thường theo tỷ lệ % gai CÒN LẠI so với gai mới' — là công thức theo % gai, KHÔNG phải '% giá trị lốp'. Bot suy 40% mòn → 60% gai còn (đúng), nhưng khẳng định 'được bồi thường 60% GIÁ TRỊ lốp' — gán con số 60% sang đại lượng sai (giá trị thay vì tỷ lệ gai). Corpus không hề nói 60% giá trị. numeric_fidelity n_numbers=0 chứng minh gate không trích được '60%' để chấm grounding → block mode bật nhưng không chặn con số bịa. Đáng lẽ theo note: chỉ nói rơi vào bracket còn-60% + bồi theo tỷ lệ gai, KHÔNG chốt '60% giá trị'.",
+   "fixable": "block-gate"
+  },
+  {
+   "id": "B-033",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-034",
+   "verdict": "sai_bia",
+   "fail_step": "grounding-nonnumeric (bịa chi tiết phi-số cụ thể ngoài corpus)",
+   "root_cause": "Corpus [III] (chunk_index=3) chỉ ghi 'Biến dạng do điều kiện bảo quản không đúng'; các từ 'nhiệt độ (cao)/ẩm ướt/ánh nắng/nóng' = 0 hit trong corpus. Bot đúng verdict 'không được bảo hành' NHƯNG chèn thêm chi tiết bịa '(như nhiệt độ cao, ẩm ướt, ánh nắng trực tiếp)' — đúng bẫy note L-068 (tài liệu chỉ nói 'bảo quản sai' — không thêm 'nóng ẩm'). Đây là fabricate phi-số (specifics không có nguồn), cần lớp grounding claim phi-số bắt.",
+   "fixable": "grounding-nonnumeric"
+  },
+  {
+   "id": "B-035",
+   "verdict": "sai_bia",
+   "fail_step": "block-gate (không bắt số có đơn vị mm) + LLM bịa world-knowledge",
+   "root_cause": "Corpus KHÔNG có thông tin độ sâu gai lốp mới: 'độ sâu gai'/'8mm'/'9mm'/'lốp mới' = 0 hit (chỉ có ngưỡng 1.6mm/70% trong [II]). Bot bịa 'từ 8mm đến 9mm' = số world-knowledge ngoài corpus. Đúng bẫy note L-056 (corpus KHÔNG có → phải nói không có info). Block mode BẬT nhưng numeric_fidelity n_numbers=0 → gate không nhận diện '8mm/9mm' (số kèm đơn vị mm) là numeric claim để chặn → lọt câu bịa số thay vì defer.",
+   "fixable": "block-gate"
+  },
+  {
+   "id": "B-036",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-037",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-038",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-039",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-040",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-041",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-042",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-043",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-044",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-045",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-046",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-047",
+   "verdict": "lech",
+   "fail_step": "understand_query/rewrite (coreference resolution)",
+   "root_cause": "Chain c46 follow-up 'Vậy SKU đó còn hàng không?' — rewritten=None, không có bước rewrite nào chạy để resolve 'SKU đó' về 225/45ZR18 (đã hỏi ở B-046). Retrieve rơi vào SKU vô quan Rovelo 175R13C (top_score chỉ 0.4047). Bot trả tồn 0 của 2-R13C 175/13 (DB: price 954000/qty 0) thay vì 225/45ZR18 tồn 39 (DB: 2-ZR18 225/45 LPD price 1440000/qty 39). Đúng entity nhưng sai dòng vì mất coreference. Số bot đưa (954.000/0) là data thật của entity SAI.",
+   "fixable": "coreference"
+  },
+  {
+   "id": "B-048",
+   "verdict": "refuse_oan",
+   "fail_step": "retrieve (post-rewrite) → block-gate",
+   "root_cause": "Rewrite ĐÃ resolve đúng coreference: rewritten='link ảnh lốp 225/45ZR18 H/P'. Nhưng retrieve với query generic 'link ảnh' kéo về chunk 155/80R13 (top_score 0.8656) thay vì 225/45ZR18. LLM ghép số lạ '1.656.000' (không phải giá SKU nào đúng), numeric gate bắt n_unsupported=1 → block ra oos-template. Corpus CÓ đáp án (image links của 225/45ZR18 đã xuất hiện exact ở chunk B-046 score 1.0) nên block này là refuse_oan, không phải defer hợp lệ. Gate hoạt động đúng (chặn số bịa) nhưng gốc là retrieve miss entity đã được rewrite chuẩn.",
+   "fixable": "retrieve"
+  },
+  {
+   "id": "B-049",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-050",
+   "verdict": "lech",
+   "fail_step": "understand_query/rewrite (coreference resolution)",
+   "root_cause": "Chain c49 follow-up 'Tính giúp anh giá của 1 cặp (2 chiếc)' — rewritten=None, không carry entity 205/55R16 từ B-049. Retrieve chọn chunk 155/80R13 (top_score 0.5908) → bot tính cặp trên SKU SAI: 684.000×2=1.368.000. Đúng phải là 205/55R16 (DB: 2-R16 205/55 LPD price 1044000) → cặp 2.088.000. Phép tính đúng số học nhưng grounded vào entity sai dòng do đứt coreference. Giá 684.000 là data thật của 155/80R13 (DB confirm) nên không bịa số, chỉ sai entity.",
+   "fixable": "coreference"
+  },
+  {
+   "id": "B-051",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-052",
+   "verdict": "refuse_oan",
+   "fail_step": "retrieve",
+   "root_cause": "Coreference follow-up 'link Drive của nó' = 165/60R14. Corpus CÓ link (DB: 2-R14 165/60 LPD image=1e7FaVP5..., RVL image=1aj8tidsu...). LLM nhớ đúng giá 684.000/648.000 từ history nhưng retrieve turn này miss entity — topK trả chunk sai (2-R12C155/12, 175/60R15) score 0.52, KHÔNG có 165/60R14. Numeric gate flag 684.000/648.000 = n_unsupported=2 (không ground trong chunk turn này) → block bằng OOS price template. Bot đáng lẽ trả link. Immutable cause: follow-up retrieval không re-fetch SKU antecedent 165/60R14.",
+   "fixable": "retrieve"
+  },
+  {
+   "id": "B-053",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-054",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-055",
+   "verdict": "sai_bia",
+   "fail_step": "generate",
+   "root_cause": "Corpus row 2-ZR21 275/40 DVT CHỈ có: productname 'Lốp xe DAVANTI 275/40ZR21 107Y XL DX640', price 3.240.000, quantity 251, image, model DX640 (verified DB attributes_json — không có trường mô tả/đặc điểm nào). Bot bịa nguyên list 5 gạch đầu dòng marketing phi-số: 'gai bám tối ưu công nghệ hình học đặc biệt', 'giảm tiếng ồn/rung động', 'vật liệu cao su tổng hợp đặc biệt', 'độ bền cao chống mài mòn', '300km/h' — world-knowledge/marketing KHÔNG có trong corpus. Chỉ 107Y/XL/251/3.240.000 là grounded. Numeric gate cho qua (n_grounded=1, n_unsupported=0) vì mọi SỐ đều đúng; gate không bắt bịa PHI-SỐ.",
+   "fixable": "grounding-nonnumeric"
+  },
+  {
+   "id": "B-056",
+   "verdict": "refuse_oan",
+   "fail_step": "retrieve",
+   "root_cause": "Coreference 'sản phẩm đó' = Davanti 275/40ZR21. Corpus CÓ giá 3.240.000 (DB: 2-ZR21 275/40 DVT price_primary=3240000). LLM nhớ đúng 3.240.000 từ history nhưng retrieve turn này trả chunk synonym-list sai (155/80R13, 195R15C, 225/45R17 xe-3) score 0.78-0.82, KHÔNG chứa giá Davanti. Numeric gate flag 3.240.000 = n_unsupported=1 → block OOS price template dù giá là thật. Immutable cause: follow-up retrieval miss SKU 2-ZR21 275/40 DVT.",
+   "fixable": "retrieve"
+  },
+  {
+   "id": "B-057",
+   "verdict": "refuse_dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-058",
+   "verdict": "refuse_dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-059",
+   "verdict": "lech",
+   "fail_step": "generate",
+   "root_cause": "Sheet lịch về hàng (attributes_json->>''='28-thg 11') CHỈ chứa LANDSPIDER/CITYTRAXX (54 dòng verified DB, KHÔNG có dòng ROVELO nào). 195/65R15 91H CITYTRAXX G/P (Landspider) CÓ trong sheet 28/11; Rovelo 195/65R15 A68 KHÔNG (chunk score 1.0: LPD row có ': 28-thg 11', RVL row date1=25 không có marker 28/11). Bot trả 'hai loại đang về ngày 28-thg 11' áp date 28/11 cho CẢ Rovelo = misattribution scope sang dòng sai. Giá/tồn (972.000/313, 981.000/45) grounded đúng; bot KHÔNG bịa số lượng về (dùng tồn hiện có 'hiện còn' — đúng note). Defect = claim '28/11' cho Rovelo (phi-số) không ground.",
+   "fixable": "grounding-nonnumeric"
+  },
+  {
+   "id": "B-060",
+   "verdict": "refuse_oan",
+   "fail_step": "retrieve",
+   "root_cause": "Coreference 'mã đó' = 195/65R15 (từ B-059). Corpus CÓ giá (DB: 2-R15 195/65 LPD=972000, 2-R15 195/65 RVL=981000). LLM nhớ đúng 972.000/981.000 nhưng retrieve turn này trả chunk sai (155/80R13, 195/75R16C, 195R15C xe-3) score 0.42-0.43, KHÔNG chứa giá 195/65R15. Numeric gate flag cả 2 số = n_unsupported=2 → block OOS price template dù giá là thật. Immutable cause: follow-up retrieval miss SKU 2-R15 195/65 LPD/RVL.",
+   "fixable": "retrieve"
+  },
+  {
+   "id": "B-061",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-062",
+   "verdict": "thieu",
+   "fail_step": "retrieve/generate — liệt kê thiếu 1 item",
+   "root_cause": "Ground truth = 9 entity WILDTRAXX A/T giá >2tr (DB document_service_index, productname ILIKE '%WILDTRAXX%' AND price_primary>2000000): 255/70R16=2.079M, 265/70R16=2.133M, 245/65R17=2.268M(2-R17 245/65 LPD WILLTRAXX, qty 64), 265/65R17=2.322M, 265/60R18=2.412M, 265/50R20=2.601M, LT285/70R17=3.123M, LT285/65R18=3.267M, 285/50R20=3.267M. Bot liệt kê theo thứ tự giá tăng dần nhưng BỎ SÓT 245/65R17 (2.268.000/64) — item này nằm giữa 2.133 và 2.322 (cả hai đều có trong list bot) nên chắc chắn bị drop, không phải do truncate cuối. Chunk aggregation-card topk=1 score=1.0 nhưng row 245/65R17 không được đưa vào/LLM bỏ qua. n_grounded 7/7 (không bịa số) nhưng coverage thiếu.",
+   "fixable": "retrieve"
+  },
+  {
+   "id": "B-063",
+   "verdict": "sai_bia",
+   "fail_step": "generate — bịa mô tả gai (phi-số)",
+   "root_cause": "3 entity + giá ĐÚNG HẾT (DB: 265/65R17 H/T=1.854M/216, A/T Wildtraxx=2.322M/40, Rovelo A/T=2.430M/1; n_grounded 3/3). NHƯNG bot bịa mô tả gai không có trong corpus: 'gai dạng đường phố phù hợp đi thành phố và cao tốc', 'gai dạng địa hình chịu được đường đất địa hình xấu', 'bền bỉ phù hợp cả đường nhựa và off-road nhẹ'. Verify: SELECT count(*) trên document_service_index + document_chunks với ILIKE '%đường phố%'/'%địa hình%'/'%độ bám%' = 0 rows. Corpus CHỈ có productname/price/quantity/image, KHÔNG có bất kỳ mô tả tread nào. Đây là world-knowledge fabrication phi-số → block-gate (numeric) không bắt được vì n_numbers grounded. Note L-090 'không bịa mô tả gai' bị vi phạm.",
+   "fixable": "grounding-nonnumeric"
+  },
+  {
+   "id": "B-064",
+   "verdict": "sai_bia",
+   "fail_step": "generate — bịa size 18-inch không tồn tại + duplicate + sót",
+   "root_cause": "Date-sheet 28/11 (attributes_json->>''='28-thg 11') có ĐÚNG 10 size 18-inch: 225/45ZR18, 225/50ZR18, 225/55ZR18, 225/60R18, 235/40ZR18, 235/55ZR18, 235/60R18, 245/45ZR18, 255/55R18, 255/60R18. Bot BỊA 4 size 18-inch KHÔNG có trên sheet (verify on_sheet=0): 255/55ZR18, 275/45ZR18, 215/55ZR18, 205/50ZR18 — thực tế sheet có 255/55ZR20, 275/45ZR21, 215/55ZR17, 205/50ZR17 (bot corrupt inch). Đồng thời DUPLICATE nặng (245/45ZR18 ×4, 235/55ZR18 ×3) và SÓT 235/60R18 (có trên sheet). Chunk date-sheet topk=1 score=1.0 nhưng LLM đọc sai/nhân bản token từ 1 chunk dày. n_numbers=0 nên block-gate không chặn.",
+   "fixable": "grounding-nonnumeric"
+  },
+  {
+   "id": "B-065",
+   "verdict": "thieu",
+   "fail_step": "retrieve — miss chunk date-sheet, chối oan ngày về",
+   "root_cause": "Giá ĐÚNG (DB: 235/55ZR18 104WXL = 1.701.000/122, n_grounded 1/1). NHƯNG câu hỏi 2 phần 'khi nào về + giá'; 235/55ZR18 104WXL CITYTRAXX H/P CÓ trên date-sheet với ngày về = '28-thg 11' (verify attributes_json->>''='28-thg 11'). Bot trả 'tài liệu không ghi rõ ngày về cụ thể cho mã này' = CHỐI OAN dữ kiện corpus CÓ. score_max=0.6805, topk=15 nhưng chunk MARKS/date-sheet không lọt top-5 chunks_to_llm → LLM không thấy dòng ngày về của size này. Coverage thiếu phần ngày-về.",
+   "fixable": "retrieve"
+  },
+  {
+   "id": "B-066",
+   "verdict": "sai_bia",
+   "fail_step": "generate — bịa toàn bộ định nghĩa H/P và A/T (phi-số)",
+   "root_cause": "Bot bịa nguyên khối kiến thức world-knowledge: H/P='High Performance... độ bám tốt đường nhựa khô ướt, ổn định tốc độ cao, xe thể thao động cơ mạnh'; A/T='All Terrain... gai sâu chịu địa hình hỗn hợp đường đất đá cát, độ bám nhựa kém hơn'. Verify corpus: 0 rows chứa 'High Performance'/'All Terrain'/'độ bám'/'địa hình' cả trong document_service_index lẫn document_chunks. Corpus KHÔNG có bất kỳ mô tả đặc điểm sản phẩm nào — chỉ có bảng giá/tồn. Bot tự thừa nhận 'CITYTRAXX A/T không được đề cập' nhưng VẪN bịa full mô tả A/T. n_numbers=0 → block-gate không chặn được bịa phi-số.",
+   "fixable": "grounding-nonnumeric"
+  },
+  {
+   "id": "B-067",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-068",
+   "verdict": "thieu",
+   "fail_step": "retrieve — miss chunk date-sheet, sót lịch về hàng",
+   "root_cause": "Giá + tồn ĐÚNG (DB: 255/60R18 112HXL CITYTRAXX H/T = 1.944.000/156, n_grounded 1/1). Câu hỏi trực tiếp 'có lịch về hàng không' — 255/60R18 112HXL CITYTRAXX H/T CÓ trên date-sheet ngày về '28-thg 11' (verify attributes_json->>''='28-thg 11'). Bot trả 'hiện đang có hàng, không cần chờ về thêm' = né/bỏ dữ kiện lịch về hàng mà corpus CÓ. Chunk topk=1 score=1.0 chỉ là card giá/tồn, chunk date-sheet không được retrieve → LLM không biết mã này nằm trong lịch 28/11. Coverage thiếu phần lịch về.",
+   "fixable": "retrieve"
+  },
+  {
+   "id": "B-069",
+   "verdict": "thieu",
+   "fail_step": "retrieve — topK miss 7/11 mã R13, tổng cộng sai",
+   "root_cause": "Ground truth 13-inch: 11 mã R13 (DB productname ILIKE '%R13%', quantity numeric), tổng tồn = 595 (155/70R13=100, 155/80R13=214, 165/65R13=35, 165/70R13=0, 165/80R13=204, 175/70R13 LPD=18, 175/70R13 RHP=16, 185/70R13=0, 155R13C=8, 165R13C=0, 175R13C=0). Bot chỉ liệt kê 4 mã (155/80=214, 165/80=204, 175/70=18, 175R13C=0) → tổng bịa 436. Bỏ sót 7 mã (100+35+0+16+0+8+0=159 tồn không tính). score_max=0.4739 (retrieval yếu nhất trong 10 câu), chunks_to_llm=5 chỉ phủ 4 R13 → LLM cộng trên tập thiếu. numeric_fidelity n_numbers=0/n_grounded=0 KHÔNG bắt được derived-sum sai (checker không validate phép cộng). Đây là lỗi coverage nghiêm trọng nhất trong lô.",
+   "fixable": "retrieve"
+  },
+  {
+   "id": "B-070",
+   "verdict": "lech",
+   "fail_step": "retrieve — trả item ngoài scope 'hàng về 28/11'",
+   "root_cause": "Câu hỏi giới hạn scope 'danh sách hàng về ngày 28/11'. Bot trả 285/45ZR22 114WXL = 3.735.000 — nhưng 285/45ZR22 KHÔNG có trên date-sheet (verify entity_name ILIKE '%285/45ZR22%' AND ngày về = 0 rows; sheet max size là 275/45ZR21). Đáp án đúng trong scope: join 54 size date-sheet với bảng giá → max = 275/45ZR21 110WXL = 3.312.000 (2-ZR21 275/45 LPD). Số 3.735.000 là giá thật của 1 mã ngoài scope → n_grounded 1/1 (không bịa số) nhưng SAI ENTITY/SCOPE cho ràng buộc 'về 28/11'. topk=1 score=1.0 chỉ lấy chunk giá cao nhất toàn kho, không join với date-sheet → không lọc theo scope 28/11.",
+   "fixable": "retrieve"
+  },
+  {
+   "id": "B-071",
+   "verdict": "refuse_dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-072",
+   "verdict": "refuse_dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-073",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-074",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-075",
+   "verdict": "refuse_dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-076",
+   "verdict": "refuse_dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-077",
+   "verdict": "refuse_dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-078",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-079",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-080",
+   "verdict": "refuse_dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-081",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-082",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-083",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-084",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-085",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-086",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-087",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-088",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-089",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-090",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-091",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-092",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-093",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-094",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-095",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-096",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-097",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-098",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-099",
+   "verdict": "refuse_dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  },
+  {
+   "id": "B-100",
+   "verdict": "dung",
+   "fail_step": "",
+   "root_cause": "",
+   "fixable": "none"
+  }
+ ]
+}
