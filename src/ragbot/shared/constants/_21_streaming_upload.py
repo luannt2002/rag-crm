@@ -254,3 +254,10 @@ SERVED_CHUNKS_PERSIST_MAX_CHARS: Final[int] = 400
 # 002-C: cap per-sub-query stats lookups when a decomposed comparison joins
 # the fan-out (bounds DB round-trips; comparisons are 2-3 legs in practice).
 DEFAULT_DECOMPOSE_STATS_MAX_SUBS: Final[int] = 4
+
+# 002-B: trace-harness chunk capture cap. 500 chars blinded the grader (the
+# exact-SKU row sat past the alias megacell → 4 wrongful sai_bia verdicts);
+# the capture's own docstring promises "grader sees exactly what the LLM saw".
+# Capped (not unlimited) to keep evidence JSONs committable; every truncation
+# now carries an explicit flag so no verdict may rely on a cut chunk.
+TRACE_CHUNK_CAPTURE_MAX_CHARS: Final[int] = 2000

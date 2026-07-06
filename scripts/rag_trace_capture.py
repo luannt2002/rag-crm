@@ -94,13 +94,18 @@ def _record(q: dict, resp: dict) -> dict:
     chunks = resp.get("retrieved_chunks_content") or []
     # Keep full chunk text (capped) + score so the grader sees exactly what the
     # LLM saw and can judge whether the answer WAS supported by retrieval.
-    trimmed = [
-        {
+    from ragbot.shared.constants import TRACE_CHUNK_CAPTURE_MAX_CHARS  # noqa: PLC0415
+
+    def _cap(ch: dict) -> dict:
+        _txt = ch.get("content") or ch.get("text") or ""
+        return {
             "score": ch.get("score") or ch.get("rerank_score") or ch.get("rrf_score"),
-            "content": (ch.get("content") or ch.get("text") or "")[:500],
+            "content": _txt[:TRACE_CHUNK_CAPTURE_MAX_CHARS],
+            # 002-B: a verdict must never silently rely on a cut chunk.
+            "truncated": len(_txt) > TRACE_CHUNK_CAPTURE_MAX_CHARS,
         }
-        for ch in chunks[:12]
-    ]
+
+    trimmed = [_cap(ch) for ch in chunks[:12]]
     return {
         "id": q["id"],
         "flow": q.get("flow", ""),

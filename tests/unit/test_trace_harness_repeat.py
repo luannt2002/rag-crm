@@ -95,3 +95,17 @@ def test_rate_limit_retry_gives_up_after_max() -> None:
 
     resp = asyncio.run(_mod._with_rate_limit_retry(_always_limited, max_retries=2, sleep=_no_sleep))
     assert _mod._rate_limited(resp) is not None  # still limited, surfaced honestly
+
+
+def test_capture_cap_is_constant_with_truncated_flag() -> None:
+    """002-B: the 500-char hardcap blinded graders into 4 wrongful verdicts —
+    cap now lives in shared constants and every cut chunk is flagged."""
+    import inspect
+
+    from ragbot.shared.constants import TRACE_CHUNK_CAPTURE_MAX_CHARS
+
+    src = inspect.getsource(_mod._record)
+    assert "TRACE_CHUNK_CAPTURE_MAX_CHARS" in src
+    assert '"truncated"' in src
+    assert "[:500]" not in src
+    assert TRACE_CHUNK_CAPTURE_MAX_CHARS >= 1500
