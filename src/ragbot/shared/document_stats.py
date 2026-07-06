@@ -975,6 +975,55 @@ def _premerge_split_headers(
     return out
 
 
+def _merge_wrapped_pipe_rows(lines: list[str]) -> list[str]:
+    """Re-join pipe-table rows broken by a NEWLINE inside a cell (002 step-6).
+
+    A spreadsheet cell containing a line break survives conversion as a
+    literal newline, splitting ONE logical row into 2-3 physical lines — the
+    first ends mid-cell BEFORE the value columns, so the extracted entity
+    loses its price/quantity (measured: 2/173 source prices lost on the
+    reference corpus). Rule (shape-only, domain-neutral): the FIRST pipe line
+    fixes the expected column width; a pipe-starting line with FEWER pipes
+    than expected is a broken row — following non-pipe-starting fragments
+    (blank lines skipped) are folded back into it until the width is reached
+    or a new proper row begins.
+    """
+    expected = 0
+    for ln in lines:
+        st = ln.strip()
+        if st.startswith("|"):
+            expected = st.count("|")
+            break
+    if expected < 3:  # noqa: PLR2004 — need a real multi-column table row
+        return lines
+    out: list[str] = []
+    for ln in lines:
+        st = ln.strip()
+        if not st:
+            out.append(ln)
+            continue
+        # find last non-empty emitted line
+        prev_idx = next(
+            (i for i in range(len(out) - 1, -1, -1) if out[i].strip()), None
+        )
+        prev = out[prev_idx].strip() if prev_idx is not None else ""
+        if (
+            prev.startswith("|")
+            and prev.count("|") < expected
+            and not st.startswith("|")
+            and "|" in st
+        ):
+            # continuation fragment of a broken row — fold back (the intra-
+            # cell newline becomes a single space) and drop any blank filler
+            # between the two physical lines.
+            out[prev_idx] = out[prev_idx].rstrip() + " " + st
+            while len(out) > prev_idx + 1:
+                out.pop()
+            continue
+        out.append(ln)
+    return out
+
+
 def parse_table_chunks(
     chunks: list[dict], custom_roles: dict[str, str] | None = None
 ) -> list[ParsedEntity]:
@@ -1028,6 +1077,10 @@ def parse_table_chunks(
         # Collapse a 2-row (split / merged-cell) header so row-2 column names
         # (the continuation labels) are not lost to col_N — SOTA header-path concat.
         lines = _premerge_split_headers(lines, _declared_labels)
+        # 002 step-6: re-join rows broken by an intra-cell newline BEFORE
+        # any row parsing — otherwise the price/quantity columns of the broken
+        # row are orphaned onto a fragment line and lost.
+        lines = _merge_wrapped_pipe_rows(lines)
 
         header: list[str] = []
         roles: dict[str, Any] = {}

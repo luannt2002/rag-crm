@@ -117,3 +117,33 @@ def test_csv_with_vocab_header_kept_even_price_less_row() -> None:
     assert any("Dịch vụ mẫu A" in n for n in names)
     # The price-less row under a STRUCTURAL (vocab) header is still legitimate.
     assert any("Dịch vụ mẫu B" in n for n in names)
+
+
+# --- Step-6 (002 / T013-mở-rộng): multi-line CELL bẻ gãy pipe-row -----------
+# Real shape (neutralized): ô productname chứa NEWLINE → converter giữ nguyên
+# → 1 dòng bảng thành 3 dòng vật lý → dòng 1 đứt TRƯỚC cột giá → entity mất
+# giá (đo được: 2/173 giá nguồn mất — 265/70 H/T 1.944.000 & 235/65R16C
+# 1.872.000). Continuation-merge phải nối lại TRƯỚC khi parse.
+_PIPE_ROW_WRAPPED_CELL = (
+    "| question | code | productname | answer | quantity | price | date1 | date2 | image |\n"
+    "| 265/70R16, 265 70 16, BrandA 265/70R16 H/T | 2-R16 265/70 AAA | SP xe BRANDA 265/70R16 112H\n"
+    "\n"
+    "SAMPLETRAXX H/T | BRANDA 265/70R16 H/T | 12 | 1944000 | 26 | | https://example.com/x |\n"
+)
+
+
+def test_wrapped_cell_row_price_recovered() -> None:
+    ents = _parse(_PIPE_ROW_WRAPPED_CELL)
+    assert len(ents) == 1, [e.name for e in ents]
+    e = ents[0]
+    assert e.price_primary == 1944000, "giá của dòng bị bẻ gãy phải sống lại"
+    assert "12" == str((e.attributes or {}).get("quantity", "")), "quantity cũng phải về đúng cột"
+
+
+def test_wrapped_cell_does_not_break_normal_rows() -> None:
+    normal = (
+        "| question | code | productname | answer | quantity | price |\n"
+        "| 185/55R15, 185 55 15 | 2-R15 185/55 AAA | SP mẫu 185/55R15 | MẪU 185/55R15 | 779 | 810000 |\n"
+    )
+    ents = _parse(normal)
+    assert len(ents) == 1 and ents[0].price_primary == 810000

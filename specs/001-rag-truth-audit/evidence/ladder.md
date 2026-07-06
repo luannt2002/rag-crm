@@ -145,3 +145,37 @@
     → OPEN follow-up: numeric-fidelity unit-token extension (mm/kg/inch nhỏ).
 - Blast-radius: mmr_dedup mọi bot (floor có thể tăng nhẹ context size khi trước đây
   collapse — chủ đích); pin = test_mmr_min_keep_floor + test_node_mmr_dedup.
+
+## Step 9 (002-B) — HARNESS: capture cap 500→2000 + truncated flag (2026-07-06)
+- Change (ONE, measurement-infra — KHÔNG đổi bot behavior): `_record` dùng
+  TRACE_CHUNK_CAPTURE_MAX_CHARS=2000 (SSoT constants) thay literal `[:500]`;
+  mỗi chunk capture thêm field `truncated: bool` — verdict KHÔNG được phép dựa
+  trên chunk bị cắt mà không biết.
+- WHY (evidence): 4 án oan đã xác nhận (315/35ZR20, 285/45ZR21, 235/65R16C, C-1
+  leg-2 235/40) — row đúng ĐÃ được serve nhưng nằm sau alias-megacell >500 chars
+  → grader mù → kết án sai_bia. Docstring của capture hứa "grader sees exactly
+  what the LLM saw" — 500 chars phá vỡ lời hứa đó.
+- RED→GREEN: test_trace_harness_repeat.py 9/9 pass (pin mới: cap + truncated flag).
+- Blast-radius: chỉ scripts/rag_trace_capture.py (eval harness); zero src/ path.
+- Residual (queued): re-grade audit các verdict sai_bia/lech cũ bằng capture
+  không-cắt — chạy cùng Step 7 re-run.
+
+## Step 10 (002-E) — INGEST: continuation-merge cho pipe-row bị bẻ gãy (2026-07-06)
+- Change (ONE): `_merge_wrapped_pipe_rows` trong shared/document_stats.py — cell
+  chứa newline (converter giữ nguyên từ sheet) làm 1 dòng bảng thành 3 dòng vật
+  lý, dòng 1 đứt TRƯỚC cột giá → entity mint không giá. Pre-pass nối fragment
+  về dòng pipe thiếu cột (đếm pipe so với header đầu tiên), wire ngay sau
+  `_premerge_split_headers`.
+- WHY (đo được): 2/173 giá nguồn mất ở chinh-sach-xe — `2-R16 265/70 LPD` (SP
+  BRANDA 265/70R16 112H⏎SAMPLETRAXX H/T → 1.944.000 rơi) + `235/65R16C`
+  (1.872.000 rơi) = đúng bug UI user report ("tìm ra được hơn 5 data mà chỉ trả
+  lời 1 dòng" — variant thiếu giá bị serve-filter Step 2 loại).
+- RED→GREEN: test_stats_extract_noise.py 7/7 (fixture THẬT neutralized shape
+  265/70: price_primary==1944000 + quantity=="12" hồi sinh; control normal-row
+  không đổi); regression 825 pass / 21 skip / 0 fail.
+- Blast-radius: ingest-time parse mọi bot (pre-pass chỉ kích hoạt khi dòng pipe
+  thiếu cột so với header — bảng lành lặn không đổi); serve-time không đổi;
+  pin = test_stats_extract_noise.py.
+- Kích hoạt data: cần re-ingest chinh-sach-xe (wipe+apply) — corpus stamp SẼ ĐỔI,
+  mọi so sánh pinned sau đó phải ghi stamp mới.
+- Rollback: revert commit (pre-pass additive).
