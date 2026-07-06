@@ -1,0 +1,1229 @@
+{
+ "corpus_stamp": "6e6c0774",
+ "date": "2026-07-06",
+ "gate100": {
+  "score": 84,
+  "tally": {
+   "dung": 74,
+   "refuse_oan": 2,
+   "thieu": 8,
+   "lech": 4,
+   "chua_chuan": 2,
+   "refuse_dung": 10
+  }
+ },
+ "luannt100b": {
+  "score": 69,
+  "tally": {
+   "lech": 13,
+   "chua_chuan": 5,
+   "dung": 61,
+   "sai_bia": 8,
+   "refuse_oan": 2,
+   "refuse_dung": 8,
+   "thieu": 3
+  }
+ },
+ "verdicts": [
+  {
+   "id": "B-001",
+   "verdict": "lech",
+   "fail_step": "generate",
+   "note": "[Y-ÁN] Confirmed by DB: DSI row '2-R16 195/65 NEO' has price_primary=NULL, qty=NULL; full chunk content shows quantity/price cells EMPTY and date1=26. Bot's 1.350.000 belongs to '2-R16 195/75 RVL' (Rovelo 195/75R16C RCMX+, price 1350000, qty 14 — chunk 2 in same context); zero chunks in corpus pair NEOTERRA with 1350000. '26 lốp' = date1 column misread as inventory. Scenario note requires defer. Retrieval correct (NEO row top-1, 0.5419), so fail at generate. Lech upheld."
+  },
+  {
+   "id": "B-002",
+   "verdict": "chua_chuan",
+   "fail_step": "generate",
+   "note": "[Y-ÁN] Verified vs DB: DSI row '2-R16 195/65 NEO' has quantity key ABSENT (attributes_json no 'quantity', price_primary NULL); raw chunk 019f36a1-a72d-7511-8460-5ca375b3b6c6 (xe-3 phần 177/187) shows empty quantity cell in table row; zero chunks pair '195/65 NEO' with 'quantity: 0'. Bot asserted 'còn 0 lốp' — empty cell coerced to 0, exact template case chua_chuan (not sai_bia: no new number fabricated; not lech: correct entity/productname). Scenario expects defer on empty quantity. Retrieval surfaced correct row (productname matches) → fail_step=generate upheld."
+  },
+  {
+   "id": "B-003",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Scenario note 'SKU ảo' lỗi thời: DB row 2-ZR20 315/35 LPD tồn tại với price=2889000, qty=158, productname 'LANDSPIDER 315/35ZR20 110WXL CITYTRAXX H/P' — bot trả 2.889.000đ/158 lốp khớp cả DB lẫn chunk (score 1.0)."
+  },
+  {
+   "id": "B-004",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "DB row 2-ZR21 285/45 LPD: price=3402000, qty=0 — bot nói 'hết hàng' (qty 0) + giá 3.402.000đ khớp chính xác DB và chunk; câu 'giá trước khi hết hàng' chỉ là framing, số và entity đều đúng corpus hiện tại."
+  },
+  {
+   "id": "B-005",
+   "verdict": "sai_bia",
+   "fail_step": "generate",
+   "note": "[Y-ÁN] Lật án THẤT BẠI — evidence kết tội chắc chắn. DSI row '2-ZR18 255/45 LPD': price_primary=NULL, quantity=NULL, attributes chỉ có date1='26' (SKU hàng xóm 255/40ZR18 và 255/45ZR19 đều có đủ price+quantity → ô trống là chủ đích). Full chunk xe-3#82 có header tường minh quantity|price → cả 2 ô TRỐNG cho SKU này. Số 1.500.000 = 0 hit toàn bộ document_chunks (LIKE + regex lỏng 1[.,s]?500[.,s]?000) và 0 hit DSI → pure fabrication, không phải lech. 'Còn 26 lốp' = misread date1=26 (quantity=26 duy nhất trong DSI thuộc SKU khác 2-R14 185/70 LPD). Chunk xe-1#95 headerless '26|24' không cứu được (26 là cột chung mọi row, chunk không được fed vào LLM, không chứa giá). Retrieval đúng SKU score 1.0 → fail_step=generate đúng."
+  },
+  {
+   "id": "B-006",
+   "verdict": "lech",
+   "fail_step": "generate",
+   "note": "[Y-ÁN] Confirmed. DSI row '2-R16 195/65 NEO' (Neoterra 195/65R16 NEOTOUR) has price_primary=NULL, quantity=NULL; full chunk 019f36a1 (xe-3 phần 177/187, not truncated) shows empty price/quantity cells. Bot correctly denied 260.000đ but asserted 1.260.000đ for Neoterra — that price belongs only to '2-R16 215/65 LPD' (Landspider 215/65R16 G/P, qty 28, context chunk 2) and '2-R15 215/70 RVL'; 0 corpus chunks tie 1260000 to NEOTERRA/NEOTOUR. Number exists in context but for a different row → misattribution (lech), not sai_bia. Retrieval was correct (Neoterra chunk ranked #1, score 0.6428) → fail_step=generate stands."
+  },
+  {
+   "id": "B-007",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Chunk trong run bị truncated nhưng DB xác nhận row 2-ZR20 315/35 LPD tồn tại: price=2889000, qty=158 — bot trả 'LANDSPIDER 315/35ZR20 H/P giá 2.889.000đ, còn 158 lốp' khớp đúng entity đúng số; note 'SKU ảo' của scenario không còn đúng với corpus 6e6c0774."
+  },
+  {
+   "id": "B-008",
+   "verdict": "lech",
+   "fail_step": "generate",
+   "note": "[Y-ÁN] Upheld with hard DB evidence. DSI row '2-R13 155/65 RHP-A68' has price_primary=NULL, quantity=NULL and attributes_json contains no price/quantity keys — so the truncated chunk tail could not have hidden a price. Full chunk content (chunk_index 125/128) shows the 155/65 row with empty price/qty cells. Bot's 630.000đ + 100 lốp + 'còn hàng' matches exactly DSI '2-R13 155/70 RHP-A68' (630000/100), the first line of the retrieved chunk. Anti-oan sweep: no chunk pairs 155/65 with 630000 without 155/70 present (0 rows). Numbers exist in chunk → not sai_bia; wrong entity attribution → lech, fail_step=generate (retrieve delivered the correct chunk at score 1.0; LLM copied the neighboring row). Expected behavior per scenario: say 'chưa có giá'."
+  },
+  {
+   "id": "B-009",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Note scenario 'tên ảo chỉ có ZR22' lỗi thời: chunk + DB có productname 'Lốp xe LANDSPIDER 285/45ZR21 113WXL CITYTRAXX H/P' với quantity=0 — bot trả 'hết hàng' khớp qty 0, không bịa giá/tồn."
+  },
+  {
+   "id": "B-010",
+   "verdict": "lech",
+   "fail_step": "generate",
+   "note": "[Y-ÁN] DB confirms: DSI row '2-R14 195/70 RVL' (Rovelo A68) has price_primary=NULL, quantity=NULL; full chunk content (xe-1 phần 144/207 + xe-3 phần 147/187, no truncation) shows empty price/qty columns for the RVL row. Bot's 963.000đ + 43 lốp uniquely matches sibling row '2-R14 195/70 LPD' (LANDSPIDER 195/70R14 G/P: 963000/qty 43) in the same retrieved chunk; corpus-wide search finds 0 chunks tying Rovelo 195/70 to 963000. Retrieval was correct (both rows in prompt, score 1.0); generation conflated adjacent Landspider row onto the Rovelo entity — misattribution (lech), fail_step=generate. Correct answer per scenario: Rovelo 195/70R14 chưa có giá."
+  },
+  {
+   "id": "B-011",
+   "verdict": "sai_bia",
+   "fail_step": "generate",
+   "note": "[Y-ÁN] Án giữ nguyên. DSI có dòng '2-R16 205/60 RVL' price_primary TRỐNG (đáp án chuẩn: chưa có giá), đồng thời 39 SKU RVL khác tồn tại — đa số có giá+tồn (vd 2-R14 175/65 RVL=684000/qty 311, 2-R15 185/60 RVL=810000/qty 557). Corpus có 135 chunks nhắc 'Rovelo' (Kho lốp ROVELO), gồm chính chunk xe-1 phần 168/207 chứa dòng '2-R16 205/60 RVL | Lốp Rovelo 205/60R16 RHP-A68' giá trống. Chunk duy nhất gửi LLM (score=1.0, truncated=false — đã check, không cần rescue) chỉ chứa dòng LANDSPIDER LPD. Claim 'bên em chưa phân phối hãng Rovelo' KHÔNG có trong chunk lẫn DB và mâu thuẫn trực tiếp cả hai → fabrication trạng thái brand-level = sai_bia. Tội danh nhẹ hơn không fit: không phải refuse_dung (answered + khẳng định sai sự thật thay vì defer), không phải chua_chuan (sai hẳn, không chỉ lệch spec). fail_step=generate đúng: retrieve có rớt dòng RVL nhưng fabrication brand-level là lỗi generate — context chỉ có LPD row, câu trả lời đúng phải là 'không có thông tin giá Rovelo 205/60R16' chứ không phải bịa 'chưa phân phối'."
+  },
+  {
+   "id": "B-012",
+   "verdict": "lech",
+   "fail_step": "generate",
+   "note": "[Y-ÁN] Verified against DSI + full chunk content (truncated chunk re-queried). DSI row 2-R15 185/55 RVL (Rovelo 185/55R15 RHP-A68): price_primary=NULL, quantity=NULL; full xe-3 chunk 019f36a1-a701 confirms empty price/quantity cells. Pair (810000, qty 779) exists on exactly one row: 2-R15 185/55 LPD = LANDSPIDER 185/55R15 G/P — present in the retrieved chunk. Exhaustive search of 403 active chunks: 0 chunks pair Rovelo with 779; Rovelo SKUs at 810000 (185/60 qty 557, 185/65 qty 324) do not match. Bot attributed Landspider's price+stock to the Rovelo entity instead of deferring on empty cell → misattribution at generate layer. Prosecution verdict lech/generate upheld; numeric_fidelity 'grounded' flag is presence-only and missed the misattribution."
+  },
+  {
+   "id": "B-013",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "DB: 2-R15 215/70 LPD = 1.278.000, quantity=2 — bot trả '1.278.000đ, còn 2 lốp' khớp cả hai. Chọn đúng dòng Landspider (không lẫn 2-R15 215/70 RVL=1.260.000/9). Date trống không bị bịa."
+  },
+  {
+   "id": "B-014",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "DB: 2-R16 LT235/85 LPD HT = giá 2.079.000, quantity=0 — bot báo 'hiện đang hết hàng' đúng spec bẫy (tồn 0 → báo hết hàng). Không bịa số, nêu đúng SKU."
+  },
+  {
+   "id": "B-015",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "DB: 2-R14 175/65 LPD = 783.000, quantity=113 — bot trả '783.000đ, còn 113 lốp' khớp. Không lẫn với 2-R15 175/65 LPD (783.000/48) hay 2-R14 175/65 RVL (684.000/311)."
+  },
+  {
+   "id": "B-016",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "DB: 2-ZR17 225/45 LPD = 1.242.000, quantity=507 — bot trả '1.242.000đ, còn 507 lốp' khớp. Refuse oan cũ (L-014) đã hết — bot answer trực tiếp, chunk score=1.0 đúng dòng."
+  },
+  {
+   "id": "B-017",
+   "verdict": "lech",
+   "fail_step": "generate",
+   "note": "[Y-ÁN] Án giữ nguyên. Bot nêu 235/40R18 H/P = 1.800.000đ/6 chiếc — cặp số này chỉ khớp DSI 2-ZR18 255/40 LPD (1800000/6, chunk[0]); đã quét toàn bộ DSI price=1800000 (4 entity), không entity 235/40R18 nào có 1.800.000/6. Dòng đúng 2-ZR18 235/40 LPD = 1.602.000/31 CÓ trong context (chunk[6], score 0.3256, không truncated) nhưng LLM chọn nhầm hàng 255/40 → lech, fail_step=generate. Nửa đầu 205/65R16 = 1.170.000/187 khớp DSI 2-R16 205/65 LPD. numeric_fidelity flag n_misattributed=1 nhất quán. Kết luận '235 đắt hơn' tình cờ đúng hướng nhưng số thuộc dòng khác."
+  },
+  {
+   "id": "B-018",
+   "verdict": "lech",
+   "fail_step": "generate",
+   "note": "[Y-ÁN] Y án lech/generate. Dòng 4 'Lốp Rovelo 195/65R15 RHP-A68 = 1.287.000đ/4 lốp' là misattribution chắc chắn: DSI xác nhận 1287000/qty4 thuộc 2-R14/195C (Lốp Rovelo 195R14C RCMX+, khớp chunk[6] nguyên vẹn không truncated), còn 2-R15 195/65 RVL thật = 981.000/qty45 (DSI + full chunk xe-3 phần 156) — không thuộc nhóm qty<5. Query chống oan: 0 chunk toàn corpus chứa cả '195/65R15' lẫn '1287000' → số không có grounding ở cả chunk lẫn DSI cho entity đó; bot lấy tên từ chunk[8] (xe-1, không có giá) ghép số chunk[6] → lỗi tầng generate, khớp numeric_fidelity n_misattributed=1. 3 dòng đầu đúng DB (882000/0, 954000/0, 909000/4). Khía cạnh thieu cũng xác nhận: DB có đúng 29 SKU qty<5, bot liệt kê 4 (bỏ sót cả chunk[9] 205/70R15C=1251000/3 đã nằm trong context); nhưng lech (gán nhầm entity) nặng hơn nên tội danh sơ thẩm chuẩn."
+  },
+  {
+   "id": "B-019",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "DB: 2-R17 215/60 DVT = 1.485.000, quantity=196 — bot xác nhận có phân phối Davanti 215/60R17 DX640, giá 1.485.000đ/còn 196 khớp cả index lẫn chunk. Refuse oan cũ (L-072) đã hết."
+  },
+  {
+   "id": "B-020",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "DB: 2-ZR17 225/45 LPD = 1.242.000, quantity=507 — bot trả đúng cả mã SKU 2-ZR17 225/45 LPD, giá 1.242.000đ, tồn 507. Không lẫn dòng Rovelo 225/45R17 (1.170.000/4) cùng nằm trong chunk[0]. Refuse oan cũ (L-075) đã hết."
+  },
+  {
+   "id": "B-021",
+   "verdict": "refuse_oan",
+   "fail_step": "retrieve",
+   "note": "[Y-ÁN] Upheld. DB verified: chunk 019f36a1-bb98-7600-bf73-c6a87e73034d (doc xe-4) chứa nguyên văn 'Landspider (Thailand)' — corpus CÓ đáp án 'Thái Lan'. Chunk này retrievable (B-027 lấy được ở score 0.3501, trả đúng Rovelo=Vietnam) nhưng B-021 top-3 chỉ gồm 2 dòng bảng kho + chunk '[I. Phạm vi áp dụng]' (không chứa Thailand), top_score 0.2726, cả 3 truncated:false. Bot từ chối trong khi corpus có đáp án → refuse_oan, fail_step=retrieve (chunk đáp án không lọt topK dù sibling chunk cùng doc lọt)."
+  },
+  {
+   "id": "B-022",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot: còn 1 chiếc. DB document_service_index '2-R17 245/70 LPD HT' quantity=1 (LANDSPIDER 245/70R17 H/T), chunk score=1.0 cũng ghi quantity: 1. Khớp scenario note 'tồn 1'."
+  },
+  {
+   "id": "B-023",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Chunk truncated:true nhưng full content + DB đều xác nhận 2-ZR20 245/40 LPD quantity=1, price=2457000. Bot trả 'còn 1 lốp, giá 2.457.000đ' — cả 2 số grounded, đúng entity, không lẫn sang các dòng 245/45ZR20... cùng chunk."
+  },
+  {
+   "id": "B-024",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Full chunk chứa dòng '2-R17 265/65 RVL: 2430000 | answer: ROVELO 265/65R17 A/T | quantity: 1 | productname: Lốp Rovelo 265/65R17 Road quest A/T'; DB qty=1. Bot nói còn 1 lốp — đúng entity Rovelo, KHÔNG conflate với 2 dòng LANDSPIDER 265/65R17 (qty 216/40) cùng chunk."
+  },
+  {
+   "id": "B-025",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot: 1.467.000đ, còn 5 lốp. DB 2-ZR17 245/40 LPD price=1467000 qty=5; chunk khớp. Đúng scenario note 1.467.000 — refuse-oan cũ đã hồi sinh."
+  },
+  {
+   "id": "B-026",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot xác nhận có phân phối Davanti + hỏi quy cách. Corpus xe-3 có sản phẩm DAVANTI DX640 (vd 2-ZR19 255/50 DVT qty 80 price 2205000; 2-ZR18 215/45 DVT qty 296) trong 3 chunks retrieved. Khớp note 'CÓ'."
+  },
+  {
+   "id": "B-027",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot: Rovelo sản xuất tại Việt Nam. Chunk retrieved verbatim 'Áp dụng cho thương hiệu Landspider (Thailand) và Rovelo (Vietnam)' — verified trong DB. Khớp note corpus 'Rovelo (Vietnam)'."
+  },
+  {
+   "id": "B-028",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot: 1.602.000đ, còn 31 lốp. DB 2-ZR18 235/40 LPD price=1602000 qty=31; chunk score=1.0 khớp. Đúng note 1.602.000."
+  },
+  {
+   "id": "B-029",
+   "verdict": "refuse_dung",
+   "fail_step": "-",
+   "note": "DB verified: 0 chunks + 0 index rows chứa NhatBan/NB17 — corpus chưa ingest kho NhatBan → bot defer đúng theo corpus. GHI GAP DATA: owner nói có 2-NB17 235/60 NBR nhưng chưa vào corpus. Blemish nhỏ: câu 'chỉ phân phối Landspider và Rovelo' mâu thuẫn corpus (xe-3 có Davanti, chính bot xác nhận ở B-026) — không đổi verdict vì core defer đúng."
+  },
+  {
+   "id": "B-030",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot: 1.872.000đ, còn 19 lốp. DB 2-R16C 235/65 LPD price=1872000 qty=19; chunk score=1.0 khớp. Đúng note anh ghi 1.872.000 — đối chiếu corpus hiện tại PASS."
+  },
+  {
+   "id": "B-031",
+   "verdict": "sai_bia",
+   "fail_step": "generate",
+   "note": "[Y-ÁN] DB-verified: chunk I (019f36a1-bb9a-7493, doc xe-4) giới hạn scope 'lốp xe du lịch (PCR) Landspider và Rovelo'; toàn corpus 0 chunk chứa 'xe tải' (match TBR chỉ là substring URL Drive). 3 chunks tới LLM (III/II/VII) khớp verbatim DB, không truncated, không có thông tin scope. Bot khẳng định 'có áp dụng cho lốp xe tải' = trạng thái không có ở cả chunk lẫn DB, mâu thuẫn chunk I — đúng trap L-060. Retrieve góp lỗi (chunk I không vào top-3) nhưng lỗi quyết định là generate extrapolate 'có' thay vì defer. Án sơ thẩm đứng vững."
+  },
+  {
+   "id": "B-032",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Mòn 40% → còn 60%, bot suy đúng bracket 'gai còn 1.6mm–<70% → bồi thường theo tỷ lệ % gai còn lại' (chunk II score 0.894) → 60% giá trị. Derivation hợp lệ, khớp note scenario L-080."
+  },
+  {
+   "id": "B-033",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot trả 'gai dưới 1,6mm hết hiệu lực bảo hành' — khớp literal chunk II 'Gai <1.6mm → Hết hiệu lực bảo hành' (DB-verified doc xe-4)."
+  },
+  {
+   "id": "B-034",
+   "verdict": "chua_chuan",
+   "fail_step": "generate",
+   "note": "[Y-ÁN] Án sơ thẩm ĐỨNG. Kết luận 'không bảo hành' đúng và grounded (chunk III xe-4: 'Biến dạng do điều kiện bảo quản không đúng', score 0.9078, truncated=false — full content re-read từ DB khớp). Nhưng bot gắn '(như nhiệt độ cao, ẩm ướt, ánh nắng trực tiếp)' vào mệnh đề 'Theo chính sách' — sweep toàn corpus 403 chunks: 0 hit cho các cụm này; chỉ 1 chunk duy nhất nhắc bảo quản/lưu kho là chính chunk III; DSI 0 entry liên quan. Đúng trap L-068 scenario note. Không phải sai_bia vì 'như...' là gloss minh họa hợp lý với premise của user và không có số bịa (n_numbers=0) — chua_chuan là đúng mức. fail_step=generate đúng (retrieval sạch, embellishment sinh ở generation)."
+  },
+  {
+   "id": "B-035",
+   "verdict": "sai_bia",
+   "fail_step": "generate",
+   "note": "[Y-ÁN] Overturn attempt failed. Full-corpus scan (403 chunks, bot c6e1fc56): only 2 chunks contain any mm value, both = 1.6mm warranty threshold (doc xe-4). Truncated cargo-table chunk checked in full (3110 chars): zero [0-9]mm patterns, zero occurrences of sâu/depth/gai. DSI: 0 rows for 8mm/9mm/độ sâu/tread. Bot's '8mm đến 9mm' exists in neither source → world-knowledge fabrication on trap L-056 (scenario: corpus KHÔNG có, phải nói không có info). fail_step=generate correct (chunks were delivered; generation added ungrounded numbers). Note: numeric_fidelity n_numbers=0 — fidelity checker missed mm-suffixed numbers."
+  },
+  {
+   "id": "B-036",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot trả '05 năm kể từ ngày sản xuất' — khớp literal chunk I 'Hiệu lực bảo hành: 05 năm kể từ ngày sản xuất' (score 0.877)."
+  },
+  {
+   "id": "B-037",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot trả không được bảo hành do lỗi đường sá — khớp chunk III 'Hư hỏng do đường sá: cắt, rách, thủng...' (score 0.818). Đúng expected 'KHÔNG — lỗi đường sá'."
+  },
+  {
+   "id": "B-038",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot trả 'đổi lốp trong vòng 72 giờ' cho đại lý — khớp literal chunk VII 'Đại lý báo hàng lỗi... đổi lốp trong vòng 72h' (score 0.918)."
+  },
+  {
+   "id": "B-039",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot trả 'đổi mới 100% lốp, không tính phần trăm mòn gai' — khớp literal chunk VII 'Hàng lỗi trong 3 tháng đầu từ khi bán ra → đổi mới 100% (không tính % mòn gai)' (score 0.922)."
+  },
+  {
+   "id": "B-040",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot trả 'đổi mới 100% 01 lốp tương đương' nếu lỗi NSX — khớp literal chunk II (score 0.954); chi tiết 7 ngày làm việc grounded chunk V. Đúng expected."
+  },
+  {
+   "id": "B-041",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot trả '7 ngày làm việc' khớp corpus xe-4 [V. Quy trình bảo hành]: 'Kết quả được thông báo trong vòng 7 ngày làm việc' — chunk này in-context score 0.870, DB verified."
+  },
+  {
+   "id": "B-042",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Đáp án ĐÚNG corpus xe-4 [II.3] 'Gai <1.6mm → Hết hiệu lực bảo hành' (bot: 1.5mm < 1.6mm → không bảo hành, khớp note 'KHÔNG'). CẢNH BÁO grounding: chunk duy nhất tới LLM là bảng ngày-về xe-2 (đã đọc full 3110 chars trong DB — KHÔNG chứa '1.6' lẫn 'bảo hành'); kết quả đúng nhờ parametric knowledge trùng corpus, retrieve shortcut topk=1 kéo sai chunk."
+  },
+  {
+   "id": "B-043",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot trả KHÔNG bảo hành, grounded đúng corpus xe-4 [III]: 'Lốp đã qua sử dụng, lốp cũ không do Nam Phát phân phối' — chunk III in-context score 0.824."
+  },
+  {
+   "id": "B-044",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Giải thích khớp corpus xe-4 [III]: 'Hỏng do hệ thống xe (góc đặt bánh sai, trục sai → mòn nhanh hoặc không đều)' + 'Sử dụng sai chức năng: quá tải, quá tốc độ, áp suất không chuẩn' — đúng note scenario 'lỗi hệ thống xe/góc đặt bánh'."
+  },
+  {
+   "id": "B-045",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot trả Zalo/website, grounded verbatim corpus xe-4 [VII]: 'Khuyến khích đăng ký bảo hành điện tử qua Zalo/Website để theo dõi và ưu tiên xử lý' — chunk VII in-context score 0.813."
+  },
+  {
+   "id": "B-046",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "DB index 2-ZR18 225/45 LPD: price=1440000, qty=39 — bot trả 1.440.000đ/39 lốp đúng. Cả 3 link ảnh (drive 1U2-nkEv…, vn1.co/15c80417763…, vn1.co/97984b8a1047…) đều thuộc đúng row 225/45ZR18 trong xe-1 (DB verified) — cờ numeric_fidelity 4 unsupported tokens là false-positive từ URL fragments nằm ở chunk xe-1 khác chunk canonical."
+  },
+  {
+   "id": "B-047",
+   "verdict": "lech",
+   "fail_step": "retrieve",
+   "note": "[Y-ÁN] Uphold lech/retrieve. Referent chắc chắn = LANDSPIDER 225/45ZR18 H/P (B-046 bot vừa trả '1.440.000đ/39 lốp', score_max=1.0; scenario note yêu cầu '225/45ZR18 còn 39'). Bot B-047 trả stock của Rovelo 175R13C 8PR RCM-X+ ('hết hàng') — DB verify: document_chunks có row 'Rovelo 175R13C 8PR RCM-X+ | 0 | 954000' (claim grounded cho entity SAI → không phải sai_bia) VÀ row 'LANDSPIDER 225/45ZR18 H/P | 39 | 1440000' (corpus CÓ đáp án đúng → không phải refuse hợp lệ). Cả 3 chunks truncated:false, không cần cứu bằng full content. rewritten=None trong khi B-048 cùng chain rewrite thành công → coreference mất ở query-side trước retrieve; chunk đúng vẫn vào context (0.356) nhưng chunk sai top (0.405). fail_step=retrieve là bucket đúng nhất. DSI row 225/45ZR18 tồn tại nhưng price/qty rỗng — chunk content là ground truth quyết định."
+  },
+  {
+   "id": "B-048",
+   "verdict": "lech",
+   "fail_step": "generate",
+   "note": "[Y-ÁN] Án lech/generate GIỮ NGUYÊN. DB truth (xe-3 phần 70, row 2-ZR18 225/45 LPD): qty=39, price=1440000, drive=1U2-nkEv. Bot trả cho 225/45ZR18: giá 1.656.000 (= row 225/50ZR18, chunk#1 in-context), 'còn 26 lốp' (26 = cột date1, qty thật 39), drive 1ZxDXJm6 (225/50ZR18) + vn1.co 67b4100f/0be648f9 (225/50ZR17, chunk#2). Grep toàn corpus: KHÔNG chunk nào gắn các link/giá đó với 225/45ZR18 → mashup 3 SKU = misattribution, không phải bịa. Đính chính sơ thẩm: chunk#0 (xe-1 phần 86, top 0.8699) chứa ĐÚNG link ảnh (1U2-nkEv + e3ddd59b/15c80417/97984b8a) nhưng KHÔNG chứa 1440000|39 — row giá/qty đúng (xe-3 phần 70) không được retrieve. Vì câu hỏi xin LINK ẢNH và link đúng có sẵn trong prompt mà bot vẫn thay bằng 3 link SKU khác → fail_step=generate đúng."
+  },
+  {
+   "id": "B-049",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "DB index 2-R16 205/55 LPD: price=1044000, qty=734 — bot trả 1.044.000đ/734 lốp đúng; cặp 2.088.000 = 1.044.000×2 derived hợp lệ (numeric_fidelity n_derived_valid=1)."
+  },
+  {
+   "id": "B-050",
+   "verdict": "lech",
+   "fail_step": "retrieve",
+   "note": "[Y-ÁN] UPHELD với evidence DB thật. (1) Referent chain c49 = Landspider 205/55R16: DSI row '2-R16 205/55 LPD' price=1044000/qty=734, pair=2.088.000 — B-049 turn trước đã trả đúng chính số này. (2) Bot B-050 trả 684.000×2=1.368.000 'còn 214' = số THẬT verbatim của DSI row '2-R13 155/80 LPD' (price=684000, qty=214) và chunk #1 full content → không phải sai_bia, đúng định nghĩa lech. (3) Verified cả 12 chunks trong record: 0 chunk chứa Landspider 205/55R16 (chunk #10 là Rovelo 205/55R16 963k, khác brand); trace request_steps (f911e447) cho thấy prompt_build cap 8000 chars chỉ đưa 6 chunks tới LLM → row đúng chắc chắn không vào context. (4) rewritten=None + retrieve source=speculative_hit → coreference mất ở pre-retrieval, fail_step=retrieve đúng tầng. Không có cơ sở lật án: bot answered (loại refuse_*), entity sai hẳn (loại dung/thieu/chua_chuan), số tồn tại ở cả chunk lẫn DSI (loại sai_bia). Trap L-087 'không lấy size khác' bị dính chính xác."
+  },
+  {
+   "id": "B-051",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Cả 2 dòng 165/60R14 đúng DB: LPD 684.000/239 lốp + link 1e7FaVP…, RVL 648.000/118 lốp + link 1aj8tid… (index 2-R14 165/60 LPD/RVL khớp 100%, link verify trong chunk xe-1/xe-3)."
+  },
+  {
+   "id": "B-052",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Link Drive đúng cho cả 2 loại 165/60R14 (1aj8tid = Rovelo RHP-A68 verify chunk DB; 1e7FaVP = Landspider). Không nhầm 285/65 (trap L-085). numeric_fidelity flag 648.000 unsupported chỉ vì chunk turn này thiếu row Rovelo — giá grounded trong DB (648000) + context chain c51, không phải bịa."
+  },
+  {
+   "id": "B-053",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "810.000đ + còn 1.350 lốp khớp DB index 2-R15 185/60 LPD (810000/1350) và chunk score=1.0."
+  },
+  {
+   "id": "B-054",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Sheet lịch xe-2 có dòng '185/60R15 84H CITYTRAXX G/P | 28-thg 11' (query full chunk vì truncated:true — xác nhận có). Bot trả 'về thêm ngày 28-thg 11' đúng corpus."
+  },
+  {
+   "id": "B-055",
+   "verdict": "sai_bia",
+   "fail_step": "generate",
+   "note": "[Y-ÁN] Verified độc lập: DSI row 2-ZR21 275/40 DVT chỉ có price=3240000/qty=251/productname '107Y XL DX640'/image/question-variants; full content 14 chunks chứa DX640 = 0 hit vocab feature; corpus-wide sweep chỉ hit 1 chunk bảo hành xe-4 ('mài mòn do lưu kho sai' — sai context). Số 3.240.000/251/107Y/XL grounded, '300km/h' = extrapolate từ speed-rating Y (không có trong corpus), còn 'công nghệ hình học đặc biệt / cao su tổng hợp giảm tiếng ồn / gai bám tối ưu / giảm rung động / chống mài mòn' = fabricate hoàn toàn (không có ở cả chunk lẫn DSI). Retrieval đúng chunk (score 1.0) → fail_step=generate đúng. Án sơ thẩm giữ nguyên."
+  },
+  {
+   "id": "B-056",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "3.240.000đ/251 lốp khớp DB index 2-ZR21 275/40 DVT (3240000/251), đúng note scenario. Coreference 'sản phẩm đó' resolve đúng Davanti 275/40ZR21 DX640 từ chain c55."
+  },
+  {
+   "id": "B-057",
+   "verdict": "sai_bia",
+   "fail_step": "generate",
+   "note": "[Y-ÁN] CONFIRMED sai_bia @generate. Bot gán Landspider 185/60R15 G/P = '920.000đ còn 127 lốp' — DB thật (DSI 2-R15 185/60 LPD + full chunk xe-3 phần 16/187, không truncated) = 810.000đ / qty 1.350. Exhaustive search: 920000/920.000/920,000 = 0 hits trong toàn bộ document_chunks của bot; price_primary=920000 và price_secondary=920000 = 0 rows DSI; qty '127' = 0 rows DSI, '| 127 |' = 0 chunks. Candidate gần nhất 927000 thuộc 2-R16 195/50 LPD (qty 244) — khác entity, khác số → không phải lech. Chain c57: B-057 là turn ĐẦU TIÊN sinh ra 920.000 (B-058 chỉ lặp lại) → fabricate tại generate của chính record này. Dòng 155/80R13 G/P 684.000/214 ĐÚNG DSI (2-R13 155/80 LPD) — không kết tội dù unsupported vs served chunks. Tư vấn size Vios được scenario cho phép (note 'tư vấn size phổ biến'). Án sơ thẩm giữ nguyên."
+  },
+  {
+   "id": "B-058",
+   "verdict": "sai_bia",
+   "fail_step": "generate",
+   "note": "[Y-ÁN] Uphold sai_bia/generate. Bot claims Landspider 185/60R15 G/P = 920.000d/127 lop. DB truth: DSI 2-R15 185/60 LPD = 810.000d/qty 1350; full chunk xe-3 phan 16/187 confirms 1350|810000. Search toan corpus (document_chunks LIKE 920000/920.000/920,000) = 0 rows; DSI price=920000 or qty=127 = 0 rows -> not lech (khong thuoc dong nao khac), pure fabrication. B-058's 3 prompt chunks deu truncated:false va khong chua 185/60R15 -> khong co an oan do cat chunk. 684.000/214 (155/80R13) grounded dung trong chunk 1, nhung cau hoi gia Landspider co 1 so bia -> sai_bia. Answer lap verbatim B-057 (carry-over hallucination qua chain c57), fail_step=generate."
+  },
+  {
+   "id": "B-059",
+   "verdict": "lech",
+   "fail_step": "generate",
+   "note": "[Y-ÁN] Án sơ thẩm ĐỨNG VỮNG. Bot claim 'hai loại đang về ngày 28-thg 11' nhưng: (1) corpus chỉ có ĐÚNG 1 chunk chứa '28-thg 11' = xe-2 chunk 0, bảng 'LANDSPIDER BRAND TYRES | NGÀY VỀ' toàn CITYTRAXX, không có dòng Rovelo nào; (2) 0 chunk nào gắn Rovelo/RHP-A68/RVL với 28-thg 11 hay bất kỳ ngày về nào; (3) DSI: arrival '28-thg 11' chỉ trên entity CITYTRAXX, dòng '2-R15 195/65 RVL' không có arrival field (chỉ price 981000, qty 45, date1=25); (4) chunk retrieve được (không truncated) tự nó tách rõ — ': 28-thg 11' chỉ nằm ở dòng LPD, dòng RVL không có → retrieval đúng, generate conflate → fail_step=generate chuẩn. Không phải sai_bia vì 28-thg-11 có thật trong corpus (chỉ sai dòng). Điểm cộng giữ nguyên: giá/tồn 972.000/313 + 981.000/45 khớp DB chính xác, không bịa số lượng về (trap chính pass)."
+  },
+  {
+   "id": "B-060",
+   "verdict": "chua_chuan",
+   "fail_step": "generate",
+   "note": "[Y-ÁN] Verify độc lập KHÔNG lật được án. (1) Giá/tồn kho bot nêu ĐÚNG và DB-grounded: DSI '2-R15 195/65 LPD'=972000/qty313, '2-R15 195/65 RVL'=981000/qty45 — khớp verbatim answer; numeric_fidelity unsupported chỉ vì 3 chunks turn này lệch size (155/80R13, 195/75R16C, 195R15C), số có trong chunk B-059 cùng chain c59 + DSI → không sai_bia. (2) Claim lặp lại 'hai loại đang về ngày 28-thg 11' verify là KHÔNG grounded cho Rovelo: chunk lịch duy nhất chứa '28-thg 11' (doc xe-2) header 'GR | LANDSPIDER BRAND TYRES | NGÀY VỀ' — chỉ LANDSPIDER (có 195/65R15 91H CITYTRAXX G/P); query toàn corpus 0 chunks link ROVELO với NGÀY VỀ/28-thg/đang về; DSI RVL chỉ có date1='25'. → over-generalize ngày về của dòng LPD sang cả Rovelo = statement lệch corpus trong câu phụ, nhưng câu hỏi chỉ hỏi giá và giá đúng 100%, '28-thg 11' có thật cho LANDSPIDER nên không phải bịa trắng → chua_chuan (fail_step=generate) là đúng tội, đúng mức."
+  },
+  {
+   "id": "B-061",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Tránh đúng bẫy suy diễn 'chưa có hàng': LPD 195/65R15 972.000đ/tồn 313 và Rovelo RHP-A68 981.000đ/tồn 45 khớp DB (2-R15 195/65 LPD=972000/313, 2-R15 195/65 RVL=981000/45, productname 'Lốp Rovelo 195/65R15 RHP-A68'). Size này có trong sheet 28-thg 11 nên nhắc ngày về là grounded; cụm 'cho các đơn đặt trước' là thêm thắt nhẹ, không sai số."
+  },
+  {
+   "id": "B-062",
+   "verdict": "thieu",
+   "fail_step": "generate",
+   "note": "[Y-ÁN] Án sơ thẩm ĐỨNG, nâng cấp evidence từ 'gần chắc' lên proven. DSI ground truth: 9 dòng WILDTRAXX A/T >2tr; bot liệt kê 8 (kể cả dòng answer bị cắt 'LT285/6'=LT285/65R18 3.267.000/1), cả 8 khớp DSI từng giá+tồn (0 misattribute). Bỏ sót 245/65R17 111TXL = 2.268.000/tồn 64 (DSI entity '2-R17 245/65 LPD WILLTRAXX'). Fail_step=generate PROVEN: fact-chunk synthetic build tại query_graph.py:2363 query_by_price_range ORDER BY price ASC, chỉ 44 rows thỏa >=2tr (< SQL LIMIT 1000 và < row cap DEFAULT_STATS_INDEX_LIMIT=100) → không dòng nào bị cắt; row thiếu rank 12/44, bot đã nêu rows rank 4,6,17,32,36,38,39 (cả trước lẫn sau rank 12) → row chắc chắn trong context, kèm 'productname: ...WILDTRAXX A/T' ngay trong dòng. Answer cắt cuối không thể chứa dòng thiếu vì bot liệt kê tăng dần theo giá (2.268.000 phải nằm giữa dòng 2 và 3). Các hướng lật án (truncation, LIMIT, typo WILLTRAXX bị name-filter loại) đều bị loại: builder không filter theo tên (chunk chứa cả CITYTRAXX), entity_name field-like nên được emit."
+  },
+  {
+   "id": "B-063",
+   "verdict": "chua_chuan",
+   "fail_step": "generate",
+   "note": "[Y-ÁN] Verified độc lập: 3 entity + giá + tồn đều grounded verbatim trong chunks (1854000/216, 2322000/40, 2430000/1; DSI row 265/65R17 NULL price nên chunk là ground truth). Đủ 3/3 codes 2-R17 265/65 trong corpus — không thieu. Nhưng grep toàn bộ document_chunks của bot với 8 keyword mô tả gai (đường phố/cao tốc/off-road/đường đất/địa hình/bền bỉ/đường nhựa/offroad) = 0 rows → mô tả 'gai dạng đường phố', 'chịu được đường đất, địa hình xấu', 'off-road nhẹ' là LLM tự suy diễn từ mã H/T-A/T, vi phạm note L-090 'không bịa mô tả gai'. Không phải sai_bia (không bịa số/tồn/trạng thái). Án sơ thẩm chua_chuan + fail_step=generate GIỮ NGUYÊN."
+  },
+  {
+   "id": "B-064",
+   "verdict": "sai_bia",
+   "fail_step": "generate",
+   "note": "[Y-ÁN] Full chunk 019f36a1-3637-7b40-9f3e-305915e7151a (xe-2, 3110 chars) fetched to clear truncated:true — tail has no extra 18\" lines; ground truth = 10 unique size-18 lines, each 1x. Bot fabricated 4 entities (215/55ZR18 98WXL, 205/50ZR18 93WXL, 255/55ZR18 110W XL, 275/45ZR18 110W XL): 0 hits in full chunk, 0 corpus-wide any-format regex, 0 in document_service_index; each is a rim-diameter mutation of a real line (ZR17/ZR17/ZR20/ZR21) in the same chunk. Loose 255/55ZR18 hits = real 255/55R18 109HXL H/T (different product, DSI 2-R18 255/55 LPD 1827000 qty5), not the fabricated ZR18 110W XL H/P. Duplicates confirmed (245/45ZR18 x3, 235/55ZR18 x3, 225/55ZR18 x2 vs 1x each in sheet); also omitted real 235/60R18 107HXL (answer clipped, secondary). Retrieval perfect (score 1.0, full ground truth in prompt) → fail_step=generate. Not lech: invented entity names exist nowhere, not cross-row misattribution."
+  },
+  {
+   "id": "B-065",
+   "verdict": "refuse_oan",
+   "fail_step": "generate",
+   "note": "[Y-ÁN] Uphold. Giá 1.701.000/qty 122 đúng DSI (2-ZR18 235/55 LPD). Nhưng ngày về CÓ trong cả corpus (chunk xe-2 019f36a1: '235/55ZR18 104WXL CITYTRAXX H/P | 28-thg 11') LẪN context gửi LLM: chunk[0] kết thúc '| : 28-thg 11' (truncated:false) và chunk[1] chứa dòng đó TRƯỚC điểm cắt (visible dù truncated:true). chunks_graded_pass=5 → LLM đã nhận đáp án mà vẫn khẳng định 'tài liệu không ghi rõ ngày về'. Flow n5_lapluan_ngayve hỏi chính ngày về → refuse oan, fail_step=generate. Không phải thieu vì bot chủ động phủ nhận data tồn tại chứ không chỉ bỏ sót."
+  },
+  {
+   "id": "B-066",
+   "verdict": "chua_chuan",
+   "fail_step": "generate",
+   "note": "[Y-ÁN] Uphold. DB verify: (1) 0/403 chunks chứa mô tả đặc điểm (địa hình/gai lốp/độ bám/High Performance/All Terrain... = 0 hit) → đoạn so sánh H/P vs A/T của bot là encyclopedia không grounded, vi phạm note 'không bịa encyclopedia' dù hedge 'thường'. (2) Corpus CÓ dòng A/T: 34 chunks WILDTRAXX A/T (xe-1:18, xe-2:1, xe-3:15), ≥16 size có giá+tồn thật (255/70R16=2.079.000/160c, 265/70R16=2.133.000/22c khớp DSI) → bot gọi 'CITYTRAXX A/T' là shell entity và meta-claim 'A/T không được đề cập' sai với corpus. (3) Chunk duy nhất vào context là slice H/P ngày-về, truncated:false — không có nội dung ẩn cứu án; retrieve góp lỗi (0 chunk WILDTRAXX được đưa vào). Không lên sai_bia vì n_numbers=0, không số bịa; không phải refuse_dung vì bot vẫn trả nội dung bịa. chua_chuan + fail_step=generate đúng tội."
+  },
+  {
+   "id": "B-067",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Tư vấn A/T cho đèo dốc + báo giá grounded đúng spec scenario: mã '2-R20 285/50 LPD AT', giá 3.267.000đ, tồn 4 khớp DB chính xác từng số (2-R20 285/50 LPD AT=3267000/4, productname 'LANDSPIDER 285/50R20 116TXL WILDTRAXX A/T'). Phần lý do gai sâu/bám đường là khung tư vấn được scenario chấp nhận ('tư vấn + giá grounded')."
+  },
+  {
+   "id": "B-068",
+   "verdict": "thieu",
+   "fail_step": "generate",
+   "note": "[Y-ÁN] Án sơ thẩm ĐỨNG. Câu hỏi hỏi LỊCH VỀ HÀNG; corpus có đáp án literal: document '22112' (sheet NGÀY VỀ, chunk 019f1929-8e92-7c41-ada5-3a1cb34d8cc7) chứa row '| | 255/60R18 112HXL CITYTRAXX H/T | 28-thg 11 |', và DSI entity '255/60R18 112HXL CITYTRAXX H/T' có attributes_json {\"\": \"28-thg 11\"}. Chunk[0] retrieved (score 1.0, truncated:false) kết thúc '| : 28-thg 11' — data ĐÃ vào context LLM nhưng bot bỏ qua, trả lời lệch sang tồn kho ('có hàng, không cần chờ về thêm'). Mọi số bot nêu đều grounded (giá 1.944.000 = DSI price_primary 1944000; tồn 156 = attributes quantity; productname khớp verbatim) → không phải sai_bia/lech; bot không refuse → không phải refuse_oan; nhưng bỏ sót item corpus có trả lời trực tiếp câu hỏi → thieu, fail_step=generate chính xác. Ghi chú giảm nhẹ (không đổi án): ingest làm mất label cột 'NGÀY VỀ' thành key rỗng ({\"\": \"28-thg 11\"}), LLM chỉ thấy date không nhãn — yếu tố góp phần ở tầng ingest, nhưng data vẫn hiện diện trong prompt nên tầng fail chính vẫn là generate."
+  },
+  {
+   "id": "B-069",
+   "verdict": "thieu",
+   "fail_step": "retrieve",
+   "note": "[Y-ÁN] Upheld. Bot trả 436 (214+204+18+0), từng dòng grounded (chunks xe-3 p1-3 + DSI 2-R13C 175/13=0) nhưng DSI có 11 dòng R13 quantity tổng=595. Sót 4 dòng tồn dương: 155/70 RHP-A68=100, 165/65 RVL=35, 175/70 RHP-A68=16, 155R13C=8 (thiếu 159). Corpus CÓ đủ: xe-3 chunks 127/129/131/134 chứa nguyên văn các dòng này kèm qty — đã ingest nhưng không lọt top-5 gửi LLM → fail_step=retrieve đúng. Chỉnh nhỏ: sơ thẩm nói 10 dòng, DSI thực tế 11 dòng có qty (thêm 165/70 RVL=0), tổng 595 không đổi."
+  },
+  {
+   "id": "B-070",
+   "verdict": "lech",
+   "fail_step": "retrieve",
+   "note": "[Y-ÁN] Án sơ thẩm ĐỨNG VỮNG. Sheet hàng về 28/11 (xe-2, 1 chunk, đọc full content DB — không truncation) liệt kê ~60 size LANDSPIDER đều '28-thg 11'; KHÔNG có 285/45ZR22. DSI: chỉ 4 entity giá > 3.312.000 (ZR22 285/45 = 3.735.000; R20 275/55 = 3.438.000; R21 295/35 RVL = 3.420.000; ZR21 285/45 = 3.402.000) — cả 4 đều KHÔNG nằm trong sheet 28/11 → đáp án đúng = 275/45ZR21 110WXL CITYTRAXX H/P, 3.312.000 (2-ZR21 275/45 LPD, qty 44), khớp sơ thẩm. Số bot nêu (3.735.000/6) grounded trong fact-chunk + DSI row 2-ZR22 285/45 LPD nên KHÔNG phải sai_bia — nhưng entity nằm ngoài filter 28/11, bot khẳng định membership sai → lech. fail_step=retrieve đúng: topk=1, chỉ fact-chunk max-giá toàn cục vào LLM, sheet xe-2 không được retrieve nên LLM không thể lọc theo ngày; generate góp lỗi phụ khi khẳng định membership không căn cứ."
+  },
+  {
+   "id": "B-071",
+   "verdict": "refuse_dung",
+   "fail_step": "-",
+   "note": "Corpus 0 chunks chứa 'tài khoản/STK' (DB verified); bot defer trung thực 'chưa có thông tin số tài khoản' + xin SĐT callback. Hotline 0988 771 310 nêu kèm là grounded (2 chunks DB + chunk top run). Cờ misattributed '0988' trong numeric_fidelity là false positive của checker — số nằm verbatim trong chunk 'Hotline/Zalo: 0988 771 310'."
+  },
+  {
+   "id": "B-072",
+   "verdict": "refuse_dung",
+   "fail_step": "-",
+   "note": "Corpus 0 chunks chứa 'Quang Minh' hoặc 'mã số thuế/MST' (DB verified). Bot redirect persona, không bịa MST, không nhận nhầm mình là công ty Quang Minh. Defer đúng thiết kế bẫy."
+  },
+  {
+   "id": "B-073",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot trả địa chỉ 'Kho Hải Ngân, Ngõ 3 Đê Đại Hà, Xóm 10, Yên Mỹ, Thanh Trì, Hà Nội' — khớp verbatim 2 chunks DB và chunk top run (score 0.849). Khớp note scenario."
+  },
+  {
+   "id": "B-074",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Hotline 0988 771 310 đúng — grounded trong chunk top (score 0.888, mục 'VI. Hỗ trợ dịch vụ') + 2 chunks DB. Cờ misattributed của numeric_fidelity là checker false positive (số verbatim trong chunk)."
+  },
+  {
+   "id": "B-075",
+   "verdict": "refuse_dung",
+   "fail_step": "-",
+   "note": "Corpus 0 chunks chứa 'thông tư' (DB verified) — OOS thật với bot lốp. Bot redirect persona 1 lần, không bịa nội dung Thông tư, không lặp vô hạn (đúng note L-002/091). Chunk score=1.0 truncated là retrieval noise nhưng bot không sử dụng sai."
+  },
+  {
+   "id": "B-076",
+   "verdict": "refuse_dung",
+   "fail_step": "-",
+   "note": "OOS — corpus không có Thông tư. answer_type=blocked, bot refuse 'chưa có thông tin chính xác trong tài liệu', không bịa ngày ban hành. Token '2020' unsupported trong numeric_fidelity là echo từ câu hỏi, answer text không chứa số nào."
+  },
+  {
+   "id": "B-077",
+   "verdict": "refuse_dung",
+   "fail_step": "-",
+   "note": "OOS — corpus không có Thông tư (0 chunks). Bot redirect persona, không bịa cơ quan ban hành (không nhắc NHNN). Refuse đúng."
+  },
+  {
+   "id": "B-078",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Câu persona — bot mô tả đúng scope thật: tra quy cách/giá/tồn kho/ngày về hàng (bảng xe-3), chính sách bảo hành (doc bảo hành), đặt đơn. Không số liệu bịa, numeric_fidelity sạch. Chunk score=1.0 truncated là noise nhưng không dùng."
+  },
+  {
+   "id": "B-079",
+   "verdict": "refuse_dung",
+   "fail_step": "-",
+   "note": "Michelin = 0 chunks toàn corpus (DB verified; corpus chỉ Landspider/Rovelo). Bot trả 'chưa phân phối hãng Michelin' + gợi ý loại tương đương — refuse brand ngoài đúng thiết kế, không bịa giá/tồn Michelin."
+  },
+  {
+   "id": "B-080",
+   "verdict": "refuse_dung",
+   "fail_step": "-",
+   "note": "Thời tiết = OOS tuyệt đối. Bot từ chối rõ 'em chưa hỗ trợ được' + nêu scope lốp xe. Không bịa thông tin thời tiết. Refuse đúng."
+  },
+  {
+   "id": "B-081",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot: 774.000đ/108 lốp. Index 2-R12C155/12=774000/qty108 khớp; chunk xe-3 '...108 | 774000 | 26'. Có chunk cũ ghi qty 134 nhưng index canonical=108, bot theo đúng."
+  },
+  {
+   "id": "B-082",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot: còn 35. Chunk score=1.0 ghi 'quantity: 35' cho 2-R13 165/65 RVL (RHP-A68); khớp note scenario 'tồn 35'."
+  },
+  {
+   "id": "B-083",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot: LANDSPIDER 215/45ZR17 H/P 1.116.000đ/682 lốp. Chunk truncated nhưng index 2-ZR17 215/45 LPD=1116000/682 xác nhận — đúng entity, đúng cả giá lẫn tồn."
+  },
+  {
+   "id": "B-084",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot: còn 97, 2.511.000đ, hàng về 28-thg 11. Index 2-ZR20 245/45 LPD=2511000/97; chunk chứa ': 28-thg 11'. Khớp note (2.511.000)."
+  },
+  {
+   "id": "B-085",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot: 1.656.000đ, hết hàng (tồn 0). Index 2-ZR18 235/50 LPD=1656000, quantity là literal '0' (không phải ô trống) → khẳng định tồn 0 là đúng spec, không phải chua_chuan."
+  },
+  {
+   "id": "B-086",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot: 1.827.000đ/5 lốp. Chunk 2-R18 255/55 LPD: 1827000, quantity 5; index khớp. Đúng note scenario 1.827.000."
+  },
+  {
+   "id": "B-087",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot: còn 3 chiếc, đúng SKU 2-ZR19 235/40 LPD. Chunk truncated nhưng index qty=3 xác nhận; khớp note 'tồn 3'."
+  },
+  {
+   "id": "B-088",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Câu xác nhận giá: bot confirm 2.367.000đ + 148 lốp. Chunk top score=0.913 và index 2-ZR19 275/35 LPD=2367000/148 đều khớp."
+  },
+  {
+   "id": "B-089",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot: 2.457.000đ/1 lốp. Chunk 2-ZR20 245/40 LPD: 2457000, quantity 1; index khớp; đúng note 2.457.000."
+  },
+  {
+   "id": "B-090",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Note scenario 'SKU ảo → refuse' đã STALE với corpus stamp 6e6c0774: 3 chunks DB chứa 2-ZR20 315/35 LPD (LANDSPIDER 315/35ZR20 110WXL) với 158 | 2889000, index=2889000/158. Bot trả 2.889.000đ/158 khớp cả chunk lẫn index → theo luật chống án oan không thể kết sai_bia; corpus có đáp án và bot trả đúng."
+  },
+  {
+   "id": "B-091",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot: 3.735.000đ còn 6. DB service_index 2-ZR22 285/45 LPD = 3735000, qty 6. Chunk khớp. Đúng cả giá lẫn tồn."
+  },
+  {
+   "id": "B-092",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot: tồn 46. DB 2-R15 LT235/75 LPD qty=46, chunk quantity: 46. Đúng."
+  },
+  {
+   "id": "B-093",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "RVL row CÓ giá: DB 2-R16 195/50 RVL = 945000, qty 5. Bot trả 945.000đ/còn 5 đúng dòng Rovelo A68, không nhầm sang dòng LPD 927000/244 cùng chunk."
+  },
+  {
+   "id": "B-094",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot: còn 64. DB 2-R16C 215/75 RVL qty=64 (RCMX+). Đúng entity đúng số."
+  },
+  {
+   "id": "B-095",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot: 1.791.000đ còn 9. DB 2-R19 235/50 RVL = 1791000, qty 9 (INSTINCT SUV). Đúng."
+  },
+  {
+   "id": "B-096",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Corpus CÓ hàng: DB 2-R21 295/35 RVL = 3420000, qty 1. Bot trả còn 1 lốp + giá 3.420.000 đúng — không phải case refuse."
+  },
+  {
+   "id": "B-097",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot liệt kê đủ 2 dòng Landspider 265/60R18: H/T 1.944.000 (146) + A/T 2.412.000 (68) — khớp DB 2-R18 265/60 LPD và LPD 116TWT; loại đúng dòng Rovelo 2295000 vì câu hỏi chỉ hỏi Landspider. Giá 1.944.000 grounded (không phải conflation với 265/70R16)."
+  },
+  {
+   "id": "B-098",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "DB 2-R14 175/70 LPD qty=0 → bot báo hết hàng đúng; gợi ý Rovelo A68 còn 295/729.000đ khớp DB 2-R14 175/70 RVL = 729000, qty 295."
+  },
+  {
+   "id": "B-099",
+   "verdict": "lech",
+   "fail_step": "generate",
+   "note": "[Y-ÁN] Upheld. DB verify: SKU 2-R15LT 31X10.50 LPD xuất hiện đúng 1 chunk toàn corpus (xe-1 chunk 19, full content query — không truncated), ô giá/tồn là placeholder rỗng col5|col6; document_service_index 0 rows cho SKU này. Giá 1.953.000 bot nêu thuộc DSI entity '2-R15 LT235/75 LPD' (price_primary=1953000, quantity=46); '26 lốp' là cột date1 của dòng đó (tồn thật 46). 0 chunk nào chứa đồng thời 1953000 và 31X10. Số grounded trong chunk nhưng gán sai entity + sai cột = lech (không phải sai_bia). Retrieval mang đúng row rỗng về top-3, generation conflate → fail_step=generate đúng."
+  },
+  {
+   "id": "B-100",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot: 1.251.000đ còn 3. DB 2-R15 205/70 RVL = 1251000, qty 3 (RCMX+ 205/70R15C). Đúng."
+  },
+  {
+   "id": "G-001",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot trả 630.000đ/100 lốp khớp expect 630.000 và DB row '2-R13 155/70 RHP-A68' = 630000/qty 100; chunk (truncated=false) chứa đúng price 630000, quantity 100, ROVELO 155/70R13 A68."
+  },
+  {
+   "id": "G-002",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot trả 684.000đ/214 lốp khớp expect 684.000 và DB row '2-R13 155/80 LPD' = 684000/qty 214; chunk có answer LANDSPIDER 155/80R13 G/P, price 684000, quantity 214."
+  },
+  {
+   "id": "G-003",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot trả 702.000đ/369 lốp + tên đầy đủ '79H CITYTRAXX G/P' khớp expect 702.000, DB row '2-R14 165/65 LPD' = 702000/qty 369, và productname trong chunk; không nhầm sang dòng RVL 675000 cùng chunk."
+  },
+  {
+   "id": "G-004",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot trả 747.000đ/204 lốp khớp expect 747.000 và DB row '2-R13 165/80 LPD' = 747000/qty 204; '75H CITYTRAXX G/P' grounded đúng productname trong chunk."
+  },
+  {
+   "id": "G-005",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot trả 783.000đ/83 lốp khớp expect 783.000 và DB row '2-R14 185/60 RVL' = 783000/qty 83; chunk chứa cả dòng LPD 819000/89 nhưng bot chọn đúng dòng Rovelo được hỏi — không conflation."
+  },
+  {
+   "id": "G-006",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot trả 810.000đ/779 lốp khớp expect 810.000 và DB row '2-R15 185/55 LPD' = 810000/qty 779; chunk có dòng RVL shell (không giá) nhưng bot không bịa gì cho nó."
+  },
+  {
+   "id": "G-007",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot trả 819.000đ/89 lốp khớp expect 819.000 và DB row '2-R14 185/60 LPD' = 819000/qty 89; chunk chứa cả dòng RVL 783000/83 nhưng bot chọn đúng dòng Landspider được hỏi."
+  },
+  {
+   "id": "G-008",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot trả 855.000đ/59 lốp khớp expect 855.000 và DB row '2-R14 185/65 LPD' = 855000/qty 59; không nhầm sang dòng RVL 801000/154 cùng chunk."
+  },
+  {
+   "id": "G-009",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot trả 900.000đ/265 lốp + '83V CITYTRAXX G/P' khớp expect 900.000, DB row '2-R16 185/55 LPD' = 900000/qty 265, và productname trong chunk."
+  },
+  {
+   "id": "G-010",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot trả 945.000đ/5 lốp khớp expect 945.000 và DB row '2-R16 195/50 RVL' = 945000/qty 5; chunk chứa cả dòng LPD 927000/244 nhưng bot chọn đúng dòng Rovelo được hỏi."
+  },
+  {
+   "id": "G-011",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot trả 963.000đ/74 lốp; DB row '2-R15 195/60 LPD' price_primary=963000, quantity=74 — khớp cả giá lẫn tồn. Qty 74 loại trừ nhầm với row cùng giá '2-R14 195/70 LPD' (qty 43)."
+  },
+  {
+   "id": "G-012",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot trả 981.000đ/19 lốp; DB row '2-R14 195/65 RVL' price_primary=981000, quantity=19 — khớp expect 981.000 của scenario."
+  },
+  {
+   "id": "G-013",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot trả 1.044.000đ/734 lốp cho LANDSPIDER 205/55R16 91V CITYTRAXX G/P; DB row '2-R16 205/55 LPD' price_primary=1044000, quantity=734 — khớp."
+  },
+  {
+   "id": "G-014",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot trả 1.116.000đ/682 lốp; DB row '2-ZR17 215/45 LPD' price_primary=1116000, quantity=682 — khớp expect 1.116.000."
+  },
+  {
+   "id": "G-015",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot trả 1.170.000đ/187 lốp; DB row '2-R16 205/65 LPD' price_primary=1170000, quantity=187 — khớp expect 1.170.000."
+  },
+  {
+   "id": "G-016",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot trả 1.224.000đ/31 lốp; DB row '2-R16 215/55 LPD' price_primary=1224000, quantity=31 — khớp expect 1.224.000."
+  },
+  {
+   "id": "G-017",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot trả 1.233.000đ/296 lốp; DB row '2-ZR17 215/55 LPD' price_primary=1233000, quantity=296 — khớp expect 1.233.000."
+  },
+  {
+   "id": "G-018",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot trả 1.260.000đ/9 lốp; DB row '2-R15 215/70 RVL' price_primary=1260000, quantity=9 — khớp expect 1.260.000."
+  },
+  {
+   "id": "G-019",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot trả 1.287.000đ/157 lốp cho Rovelo 195/70R15C RCMX+; DB row '2-R15 195/70 RVL' price_primary=1287000, quantity=157 — khớp expect 1.287.000."
+  },
+  {
+   "id": "G-020",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot trả 1.377.000đ/95 lốp; DB row '2-ZR17 225/55 LPD' price_primary=1377000, quantity=95 — khớp expect 1.377.000. numeric_fidelity: 1 grounded, 0 misattributed."
+  },
+  {
+   "id": "G-021",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot trả 1.440.000đ + tồn 22 khớp DB row '2-ZR18 225/40 LPD' (price_primary=1440000, quantity=22) và chunk score=1.0; entity LANDSPIDER 225/40ZR18 H/P đúng."
+  },
+  {
+   "id": "G-022",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot trả 1.467.000đ + tồn 55 khớp DB row '2-ZR17 245/45 LPD' (1467000, qty=55) và chunk; productname LANDSPIDER 245/45ZR17 99WXL CITYTRAXX H/P đúng."
+  },
+  {
+   "id": "G-023",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot trả 1.512.000đ + tồn 3 khớp DB row '2-R16 235/60 LPD' (1512000, qty=3) và chunk; entity 235/60R16 100H CITYTRAXX H/T đúng."
+  },
+  {
+   "id": "G-024",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot trả 1.602.000đ + tồn 101 khớp DB row '2-ZR18 235/45 LPD' (1602000, qty=101) và chunk score=1.0."
+  },
+  {
+   "id": "G-025",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot trả 1.611.000đ + tồn 46 khớp DB row '2-R17 235/60 LPD' (1611000, qty=46) và chunk; entity 235/60R17 102H CITYTRAXX H/T đúng."
+  },
+  {
+   "id": "G-026",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot trả 1.656.000đ + tồn 202 khớp DB row '2-ZR18 245/45 LPD' (1656000, qty=202) và chunk score=1.0."
+  },
+  {
+   "id": "G-027",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Chunk chứa cả H/T (1755000) lẫn A/T WILLTRAXX (1890000); bot chọn đúng dòng H/T: 1.755.000đ + tồn 70 khớp DB row '2-R16 245/70 LPD' (1755000, qty=70)."
+  },
+  {
+   "id": "G-028",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Chunk chứa cả Rovelo (1791000) lẫn Landspider ZR19 (1989000); bot chọn đúng Rovelo: 1.791.000đ + tồn 9 khớp DB row '2-R19 235/50 RVL' (1791000, qty=9) — không conflation."
+  },
+  {
+   "id": "G-029",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot trả 1.800.000đ + tồn 4 khớp DB row '2-R19 235/55 RVL' (1800000, qty=4); chunk có thêm dòng Landspider 1989000 nhưng bot không lẫn."
+  },
+  {
+   "id": "G-030",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot phân biệt đúng A/T vs H/T trong cùng chunk: 1.890.000đ + tồn 54 khớp DB row '2-R16 245/70 LPD WILLTRAXX' (1890000, qty=54)."
+  },
+  {
+   "id": "G-031",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot trả 1.944.000đ + tồn 146 cho LANDSPIDER 265/60R18 H/T — khớp DB row 2-R18 265/60 LPD (price_primary=1944000, quantity=146) và chunk score=1.0 không truncated. Giá 265/60R18 H/T=1.944.000 đã hồi sinh đúng như corpus stamp 6e6c0774."
+  },
+  {
+   "id": "G-032",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot trả 1.989.000đ + tồn 3 — khớp DB row 2-ZR19 235/40 LPD (1989000, qty=3); tên sản phẩm 'LANDSPIDER 235/40ZR19 96WXL CITYTRAXX H/P' trùng nguyên văn productname trong chunk."
+  },
+  {
+   "id": "G-033",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot trả 2.034.000đ + tồn 114 — khớp DB row 2-ZR19 245/40 LPD (2034000, qty=114) và chunk content; đúng entity 245/40ZR19 H/P."
+  },
+  {
+   "id": "G-034",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot trả 2.079.000đ + tồn 30 — khớp DB row 2-ZR19 245/55 LPD (2079000, qty=30) và chunk score=1.0; đúng entity 245/55ZR19 H/P."
+  },
+  {
+   "id": "G-035",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot trả 2.178.000đ + tồn 10 — khớp DB row 2-ZR19 255/45 LPD (2178000, qty=10) và chunk content; đúng entity 255/45ZR19 H/P."
+  },
+  {
+   "id": "G-036",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Chunk chứa cả 3 dòng (2 Landspider + 1 Rovelo) nhưng bot chọn đúng dòng Rovelo 2-R18 265/60 RVL: 2.295.000đ + tồn 20 khớp DB (2295000, qty=20) — không conflation Landspider/Rovelo."
+  },
+  {
+   "id": "G-037",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot trả 2.322.000đ + tồn 96 — khớp DB row 2-ZR20 265/50 LPD (2322000, qty=96) và chunk content; đúng entity 265/50ZR20 H/P."
+  },
+  {
+   "id": "G-038",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Chunk chứa 3 dòng (Landspider H/T 1.854.000, Landspider A/T 2.322.000, Rovelo A/T 2.430.000); bot chọn đúng dòng Rovelo 2-R17 265/65 RVL: 2.430.000đ + tồn 1 khớp DB (2430000, qty=1) — vượt bẫy conflation."
+  },
+  {
+   "id": "G-039",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot trả 2.511.000đ + tồn 8 — khớp DB row 2-ZR20 255/35 LPD (2511000, qty=8) và chunk score=1.0; đúng entity 255/35ZR20 H/P."
+  },
+  {
+   "id": "G-040",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot trả 2.520.000đ + tồn 92 cho DAVANTI 285/45ZR19 111W XL DX640 — khớp DB row 2-ZR19 285/45 DVT (2520000, qty=92) và chunk content nguyên văn."
+  },
+  {
+   "id": "G-041",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot trả 2.628.000đ + còn 36 lốp; DB row '2-ZR20 275/45 LPD' price_primary=2628000, quantity=36; chunk0 (score 1.0) chứa nguyên văn 'price: 2628000 | quantity: 36 | answer: LANDSPIDER 275/45ZR20 H/P'. Đúng entity, đúng số."
+  },
+  {
+   "id": "G-042",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot trả 3.240.000đ + còn 251 lốp; DB row '2-ZR21 275/40 DVT' = 3240000/qty 251; chunk0 (score 1.0) 'price: 3240000 | quantity: 251 | answer: DAVANTI 275/40ZR21 DX640'. Khớp expect 3.240.000."
+  },
+  {
+   "id": "G-043",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot trả 630.000đ + 100 lốp; DB row '2-R13 155/70 RHP-A68' = 630000/qty 100; chunk0 (score 0.854) 'price: 630000 | quantity: 100 | answer: ROVELO 155/70R13 A68'. Khớp expect và qty scenario."
+  },
+  {
+   "id": "G-044",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot trả 702.000đ + 369 chiếc; DB row '2-R14 165/65 LPD' = 702000/qty 369; chunk0 (score 0.821) 'price: 702000 | quantity: 369 | answer: LANDSPIDER 165/65R14 G/P'. Khớp expect."
+  },
+  {
+   "id": "G-045",
+   "verdict": "refuse_oan",
+   "fail_step": "generate",
+   "note": "[Y-ÁN] Án đứng vững. Chunk top-1 (score 0.813, không truncated) chứa nguyên văn 'price: 783000 | answer: LANDSPIDER 175/65R15 G/P | quantity: 48'; DB document_chunks (doc xe-3) xác nhận verbatim 'LANDSPIDER 175/65R15 G/P | 48 | 783000'. DSI có row entity nhưng price_primary/qty rỗng (extraction gap) — chunk content đủ cả giá lẫn tồn kho. 6 chunks graded pass, prompt 6692 tok vào LLM nhưng generate vẫn trả template từ chối. Fail_step=generate xác nhận đúng: request_logs refusal_reason rỗng, completion_tokens=96 khớp out_tok=96 của generate → LLM tự refuse, guard không override."
+  },
+  {
+   "id": "G-046",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot trả 810.000đ + 324 chiếc đúng row Rovelo; DB '2-R15 185/65 RVL' = 810000/qty 324, chunk0 chứa '2-R15 185/65 RVL: 810000 ... ROVELO 185/65R15 A68'. Bot không bị lẫn với distractor Landspider 185/65R15 (900000/470) nằm đầu chunk0."
+  },
+  {
+   "id": "G-047",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot trả 900.000đ + 265 chiếc; DB row '2-R16 185/55 LPD' = 900000/qty 265; chunk0 (score 0.858) 'price: 900000 | quantity: 265 | answer: LANDSPIDER 185/55R16 G/P'. Khớp expect."
+  },
+  {
+   "id": "G-048",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot trả 981.000đ + 45 chiếc đúng row Rovelo; DB '2-R15 195/65 RVL' = 981000/qty 45, chunk0 chứa '2-R15 195/65 RVL: 981000 ... ROVELO 195/65R15 A68'. Không conflate với Landspider 195/65R15 (972000/313) đứng đầu chunk0."
+  },
+  {
+   "id": "G-049",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot trả 1.116.000đ + 682 chiếc, kèm mã hàng '2-ZR17 215/45 LPD' khớp chính xác entity_name DB (price_primary=1116000, qty=682); chunk0 (score 0.857) chứa nguyên văn row. Khớp expect."
+  },
+  {
+   "id": "G-050",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot trả 1.233.000đ + 35 chiếc; DB row '2-R16 225/55 LPD' = 1233000/qty 35; chunk0 (score 0.849) 'price: 1233000 | quantity: 35 | answer: LANDSPIDER 225/55R16 G/P'. Khớp expect."
+  },
+  {
+   "id": "G-051",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot trả 1.350.000đ + 14 chiếc; DB row '2-R16 195/75 RVL' = price 1350000, qty=14; chunk[0] score 0.837 chứa đúng cả hai số, khớp expect 1.350.000."
+  },
+  {
+   "id": "G-052",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot trả 1.440.000đ + 39 chiếc; DB row '2-ZR18 225/45 LPD' = 1440000, qty=39; chunk[0] 'LANDSPIDER 225/45ZR18 H/P | quantity: 39' khớp hoàn toàn."
+  },
+  {
+   "id": "G-053",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot trả 1.602.000đ + 424 chiếc + đúng mã 2-ZR18 225/55 LPD; DB row = 1602000, qty=424; chunk[0] score 0.826 khớp."
+  },
+  {
+   "id": "G-054",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot trả 1.656.000đ + 145 lốp; DB row '2-ZR18 225/50 LPD' = 1656000, qty=145; chunk[0] chứa đúng entity LANDSPIDER 225/50ZR18 99WXL H/P."
+  },
+  {
+   "id": "G-055",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot trả 100 chiếc; DB row '2-R13 155/70 RHP-A68' qty=100; chunk[0] score 1.0 'ROVELO 155/70R13 A68 | quantity: 100' khớp expect."
+  },
+  {
+   "id": "G-056",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot trả 204 chiếc; DB row '2-R13 165/80 LPD' qty=204; chunk[0] 'LANDSPIDER 165/80R13 G/P | quantity: 204' khớp expect."
+  },
+  {
+   "id": "G-057",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot trả 89 chiếc cho LANDSPIDER 185/60R14 G/P; DB row '2-R14 185/60 LPD' qty=89. Chunk chứa cả dòng Rovelo cùng size (qty=83) nhưng bot chọn đúng dòng Landspider, không conflate."
+  },
+  {
+   "id": "G-058",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot trả 19 chiếc; DB row '2-R14 195/65 RVL' qty=19; chunk[0] 'ROVELO 195/65R14 A68 | quantity: 19' khớp expect."
+  },
+  {
+   "id": "G-059",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot trả 55 chiếc; DB row '2-ZR17 205/45 LPD' qty=55; chunk[0] 'LANDSPIDER 205/45ZR17 H/P | quantity: 55' khớp expect."
+  },
+  {
+   "id": "G-060",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot trả 18 chiếc cho LANDSPIDER 225/60R16 G/P; DB row '2-R16 225/60 LPD' qty=18. Chunk chứa cả Rovelo 225/60R16 (qty=1) nhưng bot chọn đúng dòng Landspider."
+  },
+  {
+   "id": "G-061",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot trả 39 chiếc — khớp DB document_service_index dòng '2-R16 235/70 LPD' quantity=39, chunk top-1 score=1.0 chứa 'quantity: 39' đúng entity LANDSPIDER 235/70R16 H/T."
+  },
+  {
+   "id": "G-062",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot trả 202 chiếc — khớp DB dòng '2-ZR18 245/45 LPD' quantity=202, chunk chứa 'quantity: 202' đúng entity LANDSPIDER 245/45ZR18 H/P."
+  },
+  {
+   "id": "G-063",
+   "verdict": "thieu",
+   "fail_step": "ingest",
+   "note": "[Y-ÁN] Án giữ nguyên (thieu, fail_step=ingest). Bot trả đúng entity + số grounded (DSI 2-R16 205/55 LPD: price=1044000, qty=734 khớp verbatim answer) nhưng KHÔNG nêu ngày về hàng được hỏi. Corpus CÓ đáp án: chunk xe-2#0 giữ header chuẩn '| GR | LANDSPIDER BRAND TYRES | NGÀY VỀ |' → '| | 205/55R16 91V CITYTRAXX G/P | 28-thg 11 |'; DSI row '205/55R16 91V CITYTRAXX G/P' attributes_json={\"\": \"28-thg 11\"} — header 'NGÀY VỀ' mất thành key rỗng ở bước ingest/index, nên chunk retrieved chỉ mang fragment '| : 28-thg 11' vô nghĩa với LLM. Không lật được: không refuse (loại refuse_oan), không bịa/không lệch dòng (loại sai_bia/lech), câu hỏi chính không được trả lời (loại dung). Root cause ingest xác nhận bằng DB: markdown giữ header nhưng DSI extraction drop key."
+  },
+  {
+   "id": "G-064",
+   "verdict": "thieu",
+   "fail_step": "ingest",
+   "note": "[Y-ÁN] Án sơ thẩm ĐỨNG VỮNG. (1) Số bot nêu grounded: 972.000đ/313 lốp khớp DSI '2-R15 195/65 LPD' (price_primary=972000, quantity=313) — không sai_bia/lech. (2) Corpus CÓ đáp án expect '28-thg 11': source chunk xe-2#0 có bảng header 'NGÀY VỀ' với row '195/65R15 91H CITYTRAXX G/P | 28-thg 11'; retrieved chunk cũng chứa date nhưng dạng unlabeled '| : 28-thg 11'. (3) Bot chỉ trả stock status + giá, bỏ sót hoàn toàn ngày về hàng được hỏi → thieu (đúng những gì nói, sót item corpus có). (4) fail_step=ingest xác nhận: attributes_json key rỗng {\"\": \"28-thg 11\"} trên cả 52 entity CITYTRAXX chứng minh label 'NGÀY VỀ' bị drop khi build document_service_index — LLM nhận date không nhãn nên không diễn giải được là ngày về."
+  },
+  {
+   "id": "G-065",
+   "verdict": "thieu",
+   "fail_step": "ingest",
+   "note": "[Y-ÁN] Verified against DB — án thieu ĐỨNG. Bot numbers grounded: DSI '2-ZR18 225/45 LPD' price_primary=1440000, quantity=39 khớp verbatim '1.440.000đ/39 lốp' (đúng entity ZR18, không lech/sai_bia); claim 'đang có hàng' đúng (qty=39). Nhưng corpus CÓ đáp án expect '28-thg 11' ở 2 nơi: (a) chính chunk retrieved có field không nhãn '| : 28-thg 11' (DSI mirror: entity '225/45ZR18 95WXL CITYTRAXX H/P' attributes_json={\"\": \"28-thg 11\"} — key rỗng, header cột mất khi ingest price-sheet), (b) document 'xe-2' chunk_index=0 có bảng CÓ NHÃN 'NGÀY VỀ' với row '| | 225/45ZR18 95WXL CITYTRAXX H/P | 28-thg 11 |' nhưng KHÔNG được retrieve (topk=1, chỉ price chunk vào LLM). Bot trả đúng những gì nói nhưng bỏ sót arrival date mà corpus có → thieu chuẩn taxonomy. Refinement fail_step: ingest đúng một phần (evidence empty-key DSI), nhưng có compound retrieve-miss vì chunk labeled 'NGÀY VỀ' tồn tại trong xe-2 mà không vào topK — fix ưu tiên: label cột NGÀY VỀ ở price-sheet ingest HOẶC tăng recall để xe-2 chunk vào topK."
+  },
+  {
+   "id": "G-066",
+   "verdict": "thieu",
+   "fail_step": "ingest",
+   "note": "[Y-ÁN] Uphold thieu/ingest. Bot's numbers grounded: DSI '2-R18 235/60 LPD'=1755000/qty 191 khớp answer 1.755.000/191. Nhưng expect '28-thg 11' bot bỏ sót hoàn toàn dù corpus CÓ: raw chunk có header '| GR | LANDSPIDER BRAND TYRES | NGÀY VỀ |' + row '235/60R18 107HXL CITYTRAXX H/T | 28-thg 11'. Root cause đúng là ingest: DSI row attributes_json={\"\": \"28-thg 11\"} — label NGÀY VỀ bị mất thành empty-string key, chunk gửi LLM chỉ còn '| : 28-thg 11' không nhãn → LLM không thể gán nghĩa 'ngày về hàng' mà không đoán. Không phải sai_bia/lech (số grounded), không refuse_oan (bot answered)."
+  },
+  {
+   "id": "G-067",
+   "verdict": "thieu",
+   "fail_step": "ingest",
+   "note": "[Y-ÁN] Án giữ nguyên: thieu / fail_step=ingest. Evidence DB: (1) Corpus CÓ đáp án labeled — chunk 019f36a1-3637-7b40-9f3e-305915e7151a (xe-2) line 101 '| | 185/60R15 84H CITYTRAXX G/P | 28-thg 11 |' dưới header '| GR | LANDSPIDER BRAND TYRES | NGÀY VỀ |' — bot không nêu ngày dù được hỏi 'khi nào về hàng' → không phải refuse_dung/dung. (2) Root cause ingest xác nhận sắc hơn sơ thẩm: xe-2 có multi-row header ('| MARKS | CARGO DESCRIPTION | |' trên '| GR | ... | NGÀY VỀ |'); extractor lấy row 1 làm header, cột 3 rỗng → DSI attributes_json={\"\": \"28-thg 11\"} (empty key, query verified) → entity chunk retrieved render '| : 28-thg 11' không nhãn → LLM không thể attribute ngày. (3) Số bot nêu grounded đủ: DSI 2-R15 185/60 LPD price=810000, quantity=1350 khớp '810.000đ/1.350 lốp'; 'còn hàng' đúng (qty>0) → không sai_bia/lech. Mọi điều bot nói đúng nhưng bỏ sót item corpus có = thieu chuẩn taxonomy."
+  },
+  {
+   "id": "G-068",
+   "verdict": "thieu",
+   "fail_step": "ingest",
+   "note": "[Y-ÁN] Giữ án. Hỏi ngày về hàng, expect 28-thg 11. Corpus xe-2 có bảng '| LANDSPIDER BRAND TYRES | NGÀY VỀ |' dòng '215/65R16 98H CITYTRAXX G/P | 28-thg 11'. Bot chỉ trả giá 1.260.000đ + tồn 28 lốp (đều grounded: DSI '2-R16 215/65 LPD' price=1260000, quantity=28 — không sai_bia/lech), bỏ sót ngày được hỏi. fail_step=ingest xác nhận: DSI '215/65R16 98H CITYTRAXX G/P' attributes_json={\"\": \"28-thg 11\"} key rỗng; chunk vào LLM chứa '| : 28-thg 11' mất nhãn NGÀY VỀ nên LLM không thể gắn giá trị với khái niệm ngày về hàng. Retrieve đúng chunk score=1.0, truncated:false — không có evidence lật án."
+  },
+  {
+   "id": "G-069",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Expect '5 năm' — bot trả '05 năm kể từ ngày sản xuất hoặc gai còn ≥ 1,6mm' khớp verbatim chunk [I. Phạm vi áp dụng] score=0.909 ('Hiệu lực bảo hành: 05 năm... gai còn ≥ 1.6mm')."
+  },
+  {
+   "id": "G-070",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Expect '0988 771 310' — bot trả đúng, khớp verbatim chunk [VI. Hỗ trợ dịch vụ] 'Hotline/Zalo: 0988 771 310'; flag misattributed '0988'→'kho' là false positive của checker vì số nằm ngay trong chunk."
+  },
+  {
+   "id": "G-071",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Answer nêu 'Kho Hải Ngân, Ngõ 3 Đê Đại Hà, Xóm 10, Yên Mỹ, Thanh Trì, Hà Nội' khớp verbatim chunk[0] xe-4 (score 0.681) và chứa expect 'Thanh Trì'."
+  },
+  {
+   "id": "G-072",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Chunk[0] [V. Quy trình bảo hành] ghi 'Kết quả được thông báo trong vòng 7 ngày làm việc' (score 0.798); bot trả đúng '7 ngày làm việc' khớp expect '7 ngày'."
+  },
+  {
+   "id": "G-073",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Chunk[0] ghi 'Áp dụng cho thương hiệu Landspider (Thailand) và Rovelo (Vietnam)'; bot trả 'Thái Lan' khớp expect."
+  },
+  {
+   "id": "G-074",
+   "verdict": "refuse_oan",
+   "fail_step": "guard",
+   "note": "[Y-ÁN] UPHELD với evidence DB mạnh hơn sơ thẩm. Corpus CÓ đáp án: document_chunks bot c6e1fc56 / doc cb8c2713 chunk_index=0 chứa verbatim 'Công ty TNHH Lốp Nam Phát' (expect='Nam Phát'), retrieved score 0.754, 3/3 graded pass, không chunk nào truncated. Generate chạy thật (59 out_tok) nhưng guardrail_events (record_request_id=82328fc0) ghi: output/system_leak/block, match_count=16 → guard_output swap answer thành OOS template (answer_type='blocked', đường code guard_output.py:513-518). Root cause: bots.system_prompt chứa 'Lốp Nam Phát' ngay position 66 → LLM trả tên công ty đúng thì shingle-match 16 lần với system prompt → system_leak false positive (đúng bài học verbatim-example trap đã ghi nhận). fail_step=guard chính xác — không phải generate (LLM có trả lời) và không phải refuse_dung (data tồn tại). Refuse oan chuẩn án."
+  },
+  {
+   "id": "G-075",
+   "verdict": "lech",
+   "fail_step": "generate",
+   "note": "[Y-ÁN] Án y. DB xác nhận: DSI '2-R16 195/65 NEO' price=NULL qty=NULL; full chunk (id 019f36a1-a72d-7511-8460-5ca375b3b6c6, không truncated) có ô price/quantity RỖNG cho dòng NEOTOUR. Giá 1.350.000 bot nêu là của '2-R16 195/75 RVL' (Rovelo 195/75R16C RCMX+, qty=14) — dòng DUY NHẤT price=1350000 của bot này, nằm cuối chunk[1] trong context. 0 chunk nào chứa cả NEOTOUR + 1350000. Bot gán giá dòng khác + khẳng định 'còn hàng' khi qty rỗng → lech (misattribution, không phải sai_bia vì số có thật trong context), fail_step=generate (retrieval trả đúng dòng NEOTOUR top-1 score 0.667)."
+  },
+  {
+   "id": "G-076",
+   "verdict": "lech",
+   "fail_step": "generate",
+   "note": "[Y-ÁN] Án sơ thẩm ĐỨNG. DSI: 2-R15 185/55 LPD (Landspider)=810000/qty779; 2-R15 185/55 RVL (Rovelo A68)=NULL/NULL. Full-chunk sweep 3 chunks chứa '185/55 RVL' (xe-1 p148/149, xe-3 p149): cột price+quantity của dòng RVL đều rỗng — không chunk/DSI nào gán 810.000 hay 779 cho Rovelo 185/55R15. Cặp 810.000+779 khớp duy nhất dòng Landspider ngay trong chunk[0] bot nhận. Bot conflate 2 dòng liền kề → lech (không phải sai_bia vì số có thật trong chunk), fail_step=generate đúng (retrieve đã đưa đúng chunk, RVL trống giá nằm ngay trong context; numeric_fidelity n_misattributed=1)."
+  },
+  {
+   "id": "G-077",
+   "verdict": "chua_chuan",
+   "fail_step": "generate",
+   "note": "[Y-ÁN] Verified against DB. Bot resisted bait price 1.044.000 (dòng LPD duy nhất trong chunk topk=1) và không nêu số nào (numeric_fidelity=0) — nhưng khẳng định 'bên em chưa phân phối hãng Rovelo' là SAI với corpus: DSI có 39 dòng RVL cho bot này, đa số đang bán có giá + tồn kho (2-R15 195/65 RVL=981.000/qty 45; 2-R14 165/65 RVL=675.000/qty 549), và 135 chunks chứa 'Rovelo' (chunk 164 doc xe-1 chứa đúng '2-R16 195/55 RVL | Lốp Rovelo 195/55R16 RHP-A68' price trống). Không lật được sang refuse_dung vì defer kèm misinformation brand-level; không nâng sai_bia vì không bịa số và là over-generalization từ context thiếu (luật chấm nhẹ hơn khi nghi ngờ). fail_step=generate đúng (retrieve miss chunk RVL là yếu tố góp phần, topk=1, nhưng câu khẳng định sai sinh ra ở generate)."
+  },
+  {
+   "id": "G-078",
+   "verdict": "chua_chuan",
+   "fail_step": "generate",
+   "note": "[Y-ÁN] Verified: chunk to LLM only had LANDSPIDER 205/65R15 (truncated:false); DSI has 39 RVL rows incl. '2-R15 205/65 RVL' price NULL and '2-R16 205/65 RVL'=1.143.000/qty 2; corpus has 135 chunks with literal 'Rovelo' incl. alias chunk 'Rovelo 205/65R15' (xe-3). Bot deferred price with 0 fabricated numbers (n_numbers=0) — satisfies trap's no-fabricate requirement — but claim 'chưa phân phối hãng Rovelo' is contradicted by both corpus and DB, so not refuse_dung. Not sai_bia per lighter-verdict rule: no number fabricated, over-assertion stems from Rovelo-empty context (retrieve returned only 1 wrong-brand chunk despite exact-alias chunk existing). fail_step=generate stands: turning 'not in context' into 'brand not distributed' is a generate-layer false status claim."
+  },
+  {
+   "id": "G-079",
+   "verdict": "lech",
+   "fail_step": "generate",
+   "note": "[Y-ÁN] Upheld. DSI: '2-R14 195/70 RVL' price=NULL qty=NULL; '2-R14 195/70 LPD' price=963000 qty=43. Full chunk xe-3 phan 147/187 (019f36a1-a6ff-...) shows RVL row with price+quantity columns BLANK. Bot's 963.000d + 43 lop are the Landspider row's values misattributed to Rovelo; 963000 exists only on LPD (and 2-R16 205/55 RVL, wrong size). Scenario trap_no_price expected defer. fail_step=generate (chunk[0] showed both rows clearly separated; LLM crossed rows)."
+  },
+  {
+   "id": "G-080",
+   "verdict": "refuse_dung",
+   "fail_step": "-",
+   "note": "DB '2-R16 245/75 LPD' price=NULL qty=NULL, chunk[2] có đúng dòng này với ô price/quantity rỗng; bot defer không bịa số → đạt trap. Wording 'chưa tìm thấy quy cách trong danh sách' hơi lệch (mã có trong danh sách nhưng không có giá) song hành vi kỳ vọng được giữ."
+  },
+  {
+   "id": "G-081",
+   "verdict": "refuse_dung",
+   "fail_step": "-",
+   "note": "DB row '2-ZR18 255/45 LPD' price=NULL qty=NULL — bot defer không bịa số (numeric_fidelity n_numbers=0), đúng expected 'PHẢI defer/không bịa'. Wording 'chưa tìm thấy quy cách' hơi lệch (quy cách có, chỉ thiếu giá) nhưng behavior đúng."
+  },
+  {
+   "id": "G-082",
+   "verdict": "refuse_dung",
+   "fail_step": "-",
+   "note": "Michelin = 0 hits ở document_service_index lẫn document_chunks (bot-scoped). Bot trả 'chưa phân phối hãng Michelin' + mời cho quy cách để gợi ý tương đương, không leak số nào — refuse chuẩn."
+  },
+  {
+   "id": "G-083",
+   "verdict": "refuse_dung",
+   "fail_step": "-",
+   "note": "Bridgestone = 0 hits cả index lẫn chunks. Bot từ chối đúng 'chưa phân phối hãng Bridgestone', không bịa giá dù chunk retrieve có giá Landspider/Rovelo 205/55R16 (1044000/963000)."
+  },
+  {
+   "id": "G-084",
+   "verdict": "refuse_dung",
+   "fail_step": "-",
+   "note": "Goodyear = 0 hits cả document_service_index lẫn document_chunks. Bot từ chối đúng, không gán giá 1044000/963000 của brand khác trong chunk cho Goodyear."
+  },
+  {
+   "id": "G-085",
+   "verdict": "refuse_dung",
+   "fail_step": "-",
+   "note": "Pirelli = 0 hits cả index lẫn chunks scoped bot. Bot trả 'chưa phân phối hãng Pirelli' + offer tương đương — đúng expected trap_oos_brand, n_numbers=0."
+  },
+  {
+   "id": "G-086",
+   "verdict": "refuse_dung",
+   "fail_step": "-",
+   "note": "Kumho = 0 hits cả index lẫn chunks. Bot từ chối chuẩn 'chưa phân phối hãng Kumho', không bịa số — pass trap."
+  },
+  {
+   "id": "G-087",
+   "verdict": "refuse_dung",
+   "fail_step": "-",
+   "note": "Câu thời tiết ngoài domain (top chunk score chỉ 0.055). Bot tự giới thiệu scope tư vấn lốp và từ chối trả lời thời tiết, không bịa — đúng expected trap_oos_domain."
+  },
+  {
+   "id": "G-088",
+   "verdict": "refuse_dung",
+   "fail_step": "-",
+   "note": "'nhớt' = 0 hits trong document_chunks bot này. Bot trả 'chưa phân phối dầu nhớt' đúng; các brand nhắc tới (Landspider, Rovelo, Davanti) đều có thật trong corpus (Davanti thấy ở chunk xe-3 phần 179/187)."
+  },
+  {
+   "id": "G-089",
+   "verdict": "refuse_dung",
+   "fail_step": "-",
+   "note": "'mâm' = 0 hits trong document_chunks bot này. Bot từ chối 'chưa phân phối mâm xe' + redirect về tư vấn lốp — đúng expected, không bịa."
+  },
+  {
+   "id": "G-090",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "DB document_service_index: '2-R13 175/70 LPD' price=738000 qty=18 và '2-R13 175/70 RHP-A68' price=720000 qty=16 — bot liệt kê đủ CẢ 2 loại đúng giá (738.000đ/720.000đ) + đúng tồn kho (18/16), khớp chunk[0] score=0.90 và scenario note; numeric_fidelity 2/2 grounded."
+  },
+  {
+   "id": "G-091",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Bot liệt kê đủ 2 loại: LPD 684.000/còn 239 khớp DB row 2-R14 165/60 LPD (684000, qty=239); RVL 648.000/còn 118 khớp 2-R14 165/60 RVL (648000, qty=118). DB không có variant R14 165/60 thứ 3."
+  },
+  {
+   "id": "G-092",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Đủ 2 loại: LPD 702.000/369 khớp 2-R14 165/65 LPD (702000, qty=369); RVL 675.000/549 khớp 2-R14 165/65 RVL (675000, qty=549). Cả 4 số đúng document_service_index."
+  },
+  {
+   "id": "G-093",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Đủ 2 loại: LPD 783.000/113 khớp 2-R14 175/65 LPD (783000, qty=113); RVL 684.000/311 khớp 2-R14 175/65 RVL (684000, qty=311)."
+  },
+  {
+   "id": "G-094",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "RVL 729.000/còn 295 khớp 2-R14 175/70 RVL (729000, qty=295); LPD 792.000 bot nói 'hết hàng' khớp 2-R14 175/70 LPD qty=0 — xử lý tồn kho 0 chuẩn, không khẳng định bịa."
+  },
+  {
+   "id": "G-095",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Rovelo 729.000 khớp 2-R14 175/70 RVL (729000); Landspider 1.224.000 khớp 2-R16 215/55 LPD (1224000); kết luận Landspider đắt hơn đúng."
+  },
+  {
+   "id": "G-096",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Rovelo 819.000 khớp 2-R14 185/70 RVL (819000); Landspider 1.602.000 khớp 2-ZR18 225/55 LPD (1602000); kết luận đúng."
+  },
+  {
+   "id": "G-097",
+   "verdict": "lech",
+   "fail_step": "generate",
+   "note": "[Y-ÁN] Upheld. Bot quoted 2.223.000 for 265/60R18 H/T but DSI says 2-R18 265/60 LPD = 1.944.000 (qty 146); 2.223.000 belongs solely to 2-R18 265/65 LPD (qty 6). Full-corpus sweep: the only chunk containing 2223000 is xe-3 part 89/187 (265/65R18 H/T, no 265/60R18 co-occurrence); all 12 prompt chunks truncated=false. Correct chunk xe-3 part 87/187 (265/60R18 110H CITYTRAXX H/T = 1944000, score 0.3147) was in the prompt, so retrieval succeeded and the LLM lifted the neighboring 265/65 row's price → misattribution at generate. Not sai_bia (number exists in corpus for another entity). fail_step=generate."
+  },
+  {
+   "id": "G-098",
+   "verdict": "dung",
+   "fail_step": "-",
+   "note": "Davanti 1.152.000 khớp 2-ZR17 205/55 DVT (1152000); Landspider 2.511.000 khớp 2-ZR20 245/45 LPD (2511000); kết luận Landspider đắt hơn đúng."
+  },
+  {
+   "id": "G-099",
+   "verdict": "thieu",
+   "fail_step": "retrieve",
+   "note": "[Y-ÁN] Verified against DB: corpus genuinely carries Davanti — DSI has exactly 7 DVT SKUs summing 1788 tires in stock (2-ZR17 205/55 DVT qty=528 price=1152000 confirmed verbatim), and 14 document_chunks mention Davanti (7 in xe-1 + 7 in xe-3). All 11 top-K chunks in the record contain zero Davanti/DVT; the single truncated chunk (xe-2 LANDSPIDER cargo table, 3110 chars) was pulled in full — no Davanti after the cut, so no exculpatory evidence hidden. Bot answer (Landspider + Rovelo only) is faithful to retrieved context — top chunk 0.744 is the warranty-scope line naming only those two brands — so not sai_bia/lech; it omits a stocked main brand the scenario note requires (\"phải kể đủ brand chính\") = thieu. fail_step=retrieve correct: retrieval surfaced 0/14 Davanti chunks for a brand-aggregation query; generation layer had no way to list Davanti."
+  },
+  {
+   "id": "G-100",
+   "verdict": "thieu",
+   "fail_step": "generate",
+   "note": "[Y-ÁN] Án sơ thẩm ĐÚNG. 2 item bot nêu khớp DSI 100% (2-ZR21 275/40 DVT=3240000/251; 2-ZR19 285/45 DVT=2520000/92) nên không phải sai_bia/lech. Nhưng khẳng định 'có 2 loại đang còn hàng' sai: DSI có 7 entity DX640 đều qty>0 (196/528/296/345/80/92/251, chunk content xác nhận cả 7 là DX640), và chunk 3 trong chính context LLM (graded pass, truncated:false) chứa DAVANTI 255/50ZR19 DX640 = 2205000/qty 80 bị bỏ sót. fail_step=generate chuẩn: cả 3 chunk DX640 đã vào prompt (6819 in_tok), lỗi omission tại generate."
+  }
+ ]
+}

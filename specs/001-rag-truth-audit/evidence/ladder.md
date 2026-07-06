@@ -193,3 +193,46 @@
   DB từng số) · E-02 giá H/T hồi sinh 10/10 · E-03 control 10/10 · numeric-
   fidelity 0 unsupported/30 run. → Bug UI gốc ("tìm ra 5+ data mà trả lời 1
   dòng") **CLOSED — VERIFIED** (không còn ở mức giả thuyết).
+
+## Step 11 (Step-7 kế hoạch) — EVAL: gate100 + luannt100b agent-graded, corpus 6e6c0774 (2026-07-06)
+- Quy trình: harness 200 câu (0 error, nf-flag 9 câu B) → 20 grader agent tự
+  verify DB (đúng mandate "chấm bằng agent") → MỌI án kết tội qua verifier độc
+  lập cố lật (phúc thẩm). Do máy 4 core cap 2 agent/workflow → tách 3 workflow
+  song song (6 agent). Evidence: step7_{gate100,luannt100b}_run.json +
+  step7_final_verdicts.json (~3.5M subagent tokens, 47 agents).
+- **GATE100: 84/100 đạt** (dung 74 + refuse_dung 10) · **sai_bia = 0/100** —
+  bộ gate sinh từ ground-truth KHÔNG có fabrication.
+  16 fail: cụm 6 thieu G-063..068 (NGÀY VỀ header rỗng — xe-2 merged 2-row
+  header → DSI attributes {""} + chunk '| : 28-thg 11' mất tên cột → bot không
+  nêu được ngày = **ingest issue MỚI root-caused**); 2 refuse_oan (G-045
+  generate-refuse dù chunk chứa đáp án; G-074 guard block answer_type=blocked
+  dù 3/3 chunk pass); 3 lech shell-conflation Rovelo (G-075/076/079 — giá dòng
+  LPD gán cho RVL price-NULL); 2 chua_chuan ("chưa phân phối Rovelo" trái DSI
+  39 dòng RVL); G-097 lech near-size (2.223.000 của 265/65R18 gán cho
+  265/60R18 = class C-1 rank-pick); G-099/100 thieu Davanti aggregation.
+- **LUANNT100B (bộ bẫy): 69/100 đạt** (dung 61 + refuse_dung 8) · sai_bia = 8.
+  So baseline 74 KHÔNG so thô được (grader round này sweep toàn corpus, nghiêm
+  hơn hẳn) — ma trận per-question là so sánh honest:
+  * FAIL→PASS 3: B-030 (1.872.000 — Step-10 data), B-061 (hết bịa "chưa có
+    hàng"), B-067.
+  * PASS→FAIL 8: ~3 do grader nghiêm hơn (B-034/063/066 — encyclopedia
+    padding bị kết); ~5 behavior-change thật cần theo dõi: B-057/058 bịa
+    920.000đ/127 lốp (0 hit toàn corpus — fabrication nặng nhất round);
+    B-048 mashup 3 SKU (giá 225/50 + date1 làm tồn + link 225/50ZR17 gán cho
+    225/45ZR18); B-050 referent chain mất (rewritten=None + speculative_hit);
+    B-099 31X10.50 gán giá LT235/75.
+  * FAIL→FAIL 23: class trội = **lech misattribution trên shell entity qua
+    RAW-CHUNK path** (13 lech + 8 sai_bia B-set; fail_step=generate 26/31) —
+    đúng residual Phase-4 đã khoanh từ Step 2 (serve filter chỉ chặn stats
+    path). B-031 xe-tải scope (D-1 OPEN), B-035 8-9mm (D-3 OPEN) giữ nguyên.
+- Phúc thẩm: **22/22 án cũ Y ÁN** (0 án oan round này — luật chống-án-oan +
+  capture 2000 chars hiệu quả); B-090/B-096 minh oan bằng DB (315/35ZR20
+  2.889.000/158 + 295/35R21 3.420.000/1 CÓ THẬT — note scenario stale).
+- HALLU=0 sacred: **GIỮ trên gate set (0/100)**, **VỠ trên trap set (8/100)**
+  — fabrication tập trung ở shell-entity + chain + marketing-fluff. KHÔNG đủ
+  điều kiện ship GA theo constitution (HALLU=0 mọi set).
+- Follow-up mở (đúng tầng, chưa fix): (1) ingest 2-row merged header mất tên
+  cột NGÀY VỀ [6-7 câu]; (2) shell-entity raw-chunk path → cần deterministic
+  block hoặc row-mask [21 câu lech/sai_bia]; (3) chain referent
+  rewritten=None + speculative_hit [B-050 class]; (4) G-074 guard
+  false-block; (5) C-1/G-097 near-size rank-pick; (6) D-1/D-3 giữ nguyên.
