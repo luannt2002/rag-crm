@@ -363,3 +363,24 @@
   P1 route refinement cần brand-aware (size AND brand) mới net-positive → defer.
 - Bài học: đo TRƯỚC khi ship lộ ra P1 không hơn block + thêm defect. Nếu ship mù
   sẽ tưởng "cải thiện route" mà thực ra chỉ thêm rủi ro.
+
+## Step 18 (best-practice #1) — ĐO LẠI FULL với block ON, agent-graded (2026-07-06)
+- Capture gate100 + luannt100b (block ON, corpus 6e6c0774, 0 error).
+  Block fired: gate100 5/100, luannt100b 14/100.
+- Agent-grade 19 câu block (DB-verified, 3 agent Opus): **13 block ĐÚNG
+  (refuse_dung) + 5 chặn oan (refuse_oan)** + 1 ambiguous.
+  * ĐÚNG (fabrication/grab → defer): G-075/076/079/080/081 (5 gate) +
+    B-001/005/006/008/010/057/058/099 (8 trap) = 13.
+  * CHẶN OAN 5: B-017/B-018 (comparison/aggregation groundable — nhiều số đúng,
+    gate over-fire) + B-048/B-052/B-056 (chain "nó/sản phẩm đó" — giá ở lượt
+    trước, gate chưa thấy history).
+- DELTA điểm (blocked agent-graded; unblocked giữ verdict step7):
+  * GATE100: 84 → **~87** (+3 lech G-075/076/079 → defer đúng · 0 chặn oan gate).
+  * LUANNT100B: 69 → **~75** (+8 fixed − 2 chain regression B-052/056).
+- HALLU numeric (bịa số/vớ số): 8 sai_bia + 13 lech → phần LỚN bị block.
+  CÒN LẠI ~5 sai_bia PHI-SỐ (B-011 "chưa phân phối Rovelo", B-031 xe-tải scope,
+  B-035 8-9mm world-knowledge, B-055 marketing fluff, B-064 bịa size) —
+  numeric gate KHÔNG bắt (không phải lỗi số). → cần lớp khác (grounding/scope).
+- 2 refinement lộ ra cho block (đúng tầng A "widen net"):
+  (1) comparison/aggregation: đừng block khi answer có ≥2 số grounded hợp lệ;
+  (2) chain: gate cần nhận history (bỏ chain false-block).
