@@ -1,0 +1,11 @@
+{
+  "bot_id": "chinh-sach-xe",
+  "channel_type": "web",
+  "workspace_id": "xe",
+  "note": "Step-10 (002-E) closure probe — user's original UI bug: 'tim ra duoc hon 5 data ma chi tra loi 1 dong'. Root cause: source row 265/70R16 H/T had an in-cell newline -> entity minted price-less -> Step-2 serve filter hid it -> only the AT variant answered. After continuation-merge + re-ingest, BOTH variants must be listed with prices. Run with --repeat 10.",
+  "questions": [
+    {"id": "E-01", "kind": "list_variants", "flow": "size_variant_listing", "q": "Size 265/70R16 bên em có những loại nào? Giá từng loại?", "entity_ref": "2-R16 265/70 LPD + 2-R16 265/70 LPD AT", "expected_behavior": "grounded_answer", "expect": "1.944.000 AND 2.133.000"},
+    {"id": "E-02", "kind": "price_lookup_recovered", "flow": "price_lookup", "q": "Lốp Landspider 265/70R16 H/T giá bao nhiêu?", "entity_ref": "2-R16 265/70 LPD", "expected_behavior": "grounded_answer", "expect": "1.944.000"},
+    {"id": "E-03", "kind": "chuan_control", "flow": "price_lookup", "q": "Lốp Landspider size 225/45R17 giá bao nhiêu?", "entity_ref": "2-ZR17 225/45 LPD", "expected_behavior": "grounded_answer", "expect": "1.242.000"}
+  ]
+}

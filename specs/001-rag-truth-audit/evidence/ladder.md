@@ -179,3 +179,17 @@
 - Kích hoạt data: cần re-ingest chinh-sach-xe (wipe+apply) — corpus stamp SẼ ĐỔI,
   mọi so sánh pinned sau đó phải ghi stamp mới.
 - Rollback: revert commit (pre-pass additive).
+- RE-INGEST ĐO ĐƯỢC (2026-07-06): lần 1 KHÔNG hồi sinh — root cause: ragbot-py.service
+  start 07-04 02:08:11 < mtime document_stats.py 02:13:42 → worker chạy code cũ
+  (bài học: ingest-fix PHẢI restart service trước khi đo). Restart → re-ingest lần 2:
+  `2-R16 265/70 LPD` price NULL→**1.944.000**, qty=**12** ✓; priced 172→**173**;
+  242 entities / 403 chunks / 403 embedded / 4 docs active.
+  Nguồn giờ đủ 173/173 giá (235/65R16C 1.872.000 đã có từ re-extract Step 1-3).
+  69 price-less còn lại = hợp lệ: 55 xe-2 (bảng lịch-về không có cột giá) +
+  14 xe-3 (ô giá trống trong source — shell thật, Step-2 filter xử lý đúng).
+- Probe closure N=10 (step10_e_probe_n10.json, corpus stamp mới
+  md5=6e6c0774…f34f3 / 403 chunks / 2026-07-06 08:54): **E-01 10/10** run liệt
+  kê ĐỦ 2 variant + 2 giá (1.944.000 H/T còn 12 + 2.133.000 A/T còn 22 — khớp
+  DB từng số) · E-02 giá H/T hồi sinh 10/10 · E-03 control 10/10 · numeric-
+  fidelity 0 unsupported/30 run. → Bug UI gốc ("tìm ra 5+ data mà trả lời 1
+  dòng") **CLOSED — VERIFIED** (không còn ở mức giả thuyết).
