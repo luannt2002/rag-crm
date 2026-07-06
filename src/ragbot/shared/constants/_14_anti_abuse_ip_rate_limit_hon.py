@@ -335,3 +335,18 @@ DEFAULT_GROUNDING_CONFIRMED_ACTION: Final[str] = GROUNDING_CONFIRMED_ACTION_OBSE
 NUMERIC_FIDELITY_EVENT: Final[str] = "numeric_fidelity_observe"
 # Cap the unsupported-token list in events/trace (counts stay exact).
 NUMERIC_FIDELITY_UNSUPPORTED_TOKENS_CAP: Final[int] = 8
+# 002-H: noise patterns stripped BEFORE numeric-fidelity tokenizing so the gate
+# does not false-flag non-value digits (measured observe FP on the trap set:
+# URL fragments, contact numbers, and question-echoed numbers were 4 of 6 FPs).
+# All structural/domain-neutral — a URL, a contact-number run, and the query's
+# own numbers are never a per-row price to misattribute.
+#   * URL: any http(s) link (its path/id digits are not corpus values).
+#   * Contact number: a leading-0 run of 8+ digits with separators — a phone
+#     shape, never a price (prices carry no leading zero); locale-agnostic.
+NUMERIC_FIDELITY_URL_PATTERN: Final[str] = r"https?://\S+"
+# Contact-number shape: leading 0, then 6–11 digits each separated by at most a
+# SINGLE space/dot/dash. The single-separator bound is load-bearing — a greedy
+# ``[\d\s.-]+`` spans the " ... " between two prices and eats both (regression
+# test_derived_valid). A phone is a contiguous 8–13 digit run; a price never
+# carries a leading zero.
+NUMERIC_FIDELITY_CONTACT_NUMBER_PATTERN: Final[str] = r"0\d(?:[ .\-]?\d){6,11}"

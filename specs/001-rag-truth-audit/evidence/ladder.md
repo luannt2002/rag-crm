@@ -289,3 +289,47 @@
 - OWNER-GATE bắt buộc kế tiếp: numeric-fidelity BLOCK mode (sacred #10 exception
   path — per-bot opt-in + refusal text = owner template). Đây là đòn bẩy DUY
   NHẤT đã CHỨNG MINH (đo) chặn được fabrication.
+
+## Step 14 (option A owner-chọn) — ĐO catch+FP của gate ROW-SCOPED (observe) 2026-07-06
+- Phát hiện: row-scoped detector `detect_cross_row_misattribution` ĐÃ TỒN TẠI
+  + chạy runtime + lưu trace 100/100 câu. B-001: classify n_unsupported=0 (MÙ
+  vì 1.350.000 CÓ trong context qua dòng kề) nhưng n_misattributed=1 token
+  1.350.000 conflict [195/65r16, neoterra] → row-scoped BẮT ĐÚNG.
+- Combined flag = (n_unsupported>0 OR n_misattributed>0). Đo trên step7 verdict:
+  * **GATE100: CATCH 4/4 sai_bia+lech (100%) · FALSE-POSITIVE 1/84 (1.2%)**.
+  * **LUANNT100B: CATCH 11/21 (52%) · FALSE-POSITIVE 6/69 (8.7%)**.
+- 6 FP trap SOI KỸ = nhiễu sạch, KHÔNG phải gate nhầm nội dung, đều fix được:
+  * URL-digit: B-046 tokens ['80417763','97984'...] = mảnh vn1.co upload URL.
+  * Phone: B-071/B-074 token '0988' = hotline (corpus-wide constant, không
+    phải giá row-scoped).
+  * Chain-context: B-052/B-056 số grounded ở turn TRƯỚC (coreference chain)
+    nhưng capture chỉ thấy chunk turn này.
+  * Question-echo: B-076 '2020' = echo "Thông tư 2020" từ câu hỏi (OOS refuse).
+- KẾT LUẬN đo: gate bắt tốt (gate-set 4/4 FP 1.2%); trap FP 8.7% do 4 nguồn
+  nhiễu tokenizer/context, KHÔNG phải confusion thật. → Trước BLOCK cần siết
+  tokenizer (loại URL/phone/question-echo digit + dùng chain context) → hạ FP
+  về ~gate-set level, rồi mới bật block an toàn.
+- KHÔNG override answer (observe thuần) — sacred #10 giữ nguyên. Owner quyết
+  block sau khi FP-noise hạ.
+
+## Step 15 (002-H) — CODE: khử nhiễu tokenizer để hạ FP (observe) 2026-07-06
+- Change: `numeric_fidelity._strip_number_noise` — bỏ URL + số-điện-thoại
+  (pattern constant, structural domain-neutral) TRƯỚC khi tokenize; thêm param
+  `question` → số nhại từ câu hỏi KHÔNG tính unsupported. Wire question vào
+  guard_output (`original_query`).
+- RED→GREEN: test_numeric_fidelity_noise_strip.py 5 test (URL-digit / question-
+  echo / contact / +2 negative: giá bịa & grab thật VẪN bị flag). 1 hotfix:
+  contact pattern greedy `[\d\s.-]{6,}` nuốt " ... " giữa 2 giá (vỡ
+  test_derived_valid) → siết `0\d(?:[ .-]?\d){6,11}` (1 separator). 20/20 pass.
+- ĐO LẠI (re-classify offline step7, code 002-H):
+  * GATE100: CATCH 4/4 · **FP 1/84 → 0/84**.
+  * LUANNT100B: CATCH 11/21 · **FP 6/69 → 4/69**.
+  * URL(B-046)/phone(B-071,074)/echo(B-076) FP BIẾN MẤT.
+  * 4 FP còn lại = ARTIFACT ĐO offline, KHÔNG phải gate sai: B-007/B-090
+    (2.889.000 CÓ THẬT nhưng sau chỗ cắt capture 2000 → truncated_chunks=1;
+    runtime full-context grounded); B-052/B-056 (chain "nó"/"sản phẩm đó" — giá
+    grounded ở lượt TRƯỚC, gate chưa thấy history).
+- Giới hạn thật DUY NHẤT còn lại: chain-context (2/69) — gate chưa nhận history.
+  Fix = truyền history vào gate (bước sau). Runtime FP thật ≤ 2/69.
+- Blast-radius: numeric-fidelity observe mọi bot; pin = test_numeric_fidelity_
+  noise_strip + test_numeric_fidelity_gate (20). Sacred #10 giữ (observe).

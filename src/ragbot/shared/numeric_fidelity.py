@@ -23,14 +23,34 @@ the two coverage checks can never drift.
 """
 from __future__ import annotations
 
+import re
+
 from ragbot.shared.constants import (
     DEFAULT_NUMERIC_COVERAGE_MIN_DIGITS,
+    NUMERIC_FIDELITY_CONTACT_NUMBER_PATTERN,
     NUMERIC_FIDELITY_UNSUPPORTED_TOKENS_CAP,
+    NUMERIC_FIDELITY_URL_PATTERN,
 )
 from ragbot.shared.number_format import (
     iter_significant_number_tokens,
     parse_money_vn,
 )
+
+_URL_RE = re.compile(NUMERIC_FIDELITY_URL_PATTERN)
+_CONTACT_RE = re.compile(NUMERIC_FIDELITY_CONTACT_NUMBER_PATTERN)
+
+
+def _strip_number_noise(text: str) -> str:
+    """Blank out digit runs that are NOT per-row corpus values before the
+    tokenizer sees them, so the fidelity check never mistakes a link fragment
+    or a contact number for a price (002-H, measured observe FPs). Structural,
+    domain-neutral: a URL and a leading-0 contact run are shapes, not literals.
+    """
+    if not text:
+        return text
+    text = _URL_RE.sub(" ", text)
+    text = _CONTACT_RE.sub(" ", text)
+    return text
 
 
 def _token_value(token: str) -> int | None:
@@ -47,19 +67,33 @@ def classify_answer_numbers(
     context_texts: list[str],
     *,
     min_digits: int = DEFAULT_NUMERIC_COVERAGE_MIN_DIGITS,
+    question: str = "",
 ) -> dict:
     """Classify answer numbers vs served context. Returns the trace-field dict:
 
     ``{"n_numbers", "n_grounded", "n_derived_valid", "n_unsupported",
        "unsupported_tokens"}`` — counts exact, token list capped (PII-lean:
     tokens only, never answer text).
+
+    ``question``: the user's turn. A number echoed from the question is not a
+    fabrication (the bot repeated the user's own figure, e.g. an OOS refusal
+    naming "Thông tư 2020") — it is excluded from the unsupported signal.
+    URLs and contact numbers are stripped first (002-H).
     """
-    joined = "\n".join(t for t in context_texts if t)
+    answer = _strip_number_noise(answer)
+    joined = "\n".join(_strip_number_noise(t) for t in context_texts if t)
     context_values: set[int] = set()
     for tok in iter_significant_number_tokens(joined, min_digits=min_digits):
         val = _token_value(tok)
         if val is not None:
             context_values.add(val)
+
+    question_stripped = _strip_number_noise(question or "")
+    question_values: set[int] = set()
+    for tok in iter_significant_number_tokens(question_stripped, min_digits=min_digits):
+        val = _token_value(tok)
+        if val is not None:
+            question_values.add(val)
 
     grounded_vals: list[int] = []
     pending: list[tuple[str, int | None]] = []
@@ -74,6 +108,9 @@ def classify_answer_numbers(
             n_grounded += 1
             if val is not None:
                 grounded_vals.append(val)
+        elif tok in question_stripped or (val is not None and val in question_values):
+            # Echoed from the user's own question — not invented by the bot.
+            n_grounded += 1
         else:
             pending.append((tok, val))
 
@@ -128,10 +165,13 @@ def detect_cross_row_misattribution(
     with A's price and brand B on line 2 with B's price — whole-answer scoping
     would false-flag it. OBSERVE-ONLY like the rest of this module.
     """
+    # 002-H: strip URL/contact digit-runs so a hotline number (a corpus-wide
+    # contact constant, not a per-row price) never trips the row-scoped check.
+    answer = _strip_number_noise(answer)
     rows: list[str] = [
         ln.strip()
         for t in context_texts
-        for ln in (t or "").splitlines()
+        for ln in _strip_number_noise(t or "").splitlines()
         if ln.strip()
     ]
     if not rows or not answer:

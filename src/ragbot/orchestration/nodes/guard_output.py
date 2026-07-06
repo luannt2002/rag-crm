@@ -82,7 +82,12 @@ async def guard_output(
             str(c.get("text") or c.get("content") or "")
             for c in (state.get("graded_chunks") or [])
         ]
-        _nf = classify_answer_numbers(_nf_answer, _nf_ctx)
+        # 002-H: pass the user's turn so a number echoed from the question
+        # (e.g. an OOS refusal naming "Thông tư 2020") is not a fabrication.
+        _nf_question = str(
+            state.get("original_query") or state.get("query") or ""
+        )
+        _nf = classify_answer_numbers(_nf_answer, _nf_ctx, question=_nf_question)
         # Step-5 lệch detector: real context number attributed to the wrong
         # entity row (cross-row mix). Same observe-only discipline.
         _nf.update(detect_cross_row_misattribution(_nf_answer, _nf_ctx))
