@@ -554,18 +554,27 @@ def test_stats_index_receives_record_bot_id_for_tenant_isolation() -> None:
 
 
 # ---------------------------------------------------------------------------
-# 11. B-ROLEBLIND — a price-ask that resolves only to price-LESS entities must
-#     fall through to hybrid (anti-fabricate, retrieval-tier). A NULL-price row
-#     handed to the LLM as an authoritative score=1.0 record made it invent a
-#     price (live: "giá lốp 195/65R15" → fabricated number that is 0× in corpus).
+# 11. 002-G AUTHORITATIVE-AS-ABSENT — a price-ask resolving ONLY to price-LESS
+#     entities must be served as a stats synthetic chunk that EXPLICITLY marks
+#     the price absent, NOT fall through to hybrid.
+#
+#     History: the original B-ROLEBLIND fix fell through to hybrid so a "priced
+#     sibling chunk" could be retrieved — but a genuinely price-less entity has
+#     NO priced sibling; the fall-through instead served the raw table chunks
+#     where a DIFFERENT product's price sits next to the empty cell, and the LLM
+#     borrowed it (measured N=10 after Step-12: 195/65R16 NEO → 1.350.000 of the
+#     adjacent Rovelo, 10/10). The empty-cell → invent fear the old fix guarded
+#     against is now closed by the explicit ``price: —`` marker: the record says
+#     "this price IS absent" instead of leaving a gap. Serving it authoritatively
+#     also STOPS the raw neighbour chunk from being retrieved at all, so there is
+#     no borrowed number in context.
 # ---------------------------------------------------------------------------
 
 
-def test_price_ask_null_price_entity_falls_through_not_stats() -> None:
-    """A price-ask point lookup whose ONLY matched entity carries no price must
-    NOT short-circuit to a stats synthetic chunk (spec + date, no price → the
-    LLM fabricates the missing price). It must fall through to hybrid so the
-    priced sibling chunk can be retrieved. Reproduces the live FM-B HALLU."""
+def test_price_ask_null_price_entity_served_absent_not_fallthrough() -> None:
+    """A price-ask whose only match is price-less is served as a stats synthetic
+    chunk carrying an EXPLICIT price-absent marker (authoritative-as-absent), so
+    the raw priced-neighbour chunk is never retrieved and cannot be borrowed."""
     null_price = [{
         "entity_name": "195/65R15 91H CITYTRAXX G/P",
         "price_primary": None, "price_secondary": None,
@@ -588,14 +597,19 @@ def test_price_ask_null_price_entity_falls_through_not_stats() -> None:
 
     result = _invoke_retrieve(compiled, state)
 
-    # The price-ask code lookup WAS attempted (interception fired) …
-    stats_repo.query_by_name_keyword.assert_called_once()
-    # … but a price-LESS hit must NOT win the route → no authoritative answer.
-    assert result.get("retrieve_mode") != "stats_index"
-    retrieved = result.get("retrieved_chunks") or []
-    assert not [c for c in retrieved if c.get("source") == "stats_index"], (
-        "a price-less entity must not become an authoritative stats answer"
-    )
+    stats_repo.query_by_name_keyword.assert_called()
+    # The price-less entity is served authoritatively (no fall-through) …
+    assert result.get("retrieve_mode") == "stats_index"
+    stats_chunks = [
+        c for c in (result.get("retrieved_chunks") or [])
+        if c.get("source") == "stats_index"
+    ]
+    assert stats_chunks, "a resolved price-less entity must be served, not dropped"
+    # … and its line explicitly marks the price absent so the LLM cannot invent
+    # or borrow a number.
+    from ragbot.shared.constants import STATS_NULL_PRICE_MARKER
+    body = " ".join(str(c.get("content") or "") for c in stats_chunks)
+    assert f"price: {STATS_NULL_PRICE_MARKER}" in body, body
 
 
 def test_price_ask_priced_entity_still_uses_stats() -> None:

@@ -2421,6 +2421,24 @@ def build_graph(
                         limit=stats_limit,
                         require_value=_require_value,
                     )
+                if not entities and expect_price and _require_value:
+                    # 002-G: a price-ask whose VALUE-filtered lookup found
+                    # nothing retries WITHOUT the value gate. A genuinely
+                    # price-less match must be served authoritatively-AS-ABSENT
+                    # (the serialization marks ``price: —``), never fall through
+                    # to hybrid — there the raw table chunk of a DIFFERENT
+                    # same-size product sits next to the empty cell and the LLM
+                    # borrows its number (measured N=10: 195/65R16 NEO →
+                    # adjacent Rovelo 1.350.000, 10/10). Only fires when the
+                    # value gate is what hid the row; a true no-match still
+                    # returns [] below → hybrid.
+                    entities = await stats_index_repo.query_by_name_keyword(
+                        record_bot_id=state["record_bot_id"],
+                        keyword=_stats_kw,
+                        synonyms=_resolve_stats_keyword_synonyms(state, _stats_kw),
+                        limit=stats_limit,
+                        require_value=False,
+                    )
             elif _operation in ("max", "min"):
                 # Superlative ("đắt nhất"/"rẻ nhất"): no bound → ORDER BY price.
                 entities = await stats_index_repo.top_by_price(
@@ -2439,16 +2457,20 @@ def build_graph(
                 )
             if not entities:
                 return None
-            # B-ROLEBLIND (anti-fabricate, retrieval-tier): a price-ask point
-            # lookup that resolved only to price-LESS rows must NOT be answered
-            # authoritatively from the structured index — the synthetic chunk
-            # would carry the spec/name + other fields but no price, and the LLM
-            # then fabricates the missing number. Return None so retrieve falls
-            # through to hybrid (which ranks the priced sibling chunk). Shape-
-            # gated on the price-ask signal + price-field presence: no vocab, no
-            # per-bot branch. Only the keyword point-lookup is gated — range /
-            # superlative / list keep their own semantics.
-            if (
+            # 002-G AUTHORITATIVE-AS-ABSENT: a price-ask point lookup that
+            # resolved ONLY to price-LESS rows is served WITH an explicit
+            # price-absent marker instead of falling through to hybrid. The old
+            # B-ROLEBLIND ``return None`` guarded against the LLM inventing a
+            # price from a spec+date record with no price — but the fall-through
+            # then served the raw table chunks where a DIFFERENT same-size
+            # product's price sits next to the empty cell, and the LLM borrowed
+            # it (measured N=10: 195/65R16 NEO → adjacent Rovelo 1.350.000,
+            # 10/10). The explicit ``price: —`` marker closes the invent fear
+            # (the record now says "price IS absent") AND serving it
+            # authoritatively stops the raw neighbour chunk from being retrieved.
+            # Shape-gated on the price-ask signal + price-field absence: no vocab,
+            # no per-bot branch. Only the keyword point-lookup is gated.
+            _force_price_absent = bool(
                 expect_price
                 and _operation == "keyword"
                 and not any(
@@ -2456,8 +2478,7 @@ def build_graph(
                     or e.get("price_secondary") is not None
                     for e in entities
                 )
-            ):
-                return None
+            )
             chunk_ids = [
                 e["record_chunk_id"]
                 for e in entities
@@ -2510,11 +2531,13 @@ def build_graph(
             # corpus without priced+alias anchors. Per-bot opt-out.
             if bool(_pcfg(state, "cross_doc_reconcile_enabled", DEFAULT_CROSS_DOC_RECONCILE_ENABLED)):
                 entities = _reconcile_cross_doc(entities)
-            # 002-F: a null-price row only needs the explicit absent-marker when
-            # PRICED siblings share the served set — that mix is exactly where
-            # the LLM used to borrow the neighbour's number. An all-priceless set
-            # (a delivery sheet with no price column) gets no marker.
-            _chunk_has_price = any(
+            # 002-F: a null-price row needs the explicit absent-marker when
+            # PRICED siblings share the served set (that mix is where the LLM
+            # borrowed the neighbour's number) OR — 002-G — when this is a
+            # price-ask served authoritatively-as-absent (``_force_price_absent``).
+            # An all-priceless NON-price-ask set (a delivery sheet with no price
+            # column) still gets no marker.
+            _chunk_has_price = _force_price_absent or any(
                 _e.get("price_primary") is not None
                 or _e.get("price_secondary") is not None
                 for _e in entities

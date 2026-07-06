@@ -258,5 +258,34 @@
 - Blast-radius: mọi bot đi stats synthetic chunk path (priced catalog); raw-doc
   chunk path KHÔNG đổi; pin = test_stats_synthetic_null_price_marker +
   test_pipeline_cfg_keys_parity.
-- ĐO N=10 (B-001 style): ghi bên dưới sau restart + probe.
+- ĐO N=10 (step12_null_price_n10.json, sau restart): **KHÔNG chuyển kim** —
+  N-01 vẫn vớ 1.350.000 10/10. Root cause phát hiện qua trace: các câu
+  point-lookup này ĐI HYBRID (retrieve_mode=None), KHÔNG qua synthetic chunk
+  em vừa sửa → Fix #1 chỉ giúp path stats (list query), chưa chạm point-lookup.
 - Rollback: revert commit (helper additive); hoặc per-bot set marker rỗng.
+
+## Step 13 (002-G) — CODE: null-price point-lookup served authoritative-as-absent (2026-07-06)
+- Change: `_do_stats_lookup` — price-ask keyword lookup mà value-filter trả 0
+  → re-query `require_value=False`; entity null-price giờ được serve với marker
+  ép (`_force_price_absent` → `_chunk_has_price=True` → `price: —`) THAY VÌ
+  fall-through hybrid (nơi LLM vớ giá dòng kề). Flip contract test cũ
+  `..._falls_through_not_stats` → `..._served_absent_not_fallthrough`.
+- RED→GREEN: test_retrieve_stats_index_routing.py 15/15 (test flip + 14 khác).
+  Regression: 0 fail MỚI (18 fail = PRE-EXISTING, stash-verified: callback/
+  worker cần Redis + domain-neutral-guard tech-debt + per_intent_caps).
+- ĐO N=10 (step13_null_price_n10.json) — **SỰ THẬT 2 mặt**:
+  * PLUMBING ĐÚNG (verified): keyword sạch "Neoterra 195/65R16 giá?" → route
+    stats_index (request_steps source=stats_index entity_count=1), chunk[0]
+    score=1.0 mang đúng `2-R16 195/65 NEO | price: — | date1: 26 | ...`.
+  * NHƯNG LLM PHỚT LỜ marker → **bịa 1.500.000 (5/5)** + "26 lốp" (đọc date1).
+    N-01/N-02 (keyword có tiền tố "Lốp") thậm chí không match DSI → vẫn hybrid
+    → vẫn vớ dòng kề.
+- KẾT LUẬN QUYẾT ĐỊNH (constitution P-IV vindicated): fix tầng context
+  (marker/route) là NECESSARY-NOT-SUFFICIENT. LLM bỏ qua "price: —" và bịa số.
+  ĐIỂM SÁNG: Fix #2 biến "vớ giá dòng kề" (số CÓ trong context, gate
+  presence-only mù) thành "bịa số" (số KHÔNG trong context → numeric-fidelity
+  gate BẮT 5/5). → Điều kiện cần để BLOCK mode hiệu quả đã sẵn sàng.
+- Blast-radius: retrieve stats keyword route mọi bot; pin = 15 test routing.
+- OWNER-GATE bắt buộc kế tiếp: numeric-fidelity BLOCK mode (sacred #10 exception
+  path — per-bot opt-in + refusal text = owner template). Đây là đòn bẩy DUY
+  NHẤT đã CHỨNG MINH (đo) chặn được fabrication.

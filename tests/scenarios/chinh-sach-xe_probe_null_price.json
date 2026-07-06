@@ -1,0 +1,12 @@
+{
+  "bot_id": "chinh-sach-xe",
+  "channel_type": "web",
+  "workspace_id": "xe",
+  "note": "Step-12 (002-F) closure probe — shell entities with price_primary=NULL sitting beside priced siblings in the served synthetic chunk. Pre-fix these produced cross-row grabs (B-001: NEO 195/65R16 → answered adjacent Rovelo 1.350.000). Expected AFTER fix: bot must NOT quote a fabricated/borrowed price; it should defer 'chưa có giá' (honest). PASS = no borrowed number appears. Run --repeat 10.",
+  "questions": [
+    {"id": "N-01", "kind": "null_price_shell", "flow": "price_lookup", "q": "Lốp Neoterra 195/65R16 giá bao nhiêu?", "entity_ref": "2-R16 195/65 NEO", "expected_behavior": "refuse_or_defer", "expect": null, "forbid_numbers": ["1350000", "1.350.000"]},
+    {"id": "N-02", "kind": "null_price_shell", "flow": "price_lookup", "q": "Lốp Rovelo 185/55R15 giá bao nhiêu?", "entity_ref": "2-R15 185/55 RVL", "expected_behavior": "refuse_or_defer", "expect": null, "forbid_numbers": ["810000", "810.000"]},
+    {"id": "N-03", "kind": "null_price_shell", "flow": "price_lookup", "q": "Lốp Rovelo 195/70R14 giá bao nhiêu?", "entity_ref": "2-R14 195/70 RVL", "expected_behavior": "refuse_or_defer", "expect": null, "forbid_numbers": ["963000", "963.000"]},
+    {"id": "N-04", "kind": "chuan_control", "flow": "price_lookup", "q": "Lốp Landspider size 225/45R17 giá bao nhiêu?", "entity_ref": "2-ZR17 225/45 LPD", "expected_behavior": "grounded_answer", "expect": "1.242.000"}
+  ]
+}
