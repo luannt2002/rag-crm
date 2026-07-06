@@ -346,3 +346,20 @@
 - Rollback: alembic downgrade (flip về observe + clear placeholder).
 - Defense-in-depth: đây là LỚP 4 (net). Lớp 1-2 (structure-serve + robust route)
   vẫn cần cho phần gate chưa bắt (~nửa lech tinh vi) — P1/P2 plan.
+
+## Step 17 (002-P1) — EXPLORED + REVERTED: robust keyword digit-signature route (2026-07-06)
+- Ý định: match keyword digit-signature (vd "195/65R16"→"1956516") vào attribute
+  blob để câu có tiền tố generic ("Lốp Neoterra 195/65R16") chắc chắn vào stats
+  route thay vì fall-through hybrid.
+- Verify isolation: resolve ĐÚNG entity NEO cho keyword có "Lốp".
+- ĐO N=10 (step17_p1route_n10.json) so Step-16 (block-only):
+  * N-01/02/03 vớ số 0/10 — Y HỆT Step-16. **P1 delta = 0** (block đã bắt hết).
+  * N-04 control đúng 10/10, 0 chặn oan.
+- DEFECT phát hiện: digit-signature mù brand → "Lốp Rovelo 185/55R15" trả CẢ 2
+  brand cùng size (LPD 810k priced + RVL null) = tái tạo nguy cơ conflation
+  (chỉ block cứu). Không phải clean win.
+- QUYẾT ĐỊNH (constitution: không ship hot-path change zero-delta + thêm risk):
+  **REVERT**. Đúng defense-in-depth — block (lớp 4) đã che case null-price;
+  P1 route refinement cần brand-aware (size AND brand) mới net-positive → defer.
+- Bài học: đo TRƯỚC khi ship lộ ra P1 không hơn block + thêm defect. Nếu ship mù
+  sẽ tưởng "cải thiện route" mà thực ra chỉ thêm rủi ro.
