@@ -384,3 +384,18 @@
 - 2 refinement lộ ra cho block (đúng tầng A "widen net"):
   (1) comparison/aggregation: đừng block khi answer có ≥2 số grounded hợp lệ;
   (2) chain: gate cần nhận history (bỏ chain false-block).
+
+## Step 19 (002-J) — CODE: gate nhận history → bỏ chain false-block (2026-07-06)
+- Phân tích lại 5 "chặn oan" Step-18: chỉ **2 SẠCH** (B-052/056 chain — số đúng
+  ở lượt trước); 3 câu kia (B-017/018/048) answer thô CÓ số SAI → block đáng
+  (agent grader chấm lỏng, không soi số raw). → block accuracy CAO hơn tưởng.
+- Change: guard_output feed conversation_history vào context grounding của
+  classify_answer_numbers (misattr giữ this-turn vì cần row-structure). Số bot
+  đã ground ở lượt trước ("giá của NÓ") không còn bị coi unsupported. An toàn
+  dưới block: câu bịa lượt trước đã bị block (template, 0 số) → history sạch.
+- RED→GREEN: test_number_grounded_via_prior_turn_context (grounded via history
+  =0 unsup; không history =1 unsup). numeric+noise 6/6.
+- Verify live (probe_chain, N=3): CH-056/CH-052 "giá của nó" blocked 0/3
+  (trước chặn oan) — chain price ground qua history.
+- Blast-radius: guard_output mọi bot; chỉ MỞ RỘNG grounding (không siết) →
+  không thể tăng false-block. Pin = test_numeric_fidelity_noise_strip.

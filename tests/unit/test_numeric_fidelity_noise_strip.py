@@ -69,3 +69,17 @@ def test_real_cross_row_grab_still_flagged() -> None:
     ]
     r = detect_cross_row_misattribution(answer, ctx)
     assert r["n_misattributed"] == 1, r
+
+
+def test_number_grounded_via_prior_turn_context() -> None:
+    """002-J chain-context: a number the bot grounded in a PRIOR turn (passed via
+    extra context_texts, as guard_output now does with conversation_history) is
+    NOT unsupported on a coreference follow-up whose current chunks lack it."""
+    answer = "Dạ lốp Davanti 275/40ZR21 giá 3.240.000đ ạ."
+    this_turn_ctx = ["275/40ZR21 DVT: image: https://drive/x | productname: DX640"]
+    prior_turn = "Lốp Davanti 275/40ZR21 DX640 giá 3.240.000đ, còn 251 lốp."
+    r = classify_answer_numbers(answer, this_turn_ctx + [prior_turn])
+    assert r["n_unsupported"] == 0, r["unsupported_tokens"]
+    # Without the prior turn it WOULD be unsupported (proves the fix matters).
+    r2 = classify_answer_numbers(answer, this_turn_ctx)
+    assert r2["n_unsupported"] == 1

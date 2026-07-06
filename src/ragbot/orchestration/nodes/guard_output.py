@@ -86,14 +86,32 @@ async def guard_output(
             str(c.get("text") or c.get("content") or "")
             for c in (state.get("graded_chunks") or [])
         ]
+        # 002-J chain-context: a coreference follow-up ("giá của NÓ", "link của
+        # sản phẩm ĐÓ") re-states a number the bot already grounded in a PRIOR
+        # turn, but THIS turn's retrieval fetched the image/link chunk, not the
+        # price row — so the gate saw the number as unsupported and (in block
+        # mode) false-blocked a correct chain answer (B-052/B-056). Feed the
+        # prior turn texts as extra grounding context. Safe under block mode:
+        # a prior fabrication was itself blocked (its answer is the template,
+        # carrying no number), so history holds only verified numbers.
+        _nf_history = [
+            str(m.get("content") or "")
+            for m in (state.get("conversation_history") or [])
+            if m.get("content")
+        ]
+        _nf_ctx_grounding = _nf_ctx + _nf_history
         # 002-H: pass the user's turn so a number echoed from the question
         # (e.g. an OOS refusal naming "Thông tư 2020") is not a fabrication.
         _nf_question = str(
             state.get("original_query") or state.get("query") or ""
         )
-        _nf = classify_answer_numbers(_nf_answer, _nf_ctx, question=_nf_question)
+        _nf = classify_answer_numbers(
+            _nf_answer, _nf_ctx_grounding, question=_nf_question
+        )
         # Step-5 lệch detector: real context number attributed to the wrong
-        # entity row (cross-row mix). Same observe-only discipline.
+        # entity row (cross-row mix). Kept on THIS turn's chunks only — the
+        # detector is row-scoped and prior-turn history is not row-structured
+        # (adding it would blur the row boundaries the check depends on).
         _nf.update(detect_cross_row_misattribution(_nf_answer, _nf_ctx))
         state["numeric_fidelity"] = _nf
         if _nf["n_numbers"]:
