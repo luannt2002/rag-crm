@@ -32,6 +32,11 @@ from ragbot.shared.constants import (
     _REFUSE_ANSWER_TYPES,
 )
 
+from ragbot.shared.request_trace import (
+    is_request_trace_enabled,
+    write_request_trace,
+)
+
 logger = structlog.get_logger(__name__)
 
 # Strong references to in-flight fire-and-forget cache-write tasks. ``asyncio``
@@ -242,6 +247,46 @@ async def persist(
                 "cost_usd": float(state.get("cost_usd", 0) or 0),
             },
         )
+        # P4 verifiable trace (dev/uat only, no-op in prod): one JSON per
+        # request with the full flow — question → chunks that reached the LLM →
+        # exact final prompt → RAW answer (pre-guard) → guard verdict → final
+        # answer. Auxiliary: the writer degrades silently on any error.
+        if is_request_trace_enabled():
+            _trace = {
+                "request_id": str(state.get("request_id") or ""),
+                "trace_id": str(state.get("trace_id") or ""),
+                "record_bot_id": str(state.get("record_bot_id") or ""),
+                "question": state.get("original_query") or state.get("query") or "",
+                "rewritten_query": state.get("rewritten_query") or "",
+                "intent": state.get("intent") or "",
+                "retrieve_mode": state.get("retrieve_mode") or "",
+                "chunks_to_llm": [
+                    {
+                        "chunk_id": str(c.get("chunk_id") or c.get("id") or ""),
+                        "score": c.get("score") or c.get("relevance_score"),
+                        "document_name": c.get("document_name") or "",
+                        "content": c.get("content") or c.get("text") or "",
+                    }
+                    for c in graded
+                ],
+                "full_prompt": state.get("_debug_prompt"),
+                "raw_answer": state.get("_debug_raw_answer"),
+                "final_answer": state.get("answer") or "",
+                "answer_type": state.get("answer_type") or "",
+                "answer_reason": state.get("answer_reason") or "",
+                "guardrail_flags": state.get("guardrail_flags") or [],
+                "numeric_fidelity": state.get("numeric_fidelity") or {},
+                "model_used": state.get("model_used") or "",
+                "tokens": state.get("tokens") or {},
+            }
+            _p = write_request_trace(
+                request_id=str(state.get("request_id") or "unknown"),
+                trace=_trace,
+            )
+            if _p:
+                logger.info("request_trace_written", path=_p,
+                            request_id=str(state.get("request_id") or ""))
+
         if graded:
             context_chars = sum(c.get("chunk_chars", len(c.get("content", ""))) for c in graded)
             context_count = len(graded)

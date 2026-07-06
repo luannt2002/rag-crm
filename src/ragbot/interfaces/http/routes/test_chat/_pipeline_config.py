@@ -25,6 +25,7 @@ from ragbot.shared.constants import (
     DEFAULT_GROUNDING_CONFIRMED_ACTION,
     DEFAULT_STATS_SERVE_REQUIRE_VALUE,
     STATS_NULL_PRICE_MARKER,
+    DEFAULT_NUMERIC_FIDELITY_ACTION,
     DEFAULT_GROUNDING_FAILURE_MODE,
     DEFAULT_GUARDRAIL_LEAK_MIN_MATCH_COUNT,
     DEFAULT_GENERATE_SURFACE_VERBATIM_ENABLED,
@@ -908,6 +909,11 @@ async def _build_pipeline_config(cfg_svc: SystemConfigService, bot_cfg: Any) -> 
         "stats_null_price_marker": resolve_bot_limit(
             bot_cfg, "stats_null_price_marker",
             system_default=STATS_NULL_PRICE_MARKER,
+        ),
+        # 002-I: numeric-fidelity enforcement (observe|block), owner opt-in.
+        "numeric_fidelity_action": resolve_bot_limit(
+            bot_cfg, "numeric_fidelity_action",
+            system_default=DEFAULT_NUMERIC_FIDELITY_ACTION,
         ),
         "guardrail_leak_min_match_count": resolve_bot_limit(
             bot_cfg, "guardrail_leak_min_match_count",

@@ -24,6 +24,21 @@ APP_ENVS_STRICT: Final[frozenset[str]] = frozenset({
     APP_ENV_UAT, APP_ENV_STAGING, APP_ENV_PRODUCTION,
 })
 
+# --- P4 verifiable request trace (dev/uat only) -----------------------------
+# The full per-request trace (final prompt sent to the LLM + the raw answer
+# BEFORE guard substitution + served chunks + step timings) is captured ONLY
+# in these envs. Production stays off: the full prompt/answer can carry PII and
+# the per-request file write is dev-debug overhead, not a prod concern
+# (request_steps + request_chunk_refs already give prod its structured trail).
+REQUEST_TRACE_ENVS: Final[frozenset[str]] = frozenset({
+    APP_ENV_DEVELOPMENT, APP_ENV_UAT,
+})
+# Per-request trace files land here (one JSON per request_id). Relative to the
+# process CWD (repo root under systemd); override via RAGBOT_TRACE_DIR env.
+REQUEST_TRACE_DIR: Final[str] = "logs/trace"
+# Cap a captured chunk / prompt block so a runaway context cannot fill the disk.
+REQUEST_TRACE_MAX_FIELD_CHARS: Final[int] = 20000
+
 # --- Retrieval / RAG defaults -----------------------------------------------
 # Retrieval casts a WIDE net (20 candidates from hybrid dense+sparse) so the
 # reranker has enough to score. This is the candidate pool, NOT the count that

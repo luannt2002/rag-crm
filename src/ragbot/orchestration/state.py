@@ -45,6 +45,12 @@ class GraphState(TypedDict, total=False):
     # Written in-place by guard_output; read by the debug trace. Never
     # gates the answer (sacred #10).
     numeric_fidelity: dict
+    # P4 verifiable trace (dev/uat only): the exact prompt sent to the LLM and
+    # the RAW answer BEFORE guard substitution. Declared so LangGraph propagates
+    # them from generate → persist; generate only sets them when tracing is on,
+    # so production state never carries them (PII-lean).
+    _debug_prompt: list
+    _debug_raw_answer: str
     tokens: dict
     cost_usd: float
     model_used: str

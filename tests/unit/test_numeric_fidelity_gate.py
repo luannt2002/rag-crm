@@ -94,25 +94,31 @@ def test_constants_exist() -> None:
     assert NUMERIC_FIDELITY_UNSUPPORTED_TOKENS_CAP > 0
 
 
-def test_guard_output_wires_observe_only() -> None:
-    """Pin: guard_output computes the observe verdict on the ORIGINAL answer
-    and NEVER uses it to modify/substitute the answer (sacred #10). The state
-    key 'numeric_fidelity' is written; no branch conditions answer content on
-    the verdict."""
+def test_guard_output_numeric_fidelity_is_owner_gated() -> None:
+    """Pin (002-I): guard_output computes the verdict once, and the ONLY way it
+    substitutes the answer is the owner-gated block path — default is observe.
+
+    Contract change from the original "observe-only forever" pin: block is now a
+    sacred-#10 EXCEPTION path (per-bot ``numeric_fidelity_action == "block"`` →
+    substitute the bot's OWN ``oos_answer_template``). The invariant that
+    survives: NO unconditional substitution on the verdict — every block is
+    guarded by the owner opt-in, and the default keeps flag-and-ship.
+    """
     from ragbot.orchestration.nodes import guard_output
 
     src = inspect.getsource(guard_output)
     assert "classify_answer_numbers" in src
     assert '"numeric_fidelity"' in src
-    # No blocking on the verdict: the fidelity result must not gate the answer.
-    assert "n_unsupported" not in src.split("classify_answer_numbers")[0], (
-        "verdict must be computed once, observe-only"
+    # The block branch MUST be guarded by the owner opt-in constant — never an
+    # unconditional "n_unsupported > 0 → substitute".
+    assert "NUMERIC_FIDELITY_ACTION_BLOCK" in src, (
+        "block must be gated on the owner opt-in action, not unconditional"
     )
-    for forbidden in (
-        'if _nf["n_unsupported"]', "if _nf['n_unsupported']",
-        'nf["n_unsupported"] >', "block_on_unsupported",
-    ):
-        assert forbidden not in src, f"observe-only violated: {forbidden}"
+    assert "DEFAULT_NUMERIC_FIDELITY_ACTION" in src, (
+        "default action must resolve to observe (flag-and-ship) when unset"
+    )
+    # The substituted text is the owner's template, never app-injected literal.
+    assert "_resolved_oos_template(state)" in src
 
 
 # ---------------------------------------------------------------------------

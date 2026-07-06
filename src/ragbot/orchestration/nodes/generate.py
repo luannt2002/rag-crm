@@ -72,6 +72,7 @@ from ragbot.shared.context_utils import (
     reorder_for_lost_in_middle,
 )
 from ragbot.shared.errors import InvariantViolation
+from ragbot.shared.request_trace import is_request_trace_enabled
 from ragbot.shared.prompt_compression import compress_chunks
 from ragbot.shared.prompt_token_opt import apply_token_opt
 from ragbot.shared.token_budget import compute_output_cap
@@ -1078,6 +1079,13 @@ async def generate(
             "citations_source": citations_source,
             "system_prompt": system_prompt,
         }
+        # P4 (dev/uat only): carry the exact prompt + raw answer so persist can
+        # write the verifiable trace. Gated so production never holds them in
+        # state (PII-lean). ``raw_answer`` is captured BEFORE guard_output may
+        # substitute the answer — the whole point of the trace.
+        if is_request_trace_enabled():
+            _return["_debug_prompt"] = messages
+            _return["_debug_raw_answer"] = answer
         if _post_drift_flags:
             _return["guardrail_flags"] = (
                 list(state.get("guardrail_flags", []))

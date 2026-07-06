@@ -46,7 +46,11 @@ from ragbot.shared.constants import (
     DEFAULT_PIPELINE_PARALLEL_OUTPUT_GUARDS_ENABLED,
     GROUNDING_FAILURE_MODE_FAIL_OPEN,
 )
-from ragbot.shared.constants import NUMERIC_FIDELITY_EVENT
+from ragbot.shared.constants import (
+    DEFAULT_NUMERIC_FIDELITY_ACTION,
+    NUMERIC_FIDELITY_ACTION_BLOCK,
+    NUMERIC_FIDELITY_EVENT,
+)
 from ragbot.shared.errors import InvariantViolation
 from ragbot.shared.numeric_fidelity import (
     classify_answer_numbers,
@@ -106,6 +110,37 @@ async def guard_output(
                 misattributed=_nf["misattributed"],
                 context_source=str(state.get("retrieve_mode") or ""),
             )
+
+        # 002-I: numeric-fidelity BLOCK (sacred #10 exception, per-bot opt-in).
+        # When the bot owner set ``numeric_fidelity_action = "block"`` and a
+        # number in the answer is fabricated (unsupported) or grabbed from the
+        # wrong row (misattributed), substitute the bot's OWN oos_answer_template
+        # — the same governed substitution the grounding judge uses (owner text,
+        # never app-injected). Default "observe" keeps flag-and-ship. Measured
+        # before enabling: gate-set FP 0/84 (see ladder Step 14-15). The check
+        # is deterministic (no model), so it never adds latency or a round-trip.
+        _nf_action = str(
+            _pcfg(state, "numeric_fidelity_action", DEFAULT_NUMERIC_FIDELITY_ACTION)
+            or DEFAULT_NUMERIC_FIDELITY_ACTION
+        )
+        if _nf_action == NUMERIC_FIDELITY_ACTION_BLOCK and (
+            _nf["n_unsupported"] > 0 or _nf["n_misattributed"] > 0
+        ):
+            _nf_flags = list(state.get("guardrail_flags", []))
+            _nf_flags.append({
+                "rule_id": "numeric_fidelity",
+                "severity": "block",
+                "blocked": True,
+                "n_unsupported": _nf["n_unsupported"],
+                "n_misattributed": _nf["n_misattributed"],
+            })
+            return {
+                "guardrail_flags": _nf_flags,
+                "numeric_fidelity": _nf,
+                "answer": _resolved_oos_template(state),
+                "answer_type": "blocked",
+                "answer_reason": "Numeric-fidelity block (fabricated/misattributed number)",
+            }
 
         # Numeric / citation grounding is the bot owner's responsibility via
         # `system_prompt` (anti-fabricate rules) — the LLM self-checks. The

@@ -343,6 +343,15 @@ NUMERIC_FIDELITY_UNSUPPORTED_TOKENS_CAP: Final[int] = 8
 #   * URL: any http(s) link (its path/id digits are not corpus values).
 #   * Contact number: a leading-0 run of 8+ digits with separators — a phone
 #     shape, never a price (prices carry no leading zero); locale-agnostic.
+# 002-I: numeric-fidelity enforcement action (per-bot). "observe" = legacy
+# flag-and-ship (default; sacred #10 untouched). "block" = the sacred-#10
+# EXCEPTION path — owner opt-in per bot; a fabricated/misattributed number
+# substitutes the bot's OWN oos_answer_template (never app-injected text), the
+# same governed substitution the grounding judge and output guardrail use.
+# Measured FP before enabling: gate-set 0/84, trap ≤2/69 (chain residual).
+NUMERIC_FIDELITY_ACTION_OBSERVE: Final[str] = "observe"
+NUMERIC_FIDELITY_ACTION_BLOCK: Final[str] = "block"
+DEFAULT_NUMERIC_FIDELITY_ACTION: Final[str] = NUMERIC_FIDELITY_ACTION_OBSERVE
 NUMERIC_FIDELITY_URL_PATTERN: Final[str] = r"https?://\S+"
 # Contact-number shape: leading 0, then 6–11 digits each separated by at most a
 # SINGLE space/dot/dash. The single-separator bound is load-bearing — a greedy
