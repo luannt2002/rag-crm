@@ -267,6 +267,7 @@ from ragbot.shared.constants import (
     DEFAULT_STATS_SUPERLATIVE_LIMIT,
     DEFAULT_STATS_SYNTHETIC_CHUNK_ID,
     DEFAULT_TOP_K,
+    STATS_NULL_PRICE_MARKER,
     INTENT_AGGREGATION,
     INTENT_COMPARISON,
 )
@@ -335,6 +336,75 @@ def _absorb_fragment_attrs(anchor: dict, frag: dict) -> None:
         if ks not in a_aj and str(v).strip():
             a_aj[ks] = v
     anchor["attributes_json"] = a_aj
+
+
+def _serialize_stats_entity_row(
+    entity: dict,
+    *,
+    chunk_has_price: bool,
+    null_price_marker: str,
+    attr_max_chars: int,
+    attr_max_words: int,
+) -> str | None:
+    """Serialize one DSI entity into a groundable text line for the synthetic
+    stats chunk. Returns None when the row yields nothing groundable.
+
+    Domain-neutral: labels are schema/header concepts (``price:``/``category:``/
+    the corpus header keys), never a corpus/brand literal — same convention the
+    caller has always used for present values.
+
+    002-F cross-row fix: when the served set mixes priced rows with price-LESS
+    rows (``chunk_has_price``), a null-price entity emits an EXPLICIT structural
+    absent-marker for its price column. Without it the line carried no price
+    field at all, so the generator borrowed the neighbour row's number
+    (truth-audit 002 B-001: NEO price-NULL → answered adjacent Rovelo
+    1.350.000). The marker is a structural description of an empty cell — it
+    injects no behaviour (QG#10-safe). Suppressed when NO row in the set is
+    priced (a delivery sheet with no price column must not sprout one).
+    """
+    def _is_field_like(v: str) -> bool:
+        return bool(v) and len(v) <= attr_max_chars \
+            and len(v.split()) <= attr_max_words
+
+    name = (str(entity.get("entity_name") or "")).strip().strip('"')
+    if not name:
+        return None
+    price = entity.get("price_primary")
+    if price is None:
+        price = entity.get("price_secondary")
+    name_field_like = _is_field_like(name)
+    # A field-like name labels its own price ("Name: 500000"); a variant
+    # mega-cell name is dropped from the lead and the price is labelled
+    # generically. In BOTH cases a null price under a priced-sibling set is
+    # marked absent so the bare column never reads as a gap to fill.
+    if name_field_like:
+        if price is not None:
+            parts = [f"{name}: {int(price)}"]
+        elif chunk_has_price:
+            parts = [name, f"price: {null_price_marker}"]
+        else:
+            parts = [name]
+    else:
+        if price is not None:
+            parts = [f"price: {int(price)}"]
+        elif chunk_has_price:
+            parts = [f"price: {null_price_marker}"]
+        else:
+            parts = []
+    cat = str(entity.get("entity_category") or "").strip()
+    if _is_field_like(cat):
+        parts.append(f"category: {cat}")
+    attrs = entity.get("attributes_json")
+    if isinstance(attrs, dict):
+        for _k, _v in attrs.items():
+            if _k in ("chunk_index", "question", "variants"):
+                continue
+            _vs = str(_v).strip()
+            if _is_field_like(_vs):
+                parts.append(f"{_k}: {_vs}")
+    if not parts:
+        return None
+    return " | ".join(parts)
 
 
 def _reconcile_cross_doc(entities: list[dict]) -> list[dict]:
@@ -2433,10 +2503,6 @@ def build_graph(
             # the chunk and trips the grounding check on a correct answer. Keep
             # only field-like values: domain-neutral word-count + char cap,
             # skip generic placeholder columns.
-            def _is_field_like(v: str) -> bool:
-                return bool(v) and len(v) <= DEFAULT_STATS_ATTR_MAX_CHARS \
-                    and len(v.split()) <= DEFAULT_STATS_ATTR_MAX_WORDS
-
             # Phase-4 cross-doc reconcile: fold price-LESS fragments of the same
             # product into their priced anchor (alias digit-key match) so a
             # combined "giá + tồn + ngày về" query sees one complete record
@@ -2444,6 +2510,18 @@ def build_graph(
             # corpus without priced+alias anchors. Per-bot opt-out.
             if bool(_pcfg(state, "cross_doc_reconcile_enabled", DEFAULT_CROSS_DOC_RECONCILE_ENABLED)):
                 entities = _reconcile_cross_doc(entities)
+            # 002-F: a null-price row only needs the explicit absent-marker when
+            # PRICED siblings share the served set — that mix is exactly where
+            # the LLM used to borrow the neighbour's number. An all-priceless set
+            # (a delivery sheet with no price column) gets no marker.
+            _chunk_has_price = any(
+                _e.get("price_primary") is not None
+                or _e.get("price_secondary") is not None
+                for _e in entities
+            )
+            _null_price_marker = str(
+                _pcfg(state, "stats_null_price_marker", STATS_NULL_PRICE_MARKER)
+            )
             _seen: set[tuple[str, int]] = set()
             _rows: list[str] = []
             for _e in entities:
@@ -2457,59 +2535,18 @@ def build_graph(
                 if _key in _seen:
                     continue
                 _seen.add(_key)
-                # A name column that is actually a synonym/variant mega-cell
-                # (a quoted "code, code, …" list parsed as col 0) is not a
-                # usable display label — surfacing it dilutes the chunk and can
-                # trip the grounding check. When the name is not field-like,
-                # drop it from the line lead and let the labeled attributes
-                # (productname / code / quantity / price / date …) carry the
-                # record. Domain-neutral: keyed on value shape, not corpus.
-                _name_field_like = _is_field_like(_name)
-                # Currency-neutral: emit the raw number only (the corpus may be
-                # in any currency — appending "VND" would break a USD/EUR bot).
-                # When the name is field-like it labels the price (e.g.
-                # "Triệt lông nách: 500000"). When it is NOT (a variant mega-cell
-                # dropped from the lead), the bare number is ambiguous — the LLM
-                # cannot tell 972000 is a price vs a quantity/id — so label it
-                # generically "price:" (price_primary IS the schema's price
-                # column, a structure concept, not a corpus/brand literal).
-                if _name_field_like:
-                    _parts = (
-                        [f"{_name}: {int(_price)}"]
-                        if _price is not None
-                        else [_name]
-                    )
-                else:
-                    _parts = (
-                        [f"price: {int(_price)}"] if _price is not None else []
-                    )
-                # Surface the remaining structured columns (answer/quantity/date/
-                # image/...) generically so a record-shaped bot (e.g. an n8n
-                # results[] consumer) gets every field, not just the price. The
-                # column names come from the corpus header — domain-neutral, no
-                # hard-coded field list. Skip internal keys + the synonym/variant
-                # mega-cell. A generic ``col_N`` name (header-less CSV) is NOT
-                # skipped: the ``_is_field_like`` gate below already drops the
-                # huge mega-cell (>120 chars / >12 words), so a short ``col_*``
-                # value like a delivery date "28-thg 11" stays groundable instead
-                # of being stripped — stripping every ``col_\d+`` left date/stock
-                # queries unanswerable (the chunk became the bare entity name).
-                _cat = str(_e.get("entity_category") or "").strip()
-                if _is_field_like(_cat):
-                    _parts.append(f"category: {_cat}")
-                _attrs = _e.get("attributes_json")
-                if isinstance(_attrs, dict):
-                    for _k, _v in _attrs.items():
-                        if _k in ("chunk_index", "question", "variants"):
-                            continue
-                        _vs = str(_v).strip()
-                        if _is_field_like(_vs):
-                            _parts.append(f"{_k}: {_vs}")
-                if not _parts:
-                    # No field-like name, price, nor attribute → nothing
-                    # groundable to surface; skip rather than emit a blank line.
+                _line = _serialize_stats_entity_row(
+                    _e,
+                    chunk_has_price=_chunk_has_price,
+                    null_price_marker=_null_price_marker,
+                    attr_max_chars=DEFAULT_STATS_ATTR_MAX_CHARS,
+                    attr_max_words=DEFAULT_STATS_ATTR_MAX_WORDS,
+                )
+                if _line is None:
+                    # Nothing groundable to surface — skip rather than emit a
+                    # blank line.
                     continue
-                _rows.append(" | ".join(_parts))
+                _rows.append(_line)
                 if len(_rows) >= DEFAULT_STATS_INDEX_LIMIT:
                     break
             synthetic_chunks: list[dict] = []

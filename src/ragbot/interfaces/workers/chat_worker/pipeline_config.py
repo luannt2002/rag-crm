@@ -21,6 +21,7 @@ from ragbot.shared.constants import (
     DEFAULT_GENERATE_SURFACE_VERBATIM_ENABLED,
     DEFAULT_GROUNDING_CONFIRMED_ACTION,
     DEFAULT_STATS_SERVE_REQUIRE_VALUE,
+    STATS_NULL_PRICE_MARKER,
     DEFAULT_GROUNDING_FAILURE_MODE,
     DEFAULT_GUARDRAIL_LEAK_MIN_MATCH_COUNT,
     DEFAULT_STATS_CODE_LOOKUP_ENABLED,
@@ -558,6 +559,12 @@ def _build_pipeline_config(_cfg: dict[str, Any], bot_cfg: Any) -> dict[str, Any]
         "stats_serve_require_value": resolve_bot_limit(
             bot_cfg, "stats_serve_require_value",
             system_default=DEFAULT_STATS_SERVE_REQUIRE_VALUE,
+        ),
+        # 002-F: explicit price-absent marker in the mixed priced/price-less
+        # synthetic chunk (per-bot override for a different convention).
+        "stats_null_price_marker": resolve_bot_limit(
+            bot_cfg, "stats_null_price_marker",
+            system_default=STATS_NULL_PRICE_MARKER,
         ),
         "guardrail_leak_min_match_count": resolve_bot_limit(
             bot_cfg, "guardrail_leak_min_match_count",

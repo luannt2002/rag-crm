@@ -236,3 +236,27 @@
   block hoặc row-mask [21 câu lech/sai_bia]; (3) chain referent
   rewritten=None + speculative_hit [B-050 class]; (4) G-074 guard
   false-block; (5) C-1/G-097 near-size rank-pick; (6) D-1/D-3 giữ nguyên.
+
+## Step 12 (002-F) — CODE: explicit price-absent marker trong stats synthetic chunk (2026-07-06)
+- Root cause khoá (deep audit W1 0.1 + query DB): DSI biết `price=NULL` cho NEO
+  195/65R16 nhưng `query_graph.py` serialize entity null-price thành dòng CHỈ
+  có tên (không field price) → khi cùng synthetic chunk có entity CÓ giá, LLM
+  vớ số dòng kề (B-001: NEO → giá Rovelo 1.350.000). generate.py:198 chỉ đọc
+  `.content` (text), không đọc `price_primary`/`attributes_json` → mất
+  provenance cột.
+- Change (ONE): extract `_serialize_stats_entity_row` (pure, module-level) +
+  khi served-set TRỘN priced + price-less (`chunk_has_price`) → entity null-price
+  emit marker cấu trúc `price: —` (STATS_NULL_PRICE_MARKER, language-neutral,
+  mô tả ô-trống = cùng loại với label `price:` sẵn có, QG#10-safe). Set
+  toàn-price-less (bảng lịch không cột giá) → KHÔNG thêm marker. Knob per-bot
+  `stats_null_price_marker` (registered ở cả 2 pipeline builder — parity pin).
+- RED→GREEN: test_stats_synthetic_null_price_marker.py 4 test (marker khi có
+  sibling priced / dòng priced không đổi / all-priceless không marker /
+  mega-cell name null vẫn mark). Regression: 0 fail MỚI (3 file fail =
+  PRE-EXISTING, xác nhận stash trên HEAD sạch: ingest-canary random-domain +
+  broad-except counter + version-ref grep — ngoài scope 002-F).
+- Blast-radius: mọi bot đi stats synthetic chunk path (priced catalog); raw-doc
+  chunk path KHÔNG đổi; pin = test_stats_synthetic_null_price_marker +
+  test_pipeline_cfg_keys_parity.
+- ĐO N=10 (B-001 style): ghi bên dưới sau restart + probe.
+- Rollback: revert commit (helper additive); hoặc per-bot set marker rỗng.

@@ -261,3 +261,17 @@ DEFAULT_DECOMPOSE_STATS_MAX_SUBS: Final[int] = 4
 # Capped (not unlimited) to keep evidence JSONs committable; every truncation
 # now carries an explicit flag so no verdict may rely on a cut chunk.
 TRACE_CHUNK_CAPTURE_MAX_CHARS: Final[int] = 2000
+
+# 002-F: explicit price-absent marker in the stats synthetic chunk. When a
+# served set mixes priced rows with price-LESS rows, a null-price entity used
+# to emit NO price field at all — so the LLM silently borrowed the neighbour
+# row's number (truth-audit 002 B-001: NEO 195/65R16 price-NULL → answered with
+# adjacent Rovelo 1.350.000). Emitting an explicit structural absent-marker for
+# the price column gives the LLM the missing "this cell IS empty" signal, so it
+# can honour the owner's "chưa có giá" behaviour instead of guessing. The marker
+# is a structural description of an empty cell — same category as the ``price:``
+# label already emitted for present values (QG#10-safe: describes DATA, injects
+# no behaviour). Language-neutral em-dash so it never reads as a corpus/brand
+# literal or a real number. Override via system_config for a bot that prefers a
+# different convention.
+STATS_NULL_PRICE_MARKER: Final[str] = "—"
