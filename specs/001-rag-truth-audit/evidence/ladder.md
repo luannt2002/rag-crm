@@ -333,3 +333,16 @@
   Fix = truyền history vào gate (bước sau). Runtime FP thật ≤ 2/69.
 - Blast-radius: numeric-fidelity observe mọi bot; pin = test_numeric_fidelity_
   noise_strip + test_numeric_fidelity_gate (20). Sacred #10 giữ (observe).
+
+## Step 16 (002-I) — CODE+CONFIG: numeric-fidelity BLOCK bật cho chinh-sach-xe (owner-approved) 2026-07-06
+- Change: alembic nf_block_csx_260706 set plan_limits.numeric_fidelity_action=
+  "block" + oos_answer_template placeholder (⚠ owner tự sửa giọng). Governed
+  path (sacred #7: alembic tracked, KHÔNG psql hotfix).
+- Demo verify (P4 trace logs/trace/): RAW (LLM) "1.500.000đ" bịa → FINAL (khách)
+  "chưa có thông tin giá..." — answer_type=blocked, gate n_unsupported=1.
+- ĐO N=10 (step16_block_n10.json) — HALLU triệt tiêu, 0 chặn oan control:
+  * N-01 vớ/bịa 10/10 → **0/10** · N-02 8→**0** · N-03 2→**0** (chặn→defer).
+  * N-04 control trả đúng 9/10 · **chặn-oan 0/10** — câu đúng KHÔNG bị chặn.
+- Rollback: alembic downgrade (flip về observe + clear placeholder).
+- Defense-in-depth: đây là LỚP 4 (net). Lớp 1-2 (structure-serve + robust route)
+  vẫn cần cho phần gate chưa bắt (~nửa lech tinh vi) — P1/P2 plan.
