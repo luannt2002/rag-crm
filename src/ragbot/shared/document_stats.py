@@ -675,6 +675,12 @@ def _extract_entity_from_row(
     # column IS the entity name — skipping it would drop the row (no name left).
     if name_idx is None:
         cat_idx = None
+    elif name_by_shape and cat_idx is not None and cat_idx == name_idx:
+        # A4: the shape-picked name column IS the identity. A header "category" role
+        # on that SAME column (e.g. a "Vùng"/region column whose body-part cell —
+        # "Cả chân", "Nách" — is the service name) must not steal the row, or the
+        # entity drops nameless. The shape-detected name wins over the category role.
+        cat_idx = None
 
     for idx, col in enumerate(cols):
         if not col:

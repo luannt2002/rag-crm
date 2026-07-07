@@ -129,3 +129,19 @@ def test_ingest_headerless_name_by_shape() -> None:
     assert shaped.name == "Lốp xe LANDSPIDER 195/55R16 87V CITYTRAXX G/P"
     # legacy positional picks the FIRST cell (the warehouse stub), not the name
     assert legacy is not None and legacy.name != shaped.name
+
+
+def test_shape_name_wins_over_category_on_same_column() -> None:
+    """Domain-neutral: a spa 'Vùng | Giá' table gives the body-part column a CATEGORY
+    role, but that cell ("Cả chân", "Nách") IS the service name. Shape-typing must
+    keep the row — the shape-picked name wins over the category role on the same
+    column — instead of dropping it nameless. (Regression exposed by the spa bot;
+    the xe bot has no category column so it hid this.)"""
+    from ragbot.shared.document_stats import _column_roles, _extract_entity_from_row
+
+    header = ["Vùng", "Giá buổi lẻ", "Giá Combo 10 buổi"]
+    roles = _column_roles(header)  # "Vùng" → category, "Giá …" → price, name → None
+    cols = ["Cả chân", "699.000", "6.291.000"]
+    e = _extract_entity_from_row(cols, header, 0, None, roles, name_by_shape=True)
+    assert e is not None
+    assert e.name == "Cả chân"
