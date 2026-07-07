@@ -1,131 +1,2083 @@
-265/50R20
-Dạ quy cách 265/50R20 bên em có loại sau ạ:
-• Lốp LANDSPIDER 265/50R20 111TXL WILDTRAXX A/T giá 2.601.000đ/lốp, hiện còn 3 lốp ạ.
-Anh/chị cần em tư vấn thêm hay hỗ trợ gì ạ?
-Chunks: 1
-Score: 1.000 avg (1.000~1.000)
-History: 0 msgs
-Tokens: 3228 in / 79 out
-Cost: $0.000803
-5568ms
-📌 Chunks được trích dẫn (1):
-#1 stats_in (không tên) score: 1.000
-có bao nhiêu loại 265/50R20
-Dạ quy cách 265/50R20 bên em hiện có 1 loại lốp là:
-• Lốp LANDSPIDER 265/50R20 111TXL WILDTRAXX A/T giá 2.601.000đ/lốp, hiện còn 3 lốp ạ.
-Anh/chị cần em hỗ trợ thêm gì không ạ?
-Chunks: 1
-Score: 1.000 avg (1.000~1.000)
-History: 2 msgs
-Tokens: 3322 in / 81 out
-Cost: $0.000844
-6818ms
-📌 Chunks được trích dẫn (1):
-#1 stats_in (không tên) score: 1.000
-#1 (không tên) (đoạn 0, score: 1.000)
-Lốp xe LANDSPIDER 265/50R20 111TXL WILDTRAXX A/T: 2601000 | Mã: 2-R20 265/50 LPD 111TXL | Giá: 2601000 | Ngày: 26 | Số lượng: 3
-215/65R16
-Dạ quy cách 215/65R16 bên em hiện có 1 loại lốp là:
-• Lốp LANDSPIDER 215/65R16 98H CITYTRAXX G/P giá 1.260.000đ/lốp, hiện còn 34 lốp ạ.
-Anh/chị cần em hỗ trợ thêm gì ạ?
-Chunks: 1
-Score: 1.000 avg (1.000~1.000)
-History: 4 msgs
-Tokens: 3482 in / 78 out
-Cost: $0.000903
-6840ms
-📌 Chunks được trích dẫn (1):
-#1 stats_in (không tên) score: 1.000
-245/70R16
-Dạ quy cách 245/70R16 bên em có các loại sau ạ:
-• Lốp LANDSPIDER 245/70R16 111HXL CITYTRAXX H/T giá 1.755.000đ/lốp, hiện còn 75 lốp ạ.
-• Lốp LANDSPIDER 245/70R16 111TXL WILDTRAXX A/T giá 1.890.000đ/lốp, hiện còn 64 lốp ạ.
-Anh/chị cần em hỗ trợ thêm gì ạ?
-Chunks: 1
-Score: 1.000 avg (1.000~1.000)
-History: 6 msgs
-Tokens: 3662 in / 122 out
-Cost: $0.001020
-6895ms
-📌 Chunks được trích dẫn (1):
-#1 stats_in (không tên) score: 1.000
-215/60/17
-Dạ quy cách 215/60R17 bên em có 1 loại lốp là:
-• Lốp Rovelo 215/60R17 RHP-A68.
-Anh/chị cần em hỗ trợ thêm gì ạ?
-Chunks: 1
-Score: 0.049 avg (0.049~0.049)
-History: 8 msgs
-Tokens: 5639 in / 50 out
-Cost: $0.001721
-13178ms
-📌 Chunks được trích dẫn (1):
-#1 019ef446 (không tên) score: 0.049
-#1 xe-1.csv (đoạn 139, score: 0.049)
-,Tên kho,Mã hàng,Tên hàng,,,,,,
-,Kho lốp ROVELO,2-R15 185/65 RVL,Lốp Rovelo 185/65R15 RHP-A68,,,,,,
-,Kho lốp ROVELO,2-R15 195/50 RVL,Lốp Rovelo 195/50R15 RHP-A68,,,,,,
-,Kho lốp ROVELO,2-R15 195/55 RVL,Lốp Rovelo 195/55R15 RHP-A68,,,,,,
-,Kho lốp ROVELO,2-R15 195/60 RVL,Lốp Rovelo 195/60R15 RHP-A68,,,,,,
-,Kho lốp ROVELO,2-R15 195/65 RVL,Lốp Rovelo 195/65R15 RHP-A68,,,,,,
-,Kho lốp ROVELO,2-R15 195/70 RVL,Lốp Rovelo 195/70R15C RCMX+,,,,,,
-,Kho lốp ROVELO,2-R15 205/65 RVL,Lốp Rovelo 205/65R15 RHP-A68,,,,,,
-,Kho lốp ROVELO,2-R15 205/70 RVL,Lốp Rovelo 205/70R15C RCMX+,,,,,,
-,Kho lốp ROVELO,2-R15 215/70 RVL,Lốp Rovelo 215/70R15 98T RHP-A68,,,,,,
-,Kho lốp ROVELO,2-R15 225/70 RVL,Lốp Rovelo 225/70R15C RCMX+,,,,,,
-,Kho lốp ROVELO,2-R15 235/75 RVL,Lốp Rovelo 235/75R15 RIDGETRAK A/T II,,,,,,
-,Kho lốp ROVELO,2-R15/195C,Lốp Rovelo 195R15C RCMX+,,,,,,
-,Kho lốp ROVELO,2-R16 195/50 RVL,Lốp Rovelo 195/50R16 RHP-A68,,,,,,
-,Kho lốp ROVELO,2-R16 195/55 RVL,Lốp Rovelo 195/55R16 RHP-A68,,,,,,
-,Kho lốp ROVELO,2-R16 195/75 RVL,Lốp Rovelo 195/75R16C RCMX+,,,,,,
-,Kho lốp ROVELO,2-R16 205/55 RVL,Lốp Rovelo 205/55R16 RHP-A68,,,,,,
-,Kho lốp ROVELO,2-R16 205/60 RVL,Lốp Rovelo 205/60R16 RHP-A68,,,,,,
-,Kho lốp ROVELO,2-R16 205/60RT RVL,Lốp Rovelo 205/60R16 INSTINCT-AS01,,,,,,
-,Kho lốp ROVELO,2-R16 205/65 RVL,Lốp Rovelo 205/65R16 RHP-A68,,,,,,
-,Kho lốp ROVELO,2-R16 215/60RT RVL,Lốp Rovelo 215/60R16 INSTINCT-AS01,,,,,,
-,Kho lốp ROVELO,2-R16 225/60 RVL,Lốp Rovelo 225/60R16 RHP-A68,,,,,,
-,Kho lốp ROVELO,2-R16 245...
-Nhập câu hỏi...
+# Expert RAG Platform — Câu hỏi, Luồng & Phân tích (Cursor)
+
+> Tài liệu tổng hợp phân tích từ session Cursor — AdapChunk, Ragbot, 8-step Debug Framework, Cost-Log Center, CRM.
+>
+> **Phiên bản:** 1.0 · **Cập nhật:** 2026-07-07
+
+---
+
+## Mục lục
+
+1. [Câu hỏi gốc & bối cảnh](#1-câu-hỏi-gốc--bối-cảnh)
+2. [AdapChunk — Mindset chunking adaptive](#2-adapchunk--mindset-chunking-adaptive)
+3. [Ragbot — Đánh giá thực tế](#3-ragbot--đánh-giá-thực-tế)
+4. [Tại sao RAG “chưa dùng được”?](#4-tại-sao-rag-chưa-dùng-được)
+5. [Luồng INGEST chuẩn (U0–U7)](#5-luồng-ingest-chuẩn-u0u7)
+6. [Luồng QUERY chuẩn (Q1–Q7)](#6-luồng-query-chuẩn-q1q7)
+7. [Khung DEBUG RAG — 8 Step × 3 Cụm](#7-khung-debug-rag--8-step--3-cụm)
+8. [5 tiêu chí Expert RAG](#8-5-tiêu-chí-expert-rag)
+9. [Identity hierarchy — Multi-tenant](#9-identity-hierarchy--multi-tenant)
+10. [Cost-Log Center — DB & luồng log](#10-cost-log-center--db--luồng-log)
+11. [CRM Dashboard & thống kê](#11-crm-dashboard--thống-kê)
+12. [Evaluation metrics (Table 5)](#12-evaluation-metrics-table-5)
+13. [Trade-off & quyết định kiến trúc](#13-trade-off--quyết-định-kiến-trúc)
+14. [Lộ trình triển khai (Gate 0 → Gate 4)](#14-lộ-trình-triển-khai-gate-0--gate-4)
+15. [Prompt mẫu cho Cursor](#15-prompt-mẫu-cho-cursor)
+
+---
+
+## 1. Câu hỏi gốc & bối cảnh
+
+### 1.1 Câu hỏi ban đầu
+
+| # | Câu hỏi | Ý định thật sự |
+|---|---------|----------------|
+| Q1 | AdapChunk là gì? Luồng chunking RAG hoạt động thế nào? | Hiểu mindset research/design doc về adaptive chunking |
+| Q2 | Build app RAG multi-bot, multi-doc, multi-format — luồng data nên control ra sao? | Thiết kế kiến trúc platform, không phải chatbot đơn |
+| Q3 | Ragbot README có build thành công không? | So sánh spec vs implementation thực tế |
+| Q4 | Luồng upload → DB + embedding pgvector expert mindset? | Hiểu ingest pipeline production-grade |
+| Q5 | Ragbot “chưa dùng được / app rác” — làm sao build luồng thật sự chạy được? | Tránh over-engineering, focus verify gate |
+| Q6 | Build Expert RAG đạt 5 tiêu chí + multi-tenant + CRM log center? | Platform RAG + observability + billing |
+
+### 1.2 Insight cốt lõi từ phân tích
+
+```
+AdapChunk doc  = RESEARCH (tại sao chunk adaptive quan trọng)
+Ragbot README  = PRODUCTION TARGET (hệ thống đã verify một phần)
+Workspace này  = DEBUG-RAG (bắt đầu từ Gate 0, verify-first)
+```
+
+**Không copy blind spec AdapChunk hay README Ragbot.** Giữ nguyên tắc, build từng gate verify.
+
+---
+
+## 2. AdapChunk — Mindset chunking adaptive
+
+### 2.1 Vấn đề cần giải quyết
+
+Hệ thống RAG phụ thuộc trực tiếp vào chất lượng phân đoạn (chunking). Fixed splitting (512 token mọi doc) gây:
+
+- Chunk bị cắt giữa bảng/công thức → mất ngữ cảnh
+- Vector embedding không phản ánh đúng ngữ nghĩa
+- Retrieval trả về đoạn không liên quan
+- LLM hallucinate vì thiếu thông tin nền
+
+### 2.2 Kiến trúc 7 tầng (AdapChunk spec)
+
+```
+PDF → Mistral OCR → Markdown
+  → Block Detection & Tagging (rule-based)
+  → Feature Extraction → Document Profile
+  → LLM Strategy Selector
+  → Rule-based Cross-check
+  → Chunking Executor (tôn trọng atomic block)
+  → Narrate special blocks
+  → Embedding → Qdrant + Metadata
+```
+
+### 2.3 Các loại block
+
+| Tag | Atomic? | Ý nghĩa |
+|-----|---------|---------|
+| HEADING | Không | Cấu trúc phân cấp |
+| TEXT | Không | Văn xuôi thường |
+| TABLE | **Có** | Không được cắt đôi |
+| FORMULA | **Có** | LaTeX giữ nguyên + context buffer |
+| IMAGE | **Có** | Embed description từ OCR |
+
+### 2.4 Bốn chiến lược chunking
+
+| Strategy | Cơ chế | Phù hợp |
+|----------|--------|---------|
+| **HDT** | Phân đoạn theo heading hierarchy, structural_path | Luận văn, báo cáo có mục lục |
+| **SEMANTIC** | Cosine similarity giữa câu liên tiếp, cắt tại điểm chuyển ngữ nghĩa | Sách giáo khoa, văn xuôi dài |
+| **PROPOSITION** | LLM tách thành phát biểu nguyên tử, tự đủ nghĩa | Hợp đồng, quy chế, pháp lý |
+| **HYBRID** | HDT macro + PROPOSITION micro (>300 từ) | Fallback an toàn |
+
+### 2.5 Cross-check rules (lớp an toàn)
+
+| Điều kiện | Hành động |
+|-----------|-----------|
+| confidence < 0.6 | Override → HYBRID |
+| HDT nhưng heading < 5 | Override → SEMANTIC |
+| SEMANTIC nhưng avg_text_block_length < 50 | Override → PROPOSITION |
+| PROPOSITION nhưng avg_text > 300 và heading > 20 | Override → HDT |
+| mixed_content_score > 0.4 và không chọn HYBRID | Cảnh báo (log) |
+
+### 2.6 Narrate then Embed
+
+Embedding model chỉ hiểu ngôn ngữ tự nhiên. Trước khi embed:
+
+| Loại | Giải pháp |
+|------|-----------|
+| FORMULA LaTeX | LLM → câu mô tả; lưu LaTeX gốc trong metadata |
+| TABLE Markdown | Linearize hàng hoặc LLM tóm tắt |
+| IMAGE/GRAPH | Embed description từ OCR |
+| TEXT | Embed trực tiếp |
+
+**Metadata `original_content` quan trọng:** retrieval trả chunk → LLM đọc cả embedded text (ngữ nghĩa) lẫn original_content (số liệu chính xác).
+
+### 2.7 Suy nghĩ Cursor về AdapChunk
+
+> AdapChunk trả lời **một câu hỏi duy nhất**: "Tài liệu này nên được cắt như thế nào để retrieval sau này tìm đúng?"
+>
+> Ba nguyên tắc không thể bỏ: (1) Structure-first, (2) Atomic blocks, (3) Narrate then embed.
+>
+> Document Profile phải **rule-based, deterministic** — không dùng LLM — để làm ground truth cho cross-check.
+
+---
+
+## 3. Ragbot — Đánh giá thực tế
+
+### 3.1 So sánh AdapChunk spec vs Ragbot implementation
+
+| Thành phần | AdapChunk spec | Ragbot thực tế | Ghi chú |
+|------------|----------------|----------------|---------|
+| OCR | Mistral OCR (cloud) | Kreuzberg (self-hosted) | Data sovereignty |
+| Strategy selector | LLM call | **Rule-based scorer** | 0 LLM cost/doc, deterministic |
+| Vector DB | Qdrant | **pgvector** (PostgreSQL) | 1 DB, RLS-capable |
+| Embedding | BGE-m3 / vietnamese-sbert | **jina-embeddings-v3** (1024-dim) | Single vendor embed+rerank |
+| Block pipeline | Full block detection | **Flag ON, parser chưa emit** → no-op | ~60-70% AdapChunk |
+| Narrate-then-embed | Required | Code có, **default OFF** | Chưa bootstrap-wired |
+| Query graph | Không mô tả | **~21 LangGraph nodes** | Vượt xa AdapChunk scope |
+| Multi-tenant | Không mô tả | **4-key identity + RLS** | Production concern |
+| Anti-HALLU | Không mô tả | **Layered defense, HALLU=0 verified** | Sacred contract |
+
+### 3.2 Ragbot đã LIVE
+
+- Multi-tenant 4-key identity (app-filter solid)
+- Async ingest 2-action (HTTP 202 + worker)
+- 6 chunking strategies (`smart_chunk`)
+- Rule-based selector + cross-check
+- Parent/child small-to-big
+- Hybrid retrieval (dense + BM25 + RRF)
+- Rerank + CRAG grade + grounding judge
+- Happy-case input control (template + normalizer + checker)
+- HALLU=0 trên tested traps
+
+### 3.3 Ragbot PARTIAL / gap
+
+- Block pipeline (atomic protection) — code có, chưa wire
+- Narrate-then-embed — code có, default OFF
+- RLS DB enforcement — Phase 3 gated (DSN flip pending)
+- Oversized sheet ingest — 224KB → 2643 chunks, có thể OOM
+- OpenAI TPM rate-limit under load test
+
+### 3.4 Suy nghĩ Cursor về Ragbot
+
+> Ragbot build **thành công phần platform** (multi-bot, ingest async, query graph, anti-hallucination).
+> Phần AdapChunk đầy đủ (block-aware + narrate) mới ~60–70%.
+> README mô tả **đích đến production (Phase D–E)**, không phải **bước 1 (Gate 0)**.
+> Cảm giác "app rác" = nhảy thẳng Phase D mà chưa pass Gate 0–1.
+
+---
+
+## 4. Tại sao RAG “chưa dùng được”?
+
+### 4.1 Pattern thất bại phổ biến
+
+| Triệu chứng | Nguyên nhân |
+|-------------|-------------|
+| Upload xong không trả lời được | Doc stuck `DRAFT`, embed fail im lặng |
+| Trả lời sai / bịa | Chunk kém + chưa refuse khi no context |
+| Setup 2 tiếng vẫn chưa chạy | Quá nhiều dependency trước khi "1 doc → 1 Q → 1 A" pass |
+| Load test fail | Scale/optimize trước happy path |
+| Happy-case format reject | Doc thật không match template |
+
+### 4.2 Nguyên tắc vàng
+
+```
+Gate 0: Upload MD → chunk → embed → hỏi "X là gì?" → trả lời đúng (có citation)
+Gate 1: Thêm PDF
+Gate 2: Thêm refuse khi không có context
+Gate 3: Thêm multi-bot isolation
+Gate 4: Thêm async worker + 202
+Gate 5: Thêm adaptive chunking (AdapChunk)
+Gate 6: Thêm query graph phức tạp (rerank, CRAG, reflect)
+```
+
+**Không nhảy gate.** Mỗi gate = verify script + gold Q&A + pass/fail rõ.
+
+### 4.3 Checklist "app dùng được"
+
+```
+□ docker compose up → API healthy < 30s
+□ Upload 1 file MD → state=active trong < 10s
+□ 3 câu hỏi gold → đúng fact, có citation
+□ 2 câu trap (không có trong doc) → oos_template, KHÔNG bịa
+□ Upload duplicate → dedup, không embed lại
+□ Restart server → data còn, query vẫn đúng
+□ Log mỗi request: chunks_retrieved, latency, token_used
+```
+
+---
+
+## 5. Luồng INGEST chuẩn (U0–U7)
+
+### 5.1 Sơ đồ tổng quan
+
+```
+Client upload
+    │
+    ▼
+[U0] IDENTITY_VALIDATE ─── tenant + bot resolve
+    │
+    ▼
+[U0.5] BOT_RESOLVE_4KEY ── BotConfig (chunk_size, model bindings...)
+    │
+    ▼
+[U1] VALIDATE ──────────── size guard + dedup (content_hash)
+    │
+    ▼
+[U2] PARSE ─────────────── format → structured text  ← MULTI-FORMAT GATE
+    │
+    ▼
+[U3] CLEAN ─────────────── NFC, injection strip, normalizer
+    │
+    ▼
+[U4] CHUNK ─────────────── AdapChunk / smart_chunk
+    │
+    ▼
+[U5] ENRICH ────────────── contextual prefix (optional phase 2)
+    │
+    ▼
+[U6] VN_SEGMENT ────────── underthesea tokenization (optional)
+    │
+    ▼
+[U7] EMBED + STORE ─────── batch embed → pgvector → state=active
+```
+
+### 5.2 Upload pattern — 2 action (industry standard)
+
+```
+Action 1 (HTTP sync, <1s):
+  POST /bots/{bot}/documents
+  → validate size + dedup (content_hash)
+  → fetch/accept raw content
+  → INSERT documents (state='DRAFT', raw_content)
+  → INSERT outbox event
+  → HTTP 202 {document_id, state: "DRAFT"}
+
+Action 2 (worker async):
+  outbox → Redis Stream → consumer
+  → đọc raw_content TỪ DB (không refetch URL!)
+  → chạy pipeline U1–U7
+  → flip state: DRAFT → enriching → embedding → active | failed
+```
+
+**Tại sao lưu raw_content vào DB?** Google Sheets `/edit?gid=` trả HTML login page nếu refetch sau.
+
+### 5.3 Multi-format control (U2 + U3)
+
+| Format | Parser | Output |
+|--------|--------|--------|
+| PDF | OCR (Kreuzberg/Mistral) | structured markdown |
+| DOCX | python-docx / pandoc | markdown |
+| XLSX/CSV | openpyxl | row-as-chunk hoặc table_csv |
+| Google Sheets | export API | same as xlsx |
+| HTML/Web | trafilatura | plain text / markdown |
+| Plain MD | passthrough | happy-case checker |
+
+**Happy-case mindset:** định nghĩa 1 template chuẩn (`## section` + `| table |`) + normalizer + checker score. Upload format lạ → normalizer cố → score thấp → warn/reject.
+
+### 5.4 Input contract — 3 vòng phòng thủ
+
+```
+Vòng 1 — Gate ở upload (U1):
+  MAX_SIZE, dedup hash, allowed MIME types
+
+Vòng 2 — Normalize ở parse (U2–U3):
+  Format → happy-case template
+  Checker score → warn nếu < threshold
+
+Vòng 3 — Quality ở chunk (U4):
+  Strategy phù hợp structure
+  Atomic block protection
+  Cross-check override
+```
+
+### 5.5 Parent/child (small-to-big)
+
+- **Child** (256 token): embed + retrieve — precision cao
+- **Parent** (1024 token): không embed — expand lúc generate để LLM có context rộng
+
+### 5.6 Schema DB tối thiểu
+
+```sql
+documents (
+  id, record_bot_id, filename, content_hash,
+  raw_content, state, error_message, created_at
+)
+
+document_chunks (
+  id, document_id, record_bot_id,
+  chunk_index, content,              -- text embed
+  embedding vector(1024),
+  content_tsv tsvector,              -- BM25
+  parent_id, structural_path,
+  strategy_used, block_types,
+  original_content, metadata jsonb
+)
+```
+
+### 5.7 Verify scripts (bắt buộc mỗi gate)
+
+```bash
+# Gate ingest
+python scripts/verify_ingest.py \
+  --file samples/spa_prices.md \
+  --bot-id demo \
+  --expect-chunks-min 3 \
+  --expect-active
+
+# Gate retrieval
+python scripts/verify_retrieval.py \
+  --bot-id demo \
+  --query "giá massage bao nhiêu" \
+  --expect-chunk-contains "300.000"
+```
+
+---
+
+## 6. Luồng QUERY chuẩn (Q1–Q7)
+
+### 6.1 MVP 5 bước (đủ dùng)
+
+```
+Q1 guard_input        → block prompt injection
+Q2 embed_query        → cùng model ingest
+Q3 retrieve           → hybrid dense + BM25, filter bot_id, top_k=10
+Q4 rerank (phase 2)   → top 5
+Q5 generate           → temp=0, chỉ context, refuse nếu rỗng
+Q6 guard_output       → grounding check (phase 2)
+```
+
+### 6.2 Ragbot full query graph (~21 nodes)
+
+```
+guard_input → check_cache + understand (parallel)
+   ├─(cache hit)──────────────────────────────────────────► persist
+   └─► condense_question / router / query_complexity
+        → rewrite | decompose | adaptive_decompose | speculative_retrieve
+        → retrieve / graph_retrieve
+        → rrf_round_robin → rerank → mmr_dedup → neighbor_expand(opt)
+        → grade (CRAG 3-state) → rewrite_retry (loop)
+        → generate → critique_parse(opt) → guard_output
+             → reflect → persist → END
+```
+
+### 6.3 Generate contract — chống bịa
+
+```
+System: {bot.system_prompt}   ← bot owner cung cấp, app KHÔNG sửa
+
+User:
+<context>
+{retrieved chunks với [chunk_id] header}
+</context>
+
+Question: {user_question}
+
+Rules:
+- Chỉ trả lời từ <context>
+- Nếu không đủ thông tin: trả lời EXACT oos_template
+- Trích dẫn [chunk_id] khi có fact cụ thể
+```
+
+**temperature = 0.0** luôn.
+
+**Refuse short-circuit (bắt buộc MVP):**
+
+```python
+if not chunks:
+    return bot.oos_answer_template  # KHÔNG gọi LLM
+```
+
+### 6.4 Hybrid retrieval
+
+```python
+dense = vector_search(query_emb, bot_id, k=20)
+sparse = bm25_search(query_text, bot_id, k=20)
+merged = rrf_fuse(dense, sparse, k=10)
+```
+
+VN text: BM25 + dense tốt hơn pure vector.
+
+### 6.5 Verify query end-to-end
+
+```bash
+python scripts/verify_query_flow.py \
+  --bot-id demo \
+  --question "Giá gói massage 60 phút?" \
+  --expect-answer-contains "300" \
+  --expect-no-hallucination
+```
+
+Gold set tối thiểu: **11 câu / 1 bot / 3 lượt stable**.
+
+### 6.6 Latency target (Ragbot measured)
+
+| Tier | Intent | LLM calls | p50 |
+|------|--------|-----------|-----|
+| T1 | Greeting/chitchat | 1 | <1s |
+| T2 | Factoid/FAQ RAG | 2–3 | 5–7s |
+| T3 | Multi-hop/aggregation | 5–8 | 9–11s p95 |
+
+---
+
+## 7. Khung DEBUG RAG — 8 Step × 3 Cụm
+
+### 7.1 Bảng tổng hợp
+
+| Cụm | Step | Verify gì (DATA) | Metric |
+|-----|------|------------------|--------|
+| **INGEST** | 1. PARSE | file → markdown CÓ CẤU TRÚC? heading/table/atomic giữ? | BI |
+| **INGEST** | 2. CHUNK | strategy đúng? atomic không cắt? parent-child? structural_path? | SC, ICC, DCC |
+| **INGEST** | 3. EMBED | null_non_parent=0? dim 1024? narrate (nếu on)? | — |
+| **INGEST** | 4. STORE | tsvector + embedding search được? stats-index? | RC (index health) |
+| **QUERY** | 5. RETRIEVE | answer chunk vào top-K? Recall: dense+BM25+RRF+rerank | RC, Context Precision |
+| **QUERY** | 6. GENERATE | LLM trả từ context? không false-refuse? không bịa? | Answer Correctness, Faithfulness |
+| **QUERY** | 7. GUARD/REFLECT | grounding check? refusal đúng? | HALLU rate |
+| **EVAL** | 8. SCORE | load-test → COVERAGE + HALLU + layer-attribution + intrinsic/retrieval/answer | All metrics |
+
+### 7.2 Nguyên tắc debug
+
+```
+Mỗi step fail → trace NGƯỢC theo request_id / document_id / trace_id
+  → xem step nào fail
+  → model nào được gọi
+  → token nào tiêu tốn
+  → latency bao nhiêu
+```
+
+### 7.3 Layer attribution (Step 8)
+
+Khi answer fail, biết fail ở layer nào:
+
+```
+fail_answer
+  → retrieve_miss?     (Step 5 — RC thấp)
+    → chunk_bad?       (Step 2 — SC/ICC/DCC/BI)
+      → parse_bad?     (Step 1 — BI)
+        → wrong_strategy? (Step 2 — strategy log)
+  → generate_fail?     (Step 6)
+  → guard_block?       (Step 7 — false refuse)
+```
+
+### 7.4 Scope kiểm thử (từ checklist team)
+
+| Scope | Mô tả |
+|-------|-------|
+| Ingest / Upload đa-format | PARSE step — mọi MIME type |
+| Chunking / AdapChunk L1–L7 | CHUNK + EMBED + STORE |
+| Answer / Generation (sacred-10) | GENERATE — 10 câu sacred không được sai |
+| Chat-entry + Test-chat (2 scope) | Entry point khác nhau, cùng pipeline |
+| Retrieval (hybrid/RRF/rerank/CRAG) | RETRIEVE step |
+| Multi-tenant / RLS / leak | Identity isolation |
+| Cost-Log Center (token_ledger/CRM) | Ledger + rollup |
+| Domain-neutral / hardcode sweep | 0 brand literal trong src |
+| Multi-language | per-bot language config |
+| Cost / Perf / Latency | 5 tiêu chí |
+
+---
+
+## 8. 5 tiêu chí Expert RAG
+
+```
+         Accuracy/Faithfulness = 100%
+              ▲
+              │    ★ Expert RAG sweet spot
+              │   ╱  (hybrid + guard + cache)
+              │  ╱
+    Cost ◄────┼────► Latency
+              │  ╲
+              │   ╲ UX (refuse rõ, citation, streaming)
+              ▼
+         Performance (throughput, concurrent)
+```
+
+### 8.1 Nhanh (Latency thấp)
+
+| Technique | Tiết kiệm |
+|-----------|-----------|
+| Cache L1 Redis exact hash | ~100% repeat Q |
+| Cache L2 semantic @0.97 | ~80% FAQ |
+| Adaptive router — skip rerank cho factoid | −40% latency |
+| Multi-query speculative (parallel) | −21% cost, −779ms |
+| Adaptive context prune | −18% cost, −619ms |
+| Parent expand-only (không embed parent) | −50% embed cost/doc |
+
+### 8.2 Đúng/Chuẩn (Faithfulness → 100%)
+
+| Layer | Defense |
+|-------|---------|
+| Empty context | refuse → oos_template |
+| CRAG grade | irrelevant → retry/refuse |
+| Cliff rerank floor | drop weak chunks |
+| Citation validation | chunk_id phải trong retrieved set |
+| Grounding judge | SUPPORTED/NOT |
+| Self-RAG reflect (opt) | completeness check |
+
+**Metric:** HALLU=0 trên trap set + Faithfulness RAGAS + Answer Correctness gold set.
+
+### 8.3 UX cao
+
+- Streaming response (SSE)
+- Refuse message rõ (`bots.oos_answer_template` per bot)
+- Citation clickable → link doc source
+- Upload progress (poll document.state)
+- Multi-language (detect query lang → response lang match)
+- Error transparent (failed ingest → error_message cụ thể)
+
+### 8.4 Performance cao
+
+- pgvector HNSW + tsvector GIN
+- Partition `request_trace` by month
+- CRM đọc `stats_*_daily`, không scan ledger
+- Batch embed, async ingest worker
+- Horizontal query (stateless API) + vertical ingest worker
+
+### 8.5 Cost thấp
+
+- Rule-based strategy selector (0 LLM/doc)
+- temp=0, deterministic transforms
+- Per-bot cost cap (`plan_limits.monthly_token_cap`)
+- Cascade router → cheap model cho simple intent
+- Cache bust chỉ khi `corpus_version` đổi
+- Rollup stats offline
+
+---
+
+## 9. Identity hierarchy — Multi-tenant
+
+### 9.1 Cây phân cấp
+
+```
+Platform (admin hệ thống)
+  └── Tenant (record_tenant_id)          ← billing cap, CRM org
+        └── Workspace (workspace_id)     ← team/project slug
+              └── Bot (bot_id)             ← 1 KB, 1 system_prompt, 1 ngôn ngữ
+                    └── Channel (channel_type)  ← web | zalo | api | messenger
+```
+
+### 9.2 4-key contract
+
+| Layer | Key public | Key internal |
+|-------|-----------|--------------|
+| Tenant | JWT `record_tenant_id` | `tenants.id` |
+| Workspace | `workspace_id` slug | `workspaces.id` |
+| Bot | `bot_id` slug | `bots.record_bot_id` |
+| Channel | `channel_type` | part of 4-key |
+
+**Unique:** `(record_tenant_id, workspace_id, bot_id, channel_type)` → 1 bot instance.
+
+**Sau resolve 1 lần ở boundary → mọi query dùng `record_bot_id` + app-filter.**
+
+### 9.3 Multi-language
+
+- Không tách bot theo ngôn ngữ
+- Mỗi bot: `primary_language` + `supported_languages[]`
+- Embed/rerank model bind per-bot
+- Query log ghi `detected_query_language`
+
+### 9.4 RLS isolation
+
+```
+Request path:  SET LOCAL app.tenant_id → NOBYPASSRLS role (ragbot_app)
+Worker path:   BYPASSRLS role (ragbot_system) — cross-tenant rollup only
+Log query:     tenant admin → WHERE record_tenant_id = ctx.tenant
+               platform admin → stats_platform_daily (system role)
+```
+
+---
+
+## 10. Cost-Log Center — DB & luồng log
+
+### 10.1 Ba bảng log — tách concern
+
+```
+request_trace      → 1 row / HTTP request hoặc ingest job (header)
+pipeline_step_log  → N rows / request (mỗi step U/Q)
+token_ledger       → M rows / external API call (billable)
+```
+
+### 10.2 request_trace (trade log chính)
+
+```sql
+CREATE TABLE request_trace (
+    id              UUID PRIMARY KEY,
+    trace_id        UUID NOT NULL,
+    request_id      UUID NOT NULL UNIQUE,
+
+    -- Identity (denormalized)
+    record_tenant_id UUID NOT NULL,
+    workspace_id    TEXT,
+    record_bot_id   UUID NOT NULL,
+    bot_id          TEXT NOT NULL,
+    channel_type    TEXT NOT NULL,
+
+    -- Meta
+    request_type    TEXT NOT NULL,  -- 'chat' | 'ingest' | 'eval' | 'admin'
+    started_at      TIMESTAMPTZ NOT NULL,
+    ended_at        TIMESTAMPTZ,
+    latency_ms      INT,
+    status          TEXT,           -- 'success' | 'failed' | 'refused' | 'timeout'
+
+    -- Aggregates (from token_ledger)
+    total_input_tokens   INT DEFAULT 0,
+    total_output_tokens  INT DEFAULT 0,
+    total_tokens         INT DEFAULT 0,
+    estimated_cost_usd   NUMERIC(12,6) DEFAULT 0,
+
+    -- Query-specific
+    user_question       TEXT,
+    answer_preview      TEXT,
+    chunks_retrieved    INT,
+    cache_hit           BOOLEAN DEFAULT FALSE,
+    refusal_reason      TEXT,
+
+    -- Ingest-specific
+    document_id         UUID
+);
+-- Partition by month cho time-range query
+```
+
+### 10.3 pipeline_step_log (8-step debug)
+
+```sql
+CREATE TABLE pipeline_step_log (
+    id              UUID PRIMARY KEY,
+    request_id      UUID NOT NULL,
+    pipeline        TEXT NOT NULL,  -- 'ingest' | 'query' | 'eval'
+    step_code       TEXT NOT NULL,  -- 'U2_PARSE' | 'Q5_RETRIEVE'
+    step_index      SMALLINT,       -- 1-8
+
+    started_at      TIMESTAMPTZ NOT NULL,
+    ended_at        TIMESTAMPTZ,
+    latency_ms      INT,
+    status          TEXT,           -- 'ok' | 'fail' | 'skip' | 'override'
+
+    input_summary   JSONB,
+    output_summary  JSONB,
+    error_message   TEXT,
+
+    verify_passed   BOOLEAN,
+    verify_details  JSONB           -- {"null_non_parent":0,"dim":1024}
+);
+```
+
+### 10.4 token_ledger (billable — CRM core)
+
+```sql
+CREATE TABLE token_ledger (
+    id              UUID PRIMARY KEY,
+    request_id      UUID NOT NULL,
+    step_log_id     UUID,
+
+    -- Identity (denormalized)
+    record_tenant_id UUID NOT NULL,
+    workspace_id    TEXT,
+    record_bot_id   UUID NOT NULL,
+
+    -- External call
+    provider        TEXT NOT NULL,  -- 'openai' | 'jina' | 'mistral'
+    model           TEXT NOT NULL,  -- 'gpt-4.1-mini' | 'jina-embeddings-v3'
+    purpose         TEXT NOT NULL,  -- 'embed'|'generate'|'rerank'|'grade'|'grounding'|'narrate'
+
+    input_tokens    INT NOT NULL DEFAULT 0,
+    output_tokens   INT NOT NULL DEFAULT 0,
+    total_tokens    INT,
+
+    unit_price_input  NUMERIC(12,8),
+    unit_price_output NUMERIC(12,8),
+    cost_usd          NUMERIC(12,6),
+
+    started_at      TIMESTAMPTZ NOT NULL,
+    ended_at        TIMESTAMPTZ NOT NULL,
+    latency_ms      INT,
+
+    idempotency_key TEXT UNIQUE
+);
+```
+
+### 10.5 Aggregation tables (rollup worker hourly/daily)
+
+```sql
+stats_bot_daily       (record_bot_id, stat_date)     -- drill-down bot
+stats_workspace_daily (record_tenant_id, workspace_id, stat_date)
+stats_tenant_daily    (record_tenant_id, stat_date)
+stats_platform_daily  (stat_date)                     -- admin hệ thống
+```
+
+Mỗi bảng rollup chứa: requests, tokens, cost, refusal_count, hallucination_count, cache_hit_count, latency_p50/p95, tokens_by_purpose JSONB, tokens_by_model JSONB.
+
+### 10.6 Luồng ghi log
+
+```
+Client → API boundary
+  → INSERT request_trace (started_at, identity)
+  → run pipeline (request_id injected)
+
+  loop each step:
+    → INSERT pipeline_step_log (started)
+    → execute step
+    → if external API:
+        → TokenLedgerService.record() → INSERT token_ledger
+    → UPDATE pipeline_step_log (ended, verify)
+
+  → UPDATE request_trace (ended, aggregates, status)
+  → response to client
+
+  [hourly worker]
+  → aggregate token_ledger → stats_*_daily
+```
+
+### 10.7 Quy tắc sacred
+
+| Rule | Lý do |
+|------|-------|
+| Mọi external call qua `TokenLedgerService.record()` | Không gọi OpenAI/Jina trực tiếp |
+| `request_id` inject từ boundary | Trace xuyên pipeline |
+| Ghi ledger trong cùng transaction (hoặc outbox) | Không mất log khi crash |
+| `idempotency_key` = `{request_id}:{purpose}:{seq}` | Retry không double-count |
+| Aggregate vào request_trace cuối request | Dashboard đọc 1 row |
+| Rollup worker hourly | CRM query stats_*_daily, không scan ledger |
+
+### 10.8 LLMGateway — wrapper bắt buộc
+
+```python
+class LLMGateway:
+    """Mọi LLM call đi qua đây — auto-log token."""
+    async def complete(self, purpose: str, **kwargs) -> LLMResponse:
+        started = utcnow()
+        resp = await self._client.complete(**kwargs)
+        await self._ledger.record(
+            request_id=self._ctx.request_id,
+            provider=resp.provider,
+            model=resp.model,
+            purpose=purpose,
+            input_tokens=resp.usage.input,
+            output_tokens=resp.usage.output,
+            started_at=started,
+            ended_at=utcnow(),
+        )
+        return resp
+```
+
+**Không có path nào gọi `openai.chat.completions.create()` trực tiếp.**
+
+---
+
+## 11. CRM Dashboard & thống kê
+
+### 11.1 Views theo role
+
+```
+Platform Admin
+├── All tenants overview (cost, requests, HALLU rate)
+├── Model usage breakdown
+├── System health (failed ingests, p95 latency)
+└── Model pricing management
+
+Tenant Admin
+├── Workspaces list + total cost
+├── Token usage trend (7d/30d/custom range)
+├── Cost cap status
+└── Top bots by cost
+
+Workspace Admin
+├── Bots in workspace
+├── Per-bot: requests, tokens, cost, refusal rate
+└── Document corpus stats
+
+Bot Owner
+├── Trade log (request list)
+├── Drill-down: 1 request → 8 steps → token calls
+├── Document upload status
+└── Eval score
+```
+
+### 11.2 Trade log row (bot owner)
+
+| Time | Question | Tokens In/Out | Cost | Latency | Status |
+|------|----------|---------------|------|---------|--------|
+| 14:32:01 | Giá massage 60p? | 1,240 / 89 | $0.002 | 4.2s | answered |
+| 14:33:15 | Thời tiết HN? | 0 / 0 | $0 | 0.1s | refused |
+
+### 11.3 Query CRM theo khoảng thời gian
+
+```sql
+-- Tenant: token 7 ngày
+SELECT stat_date, total_tokens, total_cost_usd, chat_requests
+FROM stats_tenant_daily
+WHERE record_tenant_id = $1 AND stat_date BETWEEN $2 AND $3;
+
+-- Drill-down: bot tốn nhất
+SELECT b.bot_id, s.total_tokens, s.total_cost_usd
+FROM stats_bot_daily s JOIN bots b ON b.record_bot_id = s.record_bot_id
+WHERE s.record_tenant_id = $1 AND s.workspace_id = $2
+ORDER BY s.total_cost_usd DESC;
+
+-- Trade log chi tiết 1 request
+SELECT rt.*, json_agg(psl) AS steps, json_agg(tl) AS token_calls
+FROM request_trace rt
+LEFT JOIN pipeline_step_log psl ON psl.request_id = rt.request_id
+LEFT JOIN token_ledger tl ON tl.request_id = rt.request_id
+WHERE rt.request_id = $1 GROUP BY rt.id;
+```
+
+### 11.4 Cost cap flow
+
+```
+token_ledger INSERT → check tenant monthly sum
+  → vượt cap → alert worker → flag bot → refuse new chat (graceful)
+```
+
+---
+
+## 12. Evaluation metrics (Table 5)
+
+### 12.1 Intrinsic metrics (chunk quality)
+
+| Metric | Ý nghĩa | Step |
+|--------|---------|------|
+| **SC** Size Compliance | Chunk đúng size policy | Step 2 CHUNK |
+| **ICC** Intrachunk Cohesion | Nội dung trong chunk liên quan | Step 2 |
+| **DCC** Contextual Coherence | Context buffer atomic block đủ | Step 2 |
+| **BI** Block Integrity | TABLE/FORMULA/IMAGE không cắt | Step 1–2 |
+| **RC** Retrieval Completeness | Chunk retrieved chứa đủ fact | Step 5 |
+
+### 12.2 Extrinsic metrics (end-to-end)
+
+| Metric | Ý nghĩa | Tầm quan trọng |
+|--------|---------|----------------|
+| Faithfulness | Độ trung thực vs nguồn | Cao — hallucination |
+| Context Precision | Chunk retrieved đúng info? | Cao — retrieval quality |
+| Context Recall | Info cần thiết retrieve hết? | Cao — coverage |
+| Answer Correctness | Trả lời đúng câu hỏi? | Cao |
+| Answer Relevance | Câu trả lời relevant? | Trung bình |
+| Strategy Selection Accuracy | Chọn đúng strategy? | Cao — AdapChunk mới |
+| HALLU rate | Tỉ lệ bịa | **Sacred = 0** |
+
+### 12.3 Gold question design
+
+| Loại câu hỏi | Mục đích | Ví dụ |
+|--------------|----------|-------|
+| Nằm gọn 1 đoạn | Baseline | "CNN là gì?" |
+| Cần context heading | Chunk mất heading → sai | "Phương pháp nào trong chương 3?" |
+| Liên quan bảng | Bảng cắt đôi → mất data | "Cảm biến nào sai số thấp nhất?" |
+| Liên quan công thức | Formula tách khỏi giải thích | "F1-score tính như thế nào?" |
+| Tổng hợp nhiều đoạn | Multi-chunk retrieval | "Tóm tắt kết quả thực nghiệm" |
+| Tham chiếu chéo | Mối quan hệ giữa phần | "Đề xuất chương 3 khác gì chương 2?" |
+| **Trap (không có trong doc)** | **HALLU test** | "Thời tiết HN hôm nay?" |
+
+Mỗi doc: **15–20 câu hỏi** + đáp án gold + đoạn văn gốc.
+
+### 12.4 Ablation configs
+
+| Config | Mô tả |
+|--------|-------|
+| Baseline | Fixed recursive 512 token |
+| HDT-only | Luôn HDT |
+| SEMANTIC-only | Luôn SEMANTIC |
+| PROPOSITION-only | Luôn PROPOSITION |
+| AdapChunk | Full adaptive |
+| AdapChunk (no cross-check) | Không rule override |
+
+**Wilcoxon p < 0.05:** so sánh AdapChunk vs baseline trên RC — chứng minh cải thiện có ý nghĩa thống kê.
+
+### 12.5 Eval output mẫu
+
+```json
+{
+  "coverage": 0.91,
+  "hallucination_rate": 0.0,
+  "answer_correctness": 0.82,
+  "retrieval_completeness": 0.88,
+  "false_refuse_rate": 0.09,
+  "layer_attribution": {
+    "parse_fail": 0,
+    "chunk_fail": 1,
+    "retrieve_miss": 2,
+    "generate_fail": 0,
+    "guard_block": 0
+  },
+  "intrinsic": {
+    "SC": 0.95, "ICC": 0.92, "DCC": 0.88, "BI": 0.97
+  }
+}
+```
+
+---
+
+## 13. Trade-off & quyết định kiến trúc
+
+### 13.1 Giữ từ Ragbot / AdapChunk
+
+| Giữ | Lý do |
+|-----|-------|
+| 2 pipeline ingest/query tách biệt | Scale độc lập |
+| temp=0 + refuse khi no context | HALLU=0 sacred |
+| Hybrid retrieve dense+BM25 | VN text tốt hơn pure vector |
+| Parent/child chunks | Precision + context rộng |
+| Happy-case input contract | Pragmatic hơn universal parser |
+| Verify scripts + gold Q&A | Đo được "dùng được" |
+| bot.system_prompt = SSoT | App không inject/override |
+| AdapChunk rule-based selector | Free + deterministic |
+| Token ledger mọi external call | CRM + cost control |
+
+### 13.2 Hoãn (gây "app rác" nếu làm sớm)
+
+| Hoãn | Lý do |
+|------|-------|
+| LangGraph 21 nodes ngay | Gate 0 trước |
+| Self-RAG reflect loop | Sau grounding judge pass |
+| Graph retrieve | Sau hybrid RRF pass |
+| Multi-query speculative | Sau factoid path pass |
+| Redis outbox | Khi chưa cần scale |
+| RLS DSN flip | Sau app-filter solid |
+| LLM proposition mọi doc | Chỉ khi strategy=PROPOSITION |
+| Parse mọi format bẩn | Happy-case trước |
+
+### 13.3 Engine swaps Ragbot (deliberate)
+
+| AdapChunk spec | Ragbot chọn | Vì sao |
+|----------------|-------------|--------|
+| Mistral OCR | Kreuzberg self-hosted | Data sovereignty |
+| LLM selector | Rule-based scorer | 0 cost, deterministic |
+| Qdrant | pgvector | 1 DB, RLS |
+| sbert/BGE | Jina v3 | 1 vendor embed+rerank |
+
+---
+
+## 14. Lộ trình triển khai (Gate 0 → Gate 4)
+
+### Phase A — "Trả lời được" (Gate 0) · ~1 tuần
+
+```
+□ PostgreSQL + pgvector schema (documents, document_chunks)
+□ Identity record_bot_id (1 bot trước)
+□ Upload MD sync → chunk recursive → embed → store
+□ Query: dense retrieve → generate temp=0 → refuse
+□ request_trace + token_ledger (chat only)
+□ scripts/verify_ingest.py + verify_query_flow.py
+□ 1 bot, 3 sample docs, 11 gold questions
+```
+
+**Deliverable:** demo chat trả lời đúng giá spa / quy định / FAQ.
+
+### Phase B — "Không bịa + log đủ" (Gate 1) · ~1 tuần
+
+```
+□ pipeline_step_log (8 steps)
+□ LLMGateway wrapper (no direct API call)
+□ BM25 + RRF hybrid retrieve
+□ Grounding judge + oos_template
+□ HALLU trap set = 0
+□ Bot trade log (request list API)
+```
+
+**Deliverable:** 0 hallucination trên trap set, trade log xem được.
+
+### Phase C — "Multi-tenant + CRM" (Gate 2) · ~1 tuần
+
+```
+□ 4-key identity (tenant → workspace → bot → channel)
+□ stats_bot/workspace/tenant_daily rollup worker
+□ CRM dashboard API (tenant + bot views)
+□ Cost cap + alert
+□ RLS Phase 1-2 provision
+□ Async ingest 202 + background worker
+```
+
+**Deliverable:** 2 bots isolated, CRM stats theo ngày/tuần/tháng.
+
+### Phase D — "Expert pipeline" (Gate 3) · ~2 tuần
+
+```
+□ AdapChunk: analyze_document + select_strategy + 6 strategies
+□ Cross-check override + strategy log
+□ Multi-format parse (PDF, CSV, DOCX) + normalizer
+□ Rerank (jina-reranker-v3) + CRAG grade
+□ Parent/child small-to-big
+□ Eval step 8 + layer attribution
+□ Intrinsic metrics SC/ICC/DCC/BI
+```
+
+**Deliverable:** adaptive chunking, eval report, layer attribution.
+
+### Phase E — "Performance + Cost" (Gate 4) · ~1 tuần
+
+```
+□ Cache L1 Redis + L2 semantic
+□ Adaptive router (short/long path)
+□ Platform admin dashboard
+□ Block pipeline + narrate-then-embed
+□ Load test + Wilcoxon eval (Table 5)
+□ RLS Phase 3 DSN flip
+```
+
+**Deliverable:** production-ready platform, 5 tiêu chí measured.
+
+---
+
+## 15. Prompt mẫu cho Cursor
+
+### 15.1 Gate 0 — Scaffold MVP
+
+```
+Build MVP RAG trong workspace debug-rag:
+- FastAPI + PostgreSQL pgvector + docker-compose
+- Endpoints: POST /bots/{bot_id}/documents, POST /bots/{bot_id}/chat
+- Ingest sync MD: validate → recursive chunk → embed → store
+- Query: embed → hybrid retrieve (dense+BM25 RRF) → generate temp=0 → refuse if no chunks
+- Log: request_trace + token_ledger qua LLMGateway wrapper
+- Include scripts/verify_ingest.py, verify_query_flow.py
+- samples/spa.md + 3 gold questions + 2 trap questions
+- Mọi stage log structured JSON
+- Failed ingest → state=failed + error_message
+```
+
+### 15.2 Gate 1 — Anti-HALLU + step log
+
+```
+Thêm vào MVP:
+- pipeline_step_log cho 8 steps (ingest U1-U7, query Q1-Q7)
+- LLMGateway: mọi OpenAI/Jina call auto ghi token_ledger
+- Grounding judge node (gpt-4.1-mini, SUPPORTED/NOT)
+- oos_template per bot, refuse short-circuit
+- verify_query_flow.py: 11 gold + 2 trap, expect HALLU=0
+- Trade log API: GET /bots/{bot_id}/requests?from=&to=
+```
+
+### 15.3 Gate 2 — Multi-tenant + CRM
+
+```
+Thêm multi-tenant:
+- 4-key identity: (record_tenant_id, workspace_id, bot_id, channel_type)
+- stats_bot_daily rollup worker (hourly)
+- CRM API: GET /tenants/{id}/stats, GET /workspaces/{id}/stats, GET /bots/{id}/stats
+- Cost cap check sau mỗi token_ledger INSERT
+- Async ingest: POST → 202 DRAFT → worker U1-U7 → active
+- Mọi query filter record_bot_id
+```
+
+### 15.4 Cursor rule (.cursor/rules/rag.md)
+
+```
+- Never add query node without verify script update
+- Never change embed model without migration + re-embed script
+- HALLU trap questions must pass before merge
+- temperature generation = 0.0, no exceptions
+- Mọi external API call qua LLMGateway, không direct
+- Mọi DB query filter record_bot_id / record_tenant_id
+- Failed step → pipeline_step_log status=fail + error_message
+```
+
+---
+
+## Phụ lục A — Cấu trúc repo đề xuất
+
+```
+debug-rag/
+├── src/ragbot/
+│   ├── main.py                     # FastAPI entry
+│   ├── ingest/                     # U0-U7 stages
+│   │   ├── stages.py
+│   │   ├── parser/registry.py
+│   │   └── normalizer.py
+│   ├── query/                      # Q1-Q7 nodes
+│   │   ├── graph.py
+│   │   └── nodes/
+│   ├── shared/
+│   │   ├── chunking/               # AdapChunk
+│   │   │   ├── analyze.py
+│   │   │   ├── select_strategy.py
+│   │   │   ├── strategies/
+│   │   │   └── smart_chunk.py
+│   │   └── constants/
+│   ├── infrastructure/
+│   │   ├── db/                     # models, session, RLS
+│   │   ├── embedding/
+│   │   ├── vector/pgvector_store.py
+│   │   └── ledger/                 # TokenLedgerService, LLMGateway
+│   └── application/
+│       ├── services/
+│       └── ports/
+├── scripts/
+│   ├── verify_ingest.py
+│   ├── verify_retrieval.py
+│   ├── verify_query_flow.py
+│   └── verify_answer_quality.py
+├── samples/                        # doc mẫu + gold Q&A
+├── alembic/
+├── docker-compose.yml              # postgres+pgvector
+├── docs/
+│   └── EXPERT_RAG_ANALYSIS.md      # ← file này
+└── .cursor/rules/rag.md
+```
+
+---
+
+## Phụ lục B — Glossary
+
+| Thuật ngữ | Ý nghĩa |
+|-----------|---------|
+| AdapChunk | Adaptive Document Chunking — chọn strategy theo cấu trúc doc |
+| HDT | Hierarchical Document Tree — chunk theo heading |
+| Atomic block | TABLE/FORMULA/IMAGE — không được cắt |
+| structural_path | Breadcrumb "Chương 3 > 3.1 > Kết quả" |
+| Happy-case | Template input chuẩn thay vì parse mọi format |
+| 4-key identity | tenant + workspace + bot + channel → record_bot_id |
+| oos_template | Out-of-scope answer khi không có context |
+| HALLU | Hallucination — LLM bịa fact không có trong doc |
+| RRF | Reciprocal Rank Fusion — merge dense + BM25 |
+| CRAG | Corrective RAG — grade chunk relevance 3-state |
+| Sacred-10 | 10 câu hỏi không được sai — regression gate |
+| Layer attribution | Fail answer → trace ngược layer nào gây lỗi |
+| Token ledger | Bảng log mọi external API call (billable) |
+| Trade log | request_trace — 1 row per request, drill-down được |
+
+---
+
+*Tài liệu này là living document — cập nhật khi pass mỗi Gate.*
 
 
-[6/23/26 4:32 PM] HuyPT Innocom: ùm mã sản phẩm ấy
-[6/23/26 4:33 PM] Luân tủi ngựa: có đúng khong
-[6/23/26 4:33 PM] Luân tủi ngựa: sao không dùng cái cột produc name , mà dùng cái cột questions
-[6/23/26 4:33 PM] HuyPT Innocom: để mapping sản phẩm với câu hỏi
-[6/23/26 4:34 PM] Luân tủi ngựa: mà ở sản phẩm không có  mà bắt  lỗi gì
-[6/23/26 4:35 PM] HuyPT Innocom: để fix prompt thử
-[6/23/26 4:36 PM] Luân tủi ngựa: mà anh chưa hiểu, là cái cột product name khoogncos thì sao lỗi được, cái đó ở cột question chứ có phải cột sản phẩm đâu
-[6/23/26 4:36 PM] HuyPT Innocom: là hỏi nó tự map vào product cùng size sản phẩm
-[6/23/26 4:36 PM] Luân tủi ngựa: mà cái anh thấy ở sản phẩm không có tên đó
-[6/23/26 4:36 PM] Luân tủi ngựa: Lốp xe LANDSPIDER 265/50R20 111TXL WILDTRAXX A/T
-[6/23/26 4:36 PM] Luân tủi ngựa: Lốp xe LANDSPIDER 265/50ZR20 111WXL CITYTRAXX H/P
-[6/23/26 4:37 PM] Luân tủi ngựa: tìm cũng không có ra 2 cái
-[6/23/26 4:37 PM] HuyPT Innocom: thấy cột question có k
-[6/23/26 4:37 PM] HuyPT Innocom: sao nó k lấy
-[6/23/26 4:38 PM] Luân tủi ngựa: cái này cũng lạ, soa không sửa cái code của  câu hỏi  như cái của product name, em thử đổi cái prompt là cột này-> mapping qua cột kia thử
-[6/23/26 4:39 PM] HuyPT Innocom: đã nói là cột question là để nhận biết key của khách hỏi bot
-[6/23/26 4:39 PM] HuyPT Innocom: nó tự map qua tư vấn sản phẩm cùng loại
-[6/23/26 4:39 PM] Luân tủi ngựa: chắc do sys sprompt, em dọc đi
-[6/23/26 4:40 PM] HuyPT Innocom: k được
-[6/23/26 4:41 PM] HuyPT Innocom: nó lấy được mỗi 1 chunk v
+# Ragbot — Bộ câu hỏi Audit Expert RAG
+
+> **Mục đích:** Đặt câu hỏi cho AI agent dự án Ragbot để buộc nó khai **sự thật code** — không README, không spec, không "theo thiết kế".
+>
+> **Quy tắc trả lời bắt buộc cho agent:**
+> - Mỗi câu trả lời phải có: **file path + function/class + line range** (hoặc "KHÔNG TỒN TẠI")
+> - Claim "đã implement" → phải kèm **test/verify script + kết quả pass/fail gần nhất**
+> - Claim "LIVE" → phải chỉ **entry point thực tế được gọi trong runtime**
+> - Không được trả lời chung chung — nếu không biết, nói **"chưa verify"**
+
+**Phiên bản:** 1.0 · **Ngày:** 2026-07-07 · **Vai trò người đặt câu hỏi:** Expert RAG / AI Architect
+
+---
+
+## Mục lục
+
+- [Phần 0 — Câu hỏi mở đầu (bắt buộc trả lời trước)](#phần-0--câu-hỏi-mở-đầu)
+- [Phần 1 — Tổng quan & sự thật hệ thống](#phần-1--tổng-quan--sự-thật-hệ-thống)
+- [Phần 2 — Identity & Multi-tenant](#phần-2--identity--multi-tenant)
+- [Phần 3 — Ingest / Upload (U0–U7)](#phần-3--ingest--upload-u0u7)
+- [Phần 4 — Parse & Multi-format](#phần-4--parse--multi-format)
+- [Phần 5 — Chunking / AdapChunk](#phần-5--chunking--adapchunk)
+- [Phần 6 — Embed & Store (pgvector)](#phần-6--embed--store-pgvector)
+- [Phần 7 — Query / Retrieval (Q1–Q7)](#phần-7--query--retrieval-q1q7)
+- [Phần 8 — Generate & Anti-HALLU (Sacred-10)](#phần-8--generate--anti-hallu-sacred-10)
+- [Phần 9 — Cost-Log Center / Token Ledger](#phần-9--cost-log-center--token-ledger)
+- [Phần 10 — Workers & Async](#phần-10--workers--async)
+- [Phần 11 — Cache (L1/L2)](#phần-11--cache-l1l2)
+- [Phần 12 — Evaluation & Verify scripts](#phần-12--evaluation--verify-scripts)
+- [Phần 13 — Database & Migration](#phần-13--database--migration)
+- [Phần 14 — Config & Zero-hardcode](#phần-14--config--zero-hardcode)
+- [Phần 15 — Gap & Technical Debt](#phần-15--gap--technical-debt)
+- [Phần 16 — Câu hỏi bẫy (trap questions)](#phần-16--câu-hỏi-bẫy-trap-questions)
+- [Phụ lục — Template bắt agent điền](#phụ-lục--template-bắt-agent-điền)
+
+---
+
+## Phần 0 — Câu hỏi mở đầu
+
+> Agent phải trả lời 5 câu này **trước khi** đi vào chi tiết. Nếu không trả lời được → toàn bộ audit coi là **không đáng tin**.
+
+### Q0.1 — Trạng thái thực tế
+
+```
+Hệ thống Ragbot HIỆN TẠI có chạy end-to-end được không?
+- Upload 1 file → state=active → chat → trả lời đúng?
+- Trả lời: CÓ / KHÔNG / MỘT PHẦN (giải thích cụ thể)
+- Lần verify gần nhất: ngày nào, ai chạy, script nào, kết quả gì?
+- File log / STATE_SNAPSHOT.md ghi gì?
+```
+
+### Q0.2 — Source of truth
+
+```
+Khi README và code mâu thuẫn, cái nào đúng?
+- Alembic head hiện tại là gì? (chạy: alembic current)
+- Commit hash gần nhất liên quan pipeline?
+- File nào là "always-updated source of truth"? (STATE_SNAPSHOT.md?)
+```
+
+### Q0.3 — Entry point runtime
+
+```
+Chạy production/local bằng lệnh gì?
+- python -m ragbot.main — single process?
+- Workers embedded: APP_EMBED_WORKERS_ENABLED=true/false default?
+- Liệt kê TẤT CẢ process/worker chạy khi `docker compose up` hoặc tương đương.
+```
+
+### Q0.4 — Test suite thực tế
+
+```
+- Tổng số unit test? (README nói 5926 — verify lại)
+- Có bao nhiêu test INTEGRATION thật (gọi DB/API/LLM)?
+- Có bao nhiêu test E2E upload→chat?
+- Lệnh chạy full test? Pass rate lần cuối?
+```
+
+### Q0.5 — External dependencies bắt buộc
+
+```
+Liệt kê mọi API key / service BẮT BUỘC để chạy happy path:
+- OpenAI (model nào, purpose nào)?
+- Jina (embed + rerank)?
+- Redis?
+- PostgreSQL + pgvector extension?
+- Kreuzberg OCR?
+Thiếu cái nào → pipeline dừng ở step nào?
+```
+
+---
+
+## Phần 1 — Tổng quan & sự thật hệ thống
+
+### Mindset & kiến trúc
+
+| ID | Câu hỏi | Agent phải trả lời |
+|----|---------|-------------------|
+| Q1.1 | Ragbot có mấy LangGraph state machine? Tên file, số node mỗi graph? | `ingest_graph` + `query_graph`, path + node count |
+| Q1.2 | Hai graph giao tiếp qua gì? Có direct call không? | Chỉ qua `document_chunks` + Redis Streams? |
+| Q1.3 | "Sacred contracts" liệt kê trong README — code enforce ở đâu? | HALLU=0, zero-hardcode, 4-key, no inject answer... |
+| Q1.4 | Hexagonal/DDD — Port/Adapter/Registry thực sự có hay chỉ folder naming? | Ví dụ 1 Port + 1 Adapter + DI wiring path |
+| Q1.5 | Domain-neutral — có brand literal nào trong `src/` không? Script sweep nào check? | `grep` result hoặc CI rule |
+| Q1.6 | Product là API hay FE? Demo FE có được dùng để verify production không? | ~90% BE-to-BE — endpoint nào là primary? |
+
+### Luồng tổng quan — buộc vẽ từ code
+
+| ID | Câu hỏi |
+|----|---------|
+| Q1.7 | Vẽ luồng ingest **THỰC TẾ** từ HTTP request đến chunk trong DB — mỗi bước = 1 function được gọi, không phải tên spec. |
+| Q1.8 | Vẽ luồng query **THỰC TẾ** từ POST /chat đến response — mỗi node LangGraph: tên node, file, có skip path không? |
+| Q1.9 | Có bao nhiêu code path KHÔNG được gọi trong runtime (dead code / flag OFF / no-op)? Liệt kê. |
+
+---
+
+## Phần 2 — Identity & Multi-tenant
+
+| ID | Câu hỏi | Verify bằng |
+|----|---------|-------------|
+| Q2.1 | 4-key identity `(tenant, workspace, bot, channel)` resolve ở đâu? File + function? | `BotRegistryService.lookup` path |
+| Q2.2 | `record_bot_id` inject vào mọi DB query ở layer nào? Middleware? Repository base? | Show filter code |
+| Q2.3 | RLS: policies có trên bao nhiêu bảng? `FORCE ROW LEVEL SECURITY` — list tables. | alembic migration |
+| Q2.4 | App connect DB bằng role gì **hiện tại**? `ragbot` superuser hay `ragbot_app`? | `DATABASE_URL_APP` env |
+| Q2.5 | Isolation probe — script nào? Tenant A thấy data tenant B = 0 rows? Chạy gần nhất pass? | `isolation probe` script path |
+| Q2.6 | Cross-tenant workers (outbox, recovery, cache GC) dùng engine nào? | `create_engine_system` path |
+| Q2.7 | **Leak test:** upload doc bot A, query bot B cùng tenant — có leak chunk không? Test có không? | E2E test path |
+| Q2.8 | Cross-tenant leak: tenant A JWT query bot tenant B — HTTP status? | 403/404/0 rows? |
+
+---
+
+## Phần 3 — Ingest / Upload (U0–U7)
+
+### Upload flow
+
+| ID | Câu hỏi |
+|----|---------|
+| Q3.1 | Endpoint upload chính xác? Method, path, response code? | `POST .../documents` → 202? |
+| Q3.2 | Action 1 (sync) làm gì trong <1s? Insert bảng nào, state gì? | `documents.state='DRAFT'` |
+| Q3.3 | Action 2 (async) — worker nào consume? Redis stream key? | `ragbot:documents:ingest` |
+| Q3.4 | Worker đọc content từ đâu? Có bao giờ refetch `source_url` không? | **Phải từ DB raw_content** |
+| Q3.5 | State machine document: các state và transition? | DRAFT→enriching→embedding→active/failed |
+| Q3.6 | Stuck DRAFT — recovery worker chạy thế nào? Cooldown? | `run_embedded_recovery_worker` |
+| Q3.7 | Dedup: `content_hash` tính ở đâu? Duplicate upload → behavior? | skip re-embed? |
+| Q3.8 | `MAX_DOCUMENT_CONTENT_CHARS=500_000` — enforce ở đâu? Vượt → HTTP code? | |
+
+### Từng stage U0–U7 — buộc map code
+
+| ID | Stage | Câu hỏi bắt buộc |
+|----|-------|-----------------|
+| Q3.9 | U0 IDENTITY_VALIDATE | File? Pydantic schema? 422 khi thiếu field nào? |
+| Q3.10 | U0.5 BOT_RESOLVE_4KEY | Redis cache key format? Miss → 404? |
+| Q3.11 | U1 VALIDATE | `ingest_core.py::ingest()` — signature? |
+| Q3.12 | U2 PARSE | Parser registry — MIME → adapter mapping? |
+| Q3.13 | U3 CLEAN | NFC, hyphenation, injection strip — code ở đâu? |
+| Q3.14 | U4 CHUNK | `smart_chunk()` — file path? Input/output type? |
+| Q3.15 | U5 ENRICH | Contextual enrichment — model? Prompt template path? |
+| Q3.16 | U6 VN_SEGMENT | underthesea — khi nào skip (non-VI)? |
+| Q3.17 | U7 EMBED+STORE | Batch size? Circuit breaker? Parent embed hay không? |
+| Q3.18 | finalize | `_stage_finalize` — flip DRAFT→active điều kiện? `chunks_null>0 → failed`? |
+
+### Progress & observability ingest
+
+| ID | Câu hỏi |
+|----|---------|
+| Q3.19 | Client poll progress bằng endpoint nào? Field nào trả về? |
+| Q3.20 | Mỗi stage U có ghi `pipeline_step_log` / `request_trace` không? Hay chỉ log structlog? |
+| Q3.21 | Ingest fail — `error_message` lưu ở cột nào? User thấy lý do cụ thể không? |
+
+---
+
+## Phần 4 — Parse & Multi-format
+
+| ID | Câu hỏi |
+|----|---------|
+| Q4.1 | Liệt kê MIME/format **thực sự support** vs **claim README**. | pdf, docx, xlsx, csv, md, html, google sheets? |
+| Q4.2 | Kreuzberg OCR — self-hosted setup thế nào? Có trong docker-compose không? | |
+| Q4.3 | Happy-case template (`HAPPY_CASE_DOCUMENT_FORMAT.md`) — checker script path? | `scripts/check_happy_case.py` |
+| Q4.4 | Normalizer kéo source về template — code ở đâu? Score threshold reject? | |
+| Q4.5 | Upload PDF thật — output có `## heading` và `\| table \|` không? Cho 1 ví dụ thực tế. | |
+| Q4.6 | Google Sheets export — flow nào? Có test không refetch login HTML? | |
+| Q4.7 | `adapchunk_block_pipeline_enabled` flag — parser emit block list chưa? Nếu chưa → U2 output là gì? | flat text? |
+
+---
+
+## Phần 5 — Chunking / AdapChunk
+
+### Strategy & selector
+
+| ID | Câu hỏi |
+|----|---------|
+| Q5.1 | 6 strategies trong `smart_chunk()` — list tên + file implement mỗi cái. | table_csv, recursive, hdt, semantic, proposition, hybrid |
+| Q5.2 | `analyze_document()` — input là blocks hay flat text **thực tế**? | |
+| Q5.3 | `select_strategy()` — rule-based hay LLM? File path? | README: rule-based |
+| Q5.4 | `apply_cross_check()` — list rules + default ON/OFF? | |
+| Q5.5 | Override strategy — log ở đâu? Có field `original_strategy` vs `final_strategy`? | |
+| Q5.6 | Chunk defaults: size 1024, child 256, overlap 128 — resolve chain? | constants → bot config |
+
+### Atomic & structure
+
+| ID | Câu hỏi |
+|----|---------|
+| Q5.7 | TABLE/FORMULA/IMAGE atomic protection — **LIVE hay OFF**? Flag name? | |
+| Q5.8 | Nếu OFF — table markdown có bị cắt đôi không? Test case? | |
+| Q5.9 | `structural_path` — format breadcrumb? Ví dụ thực từ DB? | `[Chương N > Điều K. title]` |
+| Q5.10 | VN-legal heading promotion (`Chương/Mục/Điều`) — code path? | |
+| Q5.11 | Parent/child — children embed, parent expand-only: verify bằng query SQL? | `parent_id IS NOT NULL` + embedding null on parent? |
+| Q5.12 | Section >1000 token — HDT split con thế nào? | |
+
+### AdapChunk gap (buộc thừa nhận)
+
+| ID | Câu hỏi |
+|----|---------|
+| Q5.13 | README nói block pipeline "flag ON but parser doesn't emit block list → no-ops". **Xác nhận từ code.** | |
+| Q5.14 | Narrate-then-embed — function có, được gọi từ U7 không? Bootstrap wired? | |
+| Q5.15 | PROPOSITION strategy — gọi LLM mỗi section? Cost per doc ước tính? | |
+| Q5.16 | SEMANTIC — embedding model tính cosine giữa câu — model nào? | |
+
+---
+
+## Phần 6 — Embed & Store (pgvector)
+
+| ID | Câu hỏi |
+|----|---------|
+| Q6.1 | Embedding model operative: provider, model name, dimension? | jina-embeddings-v3, 1024 |
+| Q6.2 | `null_non_parent=0` — có check/test không? Query SQL verify? | |
+| Q6.3 | HNSW index — params? Migration file? | |
+| Q6.4 | tsvector BM25 — column name, GIN index, update trigger? | |
+| Q6.5 | Hybrid search SQL / function — dense + BM25 + RRF ở layer nào? ingest hay query? | |
+| Q6.6 | Oversized sheet: 224KB → 2643 chunks — reproduce được không? OOM risk code handle? | |
+| Q6.7 | Embed batch — concurrency limit? rate-limit retry? | |
+| Q6.8 | Re-embed khi đổi model — script/migration có không? | |
+| Q6.9 | `corpus_version` — cache bust khi upload doc mới? | |
+
+---
+
+## Phần 7 — Query / Retrieval (Q1–Q7)
+
+### Node graph thực tế
+
+| ID | Câu hỏi |
+|----|---------|
+| Q7.1 | `query_graph.py` bao nhiêu dòng? Extracted nodes ở `orchestration/nodes/` — list files. | |
+| Q7.2 | Liệt kê **TẤT CẢ nodes** theo thứ tự runtime default path (factoid FAQ). | |
+| Q7.3 | Adaptive router — intent nào skip rerank/reflect/decompose? | |
+| Q7.4 | `check_cache` — L1 Redis key format? TTL? | |
+| Q7.5 | `understand` / `query_complexity` — heuristic vs LLM? Model? temp? | |
+| Q7.6 | `rewrite` / `decompose` / `multi_query` — temperature 0 enforced ở đâu? | |
+| Q7.7 | `retrieve` — dense top_k, BM25 top_k, RRF k? Per-intent override? | |
+| Q7.8 | `graph_retrieve` — opt-in default ON/OFF? | |
+| Q7.9 | `rrf_round_robin` — merge multi-query variants thế nào? | |
+| Q7.10 | `rerank` — jina-reranker-v3, `cliff` filter — code path? | |
+| Q7.11 | `mmr_dedup` — lambda? | |
+| Q7.12 | `neighbor_expand` — default OFF? | |
+| Q7.13 | `grade` — CRAG 3-state, retry loop max? | |
+| Q7.14 | `pipeline_multi_query_speculative_enabled` — measured -21% cost — config default? | |
+| Q7.15 | `adaptive_context_enabled` — prune weak chunks — logic? | |
+
+### Retrieval quality
+
+| ID | Câu hỏi |
+|----|---------|
+| Q7.16 | `vn_structural` LIKE-filter — match breadcrumb format chunker? R1 fix — trước match 0 chunks? | |
+| Q7.17 | Retrieval safety-net — re-union BM25 chunks reranker under-ranked? | |
+| Q7.18 | Zero chunks retrieved — flow đi thẳng refuse hay vẫn gọi generate? | |
+
+---
+
+## Phần 8 — Generate & Anti-HALLU (Sacred-10)
+
+| ID | Câu hỏi |
+|----|---------|
+| Q8.1 | `generation_temperature` — hardcode 0.0 ở đâu? Có path override không? | |
+| Q8.2 | App có **inject template text** vào LLM prompt không? Chứng minh bằng code search. | Sacred: KHÔNG |
+| Q8.3 | App có **override LLM answer** sau generate không? | Sacred: KHÔNG |
+| Q8.4 | `oos_answer_template` — lưu bảng nào? Emit khi zero chunks — có gọi LLM không? | |
+| Q8.5 | Citation validation — chunk_id trong answer phải ∈ retrieved set — code? | |
+| Q8.6 | `guard_output` — shingle leak / PII rules — seeded chưa? README gap guardrail_rules? | |
+| Q8.7 | Grounding judge — sync XOR async — có chạy đôi không? Model? | gpt-4.1-mini |
+| Q8.8 | `critique_parse` Self-RAG — default OFF? | |
+| Q8.9 | `reflect` — max iterations? | max_total_graph_iterations |
+| Q8.10 | **Sacred-10** — 10 câu hỏi cụ thể là gì? Script verify? Pass rate? | |
+| Q8.11 | HALLU=0 — trap questions list? `verify_answer_quality.py` kết quả? | |
+| Q8.12 | Anti-HALLU 4 types tracked: fabricate/misinterpret/extrapolate/conflate — log ở đâu? | |
+| Q8.13 | False refuse rate — có đo không? Ví dụ câu hỏi đúng scope bị refuse? | |
+
+---
+
+## Phần 9 — Cost-Log Center / Token Ledger
+
+| ID | Câu hỏi |
+|----|---------|
+| Q9.1 | Bảng `token_ledger` có tồn tại không? Schema đầy đủ? | |
+| Q9.2 | Mọi OpenAI/Jina call có đi qua wrapper auto-log không? Hay có leak path direct API? | |
+| Q9.3 | `request_trace` — 1 row per chat/ingest? Fields start/end time, total tokens? | |
+| Q9.4 | `pipeline_step_log` — 8-step debug có implement không? | |
+| Q9.5 | Rollup `stats_bot_daily` / tenant / platform — worker nào? | |
+| Q9.6 | CRM API endpoints — list paths cho trade log + stats? | |
+| Q9.7 | Cost cap `plan_limits.monthly_token_cap` — enforce ở đâu? | |
+| Q9.8 | `model_pricing` table — cost_usd tính lúc insert ledger? | |
+| Q9.9 | Idempotency retry — double-count token khi retry? | |
+| Q9.10 | Admin dashboard FE — có hay chỉ API? | |
+
+---
+
+## Phần 10 — Workers & Async
+
+| ID | Câu hỏi |
+|----|---------|
+| Q10.1 | 5 embedded workers — list tên function + file. | |
+| Q10.2 | `APP_EMBED_WORKERS_ENABLED` default true/false? | |
+| Q10.3 | Outbox pattern — bảng outbox, exactly-once, FOR UPDATE SKIP LOCKED — migration? | |
+| Q10.4 | Transactional inbox dedup — implement? | |
+| Q10.5 | Horizontal scale — separate worker process commands? | |
+| Q10.6 | Document consumer — bind tenant ctx từ event payload — code? | |
+
+---
+
+## Phần 11 — Cache (L1/L2)
+
+| ID | Câu hỏi |
+|----|---------|
+| Q11.1 | L1 Redis — exact hash key includes gì? system_prompt + oos_template + corpus_version? | |
+| Q11.2 | L2 semantic cache — threshold 0.97, table `semantic_cache`, dim 1024? | |
+| Q11.3 | Semantic cache GC worker — hourly DELETE expired? | |
+| Q11.4 | OpenAI prompt cache — auto — có đo savings không? | |
+| Q11.5 | Cache hit — skip retrieve/generate? Node nào branch? | |
+
+---
+
+## Phần 12 — Evaluation & Verify scripts
+
+> **Đây là phần quan trọng nhất để phơi sự thật.**
+
+| ID | Câu hỏi |
+|----|---------|
+| Q12.1 | Liệt kê **TẤT CẢ** scripts trong `scripts/` liên quan verify — mỗi script: input, expected output, lần chạy cuối. | |
+| Q12.2 | `verify_happy_case_pipeline.py` — 7-step upload pass? Log? | |
+| Q12.3 | `verify_query_flow.py` — 8-step query pass? | |
+| Q12.4 | `verify_answer_quality.py` — 11/11 × 3 lượt stable — **reproduce ngay bây giờ được không?** | |
+| Q12.5 | `loadtest_graded.py` — COVERAGE + HALLU — kết quả gần nhất? | |
+| Q12.6 | Clean-rebuild validation 2026-06-19 — wipe DB → seed 3 bots → 9 docs — **còn chạy được không?** | |
+| Q12.7 | OpenAI TPM rate-limit — load test blocked — hiện tại còn block không? | |
+| Q12.8 | Intrinsic metrics SC/ICC/DCC/BI/RC — có code tính không hay chỉ spec? | |
+| Q12.9 | Layer attribution eval — implement chưa? | |
+| Q12.10 | RAGAS integration — có không? | |
+
+### 8-step DEBUG framework mapping
+
+| Step | Câu hỏi verify DATA |
+|------|---------------------|
+| 1 PARSE | Script nào check heading/table/atomic? Pass criteria? |
+| 2 CHUNK | Script nào check strategy + atomic not cut? |
+| 3 EMBED | Query `null_non_parent=0` automated? |
+| 4 STORE | Script search dense+BM25 post-ingest? |
+| 5 RETRIEVE | Gold chunk in top-K — script? |
+| 6 GENERATE | Answer contains fact + no hallucination — script? |
+| 7 GUARD | Grounding SUPPORTED — script? |
+| 8 SCORE | load-test aggregate — script? |
+
+---
+
+## Phần 13 — Database & Migration
+
+| ID | Câu hỏi |
+|----|---------|
+| Q13.1 | Alembic baseline squash — `squash_base_20260618` — tables list? | |
+| Q13.2 | Head migration — `rls_system_role_grants_20260619` — DDL gì? | |
+| Q13.3 | `documents` + `document_chunks` schema — columns đầy đủ? | |
+| Q13.4 | Seed path — init bots, system_config, model bindings — script? | |
+| Q13.5 | Stale `system_config` embedding 1536 vs jina 1024 — đã fix seed chưa? | |
+| Q13.6 | 20 tables FORCE RLS — list tên bảng. | |
+
+---
+
+## Phần 14 — Config & Zero-hardcode
+
+| ID | Câu hỏi |
+|----|---------|
+| Q14.1 | Resolve chain: threshold_overrides → bot column → plan_limits → system_config → constants — code path? | |
+| Q14.2 | Đổi default phải sync 4 places — có test enforce không? | |
+| Q14.3 | Per-bot model binding — bảng nào? gpt-4.1-mini vs jina-v3 bind thế nào? | |
+| Q14.4 | `DEFAULT_DETERMINISTIC_LLM_PURPOSES` — list purposes temp=0? | |
+| Q14.5 | Feature flags ON by default — list flags Phase 4 cost wins? | |
+
+---
+
+## Phần 15 — Gap & Technical Debt
+
+> Buộc agent đọc `STATE_SNAPSHOT.md` và trả lời từng open gap.
+
+| ID | Câu hỏi |
+|----|---------|
+| Q15.1 | RLS Phase 3 DSN flip — blocked by gì? Timeline? | |
+| Q15.2 | Oversized doc OOM — mitigation code có chưa? | |
+| Q15.3 | guardrail_rules not seeded — hiện trạng? | |
+| Q15.4 | Block pipeline no-op — plan wire? | |
+| Q15.5 | Narrate-then-embed OFF — khi nào bật? | |
+| Q15.6 | Full-fleet automated score blocked by TPM — workaround? | |
+| Q15.7 | Còn gap nào README/STATE_SNAPSHOT chưa liệt kê? | |
+
+---
+
+## Phần 16 — Câu hỏi bẫy (trap questions)
+
+> Câu hỏi thiết kế để bắt agent trả lời theo README thay vì code.
+
+| ID | Câu hỏi bẫy | Sự thật mong đợi nếu agent trung thực |
+|----|-------------|--------------------------------------|
+| T1 | "LLM Strategy Selector chọn HDT hay SEMANTIC cho luận văn?" | Rule-based `select_strategy()`, không phải LLM |
+| T2 | "Vector store Qdrant connection string ở đâu?" | Không có — dùng pgvector |
+| T3 | "Mistral OCR API key env var?" | Không có — dùng Kreuzberg |
+| T4 | "Upload PDF xong bao lâu chat được?" | Phải đợi async worker → active; không instant nếu async |
+| T5 | "Block TABLE bị cắt đôi có fix chưa?" | Atomic protection code có nhưng block pipeline no-op → có thể vẫn cắt |
+| T6 | "RLS đã enforce DB-level chưa?" | Policies có, DSN vẫn superuser → inert |
+| T7 | "5926 tests bao gồm bao nhiêu E2E LLM thật?" | Phần lớn unit mock — hỏi số integration thật |
+| T8 | "App inject 'Tôi không biết' khi refuse?" | Không — emit `oos_answer_template` từ bot config |
+| T9 | "Parent chunks có embedding không?" | Không — expand-only |
+| T10 | "Đổi system_prompt có bust cache không?" | Có — key versioned |
+| T11 | "ZeroEntropy embed còn dùng không?" | Đã migrate Jina 1024 |
+| T12 | "Chat được khi document state=DRAFT?" | Không — guarded until active |
+| T13 | "Một request grounding sync VÀ async?" | Sacred XOR — không chạy đôi |
+| T14 | "semantic_cache dim bao nhiêu?" | 1024 post-migration |
+| T15 | "Proposition chunking chạy cho mọi doc?" | Chỉ khi strategy=PROPOSITION/HYBRID micro |
+
+---
+
+## Phụ lục — Template bắt agent điền
+
+Copy template này, bắt agent điền **từng dòng** — không bỏ trống.
+
+```markdown
+# Ragbot Audit Response — [ngày]
+
+## 0. Executive truth
+- E2E works: YES / NO / PARTIAL
+- Last verified: [date] by [script] → [result]
+- Alembic head: [revision]
+- Tests: [total] unit, [N] integration, [M] e2e — pass [X/Y]
+
+## 1. Ingest flow (actual call chain)
+HTTP POST → [file:func] → ... → [file:func] → document_chunks INSERT
+
+| Stage | File:Function | LIVE? | Test? |
+|-------|---------------|-------|-------|
+| U0    |               |       |       |
+| U0.5  |               |       |       |
+| U1    |               |       |       |
+| U2    |               |       |       |
+| U3    |               |       |       |
+| U4    |               |       |       |
+| U5    |               |       |       |
+| U6    |               |       |       |
+| U7    |               |       |       |
+
+## 2. Query flow (actual nodes — factoid path)
+[node] → [node] → ... → persist
+
+| Node | File | Skippable? | LLM? | Tokens logged? |
+|------|------|------------|------|----------------|
+
+## 3. AdapChunk reality
+- Selector: rule-based / LLM — [path]
+- Block pipeline: LIVE / NO-OP — [evidence]
+- Narrate-then-embed: ON / OFF — [evidence]
+- Strategies wired: [list]
+- Atomic protection: [YES/NO + test]
+
+## 4. Multi-tenant reality
+- Isolation mechanism LIVE: app-filter / RLS / both
+- DB role connected: [role]
+- Leak test: [script] → [pass/fail]
+
+## 5. Anti-HALLU evidence
+- Sacred-10: [list questions] → [pass rate]
+- Trap set: [N questions] → HALLU=[rate]
+- Refuse zero-context: [code path]
+- Grounding judge: [sync/async] [model]
+
+## 6. Cost-Log reality
+- token_ledger exists: YES/NO
+- Direct API leak paths: [grep results]
+- CRM stats rollup: YES/NO
+- Trade log API: [endpoints]
+
+## 7. Verify scripts inventory
+| Script | Last run | Result |
+|--------|----------|--------|
+
+## 8. Known gaps (honest)
+1.
+2.
+3.
+
+## 9. README claims vs code — mismatches
+| Claim | Reality | Evidence |
+|-------|---------|----------|
+
+## 10. Can demo in 15 minutes?
+- Steps:
+- Blockers:
+```
+
+---
+
+## Cách sử dụng với Cursor Agent
+
+### Prompt gợi ý (copy-paste)
+
+```
+Bạn là maintainer Ragbot. Trả lời TOÀN BỘ file docs/RAGBOT_AUDIT_QUESTIONS.md
+theo quy tắc:
+1. Mỗi câu: file path + function + line HOẶC "KHÔNG TỒN TẠI"
+2. Chạy thực tế: alembic current, pytest count, verify scripts nếu có
+3. Điền Phụ lục Template — không bỏ trống
+4. README claim nào sai → liệt kê mục 9
+5. Không suy diễn — chưa verify → ghi "CHƯA VERIFY"
+
+Bắt đầu từ Phần 0, trả lời tuần tự.
+```
+
+### Thứ tự ưu tiên nếu agent context limited
+
+1. **Phần 0** — có chạy được không?
+2. **Phần 12** — verify scripts + kết quả
+3. **Phần 3 + 7** — ingest + query call chain thực
+4. **Phần 5 + 8** — AdapChunk + HALLU thực tế
+5. **Phần 16** — trap questions
+6. Phần còn lại
+
+### Red flags — agent đang "đọc README" thay vì code
+
+- Trả lời không có file path
+- Nói "theo thiết kế" / "should work"
+- Claim 5926 tests pass nhưng không chạy lệnh
+- Nói RLS enforce nhưng DATABASE_URL vẫn superuser
+- Nói AdapChunk full nhưng block pipeline no-op
+- Nói HALLU=0 nhưng không list trap questions
+
+---
+
+## Liên kết
+
+- [EXPERT_RAG_ANALYSIS.md](./EXPERT_RAG_ANALYSIS.md) — phân tích mindset & luồng lý thuyết
+- Ragbot README — claims cần verify chéo
+- Ragbot STATE_SNAPSHOT.md — source of truth (agent phải đọc file này trong repo Ragbot)
+
+---
+
+*Tài liệu audit — dùng khi onboard agent mới hoặc review milestone trước khi claim "production ready".*
+# debug-rag
+
+Workspace phân tích & scaffold Expert RAG Platform.
+
+## Tài liệu
+
+| File | Nội dung |
+|------|----------|
+| [docs/EXPERT_RAG_ANALYSIS.md](docs/EXPERT_RAG_ANALYSIS.md) | **Tổng hợp chính** — câu hỏi, luồng, phân tích Cursor (AdapChunk, Ragbot, 8-step, CRM) |
+| [docs/RAGBOT_AUDIT_QUESTIONS.md](docs/RAGBOT_AUDIT_QUESTIONS.md) | **Bộ câu hỏi audit Expert** — buộc AI agent Ragbot khai sự thật code, verify, test (~120+ câu) |
+
+## Nội dung EXPERT_RAG_ANALYSIS.md
+
+1. Câu hỏi gốc & bối cảnh
+2. AdapChunk — mindset chunking adaptive
+3. Ragbot — đánh giá thực tế (LIVE vs PARTIAL)
+4. Tại sao RAG "chưa dùng được"
+5. Luồng INGEST (U0–U7)
+6. Luồng QUERY (Q1–Q7)
+7. Khung DEBUG RAG — 8 Step × 3 Cụm
+8. 5 tiêu chí Expert RAG
+9. Identity hierarchy — multi-tenant
+10. Cost-Log Center — DB schema + luồng log
+11. CRM Dashboard & thống kê
+12. Evaluation metrics (Table 5)
+13. Trade-off & quyết định kiến trúc
+14. Lộ trình Gate 0 → Gate 4
+15. Prompt mẫu cho Cursor
+
+## Bước tiếp theo
+
+```bash
+# Phase A — Gate 0: scaffold MVP
+# Dùng prompt trong docs/EXPERT_RAG_ANALYSIS.md §15.1
+```
+và cua trả ời 
+/var/www/html/ragbot/reports/RAGBOT_AUDIT_ANSWER_20260707.md
+
+phân itchs gisp tôi chuyên sâu cái luồng debug này??????
 
 
 
-louong fhienej tịa tôi chỉ thasyaq các câu hỏi chỉ lấy ra được 1 chunklaf soa? có nhiều luồng chưa dùng đocwjc ai topK 5 chunk nhỉ? 
 
 
-cái mã sản phẩm ở cái qeusstion nè 
-
-265/50R20
-
-265/50R20, 265 50 20, 265 50R20, 265/50/20, 265-50-20, 265-50R20, 2655020, 265/50-20, Landspider 265/50R20, Landspider 265 50 20, Landspider 265 50R20, Landspider 265/50/20, Land 265/50R20, Land 265 50 20, Land 265 50R20, Land 265/50/20, 265/50R20 A/T, 265/50R20 AT, 265/50R20 A-T, 265 50 20 A/T, 265 50 20 AT, 265 50 20 A-T, 265 50R20 A/T, 265 50R20 AT, 265 50R20 A-T, 265/50/20 A/T, 265/50/20 AT, 265/50/20 A-T, 265-50-20 A/T, 265-50-20 AT, 265-50-20 A-T, 265-50R20 A/T, 265-50R20 AT, 265-50R20 A-T, Landspider 265/50R20 A/T, Landspider 265/50R20 AT, Landspider 265/50R20 A-T, Landspider 265 50 20 A/T, Landspider 265 50 20 AT, Landspider 265 50 20 A-T, Landspider 265 50R20 A/T, Landspider 265 50R20 AT, Landspider 265 50R20 A-T, Landspider 265/50/20 A/T, Landspider 265/50/20 AT, Landspider 265/50/20 A-T, Land 265/50R20 A/T, Land 265/50R20 AT, Land 265/50R20 A-T, Land 265 50 20 A/T, Land 265 50 20 AT, Land 265 50 20 A-T, Land 265 50R20 A/T, Land 265 50R20 AT, Land 265 50R20 A-T, Land 265/50/20 A/T, Land 265/50/20 AT, Land 265/50/20 A-T	2-R20 265/50 LPD 111TXL	Lốp xe LANDSPIDER 265/50R20 111TXL WILDTRAXX A/T	LANDSPIDER 265/50R20 A/T	3	2601000	26																			
-265/50R20, 265 50 20, 265 50R20, 265/50/20, 265-50-20, 265-50R20, 2655020, 265/50-20, Landspider 265/50R20, Landspider 265 50 20, Landspider 265 50R20, Landspider 265/50/20, Land 265/50R20, Land 265 50 20, Land 265 50R20, Land 265/50/20, 265/50R20 H/P, 265/50R20 HP, 265/50R20 H-P, 265 50 20 H/P, 265 50 20 HP, 265 50 20 H-P, 265 50R20 H/P, 265 50R20 HP, 265 50R20 H-P, 265/50/20 H/P, 265/50/20 HP, 265/50/20 H-P, 265-50-20 H/P, 265-50-20 HP, 265-50-20 H-P, 265-50R20 H/P, 265-50R20 HP, 265-50R20 H-P, Landspider 265/50R20 H/P, Landspider 265/50R20 HP, Landspider 265/50R20 H-P, Landspider 265 50 20 H/P, Landspider 265 50 20 HP, Landspider 265 50 20 H-P, Landspider 265 50R20 H/P, Landspider 265 50R20 HP, Landspider 265 50R20 H-P, Landspider 265/50/20 H/P, Landspider 265/50/20 HP, Landspider 265/50/20 H-P, Land 265/50R20 H/P, Land 265/50R20 HP, Land 265/50R20 H-P, Land 265 50 20 H/P, Land 265 50 20 HP, Land 265 50 20 H-P, Land 265 50R20 H/P, Land 265 50R20 HP, Land 265 50R20 H-P, Land 265/50/20 H/P, Land 265/50/20 HP, Land 265/50/20 H-P	2-ZR20 265/50 LPD	Lốp xe LANDSPIDER 265/50ZR20 111WXL CITYTRAXX H/P	LANDSPIDER 265/50ZR20 H/P	114	2322000	26		https://drive.google.com/drive/folders/18E83pSTVscdtcx0jAZqTP7VvtWQvinw9?usp=drive_link																	
-đây là  2 dòng data của tài liệu gốc 
-https://docs.google.com/spreadsheets/d/1eR3o5EEx1J6UvR1649slAgvHRQT2w1y69BfHw_QE7n8/edit?gid=1832914530#gid=1832914530
-nhưng viết qua dât mới kiểu gì thì không rõ như mà cái cột question có mã sản phẩm  nhung không lấy ra được? 
-
-đấy là yêu cầu sai của con  chính sách xe? check thêm tất ca rluoongf về con chính sách xe? thử xem luồng nào đang có vấn đề? hãy giúp tôi check nhé? 
 
 
-https://backendsg.innocom.vn:3004/demo-ragbot/bot/chinh-sach-xe/web
 
+**1. Tóm tắt ưu tiên cần làm ngay**  
+- **Ưu tiên hàng đầu**:  
+  - **Sửa lỗi B4 (stats-suppress-raw)**: Gây ra ~15 false-refuse ổn định (tái hiện 100%), là hệ thống lỗi lớn nhất.  
+  - **Ngăn chặn HALLU từ kiến thức thế giới** (world-knowledge): Gây ~5 HALLU ổn định, cần xử lý ngay.  
+  - **Đảm bảo measurement rigor**: Loại bỏ artifact do tải đồng thời, đánh giá coref chính xác hơn.  
+
+- **Ưu tiên thứ cấp**:  
+  - **Bảo vệ câu trả lời trống (empty-answer guard)**: Dừng tình trạng bot trả lời rỗng khi không có chunk nào được chọn.  
+  - **Cải thiện eval multi-turn** để đo chính xác coref thay vì dựa vào artifact fresh-id.  
+
+---
+
+**2. Đề xuất bước thực hiện chi tiết cho kỹ sư**  
+
+**Pha 0: Đo lường chính xác (Measurement Rigor)**  
+- **Bước 0.1**:  
+  - **Thay đổi**: Thêm `empty-answer guard` vào `orchestration/nodes/guard_output.py` hoặc `generate.py`.  
+  - **Cài đặt**: Nếu `answer` rỗng/whitespace → thay bằng `oos_answer_template`.  
+  - **Kiểm tra**: RED test → `empty answer → template`.  
+
+- **Bước 0.2**:  
+  - **Xây dựng multi-turn eval harness**:  
+    - Script hỏi câu **SETUP** (ví dụ: "Quy trình Ultherapy là gì?") → sau đó câu **FOLLOW-UP** (ví dụ: "Quy trình của nó có gì?").  
+    - Dùng `connect_id` chung để giữ lịch sử, reset giữa các cặp câu.  
+    - **Mục tiêu**: Đo coref thật (không phải artifact fresh-id).  
+
+- **Bước 0.3**:  
+  - **Cải thiện eval concurrency**:  
+    - Giảm `sem` từ 8 → 4 hoặc thêm retry khi `0-chunk`.  
+    - **Mục tiêu**: Loại bỏ artifact do tải đồng thời.  
+
+**Pha 1: Sửa lỗi B4 (stats-suppress-raw)**  
+- **Bước 1.1**:  
+  - **Thay đổi**: Cài đặt `intent-gate` cho `query_graph._do_stats_lookup`.  
+  - **Quy tắc**:  
+    - Nếu câu hỏi có intent TEXT (ưu đãi/quy trình/công nghệ) + keyword entity → **không đè raw chunk**.  
+    - Chỉ phục vụ synthetic nếu câu có **expect number/price** (ví dụ: "giá 700.000").  
+  - **File**: `orchestration/query_graph.py`.  
+
+- **Bước 1.2**:  
+  - **Kiểm tra**: Đảm bảo `raw chunk` được phục vụ nếu không có intent số.  
+  - **Đo lường**: Dùng `spa S-037/046/075` và `xe brand-false-deny` để kiểm tra xem có flip từ `false-refuse` → `answer` không.  
+
+**Pha 2: Ngăn chặn HALLU từ kiến thức thế giới**  
+- **Bước 2.1**:  
+  - **Chọn 1 trong 2 giải pháp**:  
+    - **(a) Sysprompt anti-fabricate**: Thêm rule vào `sysprompt` (ví dụ: "Chỉ nói điều có trong tài liệu; không thêm thông tin ngoài").  
+    - **(b) Non-numeric grounding gate**: Kiểm tra claim phi-số (brand/origin) có xuất hiện trong `served context` không.  
+  - **Ưu tiên (a) trước** do ít rủi ro code.  
+
+- **Bước 2.2**:  
+  - **Đo lường**: Dùng `spa S-044/045` và `xe B-031/055/066` để xem HALLU có giảm không.  
+
+**Pha 3: Đánh giá lại 2 bot**  
+- **Bước 3.1**:  
+  - Chạy lại full eval `xe 200q` và `spa 100q` với:  
+    - **Agent-graded**, **DB-verified**, **multi-turn coref**.  
+    - **Kết quả kỳ vọng**:  
+      - False-refuse ↓ ≥50% (do B4 fix).  
+      - HALLU world-knowledge ↓ (do P2).  
+      - Empty=0 (do P0.1).  
+      - Coref đo được chính xác hơn.  
+
+---
+
+**3. Cảnh báo rủi ro có thể gặp phải**  
+- **Rủi ro 1 (B4 fix)**:  
+  - **Hiện tượng**: `raw chunk` bị kéo theo số lạ → HALLU-số tăng.  
+  - **Giải pháp**: Dùng `numeric-fidelity gate` để chặn, revert nếu HALLU-số tăng.  
+
+- **Rủi ro 2 (Non-numeric gate - P2b)**:  
+  - **Hiện tượng**: False-block cao (loại bỏ cả câu trả lời hợp lệ).  
+  - **Giải pháp**: Quan sát trước, đo FP (False Positive) để
+
+
+
+### 1. **Tóm tắt ưu tiên cần làm ngay**  
+- **Ưu tiên hàng đầu**:  
+  - **Pha 1 (P1.1–P1.3)**: Sửa lỗi **B4 false-refuse** (15 trường hợp thật) – đây là lỗi hệ thống lớn nhất, gây từ chối oan do **synthetic chunk đè raw chunk**.  
+  - **Pha 2 (P2.1)**: Ngăn **world-knowledge hallucination** (5 trường hợp thật) – LLM tự thêm chi tiết phi-số không có trong tài liệu.  
+- **Ưu tiên thứ cấp**:  
+  - **Pha 0 (P0.1–P0.3)**: Cải thiện **độ chính xác đo lường** (measurement rigor) để loại bỏ artifact (load, coref, HALLU không ổn định).  
+  - **Pha 3 (P3)**: Đánh giá lại toàn bộ hệ thống sau khi fix 2 lỗi chính.  
+
+---
+
+### 2. **Đề xuất bước thực hiện chi tiết cho kỹ sư**  
+#### **Bước 1: Phân tích dữ liệu và xác minh lỗi**  
+- **Mục tiêu**: Xác minh các lỗi "thật" (15 B4 + 5 HALLU) và loại bỏ artifact.  
+- **Hành động**:  
+  - **Tải file `fail_verify_result.json`** để phân tích chi tiết 43 lỗi đã verify.  
+  - **Phân loại lại**:  
+    - **B4 false-refuse**: 15 trường hợp tái hiện 100% (ví dụ: spa S-037, xe brand false-deny).  
+    - **World-knowledge HALLU**: 5 trường hợp ổn định (ví dụ: "Hàn Quốc", "thang máy", "lốp xe tải").  
+    - **Artifact**: 3 load, 5 coref, 6 HALLU không ổn định.  
+
+#### **Bước 2: Triển khai Pha 0 – Measurement Rigor**  
+- **P0.1: Empty-answer guard**  
+  - **Cài đặt**: Thêm rule trong `guard_output.py` để chuyển `answer` trống thành `oos_answer_template`.  
+  - **Test**: Dùng `RED test` để kiểm tra khi `answer` rỗng → template.  
+- **P0.2: Multi-turn eval harness**  
+  - **Code**: Viết script `eval_multiturn.py` để đánh giá coref bằng câu hỏi có follow-up (cùng `connect_id`).  
+  - **Test**: Đánh giá lại các trường hợp coref như B-047, S-058.  
+- **P0.3: Eval concurrency**  
+  - **Cài đặt**: Giảm `sem` từ 8 → 4 hoặc thêm retry khi `0-chunk`.  
+  - **Mục tiêu**: Loại bỏ artifact do tải cao.  
+
+#### **Bước 3: Triển khai Pha 1 – Sửa lỗi B4 (false-refuse)**  
+- **P1.1: Intent-gate cho synthetic chunk**  
+  - **Thay đổi**: Trong `query_graph.py`, thêm rule:  
+    ```python  
+    if query có intent TEXT (ưu đãi/quy trình/công nghệ) + keyword entity → **không đè raw chunk**.  
+    ```  
+  - **Test**: Dùng `spa S-037`, `xe brand-false-deny` để kiểm tra xem LLM có trả lời đúng không.  
+- **P1.2: Fix `_do_stats_lookup`**  
+  - **Thay đổi**:  
+    - **Gate suppression** theo "câu có expect number/price".  
+    - **Không suppress doc-fallback** nếu không có số.  
+  - **Test**: Đo N≥10 (spa S-037/046/075, xe brand-false-deny) → kỳ vọng `false-refuse ↓ ≥50%`.  
+
+#### **Bước 4: Triển khai Pha 2 – Ngăn HALLU world-knowledge**  
+- **P2.1: Append sysprompt anti-fabricate**  
+  - **Thay đổi**: Thêm rule vào `sysprompt`:  
+    ```text  
+    "Chỉ nói điều có trong tài liệu; không thêm xuất xứ/công nghệ/đặc điểm ngoài tài liệu."  
+    ```  
+  - **Test**: Đo lift HALLU (spa S-044, xe B-031).  
+- **P2.2: Non-numeric grounding gate (nếu cần)**  
+  - **Thay đổi**: Thêm rule check n-gram cho claim phi-số (brand/origin/feature).  
+  - **Test**: Đảm bảo không chặn quá nhiều (coverage không tụt).  
+
+#### **Bước 5: Đánh giá lại toàn bộ hệ thống (Pha 3)**  
+- **Test**:  
+  - **Eval full** 200q (xe) + 100q (spa) với multi-turn.  
+  - **Kết quả kỳ vọng**:  
+    - **False-refuse ↓ ≥50%** (B4).  
+    - **HALLU world-knowledge ↓** (5 → 0).  
+    - **Empty-answer = 0**.  
+    - **Coref đo được thật** (không còn artifact).  
+
+---
+
+### 3. **Cảnh báo rủi ro có thể gặp phải**  
+- **Rủi ro 1: B4 gate quá lỏng**  
+  - **
+
+
+  /var/www/html/ragbot/specs/002-deepdebug-luannt/evidence/fail_verify_analysis_20260707.md
+
+
+  đọc qua file này và
+
+  Tôi đã đọc kỹ báo cáo phân tích **"Fail-Verify Analysis"** ngày 07/07/2026. Đây là một bản kiểm định chất lượng (QA) cực kỳ sắc bén, giúp chuyển dịch từ việc "đếm lỗi đơn thuần" sang "xác định bản chất bug" thông qua kỹ thuật tái hiện (re-run) và phân loại.
+
+Dưới đây là những điểm cốt lõi nhất rút ra từ phân tích của bạn:
+
+### 1. Phân loại lại 43 fail: "Phóng đại" 33%
+
+Kết luận quan trọng nhất là con số **43** lỗi ban đầu không phản ánh đúng thực tế hệ thống. Sau khi re-run:
+
+* **33% (14/43)** là **Artifacts/Non-deterministic**: Do môi trường load, lỗi grading (eval sai), hoặc các lỗi HALLU dạng bẫy (intermittent) không tái hiện ổn định.
+* **67% (29/43)** là **Fail thật/Stable**: Đây mới là các bug cần tập trung xử lý.
+
+### 2. Hai "đòn bẩy" lỗi systemic (Cùng xuất hiện ở cả 2 domain)
+
+Việc chạy song song **chinh-sach-xe** và **test-spa-id** đã chứng minh đây không phải lỗi lẻ tẻ của bot, mà là lỗi kiến trúc (systemic):
+
+* **P1: BRAND / Stats-suppress-raw (10 lỗi - tái hiện 100%)**:
+* **Cơ chế**: Hệ thống ưu tiên `stats-lookup` với `score=1.0` quá mạnh, nó "đè" (suppress) hoàn toàn thông tin gốc (raw chunk).
+* **Hậu quả**: Bot từ chối cung cấp giá hoặc thông tin ngay cả khi trong tài liệu có vì bị synthetic chunk chặn đường.
+
+
+* **P2: World-knowledge Fabrication (5 lỗi - tái hiện 100%)**:
+* **Cơ chế**: LLM tự tin bịa các thông tin phi-số (như "Hàn Quốc", "đi thang máy") khi tài liệu không có.
+* **Hậu quả**: Phá vỡ sự tin cậy trong các câu hỏi về quy trình hoặc thông tin dịch vụ.
+
+
+
+### 3. Những lỗi cần đo đạc và nâng cấp hạ tầng
+
+* **Coref-resolution (6 lỗi)**: Bạn đã xác định rõ nó **yếu thật** chứ không phải ảo giác của eval. Cần xây dựng **Multi-turn Eval Harness** để đo rate chính xác trước khi fix, tránh fix kiểu "đập đi xây lại".
+* **Coverage/Aggregation (10 lỗi)**: Đây là khoảng trống về tính năng (như tự cộng tổng, tính giá cặp), cần phân biệt rõ với bug "sai logic".
+
+### 4. Giá trị của cách tiếp cận này
+
+Báo cáo này cho thấy sự hiệu quả của **"Cross-bot testing"**:
+
+* Phát hiện lỗi **Category-collision** (A4) chỉ lộ ra khi bot có cột phân loại (như spa) mà xe không có.
+* Loại bỏ được "nhiễu" từ các bài kiểm tra 1-shot, giúp team dev không mất thời gian fix các lỗi không tồn tại (phantom bugs).
+
+---
+
+**Góc nhìn của tôi về bước tiếp theo:**
+
+Dựa trên thứ tự ưu tiên bạn đã lập (P1: BRAND, P2: WK, P3: COVER, P4: COREF...), tôi đề xuất hướng hành động:
+
+1. **Sửa BRAND trước (P1)**: Đây là bug "nhẹ nhàng" nhất về mặt logic (chỉ là điều chỉnh độ ưu tiên của chunk/stats) nhưng tác động lại lớn nhất (fix 1 lần cho toàn bộ các truy vấn brand/giá).
+2. **Anti-fabricate (P2)**: Cần bổ sung *System Prompt* cứng rắn: "Nếu thông tin không nằm trong ngữ cảnh, tuyệt đối không được đưa ra các chi tiết bổ sung (như xuất xứ, bước quy trình chi tiết) dù là chi tiết phổ thông."
+3. **Harness hóa (P4)**: Việc bạn muốn xây dựng `multi-turn eval harness` là cực kỳ chuẩn xác. Đừng fix coref dựa trên các câu lẻ tẻ, hãy tạo bộ test-set bao gồm các chuỗi hội thoại `Q1 -> Q2 (ref)` để đo lường tỷ lệ thành công bền vững.
+
+**Bạn có muốn tôi hỗ trợ soạn thảo nội dung System Prompt để kiểm soát việc "Fabrication" (bịa chi tiết) dựa trên các ví dụ lỗi WK đã phân loại không?**
+
+
+
+
+
+Để phân tích chuyên sâu và xác định "tầng" (layer) gây ra bug dựa trên dữ liệu bạn đã có, chúng ta cần chia hệ thống thành **4 tầng logic (Stack Analysis)**. Khi một câu hỏi bị fail, chúng ta sẽ soi nó qua từng tầng này theo thứ tự từ dưới lên trên.
+
+Dưới đây là khung phân tích tầng để bạn truy vấn sâu vào từng lỗi:
+
+### 1. Tầng Data/Retrieval (DSI - Document Search Index)
+
+* **Vấn đề**: Tài liệu có đáp án nhưng không được kéo về (retrieval miss) hoặc dữ liệu bị "bóp méo" trước khi vào LLM.
+* **Dấu hiệu nhận biết**:
+* Tài liệu gốc (raw chunks) chứa thông tin nhưng `chunks` trả về bằng 0 hoặc không chứa từ khóa quan trọng.
+* Thông tin bị đè bởi `stats_lookup` (như các lỗi **BRAND** bạn đã liệt kê).
+
+
+* **Cách truy vấn chuyên sâu**:
+* **Trace DSI**: Lấy ID của câu query, truy vấn lại `semantic_search_results` cho câu đó. Kiểm tra xem `top_k` có chứa chunk mang đáp án không?
+* **Stats-Weighting Check**: Kiểm tra các file định nghĩa `synthetic_chunk`. Tại sao `score=1.0` lại được gắn cho một thống kê trống/không có giá trị? (Đây chính là tầng gây ra lỗi **BRAND**).
+
+
+
+### 2. Tầng Coreference/Context (State Management)
+
+* **Vấn đề**: Hệ thống không duy trì được "trạng thái" của hội thoại (conversation history).
+* **Dấu hiệu nhận biết**:
+* Các lỗi **COREF** (như lỗi S-058, B-060).
+* Hệ thống "quên" đối tượng (referent) ở câu trước dù `turns=2`.
+
+
+* **Cách truy vấn chuyên sâu**:
+* **Session State Dump**: Truy vấn log `conversation_history` của `connect_id` đó. Xem hệ thống có thực sự lưu lại tên SKU/dịch vụ của `turn-1` không, hay nó đã bị xóa/overwrite bởi `turn-2`.
+* **Referent Resolution Trace**: Kiểm tra `prompt` cuối cùng gửi đến LLM. Nếu trong prompt không xuất hiện context của `turn-1`, thì bug nằm ở tầng **Middleware/Context Injection** (chưa ghép nối được history).
+
+
+
+### 3. Tầng Reasoning/Prompt (LLM Logic)
+
+* **Vấn đề**: Thông tin đã vào prompt (đầy đủ context + dữ liệu) nhưng LLM xử lý sai (bịa thông tin, lười tính toán).
+* **Dấu hiệu nhận biết**:
+* Các lỗi **WK (World Knowledge Fabrication)**: LLM có chunk về "Triệt lông", nhưng tự bịa thêm "Hàn Quốc".
+* Lỗi **COVER (Comparison/Aggregation)**: LLM nhận đủ dữ liệu nhưng không biết so sánh hoặc tổng hợp.
+
+
+* **Cách truy vấn chuyên sâu**:
+* **Prompt-Only Testing**: Copy toàn bộ `prompt` (cả context + query) vào một môi trường test riêng (playground).
+* **Temperature & System Prompt Analysis**: Nếu cùng prompt đó mà 5 lần chạy ra 5 đáp án khác nhau, thì bug nằm ở `temperature` hoặc `System Prompt` thiếu tính ràng buộc.
+* *Giả thuyết*: Các lỗi WK của bạn nằm ở tầng này — cần thêm "Anti-hallucination instruction" vào System Prompt.
+
+
+
+### 4. Tầng Output/Formatting (Harness & Grading)
+
+* **Vấn đề**: Bot trả lời đúng nhưng bị "gắn nhãn sai" bởi eval-agent.
+* **Dấu hiệu nhận biết**:
+* Các lỗi **NOTFAIL** (như S-019, G-068).
+* Bot trả lời đúng ý nhưng format không khớp mong đợi.
+
+
+* **Cách truy vấn chuyên sâu**:
+* **Verdict Audit**: Kiểm tra file `eval_verdict.json` cho ID đó. Xem tại sao Agent lại chấm `WRONG` trong khi nội dung câu trả lời khớp thực tế.
+* **Threshold Audit**: Nếu `chunks=0`, hệ thống tự động gán `WRONG` mà không đọc câu trả lời. Đây là bug của **Harness Layer**, không phải của Bot.
+
+
+
+---
+
+### Bảng tóm tắt để bạn Audit 29 fail thật:
+
+| Tầng (Layer) | Bug Class (đã verify) | Hành động truy vấn sâu |
+| --- | --- | --- |
+| **Retrieval/DSI** | **BRAND** (10), COVER (intermittent) | Dump `semantic_search` results; Check `synthetic_chunk` logic. |
+| **State/Context** | **COREF** (4), EMPTY (3) | Trace `history` injection; Log state trước khi gửi prompt. |
+| **LLM Reasoning** | **WK** (5), NDHALLU (intermittent) | Playbook test prompt riêng biệt; Kiểm tra tính "kháng" của System Prompt. |
+| **Eval/Harness** | **NOTFAIL** (5) | Audit lại `grading_rubric` của Agent eval. |
+
+**Lời khuyên:** Để truy vấn chuyên sâu ngay bây giờ, bạn nên **dump log của 10 câu lỗi thuộc tầng BRAND** (vì nó stable 100%). Hãy nhìn vào log `raw_prompt` của chúng. Bạn sẽ thấy ngay lập tức `synthetic_chunk` chiếm vị trí số 1 và đẩy các `raw_chunk` (chứa giá trị thực) ra ngoài context.
+
+Bạn muốn bắt đầu "mổ xẻ" tầng nào trước? (Tôi đề xuất tầng **Retrieval** vì nó đang chặn họng các kết quả BRAND).
+
+
+
+
+Để "mổ xẻ" triệt để, chúng ta sẽ bắt đầu với **tầng Retrieval (DSI)** vì đây là tầng gây ra lỗi **BRAND (10/29 stable fail)** — lỗi "chặn họng" nguy hiểm nhất vì nó từ chối cung cấp thông tin dù dữ liệu có sẵn.
+
+Chúng ta sẽ sử dụng chiến thuật **"Trace-to-Log"** (Truy vết đến log). Bạn hãy thực hiện các truy vấn/phân tích theo trình tự này trên bộ dữ liệu fail-stable:
+
+### 1. Phẫu thuật tầng Retrieval (Tập trung lỗi BRAND)
+
+Lỗi BRAND của bạn (ví dụ: `B-010`, `B-011`, `S-037`) cho thấy hệ thống đang bị "ngộ độc" bởi Synthetic Chunk. Hãy dump log của 10 câu BRAND này và trả lời 3 câu hỏi sau:
+
+* **Truy vấn 1 (Cấu trúc đầu vào):** Trong log `raw_prompt` gửi cho LLM, hãy kiểm tra xem `context_chunks` có bao nhiêu chunk?
+* *Nghi vấn:* Có phải `synthetic_chunk` (với `score=1.0`) luôn nằm ở vị trí đầu tiên (được ưu tiên cao nhất) và đẩy `raw_chunk` (chứa dữ liệu thật) xuống dưới hoặc ra ngoài window không?
+
+
+* **Truy vấn 2 (Score Inflation):** Tại sao `synthetic_chunk` lại được hệ thống gán `score=1.0` (mặc định)?
+* *Mổ xẻ:* Tìm trong source code đoạn `_do_stats_lookup`. Có phải nó đang tạo ra một chunk giả định với metadata `price: null` hoặc `status: none` và áp đặt score tuyệt đối khiến thuật toán RAG bỏ qua các chunk thực tế?
+
+
+* **Truy vấn 3 (Semantic Filter):** Kiểm tra `semantic_search_results` cho câu hỏi "Lốp Rovelo 195/70R14 giá bao nhiêu?".
+* *Mổ xẻ:* Nếu kết quả search trả về chính xác dòng lốp đó, nhưng prompt gửi đi lại không có, thì **Middleware** đang lọc bỏ chunk đó dựa trên filter nào?
+
+
+
+### 2. Phẫu thuật tầng Reasoning (Tập trung lỗi WK - Fabrication)
+
+Lỗi này (`S-044`, `S-045`) xảy ra khi dữ liệu thiếu, nhưng LLM vẫn "tự tin" bịa ra thông tin. Đây là lỗi tại **tầng LLM Alignment**.
+
+* **Truy vấn 1 (Grounding Check):** Kiểm tra `System Prompt` đang dùng.
+* *Câu hỏi:* Có câu lệnh "If the information is not provided in the context, state that you do not know" hay không? Nếu có, tại sao nó bị vô hiệu hóa?
+
+
+* **Truy vấn 2 (Attention Drift):** So sánh `raw_prompt` của một câu trả lời đúng (CORRECT) và một câu WK (WRONG).
+* *Nghi vấn:* Có phải trong các câu WK, LLM đang bị đánh lạc hướng bởi các chi tiết có vẻ "chuyên gia" trong System Prompt (ví dụ: mô tả về da, SMAS) khiến nó cố gắng hoàn thiện câu trả lời thay vì dựa hoàn toàn vào Context?
+
+
+
+### 3. Phẫu thuật tầng State/Context (Tập trung lỗi COREF)
+
+Lỗi này (`S-058`, `B-060`) là lỗi "mất kết nối".
+
+* **Truy vấn 1 (Session State Dump):** Truy vấn `last_turn_context`.
+* *Mổ xẻ:* Hãy xem `connect_id` đó. Trong `turn-1`, hệ thống đã ghi nhận entity là "Ultherapy" hay "195/65R15" vào `slots` chưa?
+
+
+* **Truy vấn 2 (Query Expansion):** Khi người dùng hỏi "Quy trình thực hiện dịch vụ đó", hệ thống có thực hiện bước **"Query Expansion"** (nội suy từ "đó" thành tên dịch vụ gốc) trước khi gọi DSI không?
+* *Nghi vấn:* Nếu không expand, thì DSI sẽ tìm kiếm từ khóa "đó" — đương nhiên kết quả sẽ sai lệch hoàn toàn.
+
+
+
+---
+
+### Bảng kế hoạch "Mổ Xẻ" (Action Plan)
+
+Để tôi giúp bạn phân tích chi tiết, **bạn hãy chọn 1 trong 2 mã ID sau để chúng ta "mổ" ngay:**
+
+1. **Mã `B-010` (Lỗi BRAND)**: Để làm rõ tại sao hệ thống từ chối phân phối Rovelo dù dữ liệu có trong bảng (Lỗi tầng Retrieval/Filter).
+2. **Mã `S-044` (Lỗi WK)**: Để làm rõ tại sao hệ thống bịa thông tin "Hàn Quốc" (Lỗi tầng LLM Reasoning).
+
+**Bạn muốn mổ mã nào trước?** Hãy cung cấp đoạn log `raw_prompt` (loại bỏ các thông tin nhạy cảm) của mã đó, tôi sẽ chỉ ra chính xác dòng code hoặc logic nào đang gây lỗi.

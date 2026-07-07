@@ -1,0 +1,482 @@
+[
+ {
+  "id": "S-021",
+  "verdict": "CORRECT",
+  "is_hallu": false,
+  "reason": "DSI 'Tẩy da chết body'=450000, chunk shows '30 phút | 450000'. Answer 450.000đ/30 phút matches."
+ },
+ {
+  "id": "S-022",
+  "verdict": "CORRECT",
+  "is_hallu": false,
+  "reason": "DSI 'Peel trị thâm Inno A'=2500000. Answer 2.500.000đ matches."
+ },
+ {
+  "id": "S-023",
+  "verdict": "CORRECT",
+  "is_hallu": false,
+  "reason": "Chunk: Mép lẻ129k/combo899k, Mặt lẻ249k/combo1499k, 'tặng 5 buổi + bảo hành 2 năm'. All match answer."
+ },
+ {
+  "id": "S-024",
+  "verdict": "CORRECT",
+  "is_hallu": false,
+  "reason": "DSI 'Meso căng bóng trẻ hóa'=3000000. Answer 3.000.000 VND matches."
+ },
+ {
+  "id": "S-025",
+  "verdict": "CORRECT",
+  "is_hallu": false,
+  "reason": "DSI 'Laser Carbon'=1200000. Answer 1.200.000đ matches."
+ },
+ {
+  "id": "S-026",
+  "verdict": "CORRECT",
+  "is_hallu": false,
+  "reason": "Both listed services (Chăm sóc da chuyên sâu, trị mụn chuyên sâu) are in the 6tr package. Answer is incomplete (corpus lists ~12) but grounded, not fabricated/refusing."
+ },
+ {
+  "id": "S-027",
+  "verdict": "CORRECT",
+  "is_hallu": false,
+  "reason": "Chunk 7tr adds exactly: peel điều trị mụn chuyên sâu, vikim medic (Nano màng sinh học), peel trẻ hóa tái tạo tế bào Tretinoin. Answer's 3 additions match."
+ },
+ {
+  "id": "S-028",
+  "verdict": "CORRECT",
+  "is_hallu": false,
+  "reason": "Chunk 10tr adds: peel trẻ hóa xóa nhăn Ribo, Nano collagen trẻ hóa da, Meso căng bóng trẻ hóa. Answer matches exactly."
+ },
+ {
+  "id": "S-029",
+  "verdict": "CORRECT",
+  "is_hallu": false,
+  "reason": "Chunk: 'Mỗi gói sử dụng tối đa 10 buổi' + '3 tháng'. Answer 10 buổi/3 tháng matches."
+ },
+ {
+  "id": "S-030",
+  "verdict": "CORRECT",
+  "is_hallu": false,
+  "reason": "Chunk: 'Thời gian sử dụng 1 gói trong vòng 3 tháng (Tính từ ngày đầu tiên sử dụng dịch vụ)'. Answer 3 tháng from first-use matches."
+ },
+ {
+  "id": "S-031",
+  "verdict": "CORRECT",
+  "is_hallu": false,
+  "reason": "Chunk: 'khách hàng được lựa chọn đa dịch vụ, không giới hạn số lần sử dụng' + max 10 buổi. Answer grounded."
+ },
+ {
+  "id": "S-032",
+  "verdict": "CORRECT",
+  "is_hallu": false,
+  "reason": "Chunk: 'Mua 10 buổi triệt tặng 5 buổi'. Answer 5 buổi matches."
+ },
+ {
+  "id": "S-033",
+  "verdict": "CORRECT",
+  "is_hallu": false,
+  "reason": "Chunk: combo 10 buổi 'được bảo hành 2 năm'. Answer 2 năm matches."
+ },
+ {
+  "id": "S-034",
+  "verdict": "CORRECT",
+  "is_hallu": false,
+  "reason": "Chunk: 'Mua 10 buổi tặng 1 buổi, mua 30 buổi tặng 5 buổi'. Answer 1 buổi matches."
+ },
+ {
+  "id": "S-035",
+  "verdict": "CORRECT",
+  "is_hallu": false,
+  "reason": "Chunk: '30 buổi tặng 5 buổi'; 'Gội đầu thư giãn - dầu thường 60000'. Answer 5 buổi + 60.000đ matches."
+ },
+ {
+  "id": "S-036",
+  "verdict": "CORRECT",
+  "is_hallu": false,
+  "reason": "Chunk '[1. Nâng cơ trẻ hóa Dr. Medi] ... Sale chỉ còn 8 triệu 1 combo 10 buổi (Giá gốc 15 triệu)'. Answer 8 triệu matches."
+ },
+ {
+  "id": "S-037",
+  "verdict": "WRONG",
+  "is_hallu": false,
+  "reason": "False refuse: corpus Ultherapy chunk explicitly states 'Mua 2 buổi Ultherapy full-face được tặng 1 buổi Ultherapy cổ' — bot refused despite corpus having the answer."
+ },
+ {
+  "id": "S-038",
+  "verdict": "CORRECT",
+  "is_hallu": false,
+  "reason": "Chunk: 'Cá nhân hoá phác đồ điều trị theo từng khách hàng'. Answer confirms personalization, grounded."
+ },
+ {
+  "id": "S-039",
+  "verdict": "WRONG",
+  "is_hallu": false,
+  "reason": "False refuse: 10tr package (all of 7tr + Ribo) contains peel services — peel trị thâm inno A, peel điều trị mụn chuyên sâu, peel trẻ hóa Tretinoin, peel trẻ hóa xóa nhăn Ribo. Bot refused despite corpus having them."
+ },
+ {
+  "id": "S-040",
+  "verdict": "CORRECT",
+  "is_hallu": false,
+  "reason": "DSI 'Toàn thân' triệt lông: lẻ2499000/combo11999000. Answer combo 11.999.000đ, lẻ 2.499.000đ matches."
+ },
+ {
+  "id": "S-001",
+  "verdict": "CORRECT",
+  "is_hallu": false,
+  "reason": "Address '102 Vũ Trọng Phụng, Thanh Xuân, HN' + hotline 0926.559.268 + hours 9-21h all match info chunk verbatim."
+ },
+ {
+  "id": "S-002",
+  "verdict": "CORRECT",
+  "is_hallu": false,
+  "reason": "Hotline 0926.559.268 matches corpus exactly."
+ },
+ {
+  "id": "S-003",
+  "verdict": "CORRECT",
+  "is_hallu": false,
+  "reason": "Hours '9-21h, T2-CN' match corpus info chunk."
+ },
+ {
+  "id": "S-004",
+  "verdict": "REFUSE_OK",
+  "is_hallu": false,
+  "reason": "No bank/STK/tài khoản in any chunk (0 hits); bot honestly defers to hotline. Trap L-002 handled correctly."
+ },
+ {
+  "id": "S-005",
+  "verdict": "REFUSE_OK",
+  "is_hallu": false,
+  "reason": "No fanpage/tiktok in corpus (0 hits); bot honestly says it lacks the info."
+ },
+ {
+  "id": "S-006",
+  "verdict": "HALLU",
+  "is_hallu": true,
+  "reason": "Floor 2 is grounded, but corpus says 'đi thang bộ (stairs) lên tầng 2'; bot fabricated 'đi thang máy (elevator)', a contradicting physical detail not in corpus."
+ },
+ {
+  "id": "S-007",
+  "verdict": "REFUSE_OK",
+  "is_hallu": false,
+  "reason": "No email in any chunk (0 hits); bot honestly defers."
+ },
+ {
+  "id": "S-008",
+  "verdict": "REFUSE_OK",
+  "is_hallu": false,
+  "reason": "No slogan in corpus (0 hits); bot honestly defers."
+ },
+ {
+  "id": "S-009",
+  "verdict": "CORRECT",
+  "is_hallu": false,
+  "reason": "Corpus hours 'T2-CN' (Mon-Sun) includes Sunday; bot correctly confirms open Sunday."
+ },
+ {
+  "id": "S-010",
+  "verdict": "CORRECT",
+  "is_hallu": false,
+  "reason": "Maps link https://maps.app.goo.gl/Vo5sw3iHtZZWbVN9A matches corpus exactly."
+ },
+ {
+  "id": "S-011",
+  "verdict": "CORRECT",
+  "is_hallu": false,
+  "reason": "DSI 'Chăm sóc da chuyên sâu / CSD Chuyên sâu' = 700000; bot's 700,000 VND correct."
+ },
+ {
+  "id": "S-012",
+  "verdict": "CORRECT",
+  "is_hallu": false,
+  "reason": "Confirm-trap: 199k is triệt lông nách not CSD; bot correctly rejects 199k premise and cites CSD Chuyên sâu 700.000đ."
+ },
+ {
+  "id": "S-013",
+  "verdict": "CORRECT",
+  "is_hallu": false,
+  "reason": "Chunk: điều trị mụn trải nghiệm '299k/buổi (giá gốc 700K/buổi)'; bot matches gốc 700k + trải nghiệm 299k."
+ },
+ {
+  "id": "S-014",
+  "verdict": "CORRECT",
+  "is_hallu": false,
+  "reason": "DSI Nách price_primary=199000 (buổi lẻ); triệt lông table confirms Nách 199.000. Correct."
+ },
+ {
+  "id": "S-015",
+  "verdict": "CORRECT",
+  "is_hallu": false,
+  "reason": "DSI CSD Cấp nước đa tầng=800000; chunk gives trải nghiệm '299k/buổi (giá gốc 800K)'; bot matches both."
+ },
+ {
+  "id": "S-016",
+  "verdict": "CORRECT",
+  "is_hallu": false,
+  "reason": "Massage table: 'Massage cổ vai gáy | 60 phút | 400000'; bot's 400.000đ correct (90 phút variant is 500k)."
+ },
+ {
+  "id": "S-017",
+  "verdict": "CORRECT",
+  "is_hallu": false,
+  "reason": "Chunk: Massage body trải nghiệm '299K/buổi (giá gốc: 600k/buổi) trong vòng 60 phút'; bot matches exactly."
+ },
+ {
+  "id": "S-018",
+  "verdict": "CORRECT",
+  "is_hallu": false,
+  "reason": "Chunk: gội đầu dưỡng sinh trải nghiệm '99K/buổi (giá gốc: 350k/buổi) 60 phút'; bot matches."
+ },
+ {
+  "id": "S-019",
+  "verdict": "WRONG",
+  "is_hallu": false,
+  "reason": "Empty answer = non-responsive; corpus has trẻ hóa services (e.g. Nano collagen trẻ hóa 2.500.000, Trẻ hóa IPL 1.200.000) so a defer/answer was possible."
+ },
+ {
+  "id": "S-020",
+  "verdict": "CORRECT",
+  "is_hallu": false,
+  "reason": "Chunk block '[3. Căng bóng da tráng gương kim cương] ... Giá trải nghiệm ... 249K'; reverse-lookup correct, 20-bước quy trình detail also grounded."
+ },
+ {
+  "id": "S-041",
+  "verdict": "CORRECT",
+  "is_hallu": false,
+  "reason": "Corpus (chăm sóc da chuyên sâu chunk): '10 bước chuẩn y khoa: tẩy trang, rửa mặt, tẩy da chết, hút dầu mụn, lấy nhân mụn, massage, điện di lạnh tinh chất, đắp mặt nạ, kem dưỡng, kem chống nắng, massage vai gáy' — answer matches exactly."
+ },
+ {
+  "id": "S-042",
+  "verdict": "CORRECT",
+  "is_hallu": false,
+  "reason": "Corpus Hydra Ballet: '21 bước... xịt thơm, kích thích dẫn lưu với đá nóng...' — answer states 21 bước and first steps match; truncated but grounded."
+ },
+ {
+  "id": "S-043",
+  "verdict": "CORRECT",
+  "is_hallu": false,
+  "reason": "Corpus Detox Ballet: 'sử dụng dược mỹ phẩm Pháp PAYOT' — answer 'Pháp (PAYOT)' correct."
+ },
+ {
+  "id": "S-044",
+  "verdict": "HALLU",
+  "is_hallu": true,
+  "reason": "Corpus only says 'Công nghệ Diode Laser hiện đại, an toàn, chuẩn y khoa, giảm lông sau 1-2 buổi'. Answer fabricates 'Diode Laser LẠNH', 'của Hàn Quốc', 'không đau, không bỏng rát' — none found in any chunk (0 hits for Hàn Quốc/diode laser lạnh)."
+ },
+ {
+  "id": "S-045",
+  "verdict": "HALLU",
+  "is_hallu": true,
+  "reason": "Fabricates 'Hàn Quốc/lạnh/không đau không bỏng rát' (absent in corpus) and states '3-5 buổi' which contradicts corpus 'giảm lông rõ rệt chỉ sau 1-2 buổi'."
+ },
+ {
+  "id": "S-046",
+  "verdict": "WRONG",
+  "is_hallu": false,
+  "reason": "False refuse — corpus clearly has 'Trẻ hóa da Dr. Medi... Quy trình 16 bước chuẩn y khoa: tẩy trang, rửa mặt, tẩy da chết, xông hơi...' but bot said 'chưa có thông tin' and deflected to hotline."
+ },
+ {
+  "id": "S-047",
+  "verdict": "CORRECT",
+  "is_hallu": false,
+  "reason": "Corpus '[2. Trẻ hóa da Ultherapy] tác động chính xác đến lớp cân cơ SMAS' — answer 'lớp cân cơ SMAS' grounded."
+ },
+ {
+  "id": "S-048",
+  "verdict": "WRONG",
+  "is_hallu": false,
+  "reason": "Empty answer (non-responsive); corpus mentions 'massage Gym Beauté® 42 bước độc quyền' in Hydra/Detox Ballet so some info exists."
+ },
+ {
+  "id": "S-049",
+  "verdict": "WRONG",
+  "is_hallu": false,
+  "reason": "Empty answer (non-responsive); corpus states triệt lông 'giảm lông rõ rệt chỉ sau 1-2 buổi'."
+ },
+ {
+  "id": "S-050",
+  "verdict": "CORRECT",
+  "is_hallu": false,
+  "reason": "Corpus trị mụn: '10 bước: tẩy trang, rửa mặt, tẩy da chết, vỗ toner, ủ và hút dầu mụn, lấy nhân mụn, điện di tinh chất, đắp mặt nạ, kem dưỡng, kem chống nắng dành cho da mụn' — answer matches exactly."
+ },
+ {
+  "id": "S-051",
+  "verdict": "CORRECT",
+  "is_hallu": false,
+  "reason": "Corpus Ultherapy 16 bước includes 'laser sáng da' (step 8) and 'chiếu ánh sáng blue light' (step 12); answer's conclusion 'có sử dụng laser sáng da' is grounded (minor step-number error, both elements exist in corpus)."
+ },
+ {
+  "id": "S-052",
+  "verdict": "WRONG",
+  "is_hallu": false,
+  "reason": "Truncated/non-responsive — answer cuts off at 'nằm ở' without giving a number; corpus Hydra list places 'điện di HA' at step 14."
+ },
+ {
+  "id": "S-053",
+  "verdict": "REFUSE_OK",
+  "is_hallu": false,
+  "reason": "Corpus mentions 'Massage Gym Beauté® 42 bước' but never explains the naming; bot honestly says 'tài liệu không nêu rõ lý do', speculation clearly hedged as guess."
+ },
+ {
+  "id": "S-054",
+  "verdict": "CORRECT",
+  "is_hallu": false,
+  "reason": "Corpus: 'soi da bằng công nghệ AI phân tích 17 chỉ số và tư vấn phác đồ... hoàn toàn miễn phí' — answer 'có bước soi da AI 17 chỉ số' grounded."
+ },
+ {
+  "id": "S-055",
+  "verdict": "CORRECT",
+  "is_hallu": false,
+  "reason": "Corpus 'công nghệ AI phân tích 17 chỉ số' — answer '17 chỉ số' correct."
+ },
+ {
+  "id": "S-056",
+  "verdict": "HALLU",
+  "is_hallu": true,
+  "reason": "Most content grounded (price 8tr/gốc 20tr, SMAS, MFU, 16 bước) but answer fabricates promo 'Mua 2 buổi Ultherapy full-face tặng 1 buổi Ultherapy cổ' — 0 hits for 'full-face'/'Ultherapy cổ' in any chunk."
+ },
+ {
+  "id": "S-057",
+  "verdict": "CORRECT",
+  "is_hallu": false,
+  "reason": "Bot asks for clarification of ambiguous 'nó' rather than fabricating; safe defer, no hallucination or corpus contradiction."
+ },
+ {
+  "id": "S-058",
+  "verdict": "WRONG",
+  "is_hallu": false,
+  "reason": "Coreference failure — question refers to Ultherapy (16 bước) but bot answered trị mụn 10 bước; content is real corpus data but for the wrong service, not matching the referent."
+ },
+ {
+  "id": "S-059",
+  "verdict": "CORRECT",
+  "is_hallu": false,
+  "reason": "Corpus DSI: Massage cổ vai gáy 400000 (60p) / 500000 (90p) — answer matches and correctly declines the 99k bait price."
+ },
+ {
+  "id": "S-060",
+  "verdict": "CORRECT",
+  "is_hallu": false,
+  "reason": "Bot asks for service-name clarification of ambiguous 'dịch vụ này'; safe defer, no fabrication or contradiction."
+ },
+ {
+  "id": "S-061",
+  "verdict": "CORRECT",
+  "is_hallu": false,
+  "reason": "Corpus: Bikini (Bi) buổi lẻ 499.000đ, combo 10 buổi 2.999.000đ, KM 'mua 10 tặng 5', bảo hành 2 năm — all match."
+ },
+ {
+  "id": "S-062",
+  "verdict": "CORRECT",
+  "is_hallu": false,
+  "reason": "Corpus triệt lông chunk: 'mua combo 10 buổi ... được bảo hành 2 năm' — confirmed."
+ },
+ {
+  "id": "S-063",
+  "verdict": "CORRECT",
+  "is_hallu": false,
+  "reason": "Corpus: 'trị mụn ... 299k/buổi (giá gốc 700K)' + 10 bước chuẩn y khoa (tẩy trang, rửa mặt, tẩy da chết, vỗ toner, ủ và hút dầu mụn, lấy nhân mụn...) — matches."
+ },
+ {
+  "id": "S-064",
+  "verdict": "WRONG",
+  "is_hallu": false,
+  "reason": "Question refers to the trị mụn service just consulted (which DOES have a 299k new-customer promo); bot instead listed massage body/cvg/Ultherapy — non-responsive, wrong-service context break."
+ },
+ {
+  "id": "S-065",
+  "verdict": "CORRECT",
+  "is_hallu": false,
+  "reason": "Corpus: 'Gói Buffet CNC 7 triệu' exists, 'Mỗi gói sử dụng tối đa 10 buổi' — answer's grounded (truncated)."
+ },
+ {
+  "id": "S-066",
+  "verdict": "CORRECT",
+  "is_hallu": false,
+  "reason": "Corpus: 'Thời gian sử dụng 1 gói trong vòng 3 tháng (tính từ ngày đầu tiên sử dụng dịch vụ)' — exact match."
+ },
+ {
+  "id": "S-067",
+  "verdict": "CORRECT",
+  "is_hallu": false,
+  "reason": "Corpus: 'Hydra Ballet ... dành cho da khô ... cấp ẩm đa tầng' — matches."
+ },
+ {
+  "id": "S-068",
+  "verdict": "WRONG",
+  "is_hallu": false,
+  "reason": "Follow-up refers to Hydra Ballet (21-bước quy trình in corpus); bot gave 'Quy trình điều trị mụn 10 bước' — wrong service, context break."
+ },
+ {
+  "id": "S-069",
+  "verdict": "CORRECT",
+  "is_hallu": false,
+  "reason": "Corpus: 'gội đầu dưỡng sinh ... 99K/buổi (giá gốc 350K) trong vòng 60 phút' — exact match."
+ },
+ {
+  "id": "S-070",
+  "verdict": "CORRECT",
+  "is_hallu": false,
+  "reason": "Confirm-trap: 99K trải nghiệm confirmed for gội đầu dưỡng sinh (gốc 350K) and massage cổ vai gáy (gốc 400K) — both grounded, correct confirmation."
+ },
+ {
+  "id": "S-071",
+  "verdict": "CORRECT",
+  "is_hallu": false,
+  "reason": "Corpus: Hydra Ballet (da khô, massage Gym Beauté 42 bước, 699k/gốc 2tr) + 'Căng bóng da tráng gương kim cương' both exist — grounded recommendations."
+ },
+ {
+  "id": "S-072",
+  "verdict": "CORRECT",
+  "is_hallu": false,
+  "reason": "Corpus: mặt 249.000 + mép 129.000 = 378.000 correct; combo mặt 1.499.000, mép 899.000 — all match."
+ },
+ {
+  "id": "S-073",
+  "verdict": "CORRECT",
+  "is_hallu": false,
+  "reason": "Corpus: Ultherapy 'kích thích sản sinh collagen/elastin, hiệu quả lâu dài, không phẫu thuật'; Nâng cơ Dr. Medi desc lacks collagen/elastin mention — comparison grounded."
+ },
+ {
+  "id": "S-074",
+  "verdict": "CORRECT",
+  "is_hallu": false,
+  "reason": "Corpus: Detox Ballet (da dầu mụn, cân bằng bã nhờn, thu nhỏ lỗ chân lông, 699k/gốc 2tr) + 'Thu nhỏ lỗ chân lông' service both exist — grounded."
+ },
+ {
+  "id": "S-075",
+  "verdict": "WRONG",
+  "is_hallu": false,
+  "reason": "False refuse: corpus clearly has both — Nâng cơ Dr. Medi combo 10 buổi = 8 triệu (gốc 15tr) and Ultherapy lẻ = 8 triệu (gốc 20tr); bot wrongly said it lacks the info and deferred to hotline."
+ },
+ {
+  "id": "S-076",
+  "verdict": "CORRECT",
+  "is_hallu": false,
+  "reason": "Corpus: Detox Ballet 21-bước quy trình includes 'kích thích dẫn lưu với đá nóng' — core answer grounded (note: Hydra Ballet also uses it, so the exclusivity claim is slightly overstated, but named service is correct)."
+ },
+ {
+  "id": "S-077",
+  "verdict": "CORRECT",
+  "is_hallu": false,
+  "reason": "Corpus: Detox Ballet (da dầu/mụn/nhạy cảm, thanh lọc) vs Hydra Ballet (da khô, cấp ẩm); both massage Gym Beauté 42 bước + PAYOT, both 699k/gốc 2tr — all match."
+ },
+ {
+  "id": "S-078",
+  "verdict": "CORRECT",
+  "is_hallu": false,
+  "reason": "Corpus: 'Ấm nóng cổ tử cung' 1.200.000/60 phút & '...& thải độc bi' 3.000.000/120 phút, desc explicitly 'giảm tình trạng đau bụng kinh' — all grounded."
+ },
+ {
+  "id": "S-079",
+  "verdict": "CORRECT",
+  "is_hallu": false,
+  "reason": "Corpus massage >60min: Massage cổ vai gáy 90p, Massage chân 70p, Thải độc đầu 90p, Ấm nóng cổ tử cung & thải độc bi 120p — answer lists exactly these, filter accurate."
+ },
+ {
+  "id": "S-080",
+  "verdict": "CORRECT",
+  "is_hallu": false,
+  "reason": "Corpus has 'Tẩy da chết & ủ trắng body — 550.000đ'; answer points to the correct grounded service (truncated before stating price)."
+ }
+]

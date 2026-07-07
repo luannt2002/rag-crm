@@ -1,0 +1,3254 @@
+/var/www/html/ragbot/src/ragbot/application
+
+/var/www/html/ragbot/src/ragbot/application/commands
+    /var/www/html/ragbot/src/ragbot/application/commands/__init__.py
+            """Application commands (write side).
+
+Ref: PLAN_05_APPLICATION_COMMANDS_DTO.md.
+"""
+
+from ragbot.application.commands.chat_commands import (
+    AnswerQuestionCommand,
+    GiveFeedbackCommand,
+)
+from ragbot.application.commands.document_commands import (
+    DeleteDocumentCommand,
+    IngestDocumentCommand,
+    RechunkByDocumentIdCommand,
+    RechunkDocumentCommand,
+    ReindexCorpusCommand,
+)
+
+__all__ = [
+    "AnswerQuestionCommand",
+    "DeleteDocumentCommand",
+    "GiveFeedbackCommand",
+    "IngestDocumentCommand",
+    "RechunkByDocumentIdCommand",
+    "RechunkDocumentCommand",
+    "ReindexCorpusCommand",
+]
+
+
+
+/var/www/html/ragbot/src/ragbot/application/commands/chat_commands.py
+
+
+"""Chat commands.
+
+Ref: PLAN_05 §chat_commands.py.
+
+Pydantic v2 frozen models for runtime validation.
+"""
+
+from __future__ import annotations
+
+from datetime import datetime
+from typing import Literal
+
+from pydantic import BaseModel, ConfigDict, Field
+
+from ragbot.shared.constants import DEFAULT_HISTORY_LIMIT, MAX_CHAT_CONTENT_LENGTH
+from ragbot.shared.types import (
+    BotId,
+    Channel,
+    ConversationId,
+    MessageId,
+    TenantId,
+    TraceId,
+    UserId,
+    WorkspaceId,
+)
+
+
+class AnswerQuestionCommand(BaseModel):
+    """Inbound request to answer a user question.
+
+    `mode == "async"` is the production default — returns 202 immediately.
+    """
+
+    model_config = ConfigDict(frozen=True, arbitrary_types_allowed=True)
+
+    record_tenant_id: TenantId
+    record_bot_id: BotId
+    # External identity slugs — paired with record_tenant_id UUID; forwarded
+    # onto the ChatReceived outbox event so the worker re-resolves the
+    # bot row without trusting the cached UUID alone. ``workspace_id`` is
+    # the tenant-supplied scope slug; the route resolver fills it from
+    # ``str(record_tenant_id)`` when the wire payload omits the value.
+    workspace_id: WorkspaceId
+    bot_id: str = Field(..., min_length=1, description="External bot slug")
+    channel_type: str = Field(..., min_length=1, description="External channel")
+    user_id: UserId
+    conversation_id: ConversationId | None = None  # auto-derive if None
+    content: str = Field(min_length=1, max_length=MAX_CHAT_CONTENT_LENGTH)
+    channel: Channel
+    history_limit: int = Field(default=DEFAULT_HISTORY_LIMIT, ge=1, le=50)
+    external_message_id: str | None = None  # for idempotency
+    mode: Literal["sync", "async"] = "async"
+    callback_url: str | None = None
+    trace_id: TraceId
+    received_at: datetime
+
+
+class GiveFeedbackCommand(BaseModel):
+    model_config = ConfigDict(frozen=True, arbitrary_types_allowed=True)
+
+    record_tenant_id: TenantId
+    record_bot_id: BotId
+    workspace_id: WorkspaceId
+    conversation_id: ConversationId
+    message_id: MessageId
+    rating: Literal["up", "down"]
+    comment: str | None = Field(default=None, max_length=MAX_CHAT_CONTENT_LENGTH)
+    user_id: UserId
+    trace_id: TraceId
+
+
+__all__ = ["AnswerQuestionCommand", "GiveFeedbackCommand"]
+
+
+
+
+/var/www/html/ragbot/src/ragbot/application/commands/document_commands.py
+
+
+"""Document commands.
+
+Ref: PLAN_05 §document_commands.py.
+"""
+
+from __future__ import annotations
+
+from uuid import UUID
+
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl
+
+from ragbot.shared.constants import (
+    DEFAULT_AUTHORITY_SCORE,
+    DEFAULT_LANGUAGE,
+    MAX_DOCUMENT_NAME_LENGTH,
+)
+from ragbot.shared.types import (
+    BotId,
+    EmbeddingModelVersion,
+    TenantId,
+    TraceId,
+    WorkspaceId,
+)
+
+
+class IngestDocumentCommand(BaseModel):
+    model_config = ConfigDict(frozen=True, arbitrary_types_allowed=True)
+
+    record_tenant_id: TenantId
+    record_bot_id: BotId
+    workspace_id: WorkspaceId
+    source_url: HttpUrl
+    document_name: str = Field(min_length=1, max_length=MAX_DOCUMENT_NAME_LENGTH)
+    mime_type: str | None = None
+    language: str = DEFAULT_LANGUAGE
+    authority_score: float = Field(default=DEFAULT_AUTHORITY_SCORE, ge=0.0, le=1.0)
+    uploaded_by: str | None = None
+    trace_id: TraceId
+
+
+class DeleteDocumentCommand(BaseModel):
+    model_config = ConfigDict(frozen=True, arbitrary_types_allowed=True)
+
+    record_tenant_id: TenantId
+    record_bot_id: BotId
+    workspace_id: WorkspaceId
+    tool_name: str = Field(min_length=1, max_length=MAX_DOCUMENT_NAME_LENGTH)
+    trace_id: TraceId
+
+
+class RechunkDocumentCommand(BaseModel):
+    model_config = ConfigDict(frozen=True, arbitrary_types_allowed=True)
+
+    record_tenant_id: TenantId
+    record_bot_id: BotId
+    workspace_id: WorkspaceId
+    source_url: HttpUrl
+    trace_id: TraceId
+
+
+class RechunkByDocumentIdCommand(BaseModel):
+    """Rechunk a single document by its internal UUID.
+
+    260525 Bug #2 fix — the URL-keyed ``RechunkDocumentCommand`` cannot
+    address bots with multiple documents sharing the same ``source_url``
+    (Google Sheets workbook with multiple tab gids, S3 paths refused
+    by re-upload, etc.). This command lets the caller name the exact
+    document by primary key so the use case never has to disambiguate.
+    """
+
+    model_config = ConfigDict(frozen=True, arbitrary_types_allowed=True)
+
+    record_tenant_id: TenantId
+    record_bot_id: BotId
+    workspace_id: WorkspaceId
+    document_id: UUID
+    trace_id: TraceId
+
+
+class ReindexCorpusCommand(BaseModel):
+    model_config = ConfigDict(frozen=True, arbitrary_types_allowed=True)
+
+    record_tenant_id: TenantId
+    new_embedding_model_version: EmbeddingModelVersion
+    dry_run: bool = False
+    trace_id: TraceId
+
+
+__all__ = [
+    "DeleteDocumentCommand",
+    "IngestDocumentCommand",
+    "RechunkByDocumentIdCommand",
+    "RechunkDocumentCommand",
+    "ReindexCorpusCommand",
+]
+
+
+
+/var/www/html/ragbot/src/ragbot/application/dto
+/var/www/html/ragbot/src/ragbot/application/dto/__init__.py
+
+"""Application DTOs (use case input/output).
+
+Ref: PLAN_05 §dto/.
+"""
+
+from ragbot.application.dto.ai_specs import (
+    EmbeddingSpec,
+    LLMSpec,
+    PromptTemplate,
+    RerankerSpec,
+)
+from ragbot.application.dto.block import (
+    Block,
+    ChunkType,
+    from_chunk_dict,
+)
+from ragbot.application.dto.chat_dto import (
+    AnswerDTO,
+    ChatAcceptedDTO,
+    CitationDTO,
+    ConversationHistoryDTO,
+    JobStatusDTO,
+    MessageDTO,
+)
+from ragbot.application.dto.document_dto import (
+    DeleteResultDTO,
+    DocumentDTO,
+    IngestAcceptedDTO,
+    IngestResultDTO,
+)
+
+__all__ = [
+    "AnswerDTO",
+    "Block",
+    "ChatAcceptedDTO",
+    "ChunkType",
+    "CitationDTO",
+    "ConversationHistoryDTO",
+    "DeleteResultDTO",
+    "DocumentDTO",
+    "EmbeddingSpec",
+    "IngestAcceptedDTO",
+    "IngestResultDTO",
+    "JobStatusDTO",
+    "LLMSpec",
+    "MessageDTO",
+    "PromptTemplate",
+    "RerankerSpec",
+    "from_chunk_dict",
+]
+
+/var/www/html/ragbot/src/ragbot/application/dto/ai_specs.py
+"""AI strategy specs returned by ``ModelResolverService`` to use cases / workers."""
+
+from __future__ import annotations
+
+from enum import Enum
+from typing import Any, Literal
+from uuid import UUID
+
+from pydantic import BaseModel, ConfigDict, Field
+
+from ragbot.shared.constants import (
+    DEFAULT_SPEC_EMBEDDING_MAX_BATCH,
+    DEFAULT_SPEC_LLM_MAX_TOKENS,
+    DEFAULT_SPEC_LLM_TEMPERATURE,
+    DEFAULT_SPEC_LLM_TOP_P,
+    DEFAULT_SPEC_RERANK_BATCH_SIZE,
+    DEFAULT_SPEC_RERANK_TOP_N,
+)
+
+
+class BindingPurpose(str, Enum):
+    LLM_PRIMARY = "llm_primary"
+    LLM_INTENT = "llm_intent"
+    LLM_REWRITE = "llm_rewrite"
+    EMBEDDING = "embedding"
+    RERANK = "rerank"
+
+
+class LLMSpec(BaseModel):
+    """Resolved LLM call spec (DB-driven)."""
+
+    model_config = ConfigDict(frozen=True, arbitrary_types_allowed=True)
+
+    binding_id: UUID
+    model_name: str  # provider-prefixed LiteLLM wire name
+    provider: str
+    temperature: float = DEFAULT_SPEC_LLM_TEMPERATURE
+    max_tokens: int = DEFAULT_SPEC_LLM_MAX_TOKENS
+    top_p: float = DEFAULT_SPEC_LLM_TOP_P
+    fallback_chain: list[str] = Field(default_factory=list)  # LiteLLM model names
+    cost_tier: Literal["cheap", "mid", "premium"] = "mid"
+    variant: str | None = None  # for A/B
+    # Mirrors ai_models.supports_vision — gates multimodal (image) message content.
+    # Default False: a text-only spec; the VLM call site fails loud rather than send
+    # an image to a non-vision model. Resolved from the DB flag by the model resolver.
+    supports_vision: bool = False
+    extra_params: dict[str, Any] = Field(default_factory=dict)
+
+    def to_litellm_kwargs(self) -> dict[str, Any]:
+        kwargs: dict[str, Any] = {
+            "model": self.model_name,
+            "temperature": self.temperature,
+            "max_tokens": self.max_tokens,
+            "top_p": self.top_p,
+        }
+        kwargs.update(self.extra_params)
+        return kwargs
+
+
+class PromptTemplate(BaseModel):
+    """Resolved prompt template (per-bot, versioned in DB)."""
+
+    model_config = ConfigDict(frozen=True, arbitrary_types_allowed=True)
+
+    template_key: str
+    version: int
+    jinja_source: str
+    required_vars: frozenset[str]
+    model_hint: str | None = None
+
+
+class RerankerSpec(BaseModel):
+    model_config = ConfigDict(frozen=True, arbitrary_types_allowed=True)
+
+    binding_id: UUID
+    model_name: str
+    provider: str
+    top_n: int = DEFAULT_SPEC_RERANK_TOP_N
+    batch_size: int = DEFAULT_SPEC_RERANK_BATCH_SIZE
+
+
+class EmbeddingSpec(BaseModel):
+    model_config = ConfigDict(frozen=True, arbitrary_types_allowed=True)
+
+    binding_id: UUID
+    model_name: str
+    provider: str
+    dimension: int
+    max_batch: int = DEFAULT_SPEC_EMBEDDING_MAX_BATCH
+    model_version: str  # e.g. "bge-m3-v1"
+    # Asymmetric-retrieval task selector for providers with separate query/passage heads.
+    task: str | None = None
+
+
+__all__ = ["EmbeddingSpec", "LLMSpec", "PromptTemplate", "RerankerSpec"]
+
+/var/www/html/ragbot/src/ragbot/application/dto/block.py
+
+
+"""M11 — Blocks API: structured retrieval result wrapper.
+
+Inspired by RAG-Anything ``raganything/types.py::Block`` (HKUDS, 2025).
+RAG-Anything's retrieval pipeline returns typed ``Block`` objects instead
+of opaque dict chunks; downstream consumers (LLM context builder, citation
+extractor, modality-aware reranker) all read ``block.type`` /
+``block.metadata`` directly instead of fishing through nested dicts.
+
+Why a dataclass (and not just a TypedDict)
+------------------------------------------
+1. **Type safety** — ``chunk_type`` is constrained to a documented
+   ``Literal`` so the typechecker catches typos at lift sites.
+2. **Method surface** — helpers like :meth:`Block.as_dict` keep dict
+   serialisation consistent across persistence + audit log writers.
+3. **Backward compatibility** — every legacy ``chunk["content"]`` /
+   ``chunk.get("score")`` call site in ``query_graph.py`` (300+ sites)
+   keeps working because ``__getitem__`` + ``get`` proxy to the dataclass
+   fields plus the metadata dict.
+
+When is wrapping enabled?
+-------------------------
+Per-bot opt-in via ``bots.plan_limits.blocks_api_enabled``. Default OFF
+(``DEFAULT_BLOCKS_API_ENABLED = False``) so the production code path stays
+byte-identical until bot owners flip the flag. The wrapper is a pure
+helper: it never modifies content, scores, or metadata — only re-shapes
+the in-memory representation.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from typing import Any, Literal
+
+
+# Block type taxonomy. Mirrors ``chunking._ATOMIC_BLOCK_TYPES`` plus
+# the table-row variant emitted by the CSV/Excel parser. Kept as a
+# string ``Literal`` so static analysis catches typos at every lift
+# site without forcing a runtime ``Enum`` dependency.
+ChunkType = Literal["text", "table", "table_row", "code", "figure", "equation"]
+
+# Default type when a legacy chunk dict has no explicit ``type`` field —
+# matches the parser default in ``chunking._split_into_blocks`` where
+# unclassified prose is tagged ``"text"``.
+_DEFAULT_TYPE: ChunkType = "text"
+
+# Set of legal chunk_type values used by :func:`from_chunk_dict` to
+# guard against stray label drift in legacy dict payloads.
+_KNOWN_TYPES: frozenset[str] = frozenset(
+    {"text", "table", "table_row", "code", "figure", "equation"}
+)
+
+
+@dataclass(slots=True)
+class Block:
+    """Structured retrieval result row.
+
+    Mirrors RAG-Anything's ``Block`` shape — typed chunk_id + content +
+    type + metadata. ``references`` is reserved for the M19 multimodal
+    entity linkage phase (figure ↔ caption ↔ description triples) and
+    is currently always empty.
+
+    Backward compatibility contract
+    -------------------------------
+    Legacy node code uses dict access patterns inherited from the days
+    when chunks were ``dict[str, Any]``. Three idioms are preserved:
+
+    * ``block["content"]`` → returns ``self.content``
+    * ``block.get("score", 0)`` → falls through to ``self.metadata``
+    * ``"id" in block`` → True when ``self.chunk_id`` is set
+
+    Sites that already migrate to dataclass attribute access
+    (``block.content``) get the type-checker's full power.
+    """
+
+    chunk_id: str
+    content: str
+    type: ChunkType = _DEFAULT_TYPE
+    metadata: dict[str, Any] = field(default_factory=dict)
+    # Reserved for M19 entity linkage (figure ↔ caption ↔ description).
+    # Always empty until that wave ships; kept on the dataclass so the
+    # shape contract does not break when the field is finally populated.
+    references: list[str] = field(default_factory=list)
+
+    # ── Backward-compat dict interface ──────────────────────────────────
+
+    def __getitem__(self, key: str) -> Any:
+        """Dict-like read for legacy ``chunk[key]`` call sites.
+
+        The ``"id"`` alias resolves to ``chunk_id`` because the retrieval
+        node historically used ``c["id"]`` interchangeably with
+        ``c["chunk_id"]`` depending on which infrastructure layer
+        produced the dict. Unknown keys fall through to ``metadata`` so
+        per-chunk metadata fields (e.g. ``score``, ``rerank_score``,
+        ``document_id``) keep their callers untouched.
+
+        :raises KeyError: when the key is not a known field and absent
+            from ``metadata``. Matches dict semantics so ``in`` checks
+            and ``[key]`` raises behave identically to a plain dict.
+        """
+        if key in ("id", "chunk_id"):
+            return self.chunk_id
+        if key == "content":
+            return self.content
+        if key == "type":
+            return self.type
+        if key == "metadata":
+            return self.metadata
+        if key == "references":
+            return self.references
+        if key in self.metadata:
+            return self.metadata[key]
+        raise KeyError(key)
+
+    def get(self, key: str, default: Any = None) -> Any:  # noqa: ANN401
+        """Dict-like ``get`` for legacy call sites.
+
+        Falls through to ``metadata.get`` for unknown keys so call
+        patterns such as ``chunk.get("score", 0)`` continue to work
+        whether the underlying object is a raw dict or a Block.
+        """
+        try:
+            return self[key]
+        except KeyError:
+            return default
+
+    def __contains__(self, key: object) -> bool:
+        """Dict-like ``in`` operator.
+
+        Mirrors the lookup chain in :meth:`__getitem__`: structural
+        fields first, then ``metadata`` keys. Returning a bool rather
+        than raising keeps ``if "doc_id" in chunk:`` patterns safe.
+        """
+        if not isinstance(key, str):
+            return False
+        if key in {"id", "chunk_id", "content", "type", "metadata", "references"}:
+            return True
+        return key in self.metadata
+
+    def as_dict(self) -> dict[str, Any]:
+        """Serialise to a flat dict.
+
+        Used by the audit log writer + cache persistence path which
+        both expect a JSON-able mapping. Metadata is merged at the top
+        level for downstream symmetry with the legacy chunk dict shape
+        (e.g. ``score`` was historically a top-level key, not nested
+        under ``metadata.score``).
+        """
+        out: dict[str, Any] = {
+            "chunk_id": self.chunk_id,
+            "id": self.chunk_id,  # legacy alias
+            "content": self.content,
+            "type": self.type,
+        }
+        # Merge metadata at top level for backward compat with code that
+        # reads ``chunk["score"]`` directly. Explicit dataclass fields
+        # win over metadata entries with the same key (defensive copy).
+        for k, v in self.metadata.items():
+            if k not in out:
+                out[k] = v
+        if self.references:
+            out["references"] = list(self.references)
+        return out
+
+
+def from_chunk_dict(chunk: dict[str, Any]) -> Block:
+    """Lift a legacy chunk dict into a :class:`Block`.
+
+    Accepts both ``"chunk_id"`` and ``"id"`` as the identity key. The
+    chunk's ``type`` field is honored if present; otherwise it falls
+    back to the default ``"text"``. All keys other than the four
+    structural fields are folded into ``metadata`` so backward-compat
+    dict access keeps working through :meth:`Block.__getitem__`.
+
+    This helper is the canonical lift point — every wrap site (rerank
+    output, MMR output, generate input) should funnel through it so
+    the shape contract stays consistent.
+    """
+    raw_id = (
+        chunk.get("chunk_id")
+        or chunk.get("id")
+        or ""
+    )
+    chunk_id = str(raw_id)
+    content = str(chunk.get("content") or chunk.get("text") or "")
+    chunk_type_raw = chunk.get("type") or chunk.get("chunk_type") or _DEFAULT_TYPE
+    # Defensive: collapse unknown labels to the safe ``text`` default
+    # rather than carry a stray string the typechecker would reject.
+    chunk_type: ChunkType = chunk_type_raw if chunk_type_raw in _KNOWN_TYPES else _DEFAULT_TYPE  # type: ignore[assignment]
+    structural_keys = {"chunk_id", "id", "content", "text", "type", "chunk_type", "references"}
+    metadata = {k: v for k, v in chunk.items() if k not in structural_keys}
+    references = list(chunk.get("references") or [])
+    return Block(
+        chunk_id=chunk_id,
+        content=content,
+        type=chunk_type,
+        metadata=metadata,
+        references=references,
+    )
+
+
+__all__ = ["Block", "ChunkType", "from_chunk_dict"]
+
+/var/www/html/ragbot/src/ragbot/application/dto/bot_config.py
+
+"""BotConfig DTO — runtime shape khớp bảng `bots` migration 0011.
+
+Dùng cho BotRegistryService cache (DB → in-memory bot_map).
+"""
+
+from __future__ import annotations
+
+from datetime import datetime
+from typing import Any, Literal
+from uuid import UUID
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+from ragbot.shared.bot_limits import COLUMN_DEFAULTS
+from ragbot.shared.constants import (
+    DEFAULT_FREQUENCY_PENALTY,
+    DEFAULT_GENERATION_MAX_TOKENS,
+    DEFAULT_LANGUAGE,
+    DEFAULT_PRESENCE_PENALTY,
+    DEFAULT_TEMPERATURE,
+    DEFAULT_TOP_P,
+)
+
+
+class RerankIntentWhitelist(BaseModel):
+    """Per-bot rerank gate by query intent.
+
+    When ``None`` is stored on ``BotConfig.rerank_intent_whitelist``
+    legacy always-rerank behaviour applies. When set:
+
+    * ``enabled=False`` — whitelist explicitly disabled, always rerank.
+      Operators use this to A/B-disable the gate without dropping the
+      configured intent list.
+    * ``enabled=True`` + ``intents`` set — rerank fires only when the
+      live ``state["intent"]`` is in ``intents``. All other intents
+      bypass the rerank API call (saves ~150ms + Jina cost).
+    * ``enabled=True`` + empty ``intents`` — rerank skipped for ALL
+      intents (operator misconfig but well-defined behaviour).
+
+    Validation: extra fields rejected so a typo in the JSONB column
+    payload surfaces at load time, not silently at the gate.
+    """
+
+    enabled: bool = True
+    # tuple keeps the value hashable + immutable post-validation.
+    intents: tuple[str, ...] = ()
+
+    model_config = ConfigDict(extra="forbid")
+
+    @field_validator("intents", mode="before")
+    @classmethod
+    def _coerce_intents(cls, v: Any) -> Any:
+        """Accept JSON list / tuple / str-set inputs for forward-compat.
+
+        Postgres JSONB returns a Python ``list``; older operator scripts
+        may have written a ``set`` literal. Normalise to a clean tuple
+        of stripped non-empty strings, preserving order de-duplicated.
+        """
+        if v is None:
+            return ()
+        if isinstance(v, (list, tuple, set, frozenset)):
+            seen: set[str] = set()
+            cleaned: list[str] = []
+            for item in v:
+                if not isinstance(item, str):
+                    continue
+                token = item.strip()
+                if not token or token in seen:
+                    continue
+                seen.add(token)
+                cleaned.append(token)
+            return tuple(cleaned)
+        return v
+
+
+class BotSettingOptions(BaseModel):
+    """6 trường cấu hình LLM sampling — strict bounds."""
+
+    frequency_penalty: float = Field(default=DEFAULT_FREQUENCY_PENALTY, ge=-2.0, le=2.0)
+    max_tokens: int = Field(default=DEFAULT_GENERATION_MAX_TOKENS, ge=1, le=32000)
+    response_format: Literal["text", "json_object"] = "text"
+    presence_penalty: float = Field(default=DEFAULT_PRESENCE_PENALTY, ge=-2.0, le=2.0)
+    temperature: float = Field(default=DEFAULT_TEMPERATURE, ge=0.0, le=2.0)
+    top_p: float = Field(default=DEFAULT_TOP_P, ge=0.0, le=1.0)
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class BotConfig(BaseModel):
+    """Runtime bot config loaded from DB → cache."""
+
+    id: UUID
+    bot_id: str
+    channel_type: str
+    # Cache keys + cross-tenant guards rely on the tenant UUID and the
+    # workspace slug being present on every DTO; together with bot_id and
+    # channel_type they form the canonical resolve key.
+    record_tenant_id: UUID
+    workspace_id: str
+    bot_name: str
+    model_id: UUID | None = None
+    embedding_model_id: UUID | None = None
+    system_prompt: str = ""
+    setting_options: BotSettingOptions = Field(default_factory=BotSettingOptions)
+    tokens_used: int = Field(
+        default=0, ge=0,
+        description="Cumulative tokens this period. Reset monthly via cron.",
+    )
+    extra_max_tokens: int = Field(
+        default=0, ge=0,
+        description="Paid extra monthly quota beyond system default.",
+    )
+    extra_output_tokens_per_response: int = Field(
+        default=0, ge=0,
+        description="Paid extra output cap per chat response.",
+    )
+    bypass_token_check: bool = Field(
+        default=False,
+        description="Ops-only: skip quota check.",
+    )
+    custom_vocabulary: dict[str, Any] = Field(default_factory=dict)
+    max_history: int | None = COLUMN_DEFAULTS["max_history"]
+    max_documents: int = COLUMN_DEFAULTS["max_documents"]
+    prompt_max_tokens: int | None = COLUMN_DEFAULTS["prompt_max_tokens"]
+    rerank_top_n: int | None = COLUMN_DEFAULTS["rerank_top_n"]
+    plan_limits: dict[str, Any] = Field(default_factory=dict)
+    # Per-bot conversational-action config (slot-filling / lead-capture /
+    # booking). Owner-defined in ``bots.action_config`` JSONB:
+    # ``{"enabled": bool, "slots_schema": {...}, "service_lock": ...}``.
+    # Drives the slot-capture pipeline in the generate node.
+    action_config: dict[str, Any] = Field(default_factory=dict)
+    # Per-bot metadata-extraction hint (owner self-service for the metadata
+    # filter layer). Owner-defined in ``bots.metadata_extraction_config``.
+    metadata_extraction_config: dict[str, Any] | None = None
+    # Per-bot threshold tuning (reranker / grounding / guard / semantic_cache).
+    # Resolve chain: column > plan_limits > system_config > schema default.
+    threshold_overrides: dict[str, Any] = Field(default_factory=dict)
+    callback_url: str | None = None
+    bypass_token_limit: bool = False
+    bypass_rate_limit: bool = False
+    language: str = DEFAULT_LANGUAGE
+    oos_answer_template: str | None = None  # Per-bot OOS override; None = fall back to i18n default
+    # Phase 14 — operator opt-in rerank intent gate. ``None`` = legacy
+    # always-rerank. See ``RerankIntentWhitelist`` docstring for semantics.
+    rerank_intent_whitelist: RerankIntentWhitelist | None = None
+    # Bot creation timestamp lifted from ``bots.created_at``. Optional
+    # (rolling-deploy tolerance: pre-migration rows may not have populated
+    # the cache yet). M14 uses this to default ``xml_wrap_enabled`` ON for
+    # bots created on/after ``XML_WRAP_DEFAULT_ON_FROM_DATE`` while leaving
+    # legacy bots untouched (backward-compat).
+    created_at: datetime | None = None
+
+    @field_validator("bot_id")
+    @classmethod
+    def bot_id_not_empty(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("bot_id must not be empty")
+        return v
+
+    @field_validator("workspace_id")
+    @classmethod
+    def workspace_id_valid(cls, v: str) -> str:
+        # Defer to the central validator so DB rows that bypassed ingress
+        # checks still surface a typed error at config-load time.
+        from ragbot.shared.workspace_id_validator import WorkspaceIdValidator
+        return WorkspaceIdValidator.validate(v)
+
+/var/www/html/ragbot/src/ragbot/application/dto/chat_dto.py
+
+"""Chat DTOs.
+
+Ref: PLAN_05 §dto/chat_dto.py.
+"""
+
+from __future__ import annotations
+
+from datetime import datetime
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict
+
+from ragbot.shared.types import (
+    BotId,
+    ConversationId,
+    JobId,
+    JobStatus,
+    MessageId,
+    Role,
+    TraceId,
+)
+
+
+class CitationDTO(BaseModel):
+    model_config = ConfigDict(frozen=True, arbitrary_types_allowed=True)
+
+    document_id: str
+    chunk_id: str
+    tool_name: str
+    quote_span: str
+    page_number: int | None = None
+    snippet: str | None = None
+
+
+class AnswerDTO(BaseModel):
+    model_config = ConfigDict(frozen=True, arbitrary_types_allowed=True)
+
+    answer: str
+    citations: list[CitationDTO]
+    confidence: float = 0.0
+    refusal_reason: str | None = None
+    trace_id: TraceId
+    tokens_in: int = 0
+    tokens_out: int = 0
+    cost_usd: float = 0.0
+    latency_ms: int = 0
+    model_name: str = ""
+
+
+class ChatAcceptedDTO(BaseModel):
+    model_config = ConfigDict(frozen=True, arbitrary_types_allowed=True)
+
+    job_id: JobId
+    status: JobStatus
+    status_url: str
+    trace_id: TraceId
+
+
+class MessageDTO(BaseModel):
+    model_config = ConfigDict(frozen=True, arbitrary_types_allowed=True)
+
+    id: MessageId
+    role: Role
+    content: str
+    created_at: datetime
+    citations: list[CitationDTO] = []
+
+
+class ConversationHistoryDTO(BaseModel):
+    model_config = ConfigDict(frozen=True, arbitrary_types_allowed=True)
+
+    conversation_id: ConversationId
+    record_bot_id: BotId
+    messages: list[MessageDTO]
+    rolling_summary: str
+    total_turns: int
+
+
+class JobStatusDTO(BaseModel):
+    model_config = ConfigDict(frozen=True, arbitrary_types_allowed=True)
+
+    job_id: JobId
+    status: JobStatus
+    created_at: datetime
+    completed_at: datetime | None = None
+    error: str | None = None
+    result: dict[str, Any] | None = None
+
+
+__all__ = [
+    "AnswerDTO",
+    "ChatAcceptedDTO",
+    "CitationDTO",
+    "ConversationHistoryDTO",
+    "JobStatusDTO",
+    "MessageDTO",
+]
+
+/var/www/html/ragbot/src/ragbot/application/dto/chat_payload.py
+
+"""Schema validator cho `chat.received.v1` event payload."""
+from __future__ import annotations
+
+from uuid import UUID
+
+from pydantic import BaseModel, Field, field_validator
+
+
+class ChatReceivedPayload(BaseModel):
+    """External payload from upstream service.
+
+    Identity contract is the bot 2-key (``bot_id`` + ``channel_type``) plus
+    the canonical ``record_tenant_id`` UUID. Legacy upstream ``tenant_id``
+    INT and ``tenant_uuid`` string aliases are still accepted so the worker
+    can drain old outbox rows during the migration window — both feed the
+    same resolver in ``chat_worker._resolve_record_tenant_id``.
+    """
+
+    # External 2-key bot identity — REQUIRED for cross-tenant defense.
+    bot_id: str = Field(min_length=1)
+    channel_type: str = Field(min_length=1)
+    # Optional on the wire — worker resolver substitutes ``str(record_tenant_id)``
+    # so partially-claimed payloads stay routable.
+    workspace_id: str | None = None
+
+    # Internal IDs
+    job_id: str  # string UUID
+    message_id: int  # INT từ upstream
+    conversation_id: str | None = None  # UUID optional
+    user_id: str = Field(min_length=1)
+    trace_id: str = ""
+
+    # Tenant references — accept the new UUID claim or the legacy aliases.
+    # At least one of these PHẢI có giá trị; resolver enforces.
+    record_tenant_id: str | None = None
+    tenant_uuid: str | None = None  # legacy alias for record_tenant_id
+    tenant_id: int | None = None  # legacy upstream INT (backwards-compat)
+
+    # Content
+    content: str = Field(min_length=1)
+    callback_url: str | None = None
+
+    @field_validator("callback_url")
+    @classmethod
+    def validate_callback_url(cls, v: str | None) -> str | None:
+        if v is not None:
+            if not v.startswith("https://") and not v.startswith("http://"):
+                raise ValueError("callback_url must be a valid HTTP(S) URL")
+        return v
+
+    # Permission filtering — groups the user belongs to (optional)
+    user_groups: list[str] = Field(default_factory=list)
+
+    @field_validator("bot_id", "channel_type", "user_id")
+    @classmethod
+    def trim_not_empty(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("must not be empty")
+        return v
+
+    @field_validator("job_id", "conversation_id", "tenant_uuid", "record_tenant_id")
+    @classmethod
+    def valid_uuid_or_none(cls, v: str | None) -> str | None:
+        if v is None or v == "":
+            return None
+        try:
+            UUID(v)
+        except (TypeError, ValueError) as e:
+            raise ValueError(f"must be valid UUID: {v}") from e
+        return v
+
+/var/www/html/ragbot/src/ragbot/application/dto/document_dto.py
+
+
+"""Document DTOs.
+
+Ref: PLAN_05 §dto/document_dto.py.
+"""
+
+from __future__ import annotations
+
+from datetime import datetime
+
+from pydantic import BaseModel, ConfigDict
+
+from ragbot.shared.types import (
+    BotId,
+    ChunkingStrategyName,
+    CorpusVersion,
+    DocumentId,
+    DocumentState,
+    JobId,
+    JobStatus,
+    TraceId,
+)
+
+
+class DocumentDTO(BaseModel):
+    model_config = ConfigDict(frozen=True, arbitrary_types_allowed=True)
+
+    id: DocumentId
+    record_bot_id: BotId
+    document_name: str
+    tool_name: str
+    source_url: str
+    state: DocumentState
+    version: int
+    language: str
+    chunk_count: int = 0
+    ingested_at: datetime | None = None
+
+
+class IngestAcceptedDTO(BaseModel):
+    model_config = ConfigDict(frozen=True, arbitrary_types_allowed=True)
+
+    job_id: JobId
+    tool_name: str
+    status: JobStatus
+    trace_id: TraceId
+
+
+class IngestResultDTO(BaseModel):
+    model_config = ConfigDict(frozen=True, arbitrary_types_allowed=True)
+
+    document_id: DocumentId
+    tool_name: str
+    chunk_count: int
+    strategy_used: ChunkingStrategyName
+    corpus_version: CorpusVersion
+    success: bool
+    error: str | None = None
+
+
+class DeleteResultDTO(BaseModel):
+    model_config = ConfigDict(frozen=True, arbitrary_types_allowed=True)
+
+    deleted_chunks: int
+    corpus_version: CorpusVersion
+
+
+__all__ = [
+    "DeleteResultDTO",
+    "DocumentDTO",
+    "IngestAcceptedDTO",
+    "IngestResultDTO",
+]
+
+/var/www/html/ragbot/src/ragbot/application/dto/llm_schemas.py
+
+"""Pydantic schemas for structured LLM outputs."""
+
+from __future__ import annotations
+
+from typing import Literal
+
+from pydantic import BaseModel, ConfigDict, Field
+
+from ragbot.shared.constants import (
+    DEFAULT_DECOMPOSE_MAX_SUB_QUERIES,
+    DEFAULT_GENERATE_CITATION_QUOTE_MAX_CHARS,
+    DEFAULT_GENERATE_CITATIONS_MAX_N,
+    DEFAULT_INTENT_CONFIDENCE_FALLBACK,
+    DEFAULT_LLM_REASON_MAX_LEN,
+    DEFAULT_UNDERSTAND_CONDENSED_QUERY_MAX_LEN,
+)
+
+# OpenAI strict json_schema mode requires additionalProperties:false at every level.
+_STRICT_JSON_SCHEMA_CONFIG = ConfigDict(extra="forbid")
+
+
+class GradeOutput(BaseModel):
+    """CRAG-lite per-chunk relevance grading."""
+
+    model_config = _STRICT_JSON_SCHEMA_CONFIG
+
+    grade: Literal["yes", "no", "partial"]
+    reason: str = Field(default="", max_length=DEFAULT_LLM_REASON_MAX_LEN)
+
+
+class ReflectOutput(BaseModel):
+    """Self-RAG reflection verdict on a generated answer."""
+
+    model_config = _STRICT_JSON_SCHEMA_CONFIG
+
+    action: Literal["keep", "rewrite", "reject"]
+    reason: str = Field(default="", max_length=DEFAULT_LLM_REASON_MAX_LEN)
+
+
+class DecomposeOutput(BaseModel):
+    """Multi-hop decomposition into atomic sub-queries."""
+
+    model_config = _STRICT_JSON_SCHEMA_CONFIG
+
+    sub_queries: list[str] = Field(
+        default_factory=list,
+        max_length=DEFAULT_DECOMPOSE_MAX_SUB_QUERIES,
+    )
+
+
+class UnderstandOutput(BaseModel):
+    """Condensed standalone query plus intent classification.
+
+    Optional ``confidence`` field (LLM self-reported, range ``[0, 1]``).
+    Default :data:`DEFAULT_INTENT_CONFIDENCE_FALLBACK` when the LLM omits
+    it (older models / non-structured callers). The field is part of the
+    *structured-output contract* — Pydantic schema
+    declared once and consumed by the orchestrator (decompose gate) +
+    Prometheus histogram. The orchestrator does NOT inject any extra
+    instruction text into the LLM prompt; bot owners control behaviour
+    exclusively via ``system_prompt``. When the LLM populates this field
+    (per its own self-calibration), the application uses it; when absent,
+    fallback keeps every existing flow unchanged.
+
+    ``condensed_query`` is OPTIONAL (default ``""``). A model that does not
+    emit a rewrite — or emits an empty one — must not break understand:
+    the orchestrator already keeps the original ``state["query"]`` whenever
+    the condensed value is empty, so the effective default is "the query
+    itself". Hardening this lets a model behind an OpenAI-shape gateway
+    that drops/empties the field degrade to a no-rewrite pass instead of a
+    schema-validation failure that empties the whole understand result.
+    """
+
+    model_config = _STRICT_JSON_SCHEMA_CONFIG
+
+    condensed_query: str = Field(
+        default="",
+        max_length=DEFAULT_UNDERSTAND_CONDENSED_QUERY_MAX_LEN,
+    )
+    intent: Literal[
+        "factoid",
+        "comparison",
+        "multi_hop",
+        "aggregation",
+        "out_of_scope",
+        "greeting",
+        "feedback",
+        "chitchat",  # short social messages
+        "vu_vo",     # vague acknowledgements
+    ]
+    confidence: float = Field(
+        default=DEFAULT_INTENT_CONFIDENCE_FALLBACK,
+        ge=0.0,
+        le=1.0,
+        description=(
+            "LLM-reported classification confidence, range [0,1]. Optional "
+            "in the JSON schema — default DEFAULT_INTENT_CONFIDENCE_FALLBACK "
+            "preserves legacy behaviour when the LLM omits the key."
+        ),
+    )
+
+
+class CitationItem(BaseModel):
+    """One citation: chunk reference plus verbatim quote."""
+
+    model_config = _STRICT_JSON_SCHEMA_CONFIG
+
+    chunk_id: str = Field(..., min_length=1)
+    quote: str = Field(
+        ...,
+        min_length=1,
+        max_length=DEFAULT_GENERATE_CITATION_QUOTE_MAX_CHARS,
+    )
+
+
+class SubAnswerItem(BaseModel):
+    """One enumerated facet of a multi-fact answer.
+
+    Reasoning-first scaffolding for aggregation / comparison / list
+    intents: the LLM enumerates each facet (with its grounding value +
+    optional citation) BEFORE composing the synthesized ``answer`` string.
+    Keeping each fact as a discrete row prevents the flat-string path from
+    dropping facts when a question spans multiple rows of the corpus.
+
+    SHAPE only — the application never reads ``sub_answers`` to mutate the
+    final ``answer`` text; the field exists so the model self-organizes
+    multi-fact reasoning. ``citation`` is optional (``None`` when the LLM
+    does not attribute a specific chunk to the facet).
+    """
+
+    model_config = _STRICT_JSON_SCHEMA_CONFIG
+
+    facet: str = Field(..., min_length=1)
+    value: str = Field(..., min_length=1)
+    citation: str | None = None
+
+
+class GenerateOutput(BaseModel):
+    """Generation output: answer, citations, no-context flag.
+
+    ``sub_answers`` is the OPTIONAL structured-reasoning path (default
+    empty → fully backward compatible). When the orchestrator requests the
+    structured schema for multi-fact intents, the model enumerates each
+    facet in ``sub_answers`` first, then writes the synthesized final
+    ``answer``. The application consumes ``answer`` exactly as before.
+    """
+
+    model_config = _STRICT_JSON_SCHEMA_CONFIG
+
+    answer: str = Field(..., min_length=1)
+    citations: list[CitationItem] = Field(
+        default_factory=list,
+        max_length=DEFAULT_GENERATE_CITATIONS_MAX_N,
+    )
+    sub_answers: list[SubAnswerItem] = Field(default_factory=list)
+    used_no_context: bool = False
+
+
+class GenerateFlatOutput(BaseModel):
+    """Flat generation shape: answer + citations, no enumerated facets.
+
+    The default generation contract for factoid / single-fact intents.
+    Identical to :class:`GenerateOutput` minus ``sub_answers`` so the
+    JSON schema sent to the model stays lean (no per-facet array) and
+    avoids token bloat when the question maps to a single corpus fact.
+    The orchestrator selects :class:`GenerateOutput` (with ``sub_answers``)
+    only for multi-fact intents when the structured-sub-answer flag is ON.
+    """
+
+    model_config = _STRICT_JSON_SCHEMA_CONFIG
+
+    answer: str = Field(..., min_length=1)
+    citations: list[CitationItem] = Field(
+        default_factory=list,
+        max_length=DEFAULT_GENERATE_CITATIONS_MAX_N,
+    )
+    used_no_context: bool = False
+
+
+class ChunkGradeItem(BaseModel):
+    """Per-chunk grade verdict in a batch grade call."""
+
+    model_config = _STRICT_JSON_SCHEMA_CONFIG
+
+    chunk_id: str = Field(..., min_length=1)
+    grade: Literal["yes", "no", "partial"]
+
+
+class GradeBatchOutput(BaseModel):
+    """Batch CRAG grading — verdicts for every candidate chunk."""
+
+    model_config = _STRICT_JSON_SCHEMA_CONFIG
+
+    grades: list[ChunkGradeItem] = Field(..., min_length=1)
+
+
+class GroundingVerdict(BaseModel):
+    """Per-claim grounding verdict."""
+
+    model_config = _STRICT_JSON_SCHEMA_CONFIG
+
+    claim_index: int = Field(..., ge=0)
+    verdict: Literal["SUPPORTED", "NOT_SUPPORTED"]
+
+
+class GroundingVerdictsOutput(BaseModel):
+    """List of per-claim grounding verdicts."""
+
+    model_config = _STRICT_JSON_SCHEMA_CONFIG
+
+    verdicts: list[GroundingVerdict] = Field(default_factory=list)
+
+
+__all__ = [
+    "ChunkGradeItem",
+    "CitationItem",
+    "DecomposeOutput",
+    "GenerateFlatOutput",
+    "GenerateOutput",
+    "GradeBatchOutput",
+    "GradeOutput",
+    "GroundingVerdict",
+    "GroundingVerdictsOutput",
+    "ReflectOutput",
+    "SubAnswerItem",
+    "UnderstandOutput",
+]
+
+/var/www/html/ragbot/src/ragbot/application/dto/model_runtime.py
+"""ModelRuntimeConfig — resolved runtime spec for a (tenant, bot, purpose).
+
+Frozen dataclass; ``mask()`` for admin responses (api_key redacted);
+``compute_version_hash()`` deterministic.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import json
+from dataclasses import dataclass
+from datetime import datetime
+from decimal import Decimal
+from uuid import UUID
+
+from ragbot.shared.constants import (
+    DEFAULT_PROVIDER_CONNECT_TIMEOUT_MS,
+    DEFAULT_PROVIDER_MAX_CONCURRENT,
+    DEFAULT_PROVIDER_MAX_RETRIES,
+    DEFAULT_PROVIDER_TIMEOUT_MS,
+)
+
+
+@dataclass(frozen=True, slots=True)
+class ProviderRuntime:
+    code: str
+    base_url: str
+    api_key: str  # plain (resolved) — NEVER log
+    timeout_ms: int = DEFAULT_PROVIDER_TIMEOUT_MS
+    connect_timeout_ms: int = DEFAULT_PROVIDER_CONNECT_TIMEOUT_MS
+    max_retries: int = DEFAULT_PROVIDER_MAX_RETRIES
+    max_concurrent: int = DEFAULT_PROVIDER_MAX_CONCURRENT
+    region: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class GenerationParams:
+    temperature: float
+    top_p: float
+    max_tokens: int
+
+
+@dataclass(frozen=True, slots=True)
+class Pricing:
+    input_per_1k_usd: Decimal
+    output_per_1k_usd: Decimal
+    cached_input_per_1k_usd: Decimal | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class Capabilities:
+    supports_tool_use: bool = False
+    supports_vision: bool = False
+    supports_json_mode: bool = False
+    supports_caching: bool = False
+    supports_streaming: bool = True
+    supports_reasoning: bool = False
+
+
+@dataclass(frozen=True, slots=True)
+class ModelRuntimeConfig:
+    model_row_id: UUID
+    binding_id: UUID | None
+    purpose: str
+    kind: str                        # chat|embedding|reranker
+    provider: ProviderRuntime
+    wire_model_id: str
+    litellm_name: str                # f"{provider.code}/{wire_model_id}"
+    context_window: int
+    max_output_tokens: int
+    embedding_dimension: int | None
+    params: GenerationParams
+    pricing: Pricing
+    capabilities: Capabilities
+    quality_tier: str
+    version_hash: str                # sha256 deterministic
+    loaded_at: datetime
+    # Optional same-tier failover hop. Populated by the resolver from the
+    # binding row's ``record_fallback_model_id``; the LLM router consults
+    # these fields when the primary call hits a circuit-breaker open or a
+    # retryable LiteLLM error. ``None`` on any of the three = no failover
+    # configured (per-bot opt-out, terminal primary call).
+    fallback_model_row_id: UUID | None = None
+    fallback_wire_model_id: str | None = None
+    fallback_provider: ProviderRuntime | None = None
+
+    def mask(self) -> dict:
+        """Serialize for admin response with api_key masked."""
+        ak = self.provider.api_key or ""
+        masked_key = "sk-***" + (ak[-4:] if len(ak) > 4 else "***")
+        return {
+            "model_row_id": str(self.model_row_id),
+            "binding_id": str(self.binding_id) if self.binding_id else None,
+            "purpose": self.purpose,
+            "kind": self.kind,
+            "provider": {
+                "code": self.provider.code,
+                "base_url": self.provider.base_url,
+                "api_key": masked_key,
+                "timeout_ms": self.provider.timeout_ms,
+                "max_retries": self.provider.max_retries,
+            },
+            "wire_model_id": self.wire_model_id,
+            "litellm_name": self.litellm_name,
+            "context_window": self.context_window,
+            "max_output_tokens": self.max_output_tokens,
+            "params": {
+                "temperature": self.params.temperature,
+                "top_p": self.params.top_p,
+                "max_tokens": self.params.max_tokens,
+            },
+            "pricing": {
+                "input_per_1k_usd": str(self.pricing.input_per_1k_usd),
+                "output_per_1k_usd": str(self.pricing.output_per_1k_usd),
+                "cached_input_per_1k_usd": (
+                    str(self.pricing.cached_input_per_1k_usd)
+                    if self.pricing.cached_input_per_1k_usd is not None
+                    else None
+                ),
+            },
+            "capabilities": {
+                f: getattr(self.capabilities, f)
+                for f in Capabilities.__dataclass_fields__
+            },
+            "quality_tier": self.quality_tier,
+            "version_hash": self.version_hash,
+            "loaded_at": self.loaded_at.isoformat(),
+        }
+
+
+def compute_version_hash(payload: dict) -> str:
+    """Deterministic sha256 hash of config dict (sort keys, exclude api_key)."""
+    safe = {k: v for k, v in payload.items() if k != "api_key"}
+    return hashlib.sha256(
+        json.dumps(safe, sort_keys=True, default=str).encode(),
+    ).hexdigest()
+
+
+__all__ = [
+    "Capabilities",
+    "GenerationParams",
+    "ModelRuntimeConfig",
+    "Pricing",
+    "ProviderRuntime",
+    "compute_version_hash",
+]
+
+/var/www/html/ragbot/src/ragbot/application/dto/notify_channel.py
+
+"""Notify channel DTO — webhook target config for error alerting.
+
+The DTO is loaded from two equivalent sources:
+
+* ``system_config`` row keyed by ``NOTIFY_CHANNEL_CONFIG_KEY`` — runtime
+  source of truth, mutable through the admin API.
+* ``Settings.notify_channel_config`` — boot-time fallback parsed from
+  the ``NOTIFY_CHANNEL_CONFIG_JSON`` env var.
+
+Both paths feed the same Pydantic model so a malformed value never
+reaches the dispatcher. The webhook URL itself stays out of the codebase
+(domain-neutral rule); the model only describes the *shape* of the
+config.
+"""
+
+from __future__ import annotations
+
+from typing import Any
+
+from pydantic import BaseModel, Field, field_validator
+from pydantic.networks import AnyHttpUrl
+
+from ragbot.shared.constants import (
+    DEFAULT_NOTIFY_MAX_RETRIES,
+    DEFAULT_NOTIFY_TIMEOUT_S,
+)
+
+
+class NotifyChannelConfig(BaseModel):
+    """Webhook target — single config object, validated on every source.
+
+    ``path_template`` MUST contain the literal ``{conversation_id}``
+    placeholder; ``render_url`` interpolates the configured
+    ``conversation_id`` at dispatch time. Splitting domain + path keeps
+    config introspection clean (admins see what host they POST to
+    without having to parse a single URL string).
+    """
+
+    method: str = Field(default="POST", pattern=r"^(POST|PUT)$")
+    domain: AnyHttpUrl
+    path_template: str = Field(
+        description=(
+            "Webhook path containing the literal ``{conversation_id}`` "
+            "placeholder; interpolated at dispatch time."
+        ),
+    )
+    conversation_id: str = Field(min_length=1, max_length=128)
+    # Webhook key is sensitive — never logged in full; ``mask_for_log``
+    # is the only safe accessor for diagnostics.
+    webhook_key: str = Field(min_length=1)
+    enabled: bool = True
+    timeout_s: float = Field(default=DEFAULT_NOTIFY_TIMEOUT_S, gt=0.0)
+    max_retries: int = Field(default=DEFAULT_NOTIFY_MAX_RETRIES, ge=0)
+
+    model_config = {"extra": "forbid"}
+
+    @field_validator("path_template")
+    @classmethod
+    def _has_placeholder(cls, v: str) -> str:
+        if "{conversation_id}" not in v:
+            msg = "path_template must contain '{conversation_id}' placeholder"
+            raise ValueError(msg)
+        if not v.startswith("/"):
+            msg = "path_template must start with '/'"
+            raise ValueError(msg)
+        return v
+
+    def render_url(self) -> str:
+        """Compose the absolute URL that the dispatcher POSTs to."""
+        path = self.path_template.format(conversation_id=self.conversation_id)
+        return f"{str(self.domain).rstrip('/')}{path}"
+
+    def mask_for_log(self) -> dict[str, Any]:
+        """Return a log-safe view that hides the secret webhook_key."""
+        key = self.webhook_key or ""
+        # Show enough prefix for ops to disambiguate keys without leaking
+        # the secret. Empty string yields an empty masked field.
+        masked = (key[:8] + "...") if key else ""
+        return {
+            "method": self.method,
+            "domain": str(self.domain),
+            "path_template": self.path_template,
+            "conversation_id": self.conversation_id,
+            "webhook_key_prefix": masked,
+            "enabled": self.enabled,
+            "timeout_s": self.timeout_s,
+            "max_retries": self.max_retries,
+        }
+
+
+__all__ = ["NotifyChannelConfig"]
+
+
+
+
+/var/www/html/ragbot/src/ragbot/application/events
+/var/www/html/ragbot/src/ragbot/application/events/chat_completed.py
+
+"""In-process hook system for chat completion side-effects.
+
+Zero external dependency — just Protocol + dataclass + asyncio.
+
+Pattern: Port + Registry (mirrors Ragbot's reranker_resolver, embedder).
+Caller (chat_worker.py) gọi 4 dòng để fire side-effects. Adding new
+hook = 1 file + 1 dòng bootstrap, KHÔNG sửa chat_worker.
+
+Two-stage commit guarantee Redis+DB sync:
+  Stage 1: DB hooks run inside open transaction (caller's session)
+  Stage 2: post_commit hooks run AFTER session.commit() succeeds
+  Order prevents Redis drift if DB commit fails.
+"""
+from __future__ import annotations
+
+import asyncio
+from dataclasses import dataclass
+from typing import Protocol, runtime_checkable, Sequence, Any
+from uuid import UUID
+
+import structlog
+
+from ragbot.shared.constants import (
+    DEFAULT_CHAT_HOOK_MAX_CONCURRENCY,
+    DEFAULT_CHAT_HOOK_TIMEOUT_S,
+)
+
+logger = structlog.get_logger(__name__)
+
+
+@dataclass(frozen=True)
+class ChatCompletedEvent:
+    """Immutable post-chat event payload."""
+    record_tenant_id: UUID
+    workspace_id: str
+    bot_id: str
+    channel_type: str
+    record_bot_id: UUID
+    request_id: UUID
+    prompt_tokens: int
+    completion_tokens: int
+    tokens_used_delta: int
+    refusal_reason: str | None
+    intent: str | None
+    timestamp_iso: str
+
+
+@runtime_checkable
+class ChatCompletionHookPort(Protocol):
+    """One hook = one side-effect.
+
+    Implementations:
+      - infrastructure/chat_hooks/token_usage_db_hook.py    (stage='db')
+      - infrastructure/chat_hooks/token_usage_redis_hook.py (stage='post_commit')
+      - infrastructure/chat_hooks/quota_threshold_notify_hook.py (stage='post_commit')
+    """
+
+    @property
+    def hook_name(self) -> str: ...
+
+    @property
+    def stage(self) -> str:
+        """'db' (in transaction) or 'post_commit' (after caller commits)."""
+        ...
+
+    async def run(self, event: ChatCompletedEvent, *, session: Any) -> None:
+        """Process event. MUST NOT raise — log + return on error."""
+        ...
+
+
+class ChatHookRegistry:
+    """Ordered hooks, 2-stage dispatch, semaphore + timeout safety.
+
+    Defensive against:
+      - OOM under burst (Semaphore bounds concurrent hook count)
+      - Runaway hook (per-hook timeout)
+      - Cascade failure (per-hook try/except isolation)
+    """
+
+    def __init__(
+        self,
+        hooks: Sequence[ChatCompletionHookPort],
+        *,
+        max_concurrency: int = DEFAULT_CHAT_HOOK_MAX_CONCURRENCY,
+        timeout_s: float = DEFAULT_CHAT_HOOK_TIMEOUT_S,
+    ):
+        self._db_hooks = [h for h in hooks if h.stage == "db"]
+        self._post_hooks = [h for h in hooks if h.stage == "post_commit"]
+        self._semaphore = asyncio.Semaphore(max_concurrency)
+        self._timeout_s = timeout_s
+
+    async def fire_db_stage(
+        self, event: ChatCompletedEvent, *, session: Any,
+    ) -> dict[str, bool]:
+        """Stage 1: DB hooks (in transaction). Caller commits after."""
+        return {
+            h.hook_name: await self._run_isolated(h, event, session)
+            for h in self._db_hooks
+        }
+
+    async def fire_post_stage(
+        self, event: ChatCompletedEvent, *, session: Any,
+    ) -> dict[str, bool]:
+        """Stage 2: post-commit hooks. Run after caller commits."""
+        return {
+            h.hook_name: await self._run_isolated(h, event, session)
+            for h in self._post_hooks
+        }
+
+    async def _run_isolated(
+        self, hook: ChatCompletionHookPort,
+        event: ChatCompletedEvent,
+        session: Any,
+    ) -> bool:
+        """Run 1 hook with semaphore + timeout + exception catch."""
+        async with self._semaphore:
+            try:
+                await asyncio.wait_for(
+                    hook.run(event, session=session),
+                    timeout=self._timeout_s,
+                )
+                return True
+            except asyncio.TimeoutError:
+                logger.warning(
+                    "chat_hook_timeout",
+                    hook_name=hook.hook_name,
+                    stage=hook.stage,
+                    timeout_s=self._timeout_s,
+                    record_bot_id=str(event.record_bot_id),
+                    request_id=str(event.request_id),
+                )
+                return False
+            except Exception as exc:  # noqa: BLE001 — hook isolation by design
+                logger.warning(
+                    "chat_hook_failed",
+                    hook_name=hook.hook_name,
+                    stage=hook.stage,
+                    record_bot_id=str(event.record_bot_id),
+                    request_id=str(event.request_id),
+                    error=str(exc)[:200],
+                    exc_info=True,
+                )
+                return False
+
+
+__all__ = [
+    "ChatCompletedEvent",
+    "ChatCompletionHookPort",
+    "ChatHookRegistry",
+]
+
+/var/www/html/ragbot/src/ragbot/application/ports
+/var/www/html/ragbot/src/ragbot/application/ports/__init__.py
+
+"""Application ports — Protocol interfaces; adapters live in ``ragbot.infrastructure``."""
+
+from ragbot.application.ports.ai_config_port import AIConfigRepositoryPort, BindingRow
+from ragbot.application.ports.bus_port import EventBusPort, SubscriptionHandle
+from ragbot.application.ports.cache_port import (
+    CachePort,
+    CachedResponse,
+    SemanticCachePort,
+    build_chunks_cache_key,
+    build_embedding_cache_key,
+    build_response_cache_key,
+    build_semantic_cache_key,
+)
+from ragbot.application.ports.embedding_port import EmbeddingPort
+from ragbot.application.ports.guardrail_port import GuardrailPort, ModerationOutcome
+from ragbot.application.ports.language_pack_repository_port import (
+    LanguagePackRepositoryPort,
+)
+from ragbot.application.ports.llm_port import LLMMessage, LLMPort, LLMResponse
+from ragbot.application.ports.metrics_port import MetricsPort
+from ragbot.application.ports.ocr_port import OCRPort, ParsedDocument
+from ragbot.application.ports.outbox_port import OutboxRecord, OutboxRepositoryPort
+from ragbot.application.ports.pii_port import PIIRedactorPort
+from ragbot.application.ports.repository_ports import (
+    BotRepositoryPort,
+    ConversationRepositoryPort,
+    DocumentRepositoryPort,
+    JobRepositoryPort,
+    QuotaRepositoryPort,
+    UnitOfWorkPort,
+)
+from ragbot.application.ports.reranker_port import RerankerPort
+from ragbot.application.ports.strategy_ports import (
+    ChunkingDecision,
+    ChunkingStrategyResolverPort,
+    ModelSelectionStrategyPort,
+    PromptStrategyPort,
+    RerankerStrategyPort,
+)
+from ragbot.application.ports.vector_store_port import (
+    HybridQuery,
+    VectorCandidate,
+    VectorStorePort,
+)
+
+__all__ = [
+    "AIConfigRepositoryPort",
+    "BindingRow",
+    "BotRepositoryPort",
+    "CachePort",
+    "CachedResponse",
+    "ChunkingDecision",
+    "ChunkingStrategyResolverPort",
+    "ConversationRepositoryPort",
+    "DocumentRepositoryPort",
+    "EmbeddingPort",
+    "EventBusPort",
+    "GuardrailPort",
+    "HybridQuery",
+    "JobRepositoryPort",
+    "LanguagePackRepositoryPort",
+    "LLMMessage",
+    "LLMPort",
+    "LLMResponse",
+    "MetricsPort",
+    "ModelSelectionStrategyPort",
+    "ModerationOutcome",
+    "OCRPort",
+    "OutboxRecord",
+    "OutboxRepositoryPort",
+    "PIIRedactorPort",
+    "ParsedDocument",
+    "PromptStrategyPort",
+    "QuotaRepositoryPort",
+    "RerankerPort",
+    "RerankerStrategyPort",
+    "SemanticCachePort",
+    "SubscriptionHandle",
+    "UnitOfWorkPort",
+    "VectorCandidate",
+    "VectorStorePort",
+    "build_chunks_cache_key",
+    "build_embedding_cache_key",
+    "build_response_cache_key",
+    "build_semantic_cache_key",
+]
+
+/var/www/html/ragbot/src/ragbot/application/ports/ai_config_port.py
+
+"""AI config repository port (DB-driven model config).
+
+Ports for `ai_providers`, `ai_models`, `bot_model_bindings`, `prompt_templates`,
+`intent_routes`, `bot_ai_tools`, `ai_config_audit_log`.
+"""
+
+from __future__ import annotations
+
+from collections.abc import Sequence
+from dataclasses import dataclass, field
+from decimal import Decimal
+from typing import Any, Protocol, runtime_checkable
+from uuid import UUID
+
+from ragbot.shared.types import BotId, TenantId
+
+
+@dataclass(frozen=True, slots=True)
+class ProviderRow:
+    id: UUID
+    name: str
+    code: str  # machine slug for LiteLLM routing + cache_control match
+    type: str  # llm | embedding | reranker | moderation
+    base_url: str
+    auth_type: str
+    credentials_vault_path: str | None
+    enabled: bool
+    metadata: dict[str, Any] = field(default_factory=dict)
+    # Alembic 010e — controls LiteLLM wire-name prefixing. TRUE (default,
+    # legacy / LiteLLM convention) => ``format_litellm_model`` returns
+    # ``{code}/{name}``. FALSE (OpenAI / Anthropic native) => bare model
+    # name. The DB column is the single source of truth — flipping a
+    # provider takes effect on the next ModelResolver cache miss.
+    requires_prefix: bool = True
+
+
+@dataclass(frozen=True, slots=True)
+class ModelRow:
+    id: UUID
+    provider_id: UUID
+    name: str
+    kind: str  # chat | embedding | reranker | moderation
+    context_window: int
+    max_output_tokens: int
+    # Pricing kept as ``Decimal`` end-to-end — DB ``Numeric(10,6)`` precision
+    # would otherwise be lost via float round-trip (penny leak at scale).
+    # Conversion to ``float`` happens only at the JSON/UI boundary.
+    input_price_per_1k_usd: Decimal
+    output_price_per_1k_usd: Decimal
+    supports_streaming: bool
+    supports_tools: bool
+    supports_vision: bool
+    supports_json_mode: bool
+    languages: tuple[str, ...]
+    enabled: bool
+    metadata: dict[str, Any] = field(default_factory=dict)
+    # Exposed so ``ModelResolverService`` can populate
+    # ``ModelRuntimeConfig.embedding_dimension`` for bots whose binding
+    # ``extra_params`` does not pin ``dimension`` (it lives on the model
+    # row instead).
+    embedding_dimension: int | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class BindingRow:
+    id: UUID
+    record_tenant_id: UUID
+    record_bot_id: UUID
+    purpose: str  # llm_primary | llm_fallback | embedding | reranker | moderation_input | moderation_output
+    model_id: UUID
+    rank: int
+    variant: str | None
+    weight: int
+    temperature: float
+    max_tokens: int
+    top_p: float
+    extra_params: dict[str, Any]
+    active: bool
+    version: int
+    # Same-tier alternate model UUID (FK ai_models.id) consulted when the
+    # primary's circuit breaker OPENs or LiteLLM raises a retryable
+    # LLMError. ``None`` = no failover configured (per-bot opt-out). One
+    # hop max — failure on the fallback re-raises rather than chaining a
+    # third try.
+    record_fallback_model_id: UUID | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class PromptTemplateRow:
+    id: UUID
+    record_tenant_id: UUID
+    record_bot_id: UUID | None  # null = tenant-level default
+    template_key: str
+    version: int
+    jinja_source: str
+    required_vars: tuple[str, ...]
+    model_hint: str | None
+    active: bool
+
+
+# Migration 0010: IntentRouteRow + BotToolRow removed (tables dropped).
+
+
+@dataclass(frozen=True, slots=True)
+class AuditEntry:
+    record_tenant_id: UUID | None
+    record_bot_id: UUID | None
+    actor_user_id: str
+    action: str  # create | update | delete | rollback | rotate_key
+    resource_type: str
+    resource_id: UUID
+    before: dict[str, Any] | None
+    after: dict[str, Any] | None
+    reason: str | None
+    trace_id: str
+
+
+@runtime_checkable
+class AIConfigRepositoryPort(Protocol):
+    # Providers (global) ----------------------------------------------------
+    async def list_providers(self, *, enabled_only: bool = True) -> list[ProviderRow]: ...
+    async def get_provider(self, provider_id: UUID) -> ProviderRow | None: ...
+
+    # Models (global) -------------------------------------------------------
+    async def list_models(
+        self,
+        *,
+        provider_id: UUID | None = None,
+        kind: str | None = None,
+        enabled_only: bool = True,
+    ) -> list[ModelRow]: ...
+
+    async def get_model(self, model_id: UUID) -> ModelRow | None: ...
+
+    # Bindings (per-tenant per-bot) ----------------------------------------
+    async def list_bindings(
+        self,
+        *,
+        record_tenant_id: TenantId,
+        record_bot_id: BotId,
+        purpose: str | None = None,
+        active_only: bool = True,
+    ) -> list[BindingRow]: ...
+
+    async def list_bindings_multi_purpose(
+        self,
+        *,
+        record_tenant_id: TenantId,
+        record_bot_id: BotId,
+        purposes: list[str],
+        active_only: bool = True,
+    ) -> dict[str, list[BindingRow]]:
+        """Return ``{purpose: [BindingRow, ...]}`` in ONE SQL round-trip.
+
+        Replaces N sequential ``list_bindings(... purpose=p)`` fan-out
+        when the caller needs more than one purpose (typical chat-worker
+        boot: ``llm`` + ``embedding`` + ``rerank``). Missing purposes
+        appear as empty lists so the caller can use a single ``.get`` /
+        ``[]`` lookup without a KeyError branch.
+        """
+        ...
+
+    async def get_binding(self, binding_id: UUID, *, record_tenant_id: TenantId) -> BindingRow | None: ...
+
+    async def create_binding(self, row: BindingRow) -> BindingRow: ...
+    async def update_binding(self, binding_id: UUID, *, record_tenant_id: TenantId, **fields: Any) -> BindingRow: ...
+    async def delete_binding(self, binding_id: UUID, *, record_tenant_id: TenantId) -> None: ...
+
+    # Prompt templates -----------------------------------------------------
+    async def get_prompt_template(
+        self,
+        *,
+        record_tenant_id: TenantId,
+        record_bot_id: BotId | None,
+        template_key: str,
+        version: int | None = None,
+        active_only: bool = True,
+    ) -> PromptTemplateRow | None: ...
+
+    async def list_prompt_template_versions(
+        self,
+        *,
+        record_tenant_id: TenantId,
+        record_bot_id: BotId | None,
+        template_key: str,
+    ) -> list[int]: ...
+
+    async def create_prompt_template(self, row: PromptTemplateRow) -> PromptTemplateRow: ...
+    async def set_prompt_template_active(
+        self,
+        template_id: UUID,
+        *,
+        record_tenant_id: TenantId,
+        active: bool,
+    ) -> None: ...
+
+    # Migration 0010: intent routes + bot tools methods removed.
+
+    # Audit ----------------------------------------------------------------
+    async def write_audit(self, entry: AuditEntry) -> None: ...
+
+    async def list_audit(
+        self,
+        *,
+        record_tenant_id: TenantId,
+        record_bot_id: BotId | None = None,
+        limit: int = 100,
+    ) -> Sequence[dict[str, Any]]: ...
+
+
+__all__ = [
+    "AIConfigRepositoryPort",
+    "AuditEntry",
+    "BindingRow",
+    "ModelRow",
+    "PromptTemplateRow",
+    "ProviderRow",
+]
+
+/var/www/html/ragbot/src/ragbot/application/ports/audit_logger_port.py
+
+"""Port for the pipeline audit emitter — concrete impls send to JSONL/OTel/Loki."""
+
+from __future__ import annotations
+
+from typing import Any, Protocol, runtime_checkable
+
+
+@runtime_checkable
+class AuditLoggerPort(Protocol):
+    """Append a single audit line for a pipeline event."""
+
+    async def log(
+        self,
+        bot_id: str,
+        stage: str,
+        event: str,
+        data: dict[str, Any],
+    ) -> None: ...
+
+
+__all__ = ["AuditLoggerPort"]
+
+/var/www/html/ragbot/src/ragbot/application/ports/bus_port.py
+
+"""Event bus Protocol (Redis Streams impl in infrastructure).
+
+Ref: PLAN_06 §event_bus_port.py.
+"""
+
+from __future__ import annotations
+
+from typing import Any, Awaitable, Callable, Protocol, runtime_checkable
+
+from ragbot.domain.events.base import DomainEvent
+
+
+class SubscriptionHandle(Protocol):
+    async def unsubscribe(self) -> None: ...
+
+
+EventHandler = Callable[[DomainEvent], Awaitable[None]]
+
+
+@runtime_checkable
+class EventBusPort(Protocol):
+    async def publish(
+        self,
+        event: DomainEvent,
+        *,
+        headers: dict[str, str] | None = None,
+        msg_id: str | None = None,
+    ) -> str: ...
+
+    async def subscribe(
+        self,
+        subject: str,
+        handler: EventHandler,
+        *,
+        durable_name: str,
+        queue_group: str | None = None,
+    ) -> SubscriptionHandle: ...
+
+    async def request(
+        self,
+        subject: str,
+        payload: bytes,
+        *,
+        timeout_s: float = 5.0,
+    ) -> bytes: ...
+
+    async def close(self) -> None: ...
+
+    async def health_check(self) -> bool: ...
+
+    @staticmethod
+    def serialize(event: DomainEvent) -> bytes:
+        import orjson
+
+        return orjson.dumps(event.to_dict())
+
+    @staticmethod
+    def deserialize(payload: bytes) -> dict[str, Any]:
+        import orjson
+
+        return orjson.loads(payload)
+
+
+__all__ = ["EventBusPort", "EventHandler", "SubscriptionHandle"]
+
+/var/www/html/ragbot/src/ragbot/application/ports/cache_port.py
+
+"""Cache Protocol + key builders.
+
+Ref: PLAN_06 §cache_port.py / RAGBOT_MASTER §19.
+"""
+
+from __future__ import annotations
+
+import hashlib
+from dataclasses import dataclass
+from typing import Any, Protocol, runtime_checkable
+
+from ragbot.shared.constants import (
+    CACHE_KEY_CHUNKS,
+    CACHE_KEY_EMBEDDING,
+    CACHE_KEY_RESPONSE,
+    CACHE_KEY_SEMANTIC,
+)
+from ragbot.shared.types import (
+    BotId,
+    BotVersion,
+    CorpusVersion,
+    EmbeddingModelVersion,
+    TenantId,
+)
+
+
+@runtime_checkable
+class CachePort(Protocol):
+    async def health_check(self) -> bool: ...
+
+    async def get(self, key: str) -> bytes | None: ...
+    async def set(self, key: str, value: bytes, *, ttl_s: int) -> None: ...
+    async def delete(self, key: str) -> None: ...
+    async def exists(self, key: str) -> bool: ...
+
+    async def close(self) -> None: ...
+
+
+@dataclass(frozen=True, slots=True)
+class CachedResponse:
+    answer: str
+    citations: list[dict[str, Any]]
+    model_name: str
+    cached_at_ts: int
+    # 2026-05-27 — graded chunks snapshot so cache_hit responses also expose
+    # sources to /chat API consumers (RAGAS judge, audit tools, evaluator).
+    # Empty tuple keeps backward-compat for existing callers that don't pass it.
+    chunks: tuple[dict[str, Any], ...] = ()
+
+
+@runtime_checkable
+class SemanticCachePort(Protocol):
+    async def find_similar(
+        self,
+        query_embedding: list[float],
+        *,
+        record_tenant_id: TenantId,
+        record_bot_id: BotId,
+        bot_version: BotVersion,
+        corpus_version: CorpusVersion,
+        threshold: float = 0.97,
+    ) -> CachedResponse | None: ...
+
+    async def store(
+        self,
+        *,
+        query: str,
+        query_embedding: list[float],
+        response: CachedResponse,
+        record_tenant_id: TenantId,
+        record_bot_id: BotId,
+        workspace_id: str,
+        bot_version: BotVersion,
+        corpus_version: CorpusVersion,
+        ttl_s: int = 3600,
+    ) -> None: ...
+
+
+# --- Key builders (pure functions) ------------------------------------------
+def _h(s: str) -> str:
+    return hashlib.sha256(s.encode("utf-8")).hexdigest()[:16]
+
+
+def _scope(
+    record_tenant_id: TenantId,
+    record_bot_id: BotId,
+    bot_version: BotVersion,
+    corpus_version: CorpusVersion,
+) -> str:
+    return f"t:{record_tenant_id}:bot:{record_bot_id}:bv:{bot_version}:cv:{corpus_version}"
+
+
+def build_semantic_cache_key(
+    *,
+    record_tenant_id: TenantId,
+    record_bot_id: BotId,
+    bot_version: BotVersion,
+    corpus_version: CorpusVersion,
+) -> str:
+    return f"{CACHE_KEY_SEMANTIC}:{_scope(record_tenant_id, record_bot_id, bot_version, corpus_version)}"
+
+
+def build_response_cache_key(
+    *,
+    record_tenant_id: TenantId,
+    record_bot_id: BotId,
+    bot_version: BotVersion,
+    corpus_version: CorpusVersion,
+    prompt_hash: str,
+) -> str:
+    return (
+        f"{CACHE_KEY_RESPONSE}:"
+        f"{_scope(record_tenant_id, record_bot_id, bot_version, corpus_version)}:p:{_h(prompt_hash)}"
+    )
+
+
+def build_chunks_cache_key(
+    *,
+    record_tenant_id: TenantId,
+    record_bot_id: BotId,
+    corpus_version: CorpusVersion,
+    query_norm: str,
+    filters_hash: str,
+) -> str:
+    return (
+        f"{CACHE_KEY_CHUNKS}:t:{record_tenant_id}:bot:{record_bot_id}:cv:{corpus_version}:"
+        f"q:{_h(query_norm)}:f:{_h(filters_hash)}"
+    )
+
+
+def build_embedding_cache_key(
+    *,
+    embedding_model_version: EmbeddingModelVersion,
+    text: str,
+) -> str:
+    return f"{CACHE_KEY_EMBEDDING}:emv:{embedding_model_version}:h:{_h(text)}"
+
+
+__all__ = [
+    "CachePort",
+    "CachedResponse",
+    "SemanticCachePort",
+    "build_chunks_cache_key",
+    "build_embedding_cache_key",
+    "build_response_cache_key",
+    "build_semantic_cache_key",
+]
+
+/var/www/html/ragbot/src/ragbot/application/ports/cag_port.py
+
+"""CAG Port — contract for Cache-Augmented Generation strategy implementations.
+
+Cache-Augmented Generation (CAG) Mode.
+
+Citation: Chan et al. 2024 — "Don't Do RAG: When Cache-Augmented Generation
+is All You Need for Knowledge Tasks" (https://arxiv.org/abs/2412.15605,
+ACM Web 2025 peer-reviewed). Reported 10.9-40.5x latency reduction vs RAG
+on small knowledge bases that fit inside the model context window.
+
+Design rationale
+----------------
+Standard RAG embeds + retrieves chunks per turn — that hot path is built
+for KBs of arbitrary size. For SMALL corpora (under ~80K tokens) the
+retrieve/rerank cost dominates while adding no recall benefit: the LLM
+could simply read the whole corpus once and answer every question from
+prompt cache. CAG is that alternative path.
+
+The Port deliberately splits the decision into two methods:
+
+    should_engage(...)        — pure gating predicate (no I/O on hot path)
+    build_corpus_payload(...) — load corpus + emit cache-ready prompt block
+
+so callers can short-circuit BEFORE touching the corpus loader when the
+flag is OFF or the corpus is too large. This keeps the per-turn overhead
+of an OFF deployment at exactly one function call (the Null adapter).
+
+Owner-opt-in
+------------
+The platform exposes the Port + Registry but never auto-enables CAG.
+Operators flip ``system_config.cag_mode_enabled`` (tenant-wide) or bot
+owners flip ``bots.plan_limits.cag_mode_enabled`` (per-bot); otherwise the
+default ``NullCAGService`` returns ``should_engage=False`` so the retrieve
+hot path runs identically to today.
+
+Implementations
+---------------
+- ``NullCAGService``      — always returns False (default OFF baseline).
+- ``AnthropicCAGService`` — gates by corpus token count, returns the corpus
+                            as a single ``cache_control: ephemeral`` block
+                            for Anthropic prompt-cache reuse.
+
+HALLU=0 sacred
+--------------
+CAG never invents facts: the corpus block is the ground truth. The
+strategy MUST emit ``should_engage=False`` whenever:
+    - the feature flag is OFF
+    - the corpus is empty
+    - the corpus exceeds ``cag_max_corpus_tokens``
+    - the corpus loader raises any error
+
+so the query falls back to RAG instead of asking the LLM to answer from
+parametric memory alone.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Protocol, runtime_checkable
+
+from ragbot.shared.types import TenantId
+
+
+@dataclass(frozen=True, slots=True)
+class CAGPayload:
+    """Cache-ready corpus block for prompt injection.
+
+    @param corpus_text: the full text of the bot's knowledge base, ready
+        to be wrapped in the LLM system prompt. The implementation has
+        ALREADY validated this fits below the configured token ceiling.
+    @param corpus_tokens: measured token count of ``corpus_text`` (used
+        for observability — what the gate let through).
+    @param cache_breakpoint: opaque hint to the LLM adapter that the
+        corpus block should carry a prompt-cache marker
+        (e.g. Anthropic ``cache_control: ephemeral``). The adapter may
+        ignore this for providers without explicit cache control.
+    """
+
+    corpus_text: str
+    corpus_tokens: int
+    cache_breakpoint: bool = True
+
+
+@runtime_checkable
+class CAGServicePort(Protocol):
+    """Decide whether to bypass retrieval and inject the full corpus.
+
+    The Port stays minimal — it does NOT generate the answer. Its job is
+    purely the gating + payload-shaping decision. The query graph wires
+    the payload into the LLM call when ``should_engage`` is True.
+
+    All methods MUST be safe to call without holding any DB session
+    open — implementations open their own short-lived session if needed
+    so the orchestrator stays decoupled from persistence concerns.
+    """
+
+    async def should_engage(
+        self,
+        *,
+        record_tenant_id: TenantId,
+        record_bot_id: str,
+    ) -> bool:
+        """Return True iff CAG should replace retrieval for this turn.
+
+        @param record_tenant_id: tenant scope (4-key identity).
+        @param record_bot_id: internal bot UUID (resolved upstream from the
+            external 4-key tuple).
+        @return: True only when feature flag is ON AND corpus token count
+            is at-or-below the configured ceiling AND the corpus exists.
+            Any error path MUST return False — fall back to RAG, never
+            answer from parametric memory.
+        """
+        ...
+
+    async def build_corpus_payload(
+        self,
+        *,
+        record_tenant_id: TenantId,
+        record_bot_id: str,
+    ) -> CAGPayload | None:
+        """Load + return the corpus payload for prompt injection.
+
+        @param record_tenant_id: tenant scope (4-key identity).
+        @param record_bot_id: internal bot UUID.
+        @return: ``CAGPayload`` when corpus loaded successfully and fits
+            the ceiling; ``None`` if the ceiling check fails or the
+            corpus is empty. ``None`` is a hard signal to the caller to
+            fall back to RAG.
+        @note: implementations MUST NOT raise on missing/empty corpus —
+            return ``None`` so the orchestrator can degrade gracefully.
+        """
+        ...
+
+
+__all__ = ["CAGPayload", "CAGServicePort"]
+
+/var/www/html/ragbot/src/ragbot/application/ports/chunk_quality_port.py
+
+"""Chunk-quality Port — contract for ingest-time chunk quality scorers.
+
+T2-CostPerf. Scores each chunk on four dimensions weighted to
+``[0.0, 1.0]``:
+
+* ``text_length_score``     × 0.3  — penalises tiny fragments + over-long
+                                      pages parser leaks.
+* ``language_confidence``   × 0.2  — langdetect (or any provider that
+                                      returns a confidence in ``[0.0, 1.0]``).
+* ``information_density``   × 0.2  — type/token ratio proxy.
+* ``no_corruption_flag``    × 0.3  — OCR artefact detection (``??``, ``@@``,
+                                      ``<0x...>`` runs of replacement chars).
+
+When the operator turns the feature ON via
+``system_config.chunk_quality_scoring_enabled``, chunks whose aggregated
+score is below ``system_config.chunk_quality_min_score`` (default 0.5)
+are SKIPPED before embedding — saving the dense-encoder call cost AND
+keeping the retrieval corpus from being polluted by OCR garbage / parser
+debris. When OFF (default) every chunk passes through; the port is still
+called for observability (score logged), but no chunk is dropped.
+
+Proof citation:
+    Industry best-practice (Databricks "Quality at Ingest" 2024,
+    Anthropic Contextual Retrieval blog 2024, RAG-anything paper
+    https://arxiv.org/abs/2410.21943 §4 "Chunk Filtering"). Empirical
+    finding: removing chunks below a hand-tuned quality floor lifts
+    Hit@K by 1-3pp while shrinking the corpus 5-15% (less reranker work,
+    less pgvector index pressure).
+
+The Port deliberately does NOT carry tenant or trace identifiers — those
+are bound at construction time by the implementation; the call-site in
+``document_service`` stays minimal.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Protocol, runtime_checkable
+
+
+@dataclass(frozen=True, slots=True)
+class ChunkQualityResult:
+    """Per-chunk score breakdown.
+
+    All four sub-scores are in ``[0.0, 1.0]``. The aggregate ``score`` is
+    the weighted sum (weights live in
+    ``ragbot.shared.chunk_quality.QUALITY_WEIGHTS``) and is also in
+    ``[0.0, 1.0]`` by construction (weights sum to 1.0).
+
+    Sub-scores are exposed so the call-site can persist them to
+    ``metadata_json.chunk_quality_breakdown`` for admin dashboards +
+    retrieval tuning. Pure value object — no mutation, no I/O.
+    """
+
+    score: float
+    text_length_score: float
+    language_confidence: float
+    information_density: float
+    no_corruption_flag: float
+
+
+@runtime_checkable
+class ChunkQualityScorerPort(Protocol):
+    """Score a chunk on quality dimensions for ingest gating.
+
+    Implementations MUST be pure (no DB / network / mutation) — the
+    scorer is invoked once per chunk during ingest, on a per-document
+    hot path. Failure mode: implementations that genuinely cannot score
+    (empty input, encoding failure) MUST return a ``ChunkQualityResult``
+    with ``score == 0.0`` rather than raise; raising would abort the
+    whole document ingest, which is far worse than skipping a chunk.
+    """
+
+    def score(self, chunk: str) -> ChunkQualityResult:
+        """Return the quality breakdown for ``chunk``.
+
+        @param chunk: post-enrichment chunk text (whatever the embedder
+            will eventually see — caller decides). Empty / whitespace-
+            only inputs MUST yield ``score == 0.0`` so the gate's
+            ``score < min`` filter drops them by default.
+        @return: ``ChunkQualityResult`` with aggregate + breakdown.
+        """
+        ...
+
+
+__all__ = ["ChunkQualityResult", "ChunkQualityScorerPort"]
+
+/var/www/html/ragbot/src/ragbot/application/ports/circuit_breaker_port.py
+"""Circuit-breaker Port — Protocol contract for per-resource breakers.
+
+Phase D Stream D1 (GA-Hardening). Wraps the ``CircuitBreaker`` state
+machine (``application/services/retry_policy.py``) behind a stable port
+so each *resource* (Redis, DB, LLM API provider, …) can pick an adapter
+without orchestration code depending on the concrete class.
+
+State semantics (mirror the underlying CB):
+
+* ``CLOSED`` — calls pass through.
+* ``OPEN`` — calls fast-fail with ``CircuitBreakerOpen``; cooldown is
+  adaptive (base + step × consecutive opens, capped at max).
+* ``HALF_OPEN`` — one probe allowed per cooldown elapse; success ⇒
+  ``CLOSED``, failure ⇒ ``OPEN`` again.
+
+The port stays minimal — adapters can hold extra state (e.g. per-key
+buckets for Redis cluster nodes) but the public surface is the same six
+methods every caller relies on.
+"""
+
+from __future__ import annotations
+
+from typing import Protocol, runtime_checkable
+
+from ragbot.application.services.retry_policy import CBState
+
+
+@runtime_checkable
+class CircuitBreakerPort(Protocol):
+    """Per-resource circuit-breaker contract.
+
+    Implementations: ``NullCircuitBreaker`` (always closed, default-off),
+    ``RedisCircuitBreaker``, ``DbCircuitBreaker``, ``LlmCircuitBreaker``.
+    """
+
+    @property
+    def name(self) -> str:
+        """Stable identifier for metrics / logs (e.g. ``redis``, ``db``,
+        ``llm:openai``)."""
+        ...
+
+    @property
+    def state(self) -> CBState:
+        """Current state machine value."""
+        ...
+
+    def can_execute(self) -> bool:
+        """``True`` when the caller may issue the wrapped call.
+
+        Side-effect: transitions ``OPEN`` ⇒ ``HALF_OPEN`` once the
+        cooldown has elapsed.
+        """
+        ...
+
+    def record_success(self) -> None:
+        """Inform the breaker that the wrapped call succeeded."""
+        ...
+
+    def record_failure(self) -> None:
+        """Inform the breaker that the wrapped call failed."""
+        ...
+
+    def reset(self) -> None:
+        """Force-CLOSE the breaker (admin / test hook)."""
+        ...
+
+
+__all__ = ["CircuitBreakerPort"]
+
+
+/var/www/html/ragbot/src/ragbot/application/ports/conversation_state_port.py
+"""ConversationStatePort — per-conversation structured state for multi-turn HALLU prevention.
+
+Defines the contract between orchestration (`extract_and_validate_slots`
+node + post-generate drift detect) and any state-tracking backend
+(Null = OFF default, JSONB = DB-backed today, future Redis hot-cache etc).
+
+Why this port exists
+~~~~~~~~~~~~~~~~~~~~
+Ragbot is RAG stateless: each turn LLM re-infers state from prose
+``conversation_history`` → drift accross turns. A multi-turn UI test
+(2026-05-30 baseline) measured a 15% HALLU rate via 3 patterns:
+
+- BP-1 entity name fusion (fabricate a name from 2 corpus entries)
+- BP-2 numeric flip-flop (same entity quoted value V1 turn 4, V2 turn 7)
+- BP-3 attribute cross-entity (assign entity A's attribute to entity B)
+
+Single-turn load test (12Q/30Q with hash-based connect_id) cannot catch
+these patterns — fresh connect_id per query → 0 history → 0 drift.
+
+The fix is architectural: persist structured state in DB, inject into
+prompt via existing sysprompt rule template pattern (rule 20
+STATE_ENFORCEMENT in language_packs platform tier). LLM reads state via
+existing prompt render path; application code does NOT prepend text or
+override LLM output (sacred rule preservation).
+
+Drift handling reuses Phase 3 ``GuardrailHit`` + ``GuardrailBlocked`` so
+existing OOS refuse flow handles block via ``bots.oos_answer_template``.
+
+Sacred-rule alignment
+~~~~~~~~~~~~~~~~~~~~~
+- Domain-neutral: port surface only uses generic concepts
+  (conversation_id, state dict, drift hits). No tenant/industry/booking
+  text in code.
+- Strategy + DI: Protocol contract; implementations live in
+  ``infrastructure/conversation_state/`` (Null + Jsonb).
+- Multi-tenant: per-conversation state inherits RLS via
+  ``conversations.workspace_id`` from alembic 0141.
+- HALLU=0 first-class: structured state survives turns; LLM cannot
+  silently override via top-chunk bias.
+"""
+
+from __future__ import annotations
+
+from typing import Any, Protocol, runtime_checkable
+from uuid import UUID
+
+from ragbot.application.ports.guardrail_port import GuardrailHit
+
+
+@runtime_checkable
+class ConversationStatePort(Protocol):
+    """Contract for loading/saving structured conversation state + drift detect.
+
+    Implementations:
+    - :class:`NullConversationState` — default OFF, no-op. Used when
+      ``bots.action_config.enabled=false`` or registry resolves to
+      ``"null"`` provider.
+    - :class:`JsonbConversationState` — DB-backed via
+      ``conversations.action_state`` JSONB column (alembic 0150).
+    """
+
+    async def load_state(self, *, conversation_id: UUID | None) -> dict[str, Any]:
+        """Load prior state for this conversation. Empty dict if first turn / no state.
+
+        Implementations MUST tolerate ``conversation_id is None`` (return ``{}``)
+        so first-turn callers don't need to special-case.
+        """
+        ...
+
+    async def save_state(
+        self,
+        *,
+        conversation_id: UUID | None,
+        state: dict[str, Any],
+        record_tenant_id: UUID | None = None,
+    ) -> None:
+        """Persist updated state for this conversation.
+
+        Implementations MUST tolerate ``conversation_id is None`` (no-op)
+        so the orchestration node can call unconditionally.
+
+        ``record_tenant_id`` (optional) scopes the write to the owning
+        tenant — defence-in-depth so a poisoned/mismatched
+        ``conversation_id`` cannot write across tenants when the RLS GUC
+        is unset (e.g. under a superuser DSN). When provided, the backend
+        also binds ``app.tenant_id`` so RLS enforces on the same write.
+        """
+        ...
+
+    async def detect_drift(
+        self,
+        *,
+        prior_state: dict[str, Any],
+        proposed_answer: str,
+        chunks: list[dict[str, Any]],
+    ) -> list[GuardrailHit]:
+        """Inspect proposed LLM answer for drift vs prior state.
+
+        Returns list of GuardrailHit (Phase 3 Port type). Caller handles:
+        - severity="warn" → log + add to ``guardrail_flags`` (audit)
+        - severity="block" → raise ``GuardrailBlocked``; existing OOS
+          refuse flow substitutes ``bots.oos_answer_template`` (no
+          application-side override).
+
+        Empty list = no drift detected.
+        """
+        ...
+
+
+__all__ = ["ConversationStatePort"]
+
+/var/www/html/ragbot/src/ragbot/application/ports/convo_summary_port.py
+"""ConvoSummary Port — contract for conversation summary compression strategies.
+
+Owner-opt-in service: the platform exposes the Port + Registry but never
+inserts summary text into the LLM prompt automatically. Bot owners flip
+``bots.convo_summary_enabled`` and the admin layer wires a ``ConvoSummaryPort``
+implementation through DI. Until the owner opts in, the default
+``NullConvoSummary`` returns an empty string so the chat hot path is
+unaffected.
+
+Implementations:
+    - ``NullConvoSummary``  — returns "" (default OFF)
+    - ``LLMConvoSummary``  — uses an injected ``LLMPort`` to summarise
+
+Caller contract:
+    summarise(turns, max_tokens) -> str
+
+The Port deliberately does NOT carry tenant or trace identifiers — those
+are bound at construction time by the implementation (``LLMConvoSummary``
+takes them as constructor args) so the call site stays minimal and stable
+when the admin wiring lands in the subsequent task.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Protocol, runtime_checkable
+
+from ragbot.shared.types import Role
+
+
+@dataclass(frozen=True, slots=True)
+class Turn:
+    """One conversation turn (role + content) for summary input.
+
+    @param role: chat role (``"user"`` / ``"assistant"`` / ``"system"`` / ``"tool"``).
+    @param content: turn text exactly as sent / received — no truncation.
+    """
+
+    role: Role
+    content: str
+
+
+@runtime_checkable
+class ConvoSummaryPort(Protocol):
+    """Compress conversation history into a short text summary.
+
+    The summary is intended for owner-side use (e.g. replacing older history
+    once ``DEFAULT_CONVO_SUMMARY_TRIGGER_TURNS`` is reached) — the platform
+    never auto-injects it into an LLM prompt.
+    """
+
+    async def summarise(self, turns: list[Turn], max_tokens: int) -> str:
+        """Return a summary of ``turns`` bounded by ``max_tokens``.
+
+        @param turns: ordered conversation turns (oldest first).
+        @param max_tokens: soft upper bound for summary length.
+        @return: summary string. Empty string means no summary was produced
+            (e.g. NullConvoSummary, empty input, or provider failure handled
+            silent at adapter level).
+        """
+        ...
+
+
+__all__ = ["ConvoSummaryPort", "Turn"]
+
+/var/www/html/ragbot/src/ragbot/application/ports/crag_grader_port.py
+"""CRAG Grader Protocol — Strategy Pattern for chunk-relevance grading.
+
+The CRAG (Corrective RAG) grade node decides which retrieved chunks reach
+the generator. Today the grading lives inline in
+:mod:`ragbot.orchestration.query_graph` (``grade`` node) and runs one
+structured LLM call **per chunk** with a bounded :class:`asyncio.Semaphore`.
+For ``top_k=50`` bots this is up to 50 LLM calls per turn — both costly
+and slow (master DeepDive Finding #19).
+
+This port abstracts the grading step so the orchestrator can swap the
+strategy via ``system_config.crag_grader_provider`` (``"per_chunk"`` /
+``"batch"`` / ``"null"``):
+
+* ``per_chunk`` — legacy N-call behaviour (default; backward-compatible).
+* ``batch``     — single structured LLM call grades every chunk at once,
+                  ~10×–50× cheaper for factoid/comparison intents.
+* ``null``      — Null Object; assigns max score to every chunk so the
+                  pipeline behaves as if grading is disabled (tests, ops
+                  emergencies).
+
+The contract is intentionally minimal — return a ``{chunk_id: score}``
+mapping where scores are floats in ``[0.0, 1.0]``. The orchestrator
+remains in charge of thresholding, audit emission, retry, and fallback
+logic so the change is surgical (Quality Gate rule: keep the existing
+fallback / threshold logic untouched).
+
+Vertical-agnostic: strategies must NOT bake in any domain / brand /
+industry literal. Prompt template + system message come from the
+caller's language pack (``language_pack_service.prompt_grader``).
+"""
+
+from __future__ import annotations
+
+from typing import Protocol, runtime_checkable
+
+
+@runtime_checkable
+class CragGraderPort(Protocol):
+    """Strategy contract for CRAG chunk-relevance grading.
+
+    Implementations: :class:`NullCragGrader` (default OFF),
+    :class:`PerChunkCragGrader` (legacy N-call),
+    :class:`BatchCragGrader` (single batched call).
+
+    Contract:
+      - Empty ``chunks`` MUST return ``{}`` without invoking the LLM.
+      - Returned dict MUST contain every input chunk's ``chunk_id`` (or
+        ``id``) key. Missing scores would force callers to special-case
+        partial output; instead strategies emit a fallback ``1.0`` when
+        the LLM response cannot be parsed (graceful degradation — keep
+        the chunk, defer the decision to downstream threshold gate).
+      - Scores MUST be floats in ``[0.0, 1.0]``. The orchestrator maps
+        ``>= relevance_threshold`` -> ``relevant``, ``> 0`` -> ``ambiguous``,
+        ``0`` -> ``irrelevant`` (caller policy, not strategy concern).
+      - MUST NOT raise on LLM failure — return all-``1.0`` so the
+        pipeline degrades to "trust the reranker" rather than refuse.
+      - MUST be vertical-agnostic — no industry / brand literals.
+    """
+
+    async def grade_batch(
+        self,
+        *,
+        query: str,
+        chunks: list[dict],
+    ) -> dict[str, float]:
+        """Score each chunk's relevance to ``query``.
+
+        @param query: rewritten / condensed user query (already passed
+            through ``understand`` / ``rewrite`` nodes upstream).
+        @param chunks: list of chunk dicts. Each MUST carry either a
+            ``chunk_id`` or ``id`` field (string) plus a ``content`` or
+            ``text`` field.
+        @return: mapping of ``chunk_id`` → relevance score in
+            ``[0.0, 1.0]``. Empty mapping iff ``chunks`` is empty.
+        """
+        ...
+
+    def get_provider_name(self) -> str:
+        """Identifier for observability (e.g. ``"null"`` / ``"batch"``)."""
+        ...
+
+
+__all__ = ["CragGraderPort"]
+
+
+/var/www/html/ragbot/src/ragbot/application/ports/doc_profile_port.py
+"""DocumentProfileAnalyzer Port — contract for AdapChunk Layer 3 profilers.
+
+Inspired by the internal AdapChunk blueprint + Ekimetrics LREC 2026 proven
+adaptive-chunking metrics. The Port exposes ONE method that turns a raw
+document body into a populated ``DocumentProfile`` entity — 10 quantitative
+features rule-based, no LLM, no external lang-detect dependency.
+
+Owner-opt-in via feature flag ``adapchunk_layer3_doc_profile_enabled`` in
+``system_config``. While the flag is OFF the platform uses the legacy
+``analyze_document() -> dict`` path for select_strategy; flipping the flag
+ON lights up the entity refine + enriched structlog event so operators can
+A/B-test the refined profile without redeploy.
+
+Implementations:
+    - ``NullDocumentProfileAnalyzer`` — returns a zero-valued
+      ``DocumentProfile`` (default-OFF baseline).
+    - ``RuleBasedDocumentProfileAnalyzer`` — pure regex/heuristic count
+      of headings, tables, formulas, images, code blocks + VN-diacritic
+      language detection.
+
+The Port deliberately does NOT carry tenant or trace identifiers — the
+analyzer is stateless and side-effect free; observability lives at the
+call site.
+"""
+
+from __future__ import annotations
+
+from typing import Protocol, runtime_checkable
+
+from ragbot.domain.entities.document_profile import DocumentProfile
+
+
+@runtime_checkable
+class DocumentProfileAnalyzerPort(Protocol):
+    """Analyze a raw document body into a populated ``DocumentProfile``.
+
+    Implementations MUST be deterministic and side-effect free: the same
+    input text MUST yield the same profile. Empty / whitespace-only input
+    MUST return a well-formed zero-valued profile (no exceptions) so the
+    ingest hot path degrades gracefully on edge-case documents.
+    """
+
+    def analyze(self, text: str) -> DocumentProfile:
+        """Return the populated ``DocumentProfile`` for ``text``.
+
+        @param text: raw document body (post-parser, post-normalisation).
+        @return: ``DocumentProfile`` entity with all 10 quantitative
+            features populated. Null implementations return a zero-valued
+            profile; rule-based implementations populate every field.
+        """
+        ...
+
+
+__all__ = ["DocumentProfileAnalyzerPort"]
+
+
+/var/www/html/ragbot/src/ragbot/application/ports/document_parser_port.py
+"""Document Parser Protocol — Strategy Pattern for ingestion.
+
+Strategy port for swap-able document parsers (xlsx, sheets, future PDF/DOCX).
+Default implementation is :class:`NullParser` — operator opt-in any provider
+via ``system_config.document_parser_provider``.
+
+Caller contract:
+    parser = build_parser(provider="excel_openpyxl")
+    if parser.supports(mime_type, file_ext):
+        chunks = await parser.parse(content, file_name="...")
+
+Each parser yields a list of ``{"content": str, "metadata": dict}`` so the
+ingestion pipeline can normalise output regardless of source format.
+"""
+
+from __future__ import annotations
+
+from typing import Protocol, runtime_checkable
+
+
+@runtime_checkable
+class DocumentParserPort(Protocol):
+    """Strategy interface for document parsers."""
+
+    def supports(self, mime_type: str, file_ext: str) -> bool:
+        """Return True if this parser handles the given MIME / extension."""
+        ...
+
+    async def parse(
+        self,
+        content: bytes,
+        *,
+        file_name: str,
+    ) -> list[dict]:
+        """Parse raw bytes into a list of chunks.
+
+        @return: ``[{"content": str, "metadata": dict}, ...]``
+        """
+        ...
+
+    def get_provider_name(self) -> str:
+        """Return the registry key (e.g. ``"null"``, ``"excel_openpyxl"``)."""
+        ...
+
+
+__all__ = ["DocumentParserPort"]
+
+/var/www/html/ragbot/src/ragbot/application/ports/embedder_port.py
+
+"""Embedder Strategy port — simplified interface for failover wrapping.
+
+Distinct from ``EmbeddingPort`` (which carries the full DB-driven
+``EmbeddingSpec`` + tenant context for the orchestrator's ``embed_one`` call
+site). This Port models the *minimal* contract that a failover wrapper /
+health probe needs:
+
+* ``embed_query`` / ``embed_documents`` — the data path.
+* ``health_check`` — boot-time + circuit-breaker probe.
+* ``dimension`` / ``model_id`` — observability metadata used by failover
+  policy (dimension-mismatch warning, structured logs).
+
+Concrete strategies may also implement ``EmbeddingPort.embed_one`` for
+drop-in use by the orchestrator without changes to ``query_graph``. The
+registry treats both Ports as interchangeable at the type level.
+"""
+
+from __future__ import annotations
+
+from typing import Protocol, runtime_checkable
+
+
+@runtime_checkable
+class EmbedderPort(Protocol):
+    """Strategy port for query/document embedding (minimal, sync-friendly)."""
+
+    async def embed_query(self, text: str) -> list[float]:
+        """Return a dense vector for ``text``.
+
+        Raises ``EmbeddingError`` on adapter failure (after retry / CB exhaust).
+        """
+        ...
+
+    async def embed_documents(self, texts: list[str]) -> list[list[float]]:
+        """Batched ``embed_query`` for documents.
+
+        Raises ``EmbeddingError`` on adapter failure.
+        """
+        ...
+
+    async def health_check(self) -> bool:
+        """Return ``True`` iff a probe call succeeded.
+
+        MUST return ``False`` on any failure (including raised exceptions
+        caught internally) so probe callers never see exceptions.
+        """
+        ...
+
+    @property
+    def dimension(self) -> int:
+        """Vector dimension this embedder produces (0 for null embedders)."""
+        ...
+
+    @property
+    def model_id(self) -> str:
+        """Provider-aware identifier for observability.
+
+        Domain-neutral provider-derived label.
+        """
+        ...
+
+
+__all__ = ["EmbedderPort"]
+
+/var/www/html/ragbot/src/ragbot/application/ports/embedding_port.py
+"""Embedding Protocol (LiteLLM cloud API in infrastructure)."""
+
+from __future__ import annotations
+
+from typing import Protocol, runtime_checkable
+
+from ragbot.application.dto.ai_specs import EmbeddingSpec
+from ragbot.shared.types import TenantId
+
+
+@runtime_checkable
+class EmbeddingPort(Protocol):
+    async def health_check(self) -> bool: ...
+
+    async def embed_batch(
+        self,
+        texts: list[str],
+        *,
+        spec: EmbeddingSpec,
+        record_tenant_id: TenantId,
+    ) -> list[list[float]]: ...
+
+    async def embed_one(
+        self,
+        text: str,
+        *,
+        spec: EmbeddingSpec,
+        record_tenant_id: TenantId,
+    ) -> list[float]: ...
+
+    async def close(self) -> None: ...
+
+
+__all__ = ["EmbeddingPort"]
+
+
+
+/var/www/html/ragbot/src/ragbot/application/ports/embedding_text_port.py
+"""Embedding-text strategy port.
+
+Decouples the *embedding input* from the *persisted content*. Historically,
+``DocumentService.ingest`` fed ``enriched_prefix + raw_chunk`` straight into
+the embedder. For short keyword queries (e.g. "Điều 3?") the ~150-char LLM
+summary prefix dilutes the cosine signal — the chunk that literally contains
+"Điều 3. Nguyên tắc chung" loses to a sibling whose prefix happens to say
+"Đoạn 3 nằm trong phần ...".
+
+The strategy port lets operators choose how the *embedded text* is built per
+bot / per platform default. Persisted ``content`` column and citation paths
+remain unchanged — only the bytes passed to ``embedder.embed_batch`` differ.
+
+Implementations:
+    * ``PrefixPlusRawStrategy`` — legacy ``"{prefix}\\n\\n{raw}"`` (default
+      for backward compat with already-ingested corpora).
+    * ``RawOnlyStrategy`` — embed ``raw_chunk`` only; the prefix is kept on
+      the persisted ``content`` for BM25 + rerank but never fed to the dense
+      encoder. Opt-in via ``embedding_text_strategy="raw_only"``.
+
+Wiring lives in ``infrastructure/embedding_text/registry.py``. Bot-owner
+override goes through ``bots.plan_limits.embedding_text_strategy``; the
+platform default is read from ``system_config.embedding_text_strategy``;
+final fallback = ``DEFAULT_EMBEDDING_TEXT_STRATEGY`` constant.
+"""
+
+from __future__ import annotations
+
+from typing import Protocol, runtime_checkable
+
+
+@runtime_checkable
+class EmbeddingTextStrategyPort(Protocol):
+    """Build the text string handed to the embedder for a single chunk.
+
+    Pure function: implementations MUST NOT do I/O or mutate state. The two
+    inputs are the raw chunk text (split output, pre-enrichment) and the
+    LLM-generated enriched prefix (may be empty). Implementations decide
+    which (or both) feed the dense embedder.
+    """
+
+    @property
+    def name(self) -> str:
+        """Stable identifier used in logs / metrics (e.g. ``"raw_only"``)."""
+        ...
+
+    def build(self, *, raw_chunk: str, enriched_prefix: str | None) -> str:
+        """Return the text to embed.
+
+        @param raw_chunk: chunk text post-split, pre-enrichment.
+        @param enriched_prefix: LLM-generated context prefix (may be empty
+            string or ``None`` when enrichment was skipped).
+        @return: the string the embedder will tokenize.
+        """
+        ...
+
+
+__all__ = ["EmbeddingTextStrategyPort"]
+
+/var/www/html/ragbot/src/ragbot/application/ports/entity_extractor_port.py
+
+"""Entity Extractor Protocol — Strategy Pattern for query-side NER.
+
+Strategy port for swap-able entity extractors used by the multi-query
+expansion service. The contract returns a *ranked list of entity strings*
+extracted from the user query — rare/specific tokens (proper nouns,
+numerics, brand-like ALL-CAPS, language-specific named entities) come
+first so callers (e.g. ``expand_query_with_entities``) can use them as
+BM25-friendly verbatim variants when the LLM rewriter drops critical
+signal terms.
+
+Default implementation is :class:`NullExtractor` (returns ``[]``).
+Per-language adapters (e.g. ``vi_underthesea`` for Vietnamese,
+``en_simple`` for capitalized-multi-word English) are opt-in via the
+registry + ``system_config.entity_extractor_provider`` (master) or
+per-bot ``pipeline_config.entity_extractor_provider`` (override).
+
+Vertical-agnostic: the strategy must NOT bake in domain keywords
+(industry, brand, product). Domain expansion belongs in
+``bots.custom_vocabulary`` (per-bot) — extractors return *generic*
+named-entity tokens which the BM25 query path then matches against
+the per-bot corpus regardless of vertical.
+"""
+
+from __future__ import annotations
+
+from typing import Protocol, runtime_checkable
+
+
+@runtime_checkable
+class EntityExtractorPort(Protocol):
+    """Strategy interface for query-side named-entity extractors.
+
+    Implementations: ``NullExtractor`` (default OFF, returns empty),
+    ``ViUnderthesseaExtractor`` (Vietnamese, POS+NER hybrid),
+    ``EnSimpleExtractor`` (English, capitalized-multi-word + numerics).
+
+    Contract:
+      - MUST NOT raise on empty / whitespace input — return ``[]``.
+      - MUST NOT raise on language mismatch — return ``[]`` (caller
+        will fall back to the language-agnostic paraphrase variants).
+      - SHOULD return the *most rare/specific* entity first (so callers
+        capping the list at ``max_entities`` keep the highest-signal
+        tokens).
+      - MUST be vertical-agnostic — no industry / brand / product
+        literals baked into the strategy.
+    """
+
+    async def extract(self, query: str, *, language: str) -> list[str]:
+        """Return ranked entity strings extracted from ``query``.
+
+        @param query: raw user query (already condensed/rewritten upstream).
+        @param language: bot language hint (e.g. ``"vi"``, ``"en"``).
+            Strategy decides whether it can serve this language; if not,
+            return ``[]`` so the caller falls back to plain paraphrase.
+        @return: ranked list of entity strings (no duplicates, no empty
+            strings). Empty list when no entities are found OR the
+            strategy does not support the requested language.
+        """
+        ...
+
+    def get_provider_name(self) -> str:
+        """Identifier for observability (e.g. ``"null"``, ``"vi_underthesea"``)."""
+        ...
+
+
+__all__ = ["EntityExtractorPort"]
+
+/var/www/html/ragbot/src/ragbot/application/ports/guardrail_port.py
+"""Guardrail (input/output moderation) port.
+
+Defines the contract between orchestration and any guardrail provider
+(LocalGuardrail today; OpenAI Moderation / AzureContentSafety /
+NullGuardrail tomorrow). Orchestration imports ONLY from this module —
+never from a concrete provider in ``infrastructure.guardrails`` — so
+swap-ability is preserved (CLAUDE.md Strategy + DI mindset, sacred rule).
+
+Why ``GuardrailHit`` + ``GuardrailBlocked`` live here, not in the
+infrastructure provider: orchestration needs to ``raise GuardrailBlocked``
+to short-circuit the pipeline and inspect ``GuardrailHit`` fields to log
+rule_id / severity / action. Pulling these symbols up to the port keeps
+``query_graph`` independent of any specific provider. The legacy
+``infrastructure.guardrails.local_guardrail`` module re-exports both
+symbols so existing imports keep working.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from typing import Any, Callable, Coroutine, Protocol, runtime_checkable
+from uuid import UUID
+
+from ragbot.shared.constants import (
+    DEFAULT_GROUNDING_CHECK_THRESHOLD,
+    DEFAULT_GUARDRAIL_OOS_SIMILARITY_THRESHOLD,
+)
+from ragbot.shared.types import ModerationResultKind, TenantId
+
+
+@dataclass(frozen=True, slots=True)
+class ModerationOutcome:
+    kind: ModerationResultKind  # safe | blocked | flagged
+    reason: str | None = None
+    categories: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class GuardrailHit:
+    """One rule's verdict against an input or output."""
+
+    rule_id: str
+    severity: str  # info | warn | block
+    action: str    # allow | redact | block | hitl
+    details: dict[str, Any] = field(default_factory=dict)
+
+
+class GuardrailBlocked(Exception):
+    """Raised when any rule returns severity='block'.
+
+    Orchestration catches this to short-circuit the pipeline and emit
+    the bot's OOS template instead of running the LLM call.
+    """
+
+    def __init__(self, hits: list[GuardrailHit]) -> None:
+        self.hits = hits
+        rules = ",".join(h.rule_id for h in hits if h.severity == "block")
+        super().__init__(f"guardrail_blocked: {rules}")
+
+
+@runtime_checkable
+class GuardrailPort(Protocol):
+    """Public guardrail surface used by orchestration.
+
+    The legacy ``moderate_input`` / ``moderate_output`` /
+    ``detect_prompt_injection`` / ``check_canary_leak`` methods stay for
+    backward compat with callers that go through the simpler
+    ``ModerationOutcome`` shape (HTTP middleware, ingest pipeline).
+
+    The ``check_input`` / ``check_output`` methods are the orchestration-
+    facing surface — they iterate ALL configured rules (DB-loaded +
+    static), persist per-rule audit rows, and raise
+    :class:`GuardrailBlocked` when any rule's severity == "block".
+    """
+
+    # ---- legacy moderation surface --------------------------------------
+    async def moderate_input(
+        self, text: str, *, record_tenant_id: TenantId,
+    ) -> ModerationOutcome: ...
+
+    async def moderate_output(
+        self, text: str, *, record_tenant_id: TenantId,
+    ) -> ModerationOutcome: ...
+
+    async def detect_prompt_injection(self, text: str) -> bool: ...
+
+    async def check_canary_leak(self, output: str, canary: str) -> bool: ...
+
+    # ---- orchestration-facing rule batch surface ------------------------
+    async def check_input(
+        self,
+        text: str,
+        *,
+        tenant_id: UUID | None,
+        message_id: int,
+        request_id: UUID | None = None,
+    ) -> list[GuardrailHit]: ...
+
+    async def check_output(
+        self,
+        answer: str,
+        *,
+        system_prompt_hash: str | list[str] | None = None,
+        shingle_size: int = 8,
+        retrieved_chunks: list[Any] | None = None,
+        tenant_id: UUID | None,
+        message_id: int,
+        request_id: UUID | None = None,
+        grounding_check_enabled: bool = False,
+        grounding_check_threshold: float = DEFAULT_GROUNDING_CHECK_THRESHOLD,
+        citation_marker_required: bool = False,
+        llm_complete_fn: Callable[..., Coroutine[Any, Any, dict]] | None = None,
+        structured_judge_fn: Callable[..., Coroutine[Any, Any, Any]] | None = None,
+        grounding_use_structured: bool = False,
+        oos_template: str | None = None,
+        oos_similarity_threshold: float = DEFAULT_GUARDRAIL_OOS_SIMILARITY_THRESHOLD,
+    ) -> list[GuardrailHit]: ...
+
+
+__all__ = [
+    "GuardrailBlocked",
+    "GuardrailHit",
+    "GuardrailPort",
+    "ModerationOutcome",
+]
+
+/var/www/html/ragbot/src/ragbot/application/ports/hyde_port.py
+
+"""HyDE Port — contract for Hypothetical Document Embedding generators.
+
+Phase-C C1 stream — Gao et al. 2022, "Precise Zero-Shot Dense Retrieval
+without Relevance Labels" (https://arxiv.org/abs/2212.10496). Before
+embedding a user query, ask an LLM to produce a SHORT hypothetical answer
+to it; embed that hypothetical instead of the raw question. The resulting
+vector lives closer to actual document text (declarative style) than the
+question text does, lifting top-k recall on ambiguous queries.
+
+Owner-opt-in: the platform exposes the Port + Registry but never enables
+generation automatically. Bot owners flip ``bots.plan_limits.hyde_enabled``
+(per-bot) or operators flip ``system_config.hyde_enabled`` (tenant-wide);
+otherwise the default ``NullHyDEGenerator`` returns the raw query unchanged
+so the retrieve hot path is unaffected.
+
+Implementations:
+    - ``NullHyDEGenerator`` — returns ``query`` verbatim (default OFF).
+    - ``LLMHyDEGenerator`` — uses an injected ``LLMPort`` to draft a
+      hypothetical answer.
+
+Caller contract:
+    generate(query) -> str
+
+The Port deliberately does NOT carry tenant or trace identifiers — those
+are bound at construction time by the implementation so the call site
+inside ``_embed_query`` stays minimal.
+"""
+
+from __future__ import annotations
+
+from typing import Protocol, runtime_checkable
+
+
+@runtime_checkable
+class HyDEServicePort(Protocol):
+    """Generate a hypothetical answer to ``query`` for retrieval embedding.
+
+    The hypothetical is what the caller will embed in place of the raw
+    query. Implementations MUST return the original ``query`` on any
+    failure path (LLM error, empty completion, disabled flag, etc.) so
+    the retrieve pipeline degrades gracefully — HyDE is an enhancement,
+    never a hard dependency.
+    """
+
+    async def generate(self, query: str) -> str:
+        """Return text to embed for ``query``.
+
+        @param query: raw user query (already language-normalised by upstream).
+        @return: hypothetical answer text, or the original query verbatim
+            when the strategy is OFF / failed / produced empty output.
+        """
+        ...
+
+
+__all__ = ["HyDEServicePort"]
+
