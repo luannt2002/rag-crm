@@ -465,6 +465,12 @@ class _StageFinalizeMixin:
             # never hardcodes domain column meanings. Best-effort: a bot-repo failure
             # must never block ingest, so fall back to inference-only on any error.
             _custom_roles: dict[str, str] | None = None
+            # A4 (ADR-0008): per-bot opt-in to pick the NAME column by value-shape
+            # at ingest (headerless/uninferred tables) instead of the positional
+            # first cell. Same plan_limits flag as the serve-time path so a bot that
+            # opts in gets a correct entity_name at the SOURCE, not just a serve-time
+            # patch. Default OFF → byte-identical legacy ingest.
+            _name_by_shape = False
             if self._bot_repo is not None:
                 try:
                     _bot_cfg = await self._bot_repo.get_by_id(
@@ -474,6 +480,11 @@ class _StageFinalizeMixin:
                     _declared = _vocab.get("column_roles")
                     if isinstance(_declared, dict) and _declared:
                         _custom_roles = _declared
+                    _name_by_shape = bool(
+                        (getattr(_bot_cfg, "plan_limits", None) or {}).get(
+                            "stats_name_by_shape", False
+                        )
+                    )
                 except (SQLAlchemyError, ValueError, TypeError, AttributeError) as exc:
                     # Inference-only fallback; a bot-config lookup/shape error must
                     # never block ingest (DB error, config drift) — narrow per policy.
@@ -484,7 +495,9 @@ class _StageFinalizeMixin:
                         error=str(exc)[:200],
                     )
             _stats_rows = [_raw_row(_r) for _r in rows]
-            _raw_entities = parse_table_chunks(_stats_rows, _custom_roles)
+            _raw_entities = parse_table_chunks(
+                _stats_rows, _custom_roles, name_by_shape=_name_by_shape
+            )
             # G4 data-quality ADVISORY (ADR-0005 — advisory, NEVER blocking). Surface
             # to the owner WHY coverage may be limited: a table with no resolvable
             # NAME column (entities can't be name-keyed) and/or header columns that

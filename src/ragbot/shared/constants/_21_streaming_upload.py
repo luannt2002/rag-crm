@@ -275,3 +275,19 @@ TRACE_CHUNK_CAPTURE_MAX_CHARS: Final[int] = 2000
 # literal or a real number. Override via system_config for a bot that prefers a
 # different convention.
 STATS_NULL_PRICE_MARKER: Final[str] = "—"
+
+# ADR-0008 A1: serve the SHAPE-detected descriptive name (e.g. "Lốp Rovelo
+# 195/55R16 …") as the stats entity's identity instead of the raw ``entity_name``
+# when that turned out to be an internal code ("2-R16 195/55 LPD"). The name is
+# picked from the entity's OWN field values by value-shape (zero vocab, zero
+# model) — see ``shared/table_shape.pick_descriptive_name``. Default OFF: the
+# legacy field-like name path is byte-identical until a bot opts in.
+DEFAULT_STATS_NAME_BY_SHAPE: Final[bool] = False
+
+# ADR-0008 A2/B3: narrow the stats candidate set by the query's DISCRIMINATING
+# tokens so a brand-named spec query ("giá lốp Rovelo 195/55R16") is not served a
+# same-size row of a DIFFERENT brand (the size-code keyword alone is brand-blind).
+# Domain-neutral: uses the candidate set itself as the dictionary (a token some
+# candidates carry and others don't = a brand/model word) — zero vocab, zero
+# stopword list. See shared/table_shape.discriminating_token_filter. Default OFF.
+DEFAULT_STATS_BRAND_AWARE: Final[bool] = False

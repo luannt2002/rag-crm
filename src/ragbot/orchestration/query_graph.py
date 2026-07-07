@@ -108,6 +108,10 @@ from ragbot.shared.chunking import (
 )
 from ragbot.shared.embedding_cache import get_cached_embedding, set_cached_embedding
 from ragbot.shared.query_range_parser import parse_code_query
+from ragbot.shared.table_shape import (
+    discriminating_token_filter,
+    pick_descriptive_name,
+)
 from ragbot.shared.errors import (
     AuditEmitError,
     EmbeddingError,
@@ -262,7 +266,9 @@ from ragbot.shared.constants import (
     DEFAULT_SPECULATIVE_RETRIEVE_TIMEOUT_S,
     DEFAULT_STATS_ATTR_MAX_CHARS,
     DEFAULT_STATS_ATTR_MAX_WORDS,
+    DEFAULT_STATS_BRAND_AWARE,
     DEFAULT_STATS_INDEX_LIMIT,
+    DEFAULT_STATS_NAME_BY_SHAPE,
     DEFAULT_STATS_SERVE_REQUIRE_VALUE,
     DEFAULT_STATS_SUPERLATIVE_LIMIT,
     DEFAULT_STATS_SYNTHETIC_CHUNK_ID,
@@ -338,6 +344,25 @@ def _absorb_fragment_attrs(anchor: dict, frag: dict) -> None:
     anchor["attributes_json"] = a_aj
 
 
+def _entity_display_name(entity: dict, name_by_shape: bool) -> str:
+    """The entity's identity string for serving/dedup.
+
+    ADR-0008 A1: when ``name_by_shape`` the raw ``entity_name`` may be an internal
+    CODE ("2-R16 195/55 LPD"); pick the fullest DESCRIPTIVE name from the entity's
+    OWN field values by value-shape (zero vocab, zero model) so the brand-bearing
+    product name ("Lốp Rovelo 195/55R16 …") reaches the LLM instead of the code.
+    Off → byte-identical to the legacy raw ``entity_name``.
+    """
+    raw = (str(entity.get("entity_name") or "")).strip().strip('"')
+    if not name_by_shape:
+        return raw
+    attrs = entity.get("attributes_json")
+    candidates: list[str | None] = [raw]
+    if isinstance(attrs, dict):
+        candidates.extend(v for v in attrs.values() if isinstance(v, str))
+    return pick_descriptive_name(candidates) or raw
+
+
 def _serialize_stats_entity_row(
     entity: dict,
     *,
@@ -345,6 +370,7 @@ def _serialize_stats_entity_row(
     null_price_marker: str,
     attr_max_chars: int,
     attr_max_words: int,
+    name_by_shape: bool = False,
 ) -> str | None:
     """Serialize one DSI entity into a groundable text line for the synthetic
     stats chunk. Returns None when the row yields nothing groundable.
@@ -366,13 +392,18 @@ def _serialize_stats_entity_row(
         return bool(v) and len(v) <= attr_max_chars \
             and len(v.split()) <= attr_max_words
 
-    name = (str(entity.get("entity_name") or "")).strip().strip('"')
+    name = _entity_display_name(entity, name_by_shape)
     if not name:
         return None
     price = entity.get("price_primary")
     if price is None:
         price = entity.get("price_secondary")
-    name_field_like = _is_field_like(name)
+    # ADR-0008 A1: a shape-picked descriptive name is the entity IDENTITY and must
+    # ALWAYS lead the line. It is naturally multi-word, so the legacy field-like
+    # gate would wrongly drop it to a bare "price: X" — the exact defect that hid
+    # the brand from the LLM. Legacy path (flag off) keeps field-like gating so a
+    # short field-name still labels its own price.
+    name_field_like = name_by_shape or _is_field_like(name)
     # A field-like name labels its own price ("Name: 500000"); a variant
     # mega-cell name is dropped from the lead and the price is labelled
     # generically. In BOTH cases a null price under a priced-sibling set is
@@ -2545,10 +2576,30 @@ def build_graph(
             _null_price_marker = str(
                 _pcfg(state, "stats_null_price_marker", STATS_NULL_PRICE_MARKER)
             )
+            _name_by_shape = bool(
+                _pcfg(state, "stats_name_by_shape", DEFAULT_STATS_NAME_BY_SHAPE)
+            )
+            # A2/B3 brand-aware narrowing: a size-code lookup returns every brand
+            # of that size; drop rows whose identity lacks a brand/model word the
+            # user named (discriminating token). Domain-neutral, additive, off by
+            # default. Skipped for ≤1 candidate (nothing to disambiguate).
+            if bool(_pcfg(state, "stats_brand_aware", DEFAULT_STATS_BRAND_AWARE)) and len(entities) > 1:
+                _bq = str(state.get("original_query") or state.get("query") or "")
+                _cand_texts: list[str] = []
+                for _e in entities:
+                    _aj = _e.get("attributes_json")
+                    _extra = (
+                        " ".join(str(v) for v in _aj.values() if isinstance(v, str))
+                        if isinstance(_aj, dict) else ""
+                    )
+                    _cand_texts.append(f"{_entity_display_name(_e, _name_by_shape)} {_extra}")
+                _keep = discriminating_token_filter(_bq, _cand_texts)
+                if 0 < len(_keep) < len(entities):
+                    entities = [entities[i] for i in _keep]
             _seen: set[tuple[str, int]] = set()
             _rows: list[str] = []
             for _e in entities:
-                _name = (str(_e.get("entity_name") or "")).strip().strip('"')
+                _name = _entity_display_name(_e, _name_by_shape)
                 if not _name:
                     continue
                 _price = _e.get("price_primary")
@@ -2564,6 +2615,7 @@ def build_graph(
                     null_price_marker=_null_price_marker,
                     attr_max_chars=DEFAULT_STATS_ATTR_MAX_CHARS,
                     attr_max_words=DEFAULT_STATS_ATTR_MAX_WORDS,
+                    name_by_shape=_name_by_shape,
                 )
                 if _line is None:
                     # Nothing groundable to surface — skip rather than emit a
@@ -2712,6 +2764,7 @@ def build_graph(
         llm=llm,
         model_resolver=model_resolver,
         guardrail=guardrail,
+        stats_index_repo=stats_index_repo,
         _schedule_grounding_check_background=_schedule_grounding_check_background,
         _pcfg=_pcfg,
         _resolved_oos_template=_resolved_oos_template,

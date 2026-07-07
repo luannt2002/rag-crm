@@ -23,6 +23,7 @@ import hashlib
 from typing import Any
 
 import structlog
+from sqlalchemy.exc import SQLAlchemyError
 
 from ragbot.application.ports.guardrail_port import GuardrailBlocked
 from ragbot.infrastructure.guardrails.local_guardrail import OutputGuardrail
@@ -50,7 +51,12 @@ from ragbot.shared.constants import (
     DEFAULT_NUMERIC_FIDELITY_ACTION,
     NUMERIC_FIDELITY_ACTION_BLOCK,
     NUMERIC_FIDELITY_EVENT,
+    BRAND_SCOPE_ACTION_BLOCK,
+    BRAND_SCOPE_EVENT,
+    DEFAULT_BRAND_SCOPE_GATE_ACTION,
+    DEFAULT_BRAND_SCOPE_NEGATION_PHRASES,
 )
+from ragbot.shared.brand_scope import detect_denied_brand
 from ragbot.shared.errors import InvariantViolation
 from ragbot.shared.numeric_fidelity import (
     classify_answer_numbers,
@@ -66,6 +72,7 @@ async def guard_output(
     llm: Any = None,
     model_resolver: Any = None,
     guardrail: Any = None,
+    stats_index_repo: Any = None,
     _schedule_grounding_check_background: Any,
     _pcfg: Any,
     _resolved_oos_template: Any,
@@ -159,6 +166,86 @@ async def guard_output(
                 "answer_type": "blocked",
                 "answer_reason": "Numeric-fidelity block (fabricated/misattributed number)",
             }
+
+        # ── 002-B1: brand-scope gate (owner-gated, per-bot; default observe) ──
+        # numeric-fidelity is blind to a FALSE distribution denial ("chưa phân
+        # phối hãng X") — the claim carries no number, yet it is misinformation
+        # when the structured index actually stocks brand X (truth-audit step20:
+        # Rovelo denied while 50+ SKUs exist). Deterministic + LLM-independent:
+        # a config-seeded negation phrase + a proper-noun brand token, then a DSI
+        # existence COUNT scoped to this bot. The gate fires ONLY when the corpus
+        # DOES carry the brand (count > 0) — a true refusal (Michelin, 0 rows) is
+        # never touched. Phrases are locale DATA injected from config (empty code
+        # default → silent no-op until an operator seeds them); the brand token is
+        # extracted by shape, so no brand/Vietnamese literal lives in src.
+        # Block substitutes the bot's OWN oos_answer_template (sacred #10 path,
+        # same as numeric-fidelity/grounding) — it trades an actively-wrong denial
+        # for the owner's neutral refusal, not the ideal answer (restoring that is
+        # an upstream retrieval-routing fix). Default observe = log only, measure
+        # the false-refusal rate before any bot opts into block.
+        _bs_bot = state.get("record_bot_id")
+        _bs_phrases_cfg = _pcfg(
+            state,
+            "brand_scope_negation_phrases",
+            DEFAULT_BRAND_SCOPE_NEGATION_PHRASES,
+        )
+        _bs_phrases = (
+            tuple(str(p) for p in _bs_phrases_cfg)
+            if isinstance(_bs_phrases_cfg, (list, tuple))
+            else DEFAULT_BRAND_SCOPE_NEGATION_PHRASES
+        )
+        _bs_brand = (
+            detect_denied_brand(
+                _nf_answer, negation_phrases=_bs_phrases, question=_nf_question
+            )
+            if (_bs_phrases and stats_index_repo is not None and _bs_bot is not None)
+            else None
+        )
+        if _bs_brand:
+            try:
+                _bs_count = await stats_index_repo.count_by_name_keyword(
+                    record_bot_id=_bs_bot, keyword=_bs_brand,
+                )
+            except SQLAlchemyError as exc:
+                _bs_count = 0
+                logger.warning(
+                    "brand_scope_count_failed",
+                    error=str(exc)[:200],
+                    brand=_bs_brand,
+                )
+            if _bs_count > 0:
+                _bs_action = str(
+                    _pcfg(
+                        state,
+                        "brand_scope_gate_action",
+                        DEFAULT_BRAND_SCOPE_GATE_ACTION,
+                    )
+                    or DEFAULT_BRAND_SCOPE_GATE_ACTION
+                )
+                logger.info(
+                    BRAND_SCOPE_EVENT,
+                    record_bot_id=str(_bs_bot or ""),
+                    trace_id=str(state.get("trace_id") or ""),
+                    brand=_bs_brand,
+                    stocked_rows=_bs_count,
+                    action=_bs_action,
+                )
+                if _bs_action == BRAND_SCOPE_ACTION_BLOCK:
+                    _bs_flags = list(state.get("guardrail_flags", []))
+                    _bs_flags.append({
+                        "rule_id": "brand_scope",
+                        "severity": "block",
+                        "blocked": True,
+                        "brand": _bs_brand,
+                        "stocked_rows": _bs_count,
+                    })
+                    return {
+                        "guardrail_flags": _bs_flags,
+                        "numeric_fidelity": _nf,
+                        "answer": _resolved_oos_template(state),
+                        "answer_type": "blocked",
+                        "answer_reason": "Brand-scope block (false distribution denial)",
+                    }
 
         # Numeric / citation grounding is the bot owner's responsibility via
         # `system_prompt` (anti-fabricate rules) — the LLM self-checks. The

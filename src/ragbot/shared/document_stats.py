@@ -36,6 +36,7 @@ from ragbot.shared.constants import (
 )
 from ragbot.shared.number_format import parse_money_vn as _canonical_parse_money
 from ragbot.shared.tabular_markdown import _is_pure_money
+from ragbot.shared.table_shape import pick_descriptive_name
 
 # Bullet/list-marker leads. A first cell starting with one of these is a prose
 # DESCRIPTION line ("- Mô tả công dụng dài, nhiều mệnh đề …"), not a catalog entity —
@@ -627,6 +628,7 @@ def _extract_entity_from_row(
     chunk_index: int,
     current_category: str | None,
     roles: dict[str, Any] | None = None,
+    name_by_shape: bool = False,
 ) -> ParsedEntity | None:
     """Build a ParsedEntity from a split data row.
 
@@ -648,6 +650,19 @@ def _extract_entity_from_row(
     attributes: dict[str, Any] = {}
 
     name_idx = roles.get("name") if roles else None
+    # A4 (ADR-0008): no header name-role (headerless / uninferred table) → pick the
+    # most DESCRIPTIVE cell as the name by value-SHAPE, not the positional first
+    # cell (usually a group/warehouse stub or an internal code). Fixes catalog
+    # sheets whose brand-bearing product name sits in a later column (xe-1:
+    # "Kho lốp | 2-R16 195/55 LPD | Lốp Rovelo 195/55R16 …" → name is the 3rd cell,
+    # not the 1st). Off → byte-identical legacy positional. Zero vocab, zero model.
+    if name_idx is None and name_by_shape:
+        _shape_pick = pick_descriptive_name([(c or "").strip() for c in cols])
+        if _shape_pick:
+            for _si, _sc in enumerate(cols):
+                if (_sc or "").strip() == _shape_pick:
+                    name_idx = _si
+                    break
     cat_idx = roles.get("category") if roles else None
     alias_idx = roles.get("aliases") if roles else None
     price_cols = set(roles["price"]) if roles and roles.get("price") else None
@@ -1025,7 +1040,9 @@ def _merge_wrapped_pipe_rows(lines: list[str]) -> list[str]:
 
 
 def parse_table_chunks(
-    chunks: list[dict], custom_roles: dict[str, str] | None = None
+    chunks: list[dict],
+    custom_roles: dict[str, str] | None = None,
+    name_by_shape: bool = False,
 ) -> list[ParsedEntity]:
     """Extract structured entities from a list of CSV/table chunks.
 
@@ -1164,7 +1181,8 @@ def parse_table_chunks(
                 forced_category = stub_fill or current_category
 
             entity = _extract_entity_from_row(
-                cols, header, chunk_idx, forced_category, roles
+                cols, header, chunk_idx, forced_category, roles,
+                name_by_shape=name_by_shape,
             )
             if entity is not None and not _is_noise_entity(entity):
                 # T012 positive-table-evidence gate: a PRICE-LESS entity may

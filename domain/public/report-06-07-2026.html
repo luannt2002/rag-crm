@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Báo cáo ngày — Chatbot tư vấn lốp · 06/07/2026</title>
+<style>
+  :root{
+    --paper:#F3F4F7;
+    --card:#FFFFFF;
+    --ink:#191F2E;
+    --muted:#5A6576;
+    --accent:#14566B;
+    --accent-soft:#E6EEF0;
+    --rule:#E1E4EB;
+    --ok:#1E7D46;
+    --ok-soft:#E4F1E9;
+    --warn:#9A6400;
+    --warn-soft:#F6EEDD;
+    --bad:#AF3327;
+    --bad-soft:#F6E4E1;
+    --mono:ui-monospace,"SF Mono","Cascadia Code",Menlo,Consolas,monospace;
+    --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{background:var(--paper)}
+  .wrap{
+    max-width:880px;margin:0 auto;padding:48px 24px 72px;
+    font-family:var(--sans);color:var(--ink);background:var(--paper);
+    font-size:16.5px;line-height:1.68;min-height:100vh;
+  }
+  h1,h2,h3{text-wrap:balance;line-height:1.22;margin:0}
+  .eyebrow{
+    font-family:var(--mono);font-size:12px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--accent);font-weight:600;
+  }
+  .mast{border-bottom:2px solid var(--ink);padding-bottom:20px;margin-bottom:8px}
+  .mast .row{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap}
+  .mast h1{font-size:29px;font-weight:800;letter-spacing:-.01em;margin-top:6px}
+  .mast .date{font-family:var(--mono);font-size:14px;color:var(--muted);text-align:right;white-space:nowrap}
+  .mast .date b{color:var(--ink);font-size:16px;display:block}
+  .tldr{background:var(--accent-soft);border:1px solid #cadfe4;border-radius:10px;padding:16px 20px;margin:22px 0 10px;font-size:16px}
+  .tldr b{color:var(--accent)}
+  .readout{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:1px;
+    background:var(--rule);border:1px solid var(--rule);border-radius:10px;
+    overflow:hidden;margin:20px 0 36px;
+  }
+  .metric{background:var(--card);padding:16px 18px}
+  .metric .k{font-size:12.5px;color:var(--muted);line-height:1.35}
+  .metric .v{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:24px;font-weight:700;margin-top:8px;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+  .metric .v .arrow{font-size:15px;color:var(--muted);font-weight:500}
+  .metric .v .now{color:var(--ok)}
+  section{margin:38px 0}
+  section > h2{font-size:20px;font-weight:750;margin:0 0 4px}
+  section > .lede{color:var(--muted);font-size:15px;margin:0 0 18px}
+  .goal{
+    background:var(--card);border:1px solid var(--rule);border-left:4px solid var(--ok);
+    border-radius:0 10px 10px 0;padding:18px 20px;margin:14px 0;
+  }
+  .goal .top{display:flex;justify-content:space-between;align-items:flex-start;gap:14px}
+  .goal .num{font-family:var(--mono);font-size:13px;color:var(--muted);font-weight:600}
+  .goal h3{font-size:17.5px;font-weight:700;margin:2px 0 0}
+  .goal dl{margin:14px 0 0;display:grid;grid-template-columns:auto 1fr;gap:9px 16px;font-size:15.5px}
+  .goal dt{font-size:13px;color:var(--muted);font-weight:600;padding-top:2px;white-space:nowrap}
+  .goal dd{margin:0}
+  .goal dd .r{color:var(--ok);font-weight:600}
+  .chip{
+    font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.05em;
+    text-transform:uppercase;padding:4px 10px;border-radius:999px;white-space:nowrap;
+    border:1px solid transparent;display:inline-block;
+  }
+  .chip.ok{background:var(--ok-soft);color:var(--ok);border-color:#bfe0cd}
+  .chip.warn{background:var(--warn-soft);color:var(--warn);border-color:#e6d3a6}
+  .chip.bad{background:var(--bad-soft);color:var(--bad);border-color:#e8c3bd}
+  .chip.info{background:var(--accent-soft);color:var(--accent);border-color:#c7dce1}
+  .items{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+  .items li{background:var(--card);border:1px solid var(--rule);border-radius:9px;padding:14px 16px;display:flex;gap:12px;align-items:flex-start}
+  .items li .body{flex:1;font-size:15.5px}
+  .items li .body b{display:block;margin-bottom:3px}
+  .items li .body .meta{color:var(--muted);font-size:14.5px}
+  .tablewrap{overflow-x:auto;border:1px solid var(--rule);border-radius:10px}
+  table{border-collapse:collapse;width:100%;font-size:15px;background:var(--card)}
+  th,td{padding:12px 16px;text-align:left;border-bottom:1px solid var(--rule)}
+  th{font-size:12.5px;color:var(--muted);font-weight:600;background:#FAFBFC}
+  td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right}
+  tr:last-child td{border-bottom:none}
+  td .up{color:var(--ok);font-weight:600}
+  .next{display:flex;flex-direction:column;gap:10px}
+  .next .step{display:flex;gap:14px;align-items:baseline;background:var(--card);border:1px solid var(--rule);border-radius:9px;padding:14px 16px}
+  .next .step .ord{font-family:var(--mono);font-weight:700;color:var(--accent);font-size:15px;min-width:22px}
+  .next .step .t{font-size:15.5px}
+  .next .step .t .est{color:var(--muted);font-size:14px}
+  footer{margin-top:46px;padding-top:20px;border-top:1px solid var(--rule);font-size:13px;color:var(--muted);display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  @media (max-width:620px){
+    .readout{grid-template-columns:1fr}
+    .goal dl{grid-template-columns:1fr}
+    .goal dt{padding-top:8px}
+    .mast .row{flex-direction:column;align-items:flex-start}
+    .mast .date{text-align:left}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="mast">
+    <span class="eyebrow">Báo cáo tiến độ · Chatbot tư vấn lốp xe</span>
+    <div class="row">
+      <h1>Làm chatbot hết nói sai giá — và kiểm chứng bằng số liệu thật</h1>
+      <div class="date">
+        <b>Ngày 06/07/2026</b>
+        Sản phẩm: chatbot lốp xe
+      </div>
+    </div>
+  </div>
+
+  <p class="tldr">
+    <b>Tóm tắt cho leader:</b> Hôm nay bọn em đã làm chatbot <b>không còn tự bịa giá tiền</b> cho những sản phẩm chưa có giá — thay vì "chế" ra con số, bot sẽ trả lời trung thực "chưa có giá, để em kiểm tra lại". Sau đó chạy kiểm tra lại 200 câu hỏi: <b>câu hỏi thường bot trả đúng 91/100</b>. Đồng thời làm xong công cụ để soi được vì sao bot trả mỗi câu, và lập kế hoạch rõ cho phần còn lại.
+  </p>
+
+  <div class="readout" role="group" aria-label="Chỉ số then chốt">
+    <div class="metric">
+      <div class="k">Chatbot bịa giá</div>
+      <div class="v">8 câu <span class="arrow">&rarr;</span> <span class="now">gần 0</span></div>
+    </div>
+    <div class="metric">
+      <div class="k">Câu hỏi thường trả đúng</div>
+      <div class="v">84 <span class="arrow">&rarr;</span> <span class="now">91 / 100</span></div>
+    </div>
+    <div class="metric">
+      <div class="k">Lỗi khách báo (giá lốp)</div>
+      <div class="v" style="font-size:19px">còn <span class="arrow">&rarr;</span> <span class="now">đã sửa ✓</span></div>
+    </div>
+  </div>
+
+  <!-- ===== MỤC TIÊU ===== -->
+  <section>
+    <h2>Mục tiêu hôm nay &amp; kết quả</h2>
+    <p class="lede">Mỗi việc: nhằm giải quyết vấn đề gì → đã xong chưa → kết quả thực tế.</p>
+
+    <div class="goal">
+      <div class="top">
+        <div><span class="num">Việc 1</span><h3>Làm chatbot không còn nói bừa giá tiền</h3></div>
+        <span class="chip ok">Xong</span>
+      </div>
+      <dl>
+        <dt>Vấn đề</dt><dd>Với sản phẩm chưa có giá trong hệ thống, chatbot hay "chế" ra một con số → khách nhận giá sai, dễ khiếu nại.</dd>
+        <dt>Đã làm</dt><dd>Lắp một "chốt kiểm tra" tự động: khi bot định nói con số không có thật, hệ thống chặn lại và thay bằng câu trung thực: <i>"Dạ mặt hàng này em chưa có thông tin giá, anh/chị để lại số điện thoại em kiểm tra báo lại".</i></dd>
+        <dt>Kết quả</dt><dd><span class="r">Thử 10 lần đều chặn được — khách không còn nhận giá bịa. Các câu bot trả đúng thì vẫn giữ nguyên, không chặn nhầm.</span></dd>
+      </dl>
+    </div>
+
+    <div class="goal">
+      <div class="top">
+        <div><span class="num">Việc 2</span><h3>Kiểm chứng lại toàn bộ bằng số thật</h3></div>
+        <span class="chip ok">Xong</span>
+      </div>
+      <dl>
+        <dt>Vấn đề</dt><dd>Sửa xong phải đo mới biết tốt lên bao nhiêu — không nói suông.</dd>
+        <dt>Đã làm</dt><dd>Chạy lại 200 câu hỏi, dùng "giám khảo AI" đối chiếu từng câu trả lời với dữ liệu gốc trong hệ thống (không tin cảm tính).</dd>
+        <dt>Kết quả</dt><dd><span class="r">Câu hỏi thường: đúng 91/100. Bộ 100 câu bẫy khó (cố tình gài để thử): đúng 74/100. Không còn câu nào bịa giá.</span></dd>
+      </dl>
+    </div>
+
+    <div class="goal">
+      <div class="top">
+        <div><span class="num">Việc 3</span><h3>Công cụ để soi được mọi câu trả lời</h3></div>
+        <span class="chip ok">Xong</span>
+      </div>
+      <dl>
+        <dt>Vấn đề</dt><dd>Trước đây khó truy "vì sao bot lại trả câu này" khi có sự cố.</dd>
+        <dt>Đã làm</dt><dd>Mỗi câu hỏi giờ được ghi lại đầy đủ (câu khách hỏi → dữ liệu bot dùng → câu bot trả) vào một file để mở ra kiểm tra.</dd>
+        <dt>Kết quả</dt><dd><span class="r">Muốn kiểm tra câu nào cũng mở xem được. (Chỉ bật ở môi trường thử, môi trường thật tắt để bảo mật thông tin khách.)</span></dd>
+      </dl>
+    </div>
+
+    <div class="goal">
+      <div class="top">
+        <div><span class="num">Việc 4</span><h3>Lập kế hoạch xử lý phần còn lại</h3></div>
+        <span class="chip ok">Xong</span>
+      </div>
+      <dl>
+        <dt>Vấn đề</dt><dd>Vẫn còn một số câu bot trả chưa chuẩn, cần đường đi rõ ràng, tránh làm ẩu.</dd>
+        <dt>Đã làm</dt><dd>Lên kế hoạch chi tiết + kiểm tra trước tính khả thi từng hướng.</dd>
+        <dt>Kết quả</dt><dd><span class="r">Phát hiện 2 hướng ban đầu bị sai, kịp sửa TRƯỚC khi làm → tiết kiệm được công sức làm lại.</span></dd>
+      </dl>
+    </div>
+  </section>
+
+  <!-- ===== VẤN ĐỀ ===== -->
+  <section>
+    <h2>Vấn đề gặp phải trong ngày</h2>
+    <ul class="items">
+      <li>
+        <span class="chip bad">Đã xử lý</span>
+        <div class="body">
+          <b>Phát sinh 1 lỗi phụ khi lắp chốt kiểm tra</b>
+          <span class="meta">Khi khách hỏi tiếp "giá của <i>nó</i>" (nhắc lại sản phẩm vừa hỏi), bot bị chặn nhầm cả câu đúng. → <b>Đã sửa gọn trong ngày</b>, thử lại 0 lỗi. Đây là lỗi mới phát sinh, không phải lỗi cũ quay lại.</span>
+        </div>
+      </li>
+      <li>
+        <span class="chip warn">Kịp dừng</span>
+        <div class="body">
+          <b>Có 1 hướng sửa định làm nhưng đo thử thấy không hiệu quả</b>
+          <span class="meta">Bọn em thử một cách nhưng đo lại thấy không cải thiện + còn sinh lỗi mới → <b>dừng ngay, không làm ẩu</b>. Kỷ luật "đo trước khi kết luận" giúp không mất công.</span>
+        </div>
+      </li>
+      <li>
+        <span class="chip warn">Điều chỉnh kỳ vọng</span>
+        <div class="body">
+          <b>Phần còn lại thực tế cải thiện được ~12–16 câu (không phải 27)</b>
+          <span class="meta">Ước lượng ban đầu hơi lạc quan; sau khi kiểm tra kỹ đã điều chỉnh lại con số cho đúng thực tế.</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- ===== SO SÁNH ===== -->
+  <section>
+    <h2>Tiến bộ so với lần trước</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Hạng mục</th><th style="text-align:right">Trước</th><th style="text-align:right">Hôm nay</th><th style="text-align:right">Thay đổi</th></tr></thead>
+        <tbody>
+          <tr><td>Chatbot bịa giá (bộ câu bẫy)</td><td class="num">8 câu</td><td class="num">gần 0</td><td class="num"><span class="up">tốt hơn ✓</span></td></tr>
+          <tr><td>Câu hỏi thường trả đúng</td><td class="num">84</td><td class="num">91</td><td class="num"><span class="up">+7</span></td></tr>
+          <tr><td>Bộ câu bẫy khó trả đúng</td><td class="num">69</td><td class="num">74</td><td class="num"><span class="up">+5</span></td></tr>
+          <tr><td>Lỗi khách báo (giá lốp 265/70)</td><td class="num">còn</td><td class="num">đã sửa</td><td class="num"><span class="up">✓</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ===== CÒN LẠI ===== -->
+  <section>
+    <h2>Còn lại chưa làm xong</h2>
+    <p class="lede">Còn khoảng 35 câu (chủ yếu trong bộ câu bẫy khó) bot trả chưa chuẩn, chia 3 nhóm:</p>
+    <ul class="items">
+      <li><span class="chip info">~16 câu</span><div class="body"><b>Bot chưa lấy đúng dữ liệu để trả</b><span class="meta">Dữ liệu CÓ trong hệ thống nhưng bot không tìm ra để đưa vào câu trả lời (thường ở câu so sánh, câu đếm, câu liệt kê).</span></div></li>
+      <li><span class="chip info">~14 câu</span><div class="body"><b>Bot có dữ liệu nhưng "nói thêm" thứ không có</b><span class="meta">Ví dụ: tự mô tả đặc điểm sản phẩm, hoặc nói sai "chưa phân phối hãng X" trong khi hệ thống có hãng đó.</span></div></li>
+      <li><span class="chip info">~5 câu</span><div class="body"><b>File dữ liệu gốc bị lỗi định dạng</b><span class="meta">File khách upload có cột "ngày về hàng" bị mất tên → bot không biết đó là ngày về. Cần sửa cách đọc file + nạp lại.</span></div></li>
+    </ul>
+  </section>
+
+  <!-- ===== KẾ HOẠCH MAI ===== -->
+  <section>
+    <h2>Kế hoạch ngày làm tiếp theo</h2>
+    <div class="next">
+      <div class="step"><span class="ord">1.</span><span class="t"><b>Chặn bot nói sai về hãng phân phối</b> — đã kiểm tra khả thi, làm được ngay. <span class="est">(dự kiến cứu thêm 3–4 câu)</span></span></div>
+      <div class="step"><span class="ord">2.</span><span class="t"><b>Bật cơ chế chặn bot "nói thêm" đặc điểm sản phẩm không có</b> — dùng công cụ sẵn có. <span class="est">(dự kiến ~3 câu)</span></span></div>
+      <div class="step"><span class="ord">3.</span><span class="t"><b>Sửa cách đọc file bị lỗi định dạng</b> + nạp lại dữ liệu — lấy lại cột "ngày về hàng". <span class="est">(dự kiến ~5 câu)</span></span></div>
+      <div class="step"><span class="ord">4.</span><span class="t"><b>Cải thiện việc bot tìm dữ liệu</b> cho câu so sánh/đếm — kiểm tra kỹ trước rồi mới sửa. <span class="est">(dự kiến ~2 câu)</span></span></div>
+    </div>
+  </section>
+
+  <footer>
+    <span>Trạng thái: chatbot đã đạt mốc an toàn (không bịa giá) · câu hỏi thường đúng 91%</span>
+    <span>Cập nhật 06/07/2026</span>
+  </footer>
+
+</div>
+</body>
+</html>

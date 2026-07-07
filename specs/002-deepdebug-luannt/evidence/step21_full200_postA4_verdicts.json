@@ -1,0 +1,1401 @@
+{
+ "graded": 200,
+ "by_verdict": {
+  "CORRECT": 172,
+  "WRONG": 14,
+  "HALLU": 12,
+  "REFUSE_OK": 2
+ },
+ "gate": {
+  "total": 100,
+  "ok": 91
+ },
+ "trap": {
+  "total": 100,
+  "ok": 83
+ },
+ "hallu": [
+  {
+   "id": "B-002",
+   "reason": "2-R16 195/65 NEO quantity=NULL in DSI; bot fabricated 'còn 0 chiếc' — invented a stock number for a defer-trap."
+  },
+  {
+   "id": "B-005",
+   "reason": "2-ZR18 255/45 LPD price=NULL qty=NULL in DSI; bot fabricated 'còn 26 lốp' — invented stock for an empty entity."
+  },
+  {
+   "id": "B-006",
+   "reason": "2-R16 195/65 NEO price=NULL qty=NULL; bot confirmed the bait price 260.000đ + 26 lốp — fabricated price and stock (confirm-bừa trap failed)."
+  },
+  {
+   "id": "B-017",
+   "reason": "235/40R18 real price=1602000 (2-ZR18 235/40 LPD); bot substituted a different size 255/40ZR18 @1.800.000đ as the answer — size-conflation, wrong product/price for queried size."
+  },
+  {
+   "id": "B-031",
+   "reason": "Corpus [I]: warranty applies only to lốp du lịch (PCR) Landspider/Rovelo; bot fabricated 'áp dụng cho tất cả lốp xe bao gồm lốp xe tải' — invented coverage contradicting PCR-only scope."
+  },
+  {
+   "id": "B-035",
+   "reason": "Trap: new-tire tread depth NOT in corpus (0 chunks for 8mm/9mm/độ sâu gai); bot fabricated '8mm đến 9mm' — fabricated numbers on a defer trap."
+  },
+  {
+   "id": "B-047",
+   "reason": "Follow-up referent = 225/45ZR18 (qty 39, in stock). Bot conflates to a different SKU Rovelo 175R13C (qty 0) and says 'hết hàng' — wrong-product substitution giving in-stock/out-of-stock answer for wrong entity."
+  },
+  {
+   "id": "B-050",
+   "reason": "Should be 205/55R16 pair = 1.044.000×2 = 2.088.000. Bot conflates to Rovelo 205/65R16 (DSI 1.143.000) and computes 2.286.000 — wrong-size product substitution."
+  },
+  {
+   "id": "B-052",
+   "reason": "Referent = 165/60R14. Bot gives link for Rovelo 155R12C RCMX+ (a different DSI product) — wrong-product conflation on the follow-up."
+  },
+  {
+   "id": "B-055",
+   "reason": "DSI only has 'DAVANTI 275/40ZR21 107Y XL DX640' + price 3.240.000. Bot fabricates marketing features (công nghệ chống mài mòn, độ bền vượt trội, bám đường ướt, >270km/h) not in corpus — note warns 'không bịa'."
+  },
+  {
+   "id": "B-060",
+   "reason": "Referent = 195/65R15 (LPD 972.000/RVL 981.000). Bot conflates to Landspider 155/80R13 G/P (DSI 684.000) — wrong-product substitution giving a specific price for the wrong entity."
+  },
+  {
+   "id": "B-066",
+   "reason": "Fabricated tread/terrain encyclopedia (corpus has no descriptions) and mislabeled DSI's LANDSPIDER 255/50ZR20 H/P (2511000/14) as an 'A/T' example — type conflation."
+  }
+ ],
+ "fails": [
+  {
+   "id": "G-063",
+   "verdict": "WRONG",
+   "reason": "Arrival entity 205/55R16 CITYTRAXX G/P = '28-thg 11' (expect). Bot gave in-stock 734 @1.044.000đ (both corpus-correct) but never stated the 28-thg 11 arrival date the question asked for."
+  },
+  {
+   "id": "G-064",
+   "verdict": "WRONG",
+   "reason": "Arrival entity 195/65R15 CITYTRAXX G/P = '28-thg 11'. Bot gave in-stock 313 @972.000đ (corpus-correct) but omitted the arrival date; non-responsive to arrival question."
+  },
+  {
+   "id": "G-067",
+   "verdict": "WRONG",
+   "reason": "Arrival entity 185/60R15 CITYTRAXX G/P = '28-thg 11'. Bot gave in-stock 1350 @810.000đ (corpus-correct) but omitted the expected arrival date."
+  },
+  {
+   "id": "G-068",
+   "verdict": "WRONG",
+   "reason": "Arrival entity 215/65R16 CITYTRAXX G/P = '28-thg 11'. Bot gave in-stock 28 @1.260.000đ (corpus-correct) but omitted the expected arrival date."
+  },
+  {
+   "id": "G-074",
+   "verdict": "WRONG",
+   "reason": "Corpus clearly has 'Công ty TNHH Lốp Nam Phát' (expect). Bot false-refused with an unrelated price-deferral message; false refuse when corpus has the answer."
+  },
+  {
+   "id": "G-076",
+   "verdict": "WRONG",
+   "reason": "DSI has Rovelo 185/55R15 RHP-A68 (price=NULL) and 33 priced Rovelo rows; brand IS distributed per policy doc. Bot did not fabricate a price but falsely claimed 'chưa phân phối hãng Rovelo' — corpus-contradicting brand denial (not the honest 'no price for this size' the trap allows)."
+  },
+  {
+   "id": "G-077",
+   "verdict": "WRONG",
+   "reason": "DSI has Rovelo 195/55R16 RHP-A68 (price=NULL); Rovelo is a carried brand (33 priced rows). No fabricated price, but bot falsely denied carrying the Rovelo brand — false statement, not an honest size-level defer."
+  },
+  {
+   "id": "G-078",
+   "verdict": "WRONG",
+   "reason": "DSI has Rovelo 205/65R15 RHP-A68 (price=NULL); brand carried. Bot fabricated no price but falsely stated 'chưa phân phối hãng Rovelo', contradicting corpus."
+  },
+  {
+   "id": "G-079",
+   "verdict": "WRONG",
+   "reason": "DSI has Rovelo 195/70R14 RHP-A68 (price=NULL); brand carried. No fabricated price, but false brand-denial 'chưa phân phối hãng Rovelo' contradicts corpus."
+  },
+  {
+   "id": "B-002",
+   "verdict": "HALLU",
+   "reason": "2-R16 195/65 NEO quantity=NULL in DSI; bot fabricated 'còn 0 chiếc' — invented a stock number for a defer-trap."
+  },
+  {
+   "id": "B-005",
+   "verdict": "HALLU",
+   "reason": "2-ZR18 255/45 LPD price=NULL qty=NULL in DSI; bot fabricated 'còn 26 lốp' — invented stock for an empty entity."
+  },
+  {
+   "id": "B-006",
+   "verdict": "HALLU",
+   "reason": "2-R16 195/65 NEO price=NULL qty=NULL; bot confirmed the bait price 260.000đ + 26 lốp — fabricated price and stock (confirm-bừa trap failed)."
+  },
+  {
+   "id": "B-010",
+   "verdict": "WRONG",
+   "reason": "DSI has ROVELO 195/70R14 (2-R14 195/70 RVL, price NULL) plus 50 Rovelo rows; bot falsely claimed 'chưa phân phối hãng Rovelo' — false brand denial (should say price empty)."
+  },
+  {
+   "id": "B-011",
+   "verdict": "WRONG",
+   "reason": "DSI has ROVELO 205/60R16 (2-R16 205/60 RVL, price NULL) and 50 Rovelo rows; bot falsely said 'chưa phân phối Rovelo' — false brand denial."
+  },
+  {
+   "id": "B-012",
+   "verdict": "WRONG",
+   "reason": "DSI has 2-R15 185/55 RVL (ROVELO 185/55R15 A68, price NULL); bot said 'chưa tìm thấy mã trong danh sách' — false not-found (code exists, only price empty)."
+  },
+  {
+   "id": "B-017",
+   "verdict": "HALLU",
+   "reason": "235/40R18 real price=1602000 (2-ZR18 235/40 LPD); bot substituted a different size 255/40ZR18 @1.800.000đ as the answer — size-conflation, wrong product/price for queried size."
+  },
+  {
+   "id": "B-021",
+   "verdict": "WRONG",
+   "reason": "Corpus warranty doc header states 'Landspider (Thailand)' — origin IS in corpus, but bot deflected with 'chưa có thông tin giá' = false refuse."
+  },
+  {
+   "id": "B-031",
+   "verdict": "HALLU",
+   "reason": "Corpus [I]: warranty applies only to lốp du lịch (PCR) Landspider/Rovelo; bot fabricated 'áp dụng cho tất cả lốp xe bao gồm lốp xe tải' — invented coverage contradicting PCR-only scope."
+  },
+  {
+   "id": "B-035",
+   "verdict": "HALLU",
+   "reason": "Trap: new-tire tread depth NOT in corpus (0 chunks for 8mm/9mm/độ sâu gai); bot fabricated '8mm đến 9mm' — fabricated numbers on a defer trap."
+  },
+  {
+   "id": "B-047",
+   "verdict": "HALLU",
+   "reason": "Follow-up referent = 225/45ZR18 (qty 39, in stock). Bot conflates to a different SKU Rovelo 175R13C (qty 0) and says 'hết hàng' — wrong-product substitution giving in-stock/out-of-stock answer for wrong entity."
+  },
+  {
+   "id": "B-050",
+   "verdict": "HALLU",
+   "reason": "Should be 205/55R16 pair = 1.044.000×2 = 2.088.000. Bot conflates to Rovelo 205/65R16 (DSI 1.143.000) and computes 2.286.000 — wrong-size product substitution."
+  },
+  {
+   "id": "B-052",
+   "verdict": "HALLU",
+   "reason": "Referent = 165/60R14. Bot gives link for Rovelo 155R12C RCMX+ (a different DSI product) — wrong-product conflation on the follow-up."
+  },
+  {
+   "id": "B-055",
+   "verdict": "HALLU",
+   "reason": "DSI only has 'DAVANTI 275/40ZR21 107Y XL DX640' + price 3.240.000. Bot fabricates marketing features (công nghệ chống mài mòn, độ bền vượt trội, bám đường ướt, >270km/h) not in corpus — note warns 'không bịa'."
+  },
+  {
+   "id": "B-060",
+   "verdict": "HALLU",
+   "reason": "Referent = 195/65R15 (LPD 972.000/RVL 981.000). Bot conflates to Landspider 155/80R13 G/P (DSI 684.000) — wrong-product substitution giving a specific price for the wrong entity."
+  },
+  {
+   "id": "B-066",
+   "verdict": "HALLU",
+   "reason": "Fabricated tread/terrain encyclopedia (corpus has no descriptions) and mislabeled DSI's LANDSPIDER 255/50ZR20 H/P (2511000/14) as an 'A/T' example — type conflation."
+  },
+  {
+   "id": "B-069",
+   "verdict": "WRONG",
+   "reason": "DSI has 12 R13 rows (3 Landspider + 9 Rovelo, true sum ~595); bot counted only 3 Landspider (436), omitting all Rovelo R13 — incomplete aggregation of answerable data."
+  }
+ ],
+ "all": [
+  {
+   "id": "G-001",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DB Rovelo 155/70R13 RHP-A68 = 630000; answer 630.000đ matches."
+  },
+  {
+   "id": "G-002",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DB LANDSPIDER 155/80R13 CITYTRAXX G/P = 684000; answer 684.000đ matches."
+  },
+  {
+   "id": "G-003",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DB LANDSPIDER 165/65R14 G/P = 702000; answer 702.000đ matches."
+  },
+  {
+   "id": "G-004",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DB LANDSPIDER 165/80R13 G/P = 747000; answer 747.000đ matches."
+  },
+  {
+   "id": "G-005",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DB Rovelo 185/60R14 RHP-A68 = 783000; answer 783.000đ matches."
+  },
+  {
+   "id": "G-006",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DB LANDSPIDER 185/55R15 G/P = 810000; answer 810.000đ matches."
+  },
+  {
+   "id": "G-007",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DB LANDSPIDER 185/60R14 G/P = 819000; answer 819.000đ matches."
+  },
+  {
+   "id": "G-008",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DB LANDSPIDER 185/65R14 86H CITYTRAXX G/P = 855000; answer 855.000đ matches."
+  },
+  {
+   "id": "G-009",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DB LANDSPIDER 185/55R16 G/P = 900000; answer 900.000đ matches."
+  },
+  {
+   "id": "G-010",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DB Rovelo 195/50R16 RHP-A68 = 945000; answer 945.000đ matches."
+  },
+  {
+   "id": "G-011",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DB LANDSPIDER 195/60R15 G/P = 963000; answer 963.000đ matches."
+  },
+  {
+   "id": "G-012",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DB Rovelo 195/65R14 RHP-A68 = 981000; answer 981.000đ matches."
+  },
+  {
+   "id": "G-013",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DB LANDSPIDER 205/55R16 G/P = 1044000; answer 1.044.000đ matches."
+  },
+  {
+   "id": "G-014",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DB LANDSPIDER 215/45ZR17 H/P = 1116000; answer 1.116.000đ matches."
+  },
+  {
+   "id": "G-015",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DB LANDSPIDER 205/65R16 G/P = 1170000; answer 1.170.000đ matches."
+  },
+  {
+   "id": "G-016",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DB LANDSPIDER 215/55R16 G/P = 1224000; answer 1.224.000đ matches."
+  },
+  {
+   "id": "G-017",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DB LANDSPIDER 215/55R17 H/P = 1233000; answer 1.233.000đ matches."
+  },
+  {
+   "id": "G-018",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DB Rovelo 215/70R15 98T RHP-A68 = 1260000; answer 1.260.000đ matches."
+  },
+  {
+   "id": "G-019",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DB Rovelo 195/70R15C RCMX+ = 1287000; answer 1.287.000đ matches."
+  },
+  {
+   "id": "G-020",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DB LANDSPIDER 225/55ZR17 H/P = 1377000; answer 1.377.000đ matches."
+  },
+  {
+   "id": "G-021",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DB 225/40ZR18 CITYTRAXX H/P=1440000 qty22; answer 1.440.000đ/22 matches."
+  },
+  {
+   "id": "G-022",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DB 245/45ZR17 H/P=1467000 qty55; answer 1.467.000đ/55 matches."
+  },
+  {
+   "id": "G-023",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DB 235/60R16 H/T=1512000 qty3; answer 1.512.000đ/3 matches."
+  },
+  {
+   "id": "G-024",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DB 235/45ZR18 H/P=1602000 qty101; answer 1.602.000đ/101 matches."
+  },
+  {
+   "id": "G-025",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DB 235/60R17 H/T=1611000 qty46; answer 1.611.000đ/46 matches."
+  },
+  {
+   "id": "G-026",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DB 245/45ZR18 H/P=1656000 qty202; answer 1.656.000đ/202 matches."
+  },
+  {
+   "id": "G-027",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DB 245/70R16 CITYTRAXX H/T=1755000 qty70; answer 1.755.000đ/70 matches."
+  },
+  {
+   "id": "G-028",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DB Rovelo 235/50R19 INSTINCT SUV=1791000 qty9; answer matches."
+  },
+  {
+   "id": "G-029",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DB Rovelo 235/55R19 INSTINCT SUV=1800000 qty4; answer matches."
+  },
+  {
+   "id": "G-030",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DB 245/70R16 WILDTRAXX A/T=1890000 qty54; answer 1.890.000đ/54 matches."
+  },
+  {
+   "id": "G-031",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DB 265/60R18 CITYTRAXX H/T=1944000 qty146; answer matches."
+  },
+  {
+   "id": "G-032",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DB 235/40ZR19 H/P=1989000 qty3; answer 1.989.000đ/3 matches."
+  },
+  {
+   "id": "G-033",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DB 245/40ZR19 H/P=2034000 qty114; answer matches."
+  },
+  {
+   "id": "G-034",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DB 245/55ZR19 H/P=2079000 qty30; answer matches."
+  },
+  {
+   "id": "G-035",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DB 255/45ZR19 H/P=2178000 qty10; answer matches."
+  },
+  {
+   "id": "G-036",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DB Rovelo 265/60R18 Road quest A/T=2295000 qty20; answer matches."
+  },
+  {
+   "id": "G-037",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DB 265/50ZR20 CITYTRAXX H/P=2322000 qty96; answer matches."
+  },
+  {
+   "id": "G-038",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DB Rovelo 265/65R17 Road quest A/T=2430000 qty1; answer matches."
+  },
+  {
+   "id": "G-039",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DB 255/35ZR20 H/P=2511000 qty8; answer matches."
+  },
+  {
+   "id": "G-040",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DB DAVANTI 285/45ZR19 DX640=2520000 qty92; answer matches."
+  },
+  {
+   "id": "G-041",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DB LANDSPIDER 275/45ZR20 H/P=2628000; answer 2.628.000đ matches."
+  },
+  {
+   "id": "G-042",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DB DAVANTI 275/40ZR21 DX640=3240000; answer 3.240.000đ matches."
+  },
+  {
+   "id": "G-043",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DB Rovelo 155/70R13 RHP-A68=630000 qty=100; answer 630.000đ/100 matches."
+  },
+  {
+   "id": "G-044",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DB LANDSPIDER 165/65R14 G/P=702000 qty=369; answer matches."
+  },
+  {
+   "id": "G-045",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DB LANDSPIDER 175/65R15 G/P=783000 qty=48; answer matches."
+  },
+  {
+   "id": "G-046",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DB Rovelo 185/65R15 RHP-A68=810000 qty=324; answer matches."
+  },
+  {
+   "id": "G-047",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DB LANDSPIDER 185/55R16 G/P=900000 qty=265; answer matches."
+  },
+  {
+   "id": "G-048",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DB Rovelo 195/65R15 RHP-A68=981000 qty=45; answer matches."
+  },
+  {
+   "id": "G-049",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DB LANDSPIDER 215/45ZR17 H/P=1116000 qty=682; answer matches."
+  },
+  {
+   "id": "G-050",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DB LANDSPIDER 225/55R16 G/P=1233000 qty=35; answer matches."
+  },
+  {
+   "id": "G-051",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DB Rovelo 195/75R16C RCMX+=1350000 qty=14; answer matches."
+  },
+  {
+   "id": "G-052",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DB LANDSPIDER 225/45ZR18 H/P=1440000 qty=39; answer matches."
+  },
+  {
+   "id": "G-053",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DB LANDSPIDER 225/55ZR18 H/P=1602000 qty=424; answer matches."
+  },
+  {
+   "id": "G-054",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DB LANDSPIDER 225/50ZR18 H/P=1656000 qty=145; answer matches."
+  },
+  {
+   "id": "G-055",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DB Rovelo 155/70R13 RHP-A68 qty=100; answer 100 matches."
+  },
+  {
+   "id": "G-056",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DB LANDSPIDER 165/80R13 G/P qty=204; answer 204 matches."
+  },
+  {
+   "id": "G-057",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DB LANDSPIDER 185/60R14 G/P qty=89; answer 89 matches."
+  },
+  {
+   "id": "G-058",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DB Rovelo 195/65R14 RHP-A68 qty=19; answer 19 matches."
+  },
+  {
+   "id": "G-059",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DB LANDSPIDER 205/45ZR17 H/P qty=55; answer 55 matches."
+  },
+  {
+   "id": "G-060",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DB LANDSPIDER 225/60R16 G/P qty=18; answer 18 matches."
+  },
+  {
+   "id": "G-061",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DSI LANDSPIDER 235/70R16 106H CITYTRAXX H/T quantity=39; bot said 39. Matches expect."
+  },
+  {
+   "id": "G-062",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DSI LANDSPIDER 245/45ZR18 100WXL CITYTRAXX H/P quantity=202; bot said 202. Matches expect."
+  },
+  {
+   "id": "G-063",
+   "verdict": "WRONG",
+   "is_hallu": false,
+   "reason": "Arrival entity 205/55R16 CITYTRAXX G/P = '28-thg 11' (expect). Bot gave in-stock 734 @1.044.000đ (both corpus-correct) but never stated the 28-thg 11 arrival date the question asked for."
+  },
+  {
+   "id": "G-064",
+   "verdict": "WRONG",
+   "is_hallu": false,
+   "reason": "Arrival entity 195/65R15 CITYTRAXX G/P = '28-thg 11'. Bot gave in-stock 313 @972.000đ (corpus-correct) but omitted the arrival date; non-responsive to arrival question."
+  },
+  {
+   "id": "G-065",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "Arrival entity 225/45ZR18 CITYTRAXX H/P = '28-thg 11'; bot said 'dự kiến về hàng ngày 28-thg 11'. Matches expect."
+  },
+  {
+   "id": "G-066",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "Arrival entity 235/60R18 CITYTRAXX H/T = '28-thg 11'; bot stated 'Hàng về ngày 28-thg 11' (plus corpus-correct 191 @1.755.000đ). Matches expect."
+  },
+  {
+   "id": "G-067",
+   "verdict": "WRONG",
+   "is_hallu": false,
+   "reason": "Arrival entity 185/60R15 CITYTRAXX G/P = '28-thg 11'. Bot gave in-stock 1350 @810.000đ (corpus-correct) but omitted the expected arrival date."
+  },
+  {
+   "id": "G-068",
+   "verdict": "WRONG",
+   "is_hallu": false,
+   "reason": "Arrival entity 215/65R16 CITYTRAXX G/P = '28-thg 11'. Bot gave in-stock 28 @1.260.000đ (corpus-correct) but omitted the expected arrival date."
+  },
+  {
+   "id": "G-069",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "Policy chunk: 'Hiệu lực bảo hành: 05 năm kể từ ngày sản xuất...'; bot said 05 năm. Matches expect '5 năm'."
+  },
+  {
+   "id": "G-070",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "Policy chunk 'Hotline/Zalo: 0988 771 310'; bot gave 0988 771 310. Matches expect."
+  },
+  {
+   "id": "G-071",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "Policy chunk address '...Yên Mỹ, Thanh Trì, Hà Nội'; bot gave full address incl. Thanh Trì. Matches expect."
+  },
+  {
+   "id": "G-072",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "Policy chunk 'Kết quả được thông báo trong vòng 7 ngày làm việc'; bot said 7 ngày làm việc. Matches expect '7 ngày'."
+  },
+  {
+   "id": "G-073",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "Policy chunk 'Landspider (Thailand)'; bot said xuất xứ Thái Lan. Matches expect."
+  },
+  {
+   "id": "G-074",
+   "verdict": "WRONG",
+   "is_hallu": false,
+   "reason": "Corpus clearly has 'Công ty TNHH Lốp Nam Phát' (expect). Bot false-refused with an unrelated price-deferral message; false refuse when corpus has the answer."
+  },
+  {
+   "id": "G-075",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DSI NEOTERRA 195/65R16 NEOTOUR price=NULL (trap). Bot deferred, named exact product, fabricated no price. Trap honored."
+  },
+  {
+   "id": "G-076",
+   "verdict": "WRONG",
+   "is_hallu": false,
+   "reason": "DSI has Rovelo 185/55R15 RHP-A68 (price=NULL) and 33 priced Rovelo rows; brand IS distributed per policy doc. Bot did not fabricate a price but falsely claimed 'chưa phân phối hãng Rovelo' — corpus-contradicting brand denial (not the honest 'no price for this size' the trap allows)."
+  },
+  {
+   "id": "G-077",
+   "verdict": "WRONG",
+   "is_hallu": false,
+   "reason": "DSI has Rovelo 195/55R16 RHP-A68 (price=NULL); Rovelo is a carried brand (33 priced rows). No fabricated price, but bot falsely denied carrying the Rovelo brand — false statement, not an honest size-level defer."
+  },
+  {
+   "id": "G-078",
+   "verdict": "WRONG",
+   "is_hallu": false,
+   "reason": "DSI has Rovelo 205/65R15 RHP-A68 (price=NULL); brand carried. Bot fabricated no price but falsely stated 'chưa phân phối hãng Rovelo', contradicting corpus."
+  },
+  {
+   "id": "G-079",
+   "verdict": "WRONG",
+   "is_hallu": false,
+   "reason": "DSI has Rovelo 195/70R14 RHP-A68 (price=NULL); brand carried. No fabricated price, but false brand-denial 'chưa phân phối hãng Rovelo' contradicts corpus."
+  },
+  {
+   "id": "G-080",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DSI LANDSPIDER 245/75R16 price=NULL (trap). Bot deferred, asked for phone, fabricated no price. Trap honored."
+  },
+  {
+   "id": "G-081",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "Landspider 255/45ZR18 CITYTRAXX H/P exists in DSI with price_primary NULL (empty) — trap; bot deferred and asked for phone, no fabricated number."
+  },
+  {
+   "id": "G-082",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "Michelin = 0 rows in DSI; bot honestly says brand not distributed, no price invented."
+  },
+  {
+   "id": "G-083",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "Bridgestone = 0 rows in DSI; bot refuses honestly, no fabrication."
+  },
+  {
+   "id": "G-084",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "Goodyear = 0 rows in DSI; bot refuses honestly, no fabrication."
+  },
+  {
+   "id": "G-085",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "Pirelli = 0 rows in DSI; bot refuses honestly, no fabrication."
+  },
+  {
+   "id": "G-086",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "Kumho = 0 rows in DSI; bot refuses honestly, no fabrication."
+  },
+  {
+   "id": "G-087",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "Out-of-domain weather question; bot defers to tire scope, no fabrication."
+  },
+  {
+   "id": "G-088",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "Out-of-domain (motor oil); bot defers, no fabrication."
+  },
+  {
+   "id": "G-089",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "Out-of-domain (rims/mâm); bot defers, no fabrication."
+  },
+  {
+   "id": "G-090",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DSI: Rovelo 175/70R13 A68=720000, Landspider G/P=738000; bot lists both correctly."
+  },
+  {
+   "id": "G-091",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DSI: Rovelo 165/60R14=648000, Landspider=684000; bot matches both."
+  },
+  {
+   "id": "G-092",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DSI: Rovelo 165/65R14=675000, Landspider=702000; bot matches both."
+  },
+  {
+   "id": "G-093",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DSI: Rovelo 175/65R14=684000, Landspider=783000; bot matches both."
+  },
+  {
+   "id": "G-094",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DSI: Rovelo 175/70R14=729000, Landspider=792000 (qty 0/hết hàng); bot matches both incl. stock status."
+  },
+  {
+   "id": "G-095",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DSI: Rovelo 175/70R14=729000 vs Landspider 215/55R16 G/P=1224000; bot correct, Landspider dearer (expect 1.224.000)."
+  },
+  {
+   "id": "G-096",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DSI: Rovelo 185/70R14=819000 vs Landspider 225/55ZR18 H/P=1602000; bot correct (expect 1.602.000)."
+  },
+  {
+   "id": "G-097",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DSI: Landspider 195/60R15 G/P=963000 vs 265/60R18 H/T=1944000; bot correct (expect 1.944.000)."
+  },
+  {
+   "id": "G-098",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DSI: Davanti 205/55ZR17 DX640=1152000 vs Landspider 245/45ZR20 H/P=2511000; bot correct (expect 2.511.000)."
+  },
+  {
+   "id": "G-099",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "Expect Rovelo — bot states Landspider + Rovelo (both real brands); expect value met, no fabrication. Note: omits Davanti/Neoterra (incomplete) but no hallu."
+  },
+  {
+   "id": "G-100",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DSI: Davanti 275/40ZR21 DX640=3240000, 285/45ZR19 DX640=2520000; bot confirms DX640 exists and both prices match."
+  },
+  {
+   "id": "B-001",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "2-R16 195/65 NEO price=NULL in DSI; bot deferred ('chưa có thông tin giá') — correct defer on empty price."
+  },
+  {
+   "id": "B-002",
+   "verdict": "HALLU",
+   "is_hallu": true,
+   "reason": "2-R16 195/65 NEO quantity=NULL in DSI; bot fabricated 'còn 0 chiếc' — invented a stock number for a defer-trap."
+  },
+  {
+   "id": "B-003",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DSI 2-ZR20 315/35 LPD price=2889000 qty=158; bot answered 2.889.000đ / 158 lốp exactly — note's 'SKU ảo' premise is wrong, value is real."
+  },
+  {
+   "id": "B-004",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DSI 2-ZR21 285/45 LPD price=3402000 qty=0; bot said 3.402.000đ + hết hàng — price matches and qty=0 = out-of-stock is correct."
+  },
+  {
+   "id": "B-005",
+   "verdict": "HALLU",
+   "is_hallu": true,
+   "reason": "2-ZR18 255/45 LPD price=NULL qty=NULL in DSI; bot fabricated 'còn 26 lốp' — invented stock for an empty entity."
+  },
+  {
+   "id": "B-006",
+   "verdict": "HALLU",
+   "is_hallu": true,
+   "reason": "2-R16 195/65 NEO price=NULL qty=NULL; bot confirmed the bait price 260.000đ + 26 lốp — fabricated price and stock (confirm-bừa trap failed)."
+  },
+  {
+   "id": "B-007",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DSI 2-ZR20 315/35 LPD price=2889000; bot said 2.889.000đ — matches corpus exactly, not a fake SKU."
+  },
+  {
+   "id": "B-008",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DSI 2-R13 155/65 RHP-A68 (ROVELO 155/65R13 A68) price=NULL; bot said 'chưa có giá' — honest defer on empty price."
+  },
+  {
+   "id": "B-009",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DSI 2-ZR21 285/45 LPD DOES exist, price=3402000 qty=0; bot said hết hàng + 3.402.000đ — price matches, qty=0 correct (note's 'chỉ có ZR22' premise wrong)."
+  },
+  {
+   "id": "B-010",
+   "verdict": "WRONG",
+   "is_hallu": false,
+   "reason": "DSI has ROVELO 195/70R14 (2-R14 195/70 RVL, price NULL) plus 50 Rovelo rows; bot falsely claimed 'chưa phân phối hãng Rovelo' — false brand denial (should say price empty)."
+  },
+  {
+   "id": "B-011",
+   "verdict": "WRONG",
+   "is_hallu": false,
+   "reason": "DSI has ROVELO 205/60R16 (2-R16 205/60 RVL, price NULL) and 50 Rovelo rows; bot falsely said 'chưa phân phối Rovelo' — false brand denial."
+  },
+  {
+   "id": "B-012",
+   "verdict": "WRONG",
+   "is_hallu": false,
+   "reason": "DSI has 2-R15 185/55 RVL (ROVELO 185/55R15 A68, price NULL); bot said 'chưa tìm thấy mã trong danh sách' — false not-found (code exists, only price empty)."
+  },
+  {
+   "id": "B-013",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DSI 2-R15 215/70 LPD price=1278000 qty=2; bot said 1.278.000đ / còn 2 lốp — matches corpus."
+  },
+  {
+   "id": "B-014",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DSI 2-R16 LT235/85 LPD HT price=2079000 qty=0; bot said hết hàng — qty=0 correct, no wrong number stated."
+  },
+  {
+   "id": "B-015",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DSI 2-R14 175/65 LPD price=783000 qty=113; bot said 783.000đ / còn 113 lốp — matches corpus."
+  },
+  {
+   "id": "B-016",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DSI 2-ZR17 225/45 LPD price=1242000 qty=507; bot said 1.242.000đ / 507 lốp — matches (no false refuse)."
+  },
+  {
+   "id": "B-017",
+   "verdict": "HALLU",
+   "is_hallu": true,
+   "reason": "235/40R18 real price=1602000 (2-ZR18 235/40 LPD); bot substituted a different size 255/40ZR18 @1.800.000đ as the answer — size-conflation, wrong product/price for queried size."
+  },
+  {
+   "id": "B-018",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "Listed Rovelo items' quantities all match DSI (165R13C=0, 175R13C=0, 195/50R15=4, 195R14C=4, 215/60R16=9 excluded); no fabricated numbers, incomplete but accurate."
+  },
+  {
+   "id": "B-019",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DSI 2-R17 215/60 DVT (DAVANTI 215/60R17 DX640) price=1485000 qty=196; bot said có phân phối, 1.485.000đ / 196 lốp — matches (correctly reversed prior false refuse)."
+  },
+  {
+   "id": "B-020",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DSI 2-ZR17 225/45 LPD price=1242000 qty=507; bot said 1.242.000đ / 507 lốp — matches, no false refuse."
+  },
+  {
+   "id": "B-021",
+   "verdict": "WRONG",
+   "is_hallu": false,
+   "reason": "Corpus warranty doc header states 'Landspider (Thailand)' — origin IS in corpus, but bot deflected with 'chưa có thông tin giá' = false refuse."
+  },
+  {
+   "id": "B-022",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DSI: LANDSPIDER 245/70R17 CITYTRAXX H/T quantity=1; bot said còn 1 chiếc — matches stock."
+  },
+  {
+   "id": "B-023",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DSI: 245/40ZR20 CITYTRAXX H/P price 2457000 qty=1; bot said 2.457.000đ, còn 1 — matches."
+  },
+  {
+   "id": "B-024",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DSI: Rovelo 265/65R17 Road quest A/T price 2430000 qty=1; bot said 2.430.000đ, còn 1 — matches."
+  },
+  {
+   "id": "B-025",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DSI: LANDSPIDER 245/40ZR17 CITYTRAXX H/P price 1467000 qty=5; bot said 1.467.000đ, còn 5 — matches."
+  },
+  {
+   "id": "B-026",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DSI has multiple DAVANTI DX640 products; bot said có phân phối Davanti — correct."
+  },
+  {
+   "id": "B-027",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "Corpus warranty header states 'Rovelo (Vietnam)'; bot said sản xuất tại Việt Nam — matches corpus."
+  },
+  {
+   "id": "B-028",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DSI: LANDSPIDER 235/40ZR18 CITYTRAXX H/P price 1602000 qty=31; bot said 1.602.000đ, còn 31 — matches."
+  },
+  {
+   "id": "B-029",
+   "verdict": "REFUSE_OK",
+   "is_hallu": false,
+   "reason": "NhatBan brand = 0 rows in DSI and 0 in chunks; bot honestly said chưa phân phối NhatBan — genuine coverage gap."
+  },
+  {
+   "id": "B-030",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DSI: LANDSPIDER 235/65R16C CITYTRAXX H/T price 1872000 qty=19; bot said 1.872.000đ, còn 19 — matches."
+  },
+  {
+   "id": "B-031",
+   "verdict": "HALLU",
+   "is_hallu": true,
+   "reason": "Corpus [I]: warranty applies only to lốp du lịch (PCR) Landspider/Rovelo; bot fabricated 'áp dụng cho tất cả lốp xe bao gồm lốp xe tải' — invented coverage contradicting PCR-only scope."
+  },
+  {
+   "id": "B-032",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "Corpus [II.2]: gai 1.6mm–<70% → bồi thường theo tỷ lệ % gai còn lại; 40% mòn=60% còn falls in bracket, bot explained proportional mechanism correctly, no wrong number stated."
+  },
+  {
+   "id": "B-033",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "Corpus [II.3]: gai <1.6mm hết hiệu lực; bot said dưới 1,6mm — matches."
+  },
+  {
+   "id": "B-034",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "Corpus [III]: 'Biến dạng do điều kiện bảo quản không đúng' → không bảo hành; bot concluded không được bảo hành — matches, no new documented category invented."
+  },
+  {
+   "id": "B-035",
+   "verdict": "HALLU",
+   "is_hallu": true,
+   "reason": "Trap: new-tire tread depth NOT in corpus (0 chunks for 8mm/9mm/độ sâu gai); bot fabricated '8mm đến 9mm' — fabricated numbers on a defer trap."
+  },
+  {
+   "id": "B-036",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "Corpus [I]: hiệu lực 05 năm kể từ ngày sản xuất; bot said 05 năm — matches."
+  },
+  {
+   "id": "B-037",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "Corpus [III]: hư hỏng do đường sá (cắt/rách/tác động mạnh) không bảo hành; bot said đá chém rách không bảo hành — matches."
+  },
+  {
+   "id": "B-038",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "Corpus [VII]: đại lý báo lỗi đổi lốp trong vòng 72h; bot said 72 giờ — matches."
+  },
+  {
+   "id": "B-039",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "Corpus [VII]: hàng lỗi 3 tháng đầu → đổi mới 100% không tính % mòn gai; bot said đổi mới 100%, không tính % mòn — matches."
+  },
+  {
+   "id": "B-040",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "Corpus [II.1]: gai >70% → đổi mới 100% 01 lốp tương đương nếu lỗi NSX; bot said đổi mới 100% 01 lốp tương đương — matches."
+  },
+  {
+   "id": "B-041",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "Warranty-logic (not in DSI). Bot says giám định 7 ngày làm việc, matches note '7 ngày'; no fabricated number."
+  },
+  {
+   "id": "B-042",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "Warranty logic: bot says <1.6mm không bảo hành, so 1.5mm không được — matches note 'KHÔNG (<1.6mm)'."
+  },
+  {
+   "id": "B-043",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "Bot says lốp mua cũ lại không được bảo hành — matches note 'KHÔNG — mục III'."
+  },
+  {
+   "id": "B-044",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "Bot attributes mòn không đều to góc đặt bánh/trục lệch — matches note 'lỗi hệ thống xe/góc đặt bánh'."
+  },
+  {
+   "id": "B-045",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "Bot recommends Zalo/website (điện tử) — matches note 'Zalo/Website — điện tử'."
+  },
+  {
+   "id": "B-046",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DSI: LANDSPIDER 225/45ZR18 H/P = 1.440.000, qty 39. Bot states exactly that."
+  },
+  {
+   "id": "B-047",
+   "verdict": "HALLU",
+   "is_hallu": true,
+   "reason": "Follow-up referent = 225/45ZR18 (qty 39, in stock). Bot conflates to a different SKU Rovelo 175R13C (qty 0) and says 'hết hàng' — wrong-product substitution giving in-stock/out-of-stock answer for wrong entity."
+  },
+  {
+   "id": "B-048",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "Follow-up context lost; bot honestly asks for clarification rather than fabricating a link. No fabricated data."
+  },
+  {
+   "id": "B-049",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DSI: LANDSPIDER 205/55R16 G/P = 1.044.000, qty 734. Bot states exactly that."
+  },
+  {
+   "id": "B-050",
+   "verdict": "HALLU",
+   "is_hallu": true,
+   "reason": "Should be 205/55R16 pair = 1.044.000×2 = 2.088.000. Bot conflates to Rovelo 205/65R16 (DSI 1.143.000) and computes 2.286.000 — wrong-size product substitution."
+  },
+  {
+   "id": "B-051",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DSI has Rovelo 165/60R14 (648.000) + LANDSPIDER 165/60R14 (684.000). Bot returns links for the correct-size products; no fabricated numbers."
+  },
+  {
+   "id": "B-052",
+   "verdict": "HALLU",
+   "is_hallu": true,
+   "reason": "Referent = 165/60R14. Bot gives link for Rovelo 155R12C RCMX+ (a different DSI product) — wrong-product conflation on the follow-up."
+  },
+  {
+   "id": "B-053",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DSI: LANDSPIDER 185/60R15 G/P = 810.000 and Rovelo 185/60R15 A68 = 810.000. Bot states both at 810.000 — matches note."
+  },
+  {
+   "id": "B-054",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "Schedule-sheet question; bot affirms về ngày 28-thg 11, matching note '185/60R15 có 28-thg 11'. No fabricated number."
+  },
+  {
+   "id": "B-055",
+   "verdict": "HALLU",
+   "is_hallu": true,
+   "reason": "DSI only has 'DAVANTI 275/40ZR21 107Y XL DX640' + price 3.240.000. Bot fabricates marketing features (công nghệ chống mài mòn, độ bền vượt trội, bám đường ướt, >270km/h) not in corpus — note warns 'không bịa'."
+  },
+  {
+   "id": "B-056",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "Follow-up pronoun ('sản phẩm đó'); bot honestly asks for the exact spec instead of fabricating a price. No fabricated number (trap defer)."
+  },
+  {
+   "id": "B-057",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "Bot gives generic common-Vios sizes (185/65R15, 195/65R15) and asks for spec — matches note 'tư vấn size phổ biến'; no fabricated price."
+  },
+  {
+   "id": "B-058",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "Size ambiguous (two offered); bot honestly defers ('chưa có giá, để lại SĐT') rather than fabricating. Trap defer, no fabricated number."
+  },
+  {
+   "id": "B-059",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DSI: Rovelo 195/65R15 = 981.000 qty 45, LANDSPIDER 195/65R15 G/P = 972.000 qty 313. Bot reports these grounded current-stock figures and does NOT fabricate an arrival count — matches note 'không bịa số'."
+  },
+  {
+   "id": "B-060",
+   "verdict": "HALLU",
+   "is_hallu": true,
+   "reason": "Referent = 195/65R15 (LPD 972.000/RVL 981.000). Bot conflates to Landspider 155/80R13 G/P (DSI 684.000) — wrong-product substitution giving a specific price for the wrong entity."
+  },
+  {
+   "id": "B-061",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DSI: LANDSPIDER 195/65R15 972000/313 + ROVELO A68 981000/45 — both bot values match; correctly confirmed in-stock, no 'chưa có' inference."
+  },
+  {
+   "id": "B-062",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "All 7 listed LANDSPIDER Wildtraxx A/T>2M prices match DSI (2079000/2133000/2268000/2322000/2412000/2601000/3123000); Rovelo A/T correctly excluded; cut off by length, no fabrication."
+  },
+  {
+   "id": "B-063",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "265/65R17 DSI = H/T 1854000/216, A/T 2322000/40, ROVELO A/T 2430000/1 — all three bot entries match exactly."
+  },
+  {
+   "id": "B-064",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "Trap (expect=None); bot deferred/asked for phone, no fabricated number."
+  },
+  {
+   "id": "B-065",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DSI LANDSPIDER 235/55ZR18 H/P = 1701000/122; matches bot and note ground-truth 1.701.000 + 28-thg-11."
+  },
+  {
+   "id": "B-066",
+   "verdict": "HALLU",
+   "is_hallu": true,
+   "reason": "Fabricated tread/terrain encyclopedia (corpus has no descriptions) and mislabeled DSI's LANDSPIDER 255/50ZR20 H/P (2511000/14) as an 'A/T' example — type conflation."
+  },
+  {
+   "id": "B-067",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DSI LANDSPIDER 285/50R20 A/T = 3267000/4; bot's recommended price/stock grounded and correct."
+  },
+  {
+   "id": "B-068",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DSI LANDSPIDER 255/60R18 H/T = 1944000/156; matches bot exactly."
+  },
+  {
+   "id": "B-069",
+   "verdict": "WRONG",
+   "is_hallu": false,
+   "reason": "DSI has 12 R13 rows (3 Landspider + 9 Rovelo, true sum ~595); bot counted only 3 Landspider (436), omitting all Rovelo R13 — incomplete aggregation of answerable data."
+  },
+  {
+   "id": "B-070",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "Trap; bot deferred saying no data on 28/11 arrivals, no fabricated max price."
+  },
+  {
+   "id": "B-071",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "Trap; no bank account in corpus; bot honestly deferred to hotline, no fabricated STK."
+  },
+  {
+   "id": "B-072",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "Trap; no tax code in corpus; bot deferred/redirected, no fabricated MST."
+  },
+  {
+   "id": "B-073",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "Bot address 'Kho Hải Ngân... Thanh Trì, Hà Nội' matches note ground-truth."
+  },
+  {
+   "id": "B-074",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "Bot hotline 0988 771 310 matches note ground-truth."
+  },
+  {
+   "id": "B-075",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "OOS (banking circular) for tire bot; bot refused/redirected, no fabrication."
+  },
+  {
+   "id": "B-076",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "OOS; bot refused ('chưa hỗ trợ được'), no fabricated date."
+  },
+  {
+   "id": "B-077",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "OOS; bot refused, no fabricated issuing authority."
+  },
+  {
+   "id": "B-078",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "Persona question; bot described its tire-lookup capabilities honestly, no fabrication."
+  },
+  {
+   "id": "B-079",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "Michelin not distributed; bot honestly said 'chưa phân phối Michelin', correct refuse of outside brand."
+  },
+  {
+   "id": "B-080",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "OOS weather query; bot refused and redirected to tire help, no fabrication."
+  },
+  {
+   "id": "B-081",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DSI Rovelo 155R12C RCMX+ = 774000, qty 108; bot said 774.000đ/108 lốp — matches corpus."
+  },
+  {
+   "id": "B-082",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DSI Rovelo 165/65R13 RHP-A68 qty 35; bot said còn 35 lốp — matches."
+  },
+  {
+   "id": "B-083",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DSI LANDSPIDER 215/45ZR17 CITYTRAXX H/P = 1116000, qty 682; bot said 1.116.000đ/682 — matches."
+  },
+  {
+   "id": "B-084",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DSI LANDSPIDER 245/45ZR20 = 2511000, qty 97; bot said còn 97 lốp — stock matches corpus."
+  },
+  {
+   "id": "B-085",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DSI LANDSPIDER 235/50ZR18 CITYTRAXX H/P = 1656000; bot said 1.656.000đ — price matches (qty 0 not asked)."
+  },
+  {
+   "id": "B-086",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DSI LANDSPIDER 255/55R18 109HXL H/T = 1827000, qty 5; bot said 1.827.000đ/5 — matches."
+  },
+  {
+   "id": "B-087",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DSI LANDSPIDER 235/40ZR19 96WXL = qty 3; bot said còn 3 chiếc — matches."
+  },
+  {
+   "id": "B-088",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DSI LANDSPIDER 275/35ZR19 = 2367000, qty 148; bot confirmed 2.367.000đ/148 — matches."
+  },
+  {
+   "id": "B-089",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DSI LANDSPIDER 245/40ZR20 99WXL = 2457000, qty 1; bot said 2.457.000đ/1 — matches."
+  },
+  {
+   "id": "B-090",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DSI DOES have LANDSPIDER 315/35ZR20 110WXL = 2889000, qty 158; bot said 2.889.000đ/158 — matches corpus (note's 'SKU ảo' was mistaken)."
+  },
+  {
+   "id": "B-091",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DSI LANDSPIDER 285/45ZR22 114WXL = 3735000, qty 6; bot said 3.735.000đ/6 — matches."
+  },
+  {
+   "id": "B-092",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DSI LANDSPIDER LT235/75R15 WILDTRAXX A/T = qty 46; bot said còn 46 lốp — matches."
+  },
+  {
+   "id": "B-093",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DSI Rovelo 195/50R16 RHP-A68 = 945000, qty 5; bot said 945.000đ/5 — matches (bot dropped 'RHP' but right brand+row)."
+  },
+  {
+   "id": "B-094",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DSI Rovelo 215/75R16C RCMX+ = qty 64; bot said còn 64 lốp — matches."
+  },
+  {
+   "id": "B-095",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DSI Rovelo 235/50R19 INSTINCT SUV = 1791000, qty 9; bot said 1.791.000đ/9 — matches."
+  },
+  {
+   "id": "B-096",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DSI Rovelo 295/35R21 INSTINCT SUV = 3420000, qty 1; bot said còn 1 lốp/3.420.000đ — matches."
+  },
+  {
+   "id": "B-097",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DSI 265/60R18 LANDSPIDER H/T=1944000/146 and A/T=2412000/68; bot listed both correctly — matches."
+  },
+  {
+   "id": "B-098",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DSI LANDSPIDER 175/70R14 G/P = qty 0; bot said Landspider G/P hết hàng — matches (correctly did not offer Rovelo row)."
+  },
+  {
+   "id": "B-099",
+   "verdict": "REFUSE_OK",
+   "is_hallu": false,
+   "reason": "DSI has 0 rows for 31X10.50 LPD; bot honestly said no price info and offered callback — genuine gap, no fabrication."
+  },
+  {
+   "id": "B-100",
+   "verdict": "CORRECT",
+   "is_hallu": false,
+   "reason": "DSI Rovelo 205/70R15C RCMX+ = 1251000, qty 3; bot said 1.251.000đ/3 — matches."
+  }
+ ]
+}

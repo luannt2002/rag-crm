@@ -399,3 +399,33 @@
   (trước chặn oan) — chain price ground qua history.
 - Blast-radius: guard_output mọi bot; chỉ MỞ RỘNG grounding (không siết) →
   không thể tăng false-block. Pin = test_numeric_fidelity_noise_strip.
+
+## Step 20 (002-B1) — CODE: brand-scope OBSERVE gate — false-brand-denial detector (2026-07-07)
+- Vấn đề (Step-18 dư địa): numeric-fidelity MÙ với "chưa phân phối hãng X" — câu
+  từ chối KHÔNG mang số, nhưng là MISINFORMATION khi corpus thực sự có bán X
+  (step20: Rovelo bị từ chối trong khi document_service_index có 51 SKU Rovelo).
+- Change (deterministic, LLM-independent):
+  * `src/ragbot/shared/brand_scope.py::detect_denied_brand` — PURE, shape-based:
+    negation-phrase (config-injected) + proper-noun brand token. 0 brand/VN
+    literal trong src (default phrases = ()). RED test 6/6.
+  * `guard_output.py` — sau numeric-fidelity block: detect brand → DSI existence
+    `stats_index_repo.count_by_name_keyword(record_bot_id, brand)`. Chỉ khi
+    count>0 (brand THỰC SỰ có) → observe-log `brand_scope_observe` (default) hoặc
+    block (owner opt-in, substitute oos_answer_template — sacred #10 path).
+  * pcfg keys `brand_scope_gate_action` + `brand_scope_negation_phrases` trong CẢ
+    2 builder (parity 4/4 green). Alembic `brand_scope_csx_260707` seed observe +
+    3 phrase VN (grounded step20 answers) vào plan_limits chinh-sach-xe.
+- MEASURE (runtime N, bypass_cache, journalctl brand_scope_observe events):
+  | probe | denials | events | stocked_rows | verdict |
+  | Rovelo (DSI=51) | 35/36 | **35** | 51 (exact) | fires trên MỌI false-denial |
+  | Michelin (DSI=0) | 12/12 | **0** | — | SILENT trên true-refusal |
+  * Catch = 35/35; False-positive = 0/12 (control Michelin không bao giờ fire).
+  * action=observe 35/35 → 0 answer thay đổi (sacred #10 giữ nguyên).
+- COVERAGE finding: bot false-deny Rovelo ~97% (35/36) dù có 51 SKU → coverage
+  loss LỚN (faithfulness-1.0-nhưng-coverage-vỡ). B1 observe giờ ĐO được nó.
+- Tests: brand_scope 6/6 + guard/parity 93 GREEN. 3 fail khác (domain-neutral×2,
+  broad-except 251>249) VERIFIED pre-existing (stash-isolation: count clean==mine).
+- Next rung (owner-gate): flip block (harm-reduction: 35/36 misinformation → 0,
+  thay bằng oos_template) — NHƯNG block KHÔNG khôi phục giá đúng; coverage-fix
+  thật = upstream retrieval routing (đưa chunk Rovelo vào topN). 2 việc khác tầng.
+- Evidence: alembic 20260707_brand_scope_observe_chinh_sach_xe.py · b1_observe_result.json.

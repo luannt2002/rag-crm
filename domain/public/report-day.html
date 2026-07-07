@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Báo cáo ngày — Chatbot tư vấn lốp xe</title>
+<style>
+  :root{
+    --paper:#F3F4F7;--card:#FFFFFF;--ink:#191F2E;--muted:#5A6576;
+    --accent:#14566B;--accent-soft:#E6EEF0;--rule:#E1E4EB;--ok:#1E7D46;
+    --mono:ui-monospace,"SF Mono","Cascadia Code",Menlo,Consolas,monospace;
+    --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{background:var(--paper)}
+  .wrap{max-width:720px;margin:0 auto;padding:56px 24px 72px;font-family:var(--sans);color:var(--ink);font-size:16.5px;line-height:1.68;min-height:100vh}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:600}
+  h1{font-size:28px;font-weight:800;letter-spacing:-.01em;margin:8px 0 6px;line-height:1.22}
+  .sub{color:var(--muted);font-size:15px;margin:0 0 32px}
+  .days{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
+  .days a{
+    display:flex;justify-content:space-between;align-items:center;gap:16px;
+    background:var(--card);border:1px solid var(--rule);border-left:4px solid var(--accent);
+    border-radius:0 11px 11px 0;padding:18px 22px;text-decoration:none;color:inherit;
+    transition:border-color .12s ease, transform .12s ease;
+  }
+  .days a:hover,.days a:focus-visible{border-left-color:var(--ok);transform:translateX(2px);outline:none}
+  .days a:focus-visible{box-shadow:0 0 0 3px var(--accent-soft)}
+  .days .d{display:flex;flex-direction:column;gap:3px}
+  .days .d .date{font-family:var(--mono);font-size:13px;color:var(--muted);letter-spacing:.04em}
+  .days .d .title{font-size:16.5px;font-weight:700}
+  .days .arrow{font-family:var(--mono);color:var(--accent);font-size:18px}
+  .badge{font-family:var(--mono);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ok);background:#E4F1E9;border:1px solid #bfe0cd;border-radius:999px;padding:3px 9px}
+  .note{margin-top:32px;color:var(--muted);font-size:13.5px;font-family:var(--mono);border-top:1px solid var(--rule);padding-top:18px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <span class="eyebrow">Báo cáo tiến độ · Chatbot tư vấn lốp xe</span>
+  <h1>Nhật ký công việc theo ngày</h1>
+  <p class="sub">Chọn một ngày để xem báo cáo chi tiết: mục tiêu, kết quả, vấn đề gặp phải và kế hoạch hôm sau.</p>
+
+  <ul class="days">
+    <li>
+      <a href="report-06-07-2026.html">
+        <span class="d">
+          <span class="date">06 / 07 / 2026</span>
+          <span class="title">Làm chatbot hết nói sai giá &amp; kiểm chứng bằng số liệu</span>
+        </span>
+        <span class="badge">Mới nhất</span>
+      </a>
+    </li>
+  </ul>
+
+  <p class="note">Mỗi ngày thêm 1 file <code>report-DDMMYYYY.html</code> và một dòng ở danh sách trên.</p>
+</div>
+</body>
+</html>

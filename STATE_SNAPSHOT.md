@@ -3,7 +3,24 @@
 > Always-updated current state. Git history was reset on 2026-06-14 (fresh start);
 > commit-SHA anchors no longer apply — this file is the source of truth.
 
-## Session 2026-07-03/04 — TRUTH-AUDIT program (spec-kit 001+002): 5-ladder-fix + 3×100Q agent-graded + 4 root-cause locked  ⟵ LATEST
+## Session 2026-07-07 — ADR-0008 Manifest program: shape/value name-typing (A1/A4) + brand-aware (A2/B3) + brand-scope gate (B1) + full-200q agent-graded  ⟵ LATEST
+
+**Anchor**: work UNCOMMITTED on branch `fix-260623-ingest-expert` (HEAD `db7ee52`). ADR-0008 owner-approved (A0).
+
+- **Root cause (DB-verified, live-fixed)**: DSI `entity_name` held an internal CODE ("2-R16 195/55 LPD", brand as suffix RVL/LPD) while the real product name ("Lốp Rovelo 195/55R16 …", with brand) sat UNUSED in `attributes_json.productname` — **0/242 rows used the real name**. Ingest mapped entity_name to the code column. Caused ~97% false brand-denial (Rovelo) + brand-conflation, HALLU-số≈0. NOT retrieval-miss (chunk retrieved score 1.0), NOT number-fabrication — a stats-serialize/name-selection defect. `_column_roles` header vocab does NOT match "productname" → name_idx=None → positional picks code/stub.
+- **ADR-0008** `docs/adr/0008-per-file-data-structure-manifest.md`: engine knows STRUCTURE, meaning travels WITH data (shape/value typing + manifest); column-role by VALUE-shape not vocab/position; **0 extra LLM** (answer-LLM interprets); column_roles demoted to optional override. Strangler-fig, flag OFF default.
+- **Shipped (flag-gated per-bot, TDD, 0 regression)**:
+  - **`shared/table_shape.py`** (NEW, 13/13 tests): `classify_cell_shape` · `pick_descriptive_name` (name by value-shape, not vocab) · `discriminating_token_filter` (B3 brand-aware narrowing, candidate-set-as-dictionary, 0 vocab/stopword).
+  - **A1 serve** — `_serialize_stats_entity_row` + `_entity_display_name` use shape-picked name (flag `stats_name_by_shape`). **A4 ingest** — `_extract_entity_from_row`/`parse_table_chunks` pick descriptive name by shape at SOURCE (same flag, threaded through ingest). **A2/B3** — brand-aware stats candidate narrowing (flag `stats_brand_aware`).
+  - **B1 brand-scope OBSERVE gate** — `shared/brand_scope.py` + guard_output; detects "chưa phân phối hãng X" false denial via DSI existence (`count_by_name_keyword`); measured Rovelo 35/35 fire, Michelin FP=0. sacred #10 (owner template on block).
+  - Alembic (per-bot chinh-sach-xe, sacred #7): `brand_scope_csx_260707` · `stats_shape_csx_260707` · `stats_brand_csx_260707` (+ prior `nf_block_csx_260706`). pcfg keys registered in BOTH builders (parity 4/4).
+- **LIVE-verified (rule #0, DB-anchored)**: re-ingest xe-3 via `/documents/rechunk-by-id` → DSI entity_name flipped **187/187** code→real-name (poll to 90s). A4 works at source.
+- **2 measurement traps caught (honest)**: (1) my data-structure `.md` LEAKED into the corpus (doc "Cấu trúc DATA", 4 bogus entities incl. a "Rovelo" w/ placeholder price 1044000) → deleted. (2) "brand-conflation HALLU 8/10" was a **measurement artifact** — reused connect_ids carried stale bogus answers in conversation HISTORY; FRESH connect_id → 0/10 bịa, honest denial. Context to LLM is CLEAN; LLM is fine. → lesson: eval MUST use fresh connect_id per call (like bypass_cache).
+- **FULL EVAL 200q (agent-graded, DB-verified, 10-agent workflow)**: **gate 91/100 · trap 83/100 (+9 vs step20's 74) · HALLU=12**. 26 fails by layer: brand-false-deny 7 (Rovelo carried, size price=NULL → "chưa phân phối" false) · coref-conflation 5 (HALLU, follow-up wrong product) · world-knowledge 4 (HALLU, warranty/tread/marketing bịa) · arrival-date 4 (omit ngày về) · date-26 null 3 (HALLU, "26" date leaks as stock) · false-refuse 2 · incomplete-agg 1. Evidence: `specs/002-deepdebug-luannt/evidence/step21_full200_postA4_verdicts.json`.
+- **Domain-neutral audit** (40-agent workflow, verified): **19 betrayals / 3 families** — F1 price-first-class ×11 (=ADR-0007) · F2 lang-vocab hardcode ×6 (→locale packs) · F3 rigid-schema-guess + prompt ×2 (=ADR-0008 + generate.py service-slot). Framework clean (registry, degradation, sacred #10). `plans/20260707-expert-manifest-program/betrayal_audit_verified.md`.
+- **Next**: HALLU=12 by layer (date-26 null-guard · coref resolution · anti-fabricate sysprompt) · brand-false-deny (B1 block + owner sysprompt + data đủ giá) · arrival serve (xe-2) · commit checkpoint · F1/F2 cleanup · re-ingest xe-2 · owner data 5-file re-upload.
+
+## Session 2026-07-03/04 — TRUTH-AUDIT program (spec-kit 001+002): 5-ladder-fix + 3×100Q agent-graded + 4 root-cause locked
 
 **Anchor**: `5b11b62` (+ commit nợ-compliance kế tiếp) · Branch `fix-260623-ingest-expert` (chưa push)
 

@@ -1,6 +1,8 @@
 # Ragbot
 
 > **Multi-tenant Retrieval-Augmented Generation (RAG) chatbot platform.** Vietnamese-first, multilingual. Adaptive pipeline (7 ingest stages + ~21 query nodes) that turns a tenant's document corpus into a refusal-safe Q&A bot. The product is the **API** (BE-to-BE integration, ~90% of real traffic); the demo FE pages are a test harness only. Platform owns ingestion, retrieval, faithfulness checking, refusal, observability — bot owner only ships documents + a `system_prompt`.
+>
+> **Domain-neutral by construction (ADR-0006/0007/0008)**: tabular structure is understood by **value-SHAPE**, not a hardcoded word list — the column carrying a product's descriptive name is chosen by cell shape (`shared/table_shape.py`), so any brand / language / column layout works with zero engine code. Structured answers pass deterministic HALLU guards: **numeric-fidelity** (every number in an answer must exist in served context/DB) and **brand-scope** (`shared/brand_scope.py` — a "we don't carry brand X" reply is caught when the index actually stocks X). Meaning travels WITH the data (owner `custom_vocabulary` / per-file manifest), never baked into the engine.
 
 **Stack (verified against live DB + code 2026-06-19; alembic head `rls_system_role_grants_20260619`)**:
 - **Runtime**: Python 3.12+ · FastAPI + uvicorn (**single process `python -m ragbot.main`**) · LangGraph orchestration. The one process also runs **5 embedded asyncio workers** (ingest consumer, outbox publisher, document recovery, cost-cap alerter, **semantic-cache GC**) — toggle `APP_EMBED_WORKERS_ENABLED`.

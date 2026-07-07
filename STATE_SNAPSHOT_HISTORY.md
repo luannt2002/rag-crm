@@ -2,6 +2,13 @@
 
 > **Session resume prompt mới**: `plans/SESSION_RESUME_PROMPT_RAGBOT_20260506.md` — paste vào new session.
 
+## 2026-07-07 — ADR-0008 Manifest program (shape/value typing + brand gates) + full-200q agent-graded  (detail in STATE_SNAPSHOT.md)
+- Root: DSI `entity_name`=internal CODE, real productname (with brand) unused → 0/242 real names → ~97% false brand-denial + conflation. Ingest mapped name to code column.
+- Shipped (flag-gated, TDD, 0 reg): `shared/table_shape.py` (shape/value name-typing + brand-aware filter, 13/13) · A1 serve + A4 ingest shape-name · A2/B3 brand-aware · B1 brand-scope observe gate (`shared/brand_scope.py`) · ADR-0008 · 4 per-bot alembic (chinh-sach-xe).
+- LIVE: re-ingest xe-3 → DSI 187/187 flipped code→real-name. Full eval 200q agent-graded: **gate 91 · trap 83 (+9 vs step20) · HALLU=12** (date-26 null 3 · coref-conflation 5 · world-knowledge 4). Domain-neutral audit: 19 betrayals / 3 families (F1 price×11 / F2 vocab×6 / F3×2).
+- Honest traps caught: (1) my `.md` leaked into corpus (deleted); (2) "conflation HALLU" was measurement artifact (reused connect_id → stale history) — fresh id = honest. Context to LLM clean; LLM fine.
+- Uncommitted on `fix-260623-ingest-expert`.
+
 ## 2026-06-21→22 — Conversational QA + xe price fix + multimodal track + RAG scorecard (marathon session)
 
 Long session, 21 commits. Summary (detail in STATE_SNAPSHOT.md + reports/qa_live/ + reports/RAG_SCORECARD_20260621.md):

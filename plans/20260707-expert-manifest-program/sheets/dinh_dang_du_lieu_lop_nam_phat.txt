@@ -1,0 +1,57 @@
+HƯỚNG DẪN ĐỌC DỮ LIỆU — CỬA HÀNG LỐP NAM PHÁT
+
+Cửa hàng Lốp Nam Phát phân phối lốp xe của hai thương hiệu:
+- Landspider (xuất xứ Thailand)
+- Rovelo (xuất xứ Vietnam)
+
+Dữ liệu của cửa hàng gồm các bảng sau. Mỗi bảng có dòng đầu là tên cột, mỗi dòng
+tiếp theo là một loại lốp.
+
+====================================================================
+BẢNG GIÁ (mỗi dòng = một loại lốp đang bán)
+====================================================================
+Các cột và ý nghĩa:
+- brand         : thương hiệu của lốp (Landspider hoặc Rovelo).
+- product_name  : tên đầy đủ của lốp, gồm thương hiệu + quy cách + dòng sản phẩm.
+                  Ví dụ "Lốp Rovelo 195/55R16 RHP-A68" hay
+                  "Lốp xe LANDSPIDER 195/55R16 87V CITYTRAXX G/P". Đây là tên
+                  chính để gọi sản phẩm.
+- size          : quy cách/kích thước lốp, ví dụ 195/55R16, 205/60R16, 225/45ZR18.
+- code          : mã kho nội bộ (ví dụ "2-R16 195/55 LPD"). LPD = Landspider,
+                  RVL = Rovelo, NEO = Neoterra. Mã này chỉ để tra kho, không phải
+                  tên để đọc cho khách.
+- price         : GIÁ BÁN một lốp, tính bằng đồng Việt Nam (ví dụ 1044000 = 1.044.000đ).
+- quantity      : số lượng còn trong kho.
+- arrival_date  : ngày hàng về (nếu có).
+- image         : đường dẫn ảnh sản phẩm.
+
+Cách hiểu: một loại lốp được xác định bằng THƯƠNG HIỆU + QUY CÁCH. Ví dụ
+"Rovelo 195/55R16" và "Landspider 195/55R16" là HAI sản phẩm KHÁC NHAU dù cùng
+quy cách — phải phân biệt theo cột brand / product_name, không được lẫn giá của
+thương hiệu này sang thương hiệu kia.
+
+====================================================================
+BẢNG HÀNG ĐANG VỀ (lốp sắp/đang nhập kho)
+====================================================================
+Các cột và ý nghĩa:
+- brand         : thương hiệu.
+- product_name  : tên đầy đủ của lốp.
+- size          : quy cách.
+- arrival_date  : ngày dự kiến về hàng (ví dụ 28-11).
+- status        : trạng thái (ví dụ "đang về").
+
+Bảng này KHÔNG có giá — dùng để trả lời câu hỏi "khi nào về hàng" / "sắp có loại nào".
+
+====================================================================
+CHÍNH SÁCH BẢO HÀNH
+====================================================================
+Được ghi trong tài liệu chính sách riêng, áp dụng cho thương hiệu Landspider và Rovelo.
+
+====================================================================
+LƯU Ý CHUNG KHI TRA CỨU
+====================================================================
+- Giá của một loại lốp lấy đúng từ cột price của DÒNG có brand + size khớp yêu cầu.
+- Nếu một quy cách chỉ có ở một thương hiệu, thì thương hiệu kia KHÔNG có quy cách đó
+  (ví dụ nếu chỉ có Landspider 195/55R16 mà không có Rovelo 195/55R16, thì cửa hàng
+  vẫn phân phối Rovelo ở các quy cách khác, chỉ là chưa có Rovelo đúng quy cách này).
+- Mã kho (code) không phải tên sản phẩm; tên để trả lời cho khách là product_name.

@@ -25,7 +25,11 @@ from ragbot.shared.constants import (
     DEFAULT_GROUNDING_CONFIRMED_ACTION,
     DEFAULT_STATS_SERVE_REQUIRE_VALUE,
     STATS_NULL_PRICE_MARKER,
+    DEFAULT_STATS_NAME_BY_SHAPE,
+    DEFAULT_STATS_BRAND_AWARE,
     DEFAULT_NUMERIC_FIDELITY_ACTION,
+    DEFAULT_BRAND_SCOPE_GATE_ACTION,
+    DEFAULT_BRAND_SCOPE_NEGATION_PHRASES,
     DEFAULT_GROUNDING_FAILURE_MODE,
     DEFAULT_GUARDRAIL_LEAK_MIN_MATCH_COUNT,
     DEFAULT_GENERATE_SURFACE_VERBATIM_ENABLED,
@@ -910,10 +914,26 @@ async def _build_pipeline_config(cfg_svc: SystemConfigService, bot_cfg: Any) -> 
             bot_cfg, "stats_null_price_marker",
             system_default=STATS_NULL_PRICE_MARKER,
         ),
+        "stats_name_by_shape": resolve_bot_limit(
+            bot_cfg, "stats_name_by_shape",
+            system_default=DEFAULT_STATS_NAME_BY_SHAPE,
+        ),
+        "stats_brand_aware": resolve_bot_limit(
+            bot_cfg, "stats_brand_aware",
+            system_default=DEFAULT_STATS_BRAND_AWARE,
+        ),
         # 002-I: numeric-fidelity enforcement (observe|block), owner opt-in.
         "numeric_fidelity_action": resolve_bot_limit(
             bot_cfg, "numeric_fidelity_action",
             system_default=DEFAULT_NUMERIC_FIDELITY_ACTION,
+        ),
+        "brand_scope_gate_action": resolve_bot_limit(
+            bot_cfg, "brand_scope_gate_action",
+            system_default=DEFAULT_BRAND_SCOPE_GATE_ACTION,
+        ),
+        "brand_scope_negation_phrases": resolve_bot_limit(
+            bot_cfg, "brand_scope_negation_phrases",
+            system_default=DEFAULT_BRAND_SCOPE_NEGATION_PHRASES,
         ),
         "guardrail_leak_min_match_count": resolve_bot_limit(
             bot_cfg, "guardrail_leak_min_match_count",

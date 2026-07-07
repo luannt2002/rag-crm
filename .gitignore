@@ -127,3 +127,4 @@ coverage.json
 # Personal design docs (HTML masterplans) — not code
 z-luannt/
 ref_rag/
+logs/

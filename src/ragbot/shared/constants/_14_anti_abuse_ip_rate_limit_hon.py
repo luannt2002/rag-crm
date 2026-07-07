@@ -352,6 +352,17 @@ NUMERIC_FIDELITY_UNSUPPORTED_TOKENS_CAP: Final[int] = 8
 NUMERIC_FIDELITY_ACTION_OBSERVE: Final[str] = "observe"
 NUMERIC_FIDELITY_ACTION_BLOCK: Final[str] = "block"
 DEFAULT_NUMERIC_FIDELITY_ACTION: Final[str] = NUMERIC_FIDELITY_ACTION_OBSERVE
+# 002-B1: brand-scope gate — a "chưa phân phối hãng X" denial is a FALSE refusal
+# when the corpus actually stocks brand X (measured: Rovelo denied while 50+ SKUs
+# exist). Action per-bot (observe|block, default observe — measure FP first).
+# The negation phrases are LANGUAGE data, injected from config per-locale — the
+# code default is EMPTY so no Vietnamese/brand literal lives here (gate is a
+# silent no-op until an operator seeds the phrases). Event name for observe log.
+BRAND_SCOPE_ACTION_OBSERVE: Final[str] = "observe"
+BRAND_SCOPE_ACTION_BLOCK: Final[str] = "block"
+DEFAULT_BRAND_SCOPE_GATE_ACTION: Final[str] = BRAND_SCOPE_ACTION_OBSERVE
+DEFAULT_BRAND_SCOPE_NEGATION_PHRASES: Final[tuple[str, ...]] = ()
+BRAND_SCOPE_EVENT: Final[str] = "brand_scope_observe"
 NUMERIC_FIDELITY_URL_PATTERN: Final[str] = r"https?://\S+"
 # Contact-number shape: leading 0, then 6–11 digits each separated by at most a
 # SINGLE space/dot/dash. The single-separator bound is load-bearing — a greedy
