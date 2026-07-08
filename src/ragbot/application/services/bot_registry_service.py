@@ -47,8 +47,21 @@ _SINGLE_FLIGHT_LABEL = "bot_registry"
 class BotRegistryService:
     """Load + cache + lookup bot config by ``(record_tenant_id, workspace_id, bot_id, channel_type)``."""
 
-    def __init__(self, repo: BotRepositoryPort, redis_client: Redis) -> None:
+    def __init__(
+        self,
+        repo: BotRepositoryPort,
+        redis_client: Redis,
+        system_repo: BotRepositoryPort | None = None,
+    ) -> None:
         self._repo = repo
+        # Cross-tenant warm (``bootstrap_cache`` loads EVERY tenant's active bots)
+        # is a legitimate admin read that must NOT be tenant-scoped. Under the
+        # NOBYPASSRLS app role it would fail-closed to 0 rows (no request tenant
+        # bound at boot) → empty cache. ``system_repo`` (BYPASSRLS system factory)
+        # keeps the warm working; per-tenant ``lookup`` stays on the app repo.
+        # Defaults to ``repo`` so behaviour is unchanged when unwired (superuser
+        # today: both factories are the same connection → no-op).
+        self._system_repo = system_repo or repo
         self._redis = redis_client
         self._lock = asyncio.Lock()
         self._last_bootstrap_at: datetime | None = None
@@ -75,7 +88,8 @@ class BotRegistryService:
 
     async def bootstrap_cache(self) -> int:
         async with self._lock:
-            rows = await self._repo.list_active(record_tenant_id=None)
+            # Cross-tenant warm via the system (BYPASSRLS) repo — see __init__.
+            rows = await self._system_repo.list_active(record_tenant_id=None)
 
             old_keys = await self._redis.smembers(BOT_LIST_KEY)
             if old_keys:

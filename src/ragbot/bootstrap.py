@@ -473,6 +473,13 @@ class Container(containers.DeclarativeContainer):
         SqlAlchemyDocumentRepository, session_factory=session_factory,
     )
     bot_repo = providers.Factory(SqlAlchemyBotRepository, session_factory=session_factory)
+    # System (BYPASSRLS) bot repo — used ONLY for the cross-tenant registry warm
+    # (bootstrap_cache loads every tenant's active bots). Under the NOBYPASSRLS
+    # app role a tenant-scoped warm would fail-closed; the system factory keeps it
+    # working. Per-tenant lookup stays on the app-scoped bot_repo above.
+    bot_repo_system = providers.Factory(
+        SqlAlchemyBotRepository, session_factory=system_session_factory,
+    )
     job_repo = providers.Factory(SqlAlchemyJobRepository, session_factory=session_factory)
     # Workspace entity (ADR-W2-D2) — slug → row lookup / lifecycle. Bare
     # session inherits the RLS app.tenant_id GUC via the D3 hook.
@@ -610,6 +617,7 @@ class Container(containers.DeclarativeContainer):
         BotRegistryService,
         repo=bot_repo,
         redis_client=redis_client,
+        system_repo=bot_repo_system,
     )
     # Language packs — DB-driven prompt translations (migrations 0055/0056).
     # Adding a new language is a SQL INSERT + Redis bust; zero code change.

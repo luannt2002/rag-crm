@@ -183,3 +183,40 @@ def test_lookup_returns_cached_row_for_tenant():
     ))
     assert got_a is not None and got_a.record_tenant_id == TEST_TENANT_UUID
     assert got_b is not None and got_b.record_tenant_id == TEST_TENANT_2_UUID
+
+
+# ── RLS pre-fix: cross-tenant warm uses the SYSTEM (BYPASSRLS) repo ──────────
+def test_bootstrap_uses_system_repo_lookup_uses_app_repo():
+    """RLS flip prep: bootstrap_cache (cross-tenant, all tenants' bots) must read
+    via the system (BYPASSRLS) repo — under the NOBYPASSRLS app role a tenant-
+    scoped warm fails-closed to 0 rows. Per-tenant lookup stays on the app repo.
+    """
+    rows = [_make_cfg("A"), _make_cfg("B")]
+    app_repo = MagicMock()
+    app_repo.list_active = AsyncMock(return_value=[])       # app repo would fail-closed
+    app_repo.find_by_4key = AsyncMock(return_value=_make_cfg("A"))
+    sys_repo = MagicMock()
+    sys_repo.list_active = AsyncMock(return_value=rows)     # system repo sees all
+    sys_repo.find_by_4key = AsyncMock(return_value=None)
+
+    svc = BotRegistryService(repo=app_repo, redis_client=FakeRedis(), system_repo=sys_repo)
+    count = asyncio.run(svc.bootstrap_cache())
+
+    # warm read went to the SYSTEM repo, NOT the app repo
+    assert count == 2
+    sys_repo.list_active.assert_awaited_once()
+    app_repo.list_active.assert_not_awaited()
+
+    # per-tenant lookup DB-miss uses the APP repo (context-bound, RLS-scoped)
+    got = asyncio.run(svc.lookup(TEST_TENANT_UUID, _ws(), "A", "web"))
+    assert got is not None
+    app_repo.find_by_4key.assert_awaited()
+
+
+def test_system_repo_defaults_to_app_repo_when_unwired():
+    """Backward-compat: omitting system_repo falls back to the app repo (superuser
+    today = both factories are the same connection → no behaviour change)."""
+    rows = [_make_cfg("A")]
+    svc = _make_service(rows)  # no system_repo passed
+    assert svc._system_repo is svc._repo
+    assert asyncio.run(svc.bootstrap_cache()) == 1
