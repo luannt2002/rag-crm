@@ -363,6 +363,30 @@ BRAND_SCOPE_ACTION_BLOCK: Final[str] = "block"
 DEFAULT_BRAND_SCOPE_GATE_ACTION: Final[str] = BRAND_SCOPE_ACTION_OBSERVE
 DEFAULT_BRAND_SCOPE_NEGATION_PHRASES: Final[tuple[str, ...]] = ()
 BRAND_SCOPE_EVENT: Final[str] = "brand_scope_observe"
+# P0.1: empty-answer guard (cross-bot fail-verify 2026-07-07 — S-048/B-050/B-052
+# returned a BLANK answer). An empty/whitespace answer is a silent generation
+# failure (chunks present, LLM produced nothing), not an answer. When the owner
+# opts in, guard_output substitutes the bot's OWN oos_answer_template — the same
+# governed path numeric-fidelity/brand-scope/grounding use (owner text, never
+# app-injected; an empty string is not an LLM answer to override → sacred #10
+# safe). Default OFF preserves the legacy verbatim-empty behaviour (generate.py
+# already WARN-logs the empty answer either way). Per-bot opt-in, then measure.
+DEFAULT_EMPTY_ANSWER_GUARD_ENABLED: Final[bool] = False
+EMPTY_ANSWER_GUARD_EVENT: Final[str] = "empty_answer_guard_fill"
+# Claim-fidelity (deep-analysis 2026-07-08): deterministic NON-numeric grounding —
+# a scope-affirmation phrase whose affirmed object is absent from served context
+# (e.g. warranty "bao gồm cả lốp xe tải" while corpus scopes to "lốp xe du lịch").
+# numeric_fidelity is number-only; brand_scope is denial-only → this false
+# AFFIRMATIVE claim is un-gated. Phrases are LANGUAGE data injected per-locale from
+# config; the code default is EMPTY so no VN/brand literal here (silent no-op until
+# seeded, same contract as brand_scope). Action per-bot: "observe" (default — log
+# only, never touches answer, sacred #10) vs "block" (future owner opt-in after FP
+# measured, substitutes oos_answer_template — the governed path). Event name below.
+DEFAULT_CLAIM_FIDELITY_SCOPE_PHRASES: Final[tuple[str, ...]] = ()
+CLAIM_FIDELITY_ACTION_OBSERVE: Final[str] = "observe"
+CLAIM_FIDELITY_ACTION_BLOCK: Final[str] = "block"
+DEFAULT_CLAIM_FIDELITY_ACTION: Final[str] = CLAIM_FIDELITY_ACTION_OBSERVE
+CLAIM_FIDELITY_EVENT: Final[str] = "claim_fidelity_observe"
 NUMERIC_FIDELITY_URL_PATTERN: Final[str] = r"https?://\S+"
 # Contact-number shape: leading 0, then 6–11 digits each separated by at most a
 # SINGLE space/dot/dash. The single-separator bound is load-bearing — a greedy

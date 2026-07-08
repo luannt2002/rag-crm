@@ -55,8 +55,15 @@ from ragbot.shared.constants import (
     BRAND_SCOPE_EVENT,
     DEFAULT_BRAND_SCOPE_GATE_ACTION,
     DEFAULT_BRAND_SCOPE_NEGATION_PHRASES,
+    DEFAULT_EMPTY_ANSWER_GUARD_ENABLED,
+    EMPTY_ANSWER_GUARD_EVENT,
+    DEFAULT_CLAIM_FIDELITY_SCOPE_PHRASES,
+    DEFAULT_CLAIM_FIDELITY_ACTION,
+    CLAIM_FIDELITY_ACTION_BLOCK,
+    CLAIM_FIDELITY_EVENT,
 )
 from ragbot.shared.brand_scope import detect_denied_brand
+from ragbot.shared.claim_fidelity import detect_scope_overextension
 from ragbot.shared.errors import InvariantViolation
 from ragbot.shared.numeric_fidelity import (
     classify_answer_numbers,
@@ -79,6 +86,38 @@ async def guard_output(
 ) -> dict:
     async with state["step_tracker"].step("guard_output") as guard_ctx:
         flags = list(state.get("guardrail_flags", []))
+
+        # ── P0.1: empty-answer guard (owner-gated, per-bot; default OFF) ──────
+        # An EMPTY/whitespace answer is a silent generation failure (chunks
+        # present, LLM produced nothing) — a blank message, not an answer. When
+        # the owner opts in, substitute the bot's OWN oos_answer_template (the
+        # same governed path numeric-fidelity/brand-scope/grounding use; owner
+        # text, never app-injected — an empty string is not an answer to
+        # override, sacred #10 safe). Placed FIRST: an empty answer has no
+        # number/brand/citation for the downstream guards to check. Default OFF
+        # keeps the legacy verbatim-empty behaviour (generate.py WARN-logs it).
+        if _pcfg(
+            state, "empty_answer_guard_enabled", DEFAULT_EMPTY_ANSWER_GUARD_ENABLED
+        ) and not str(state.get("answer") or "").strip():
+            _eg_flags = list(state.get("guardrail_flags", []))
+            _eg_flags.append({
+                "rule_id": "empty_answer_guard",
+                "severity": "block",
+                "blocked": True,
+            })
+            logger.warning(
+                EMPTY_ANSWER_GUARD_EVENT,
+                record_bot_id=str(state.get("record_bot_id") or ""),
+                trace_id=str(state.get("trace_id") or ""),
+                intent=state.get("intent") or "",
+                chunks_used=len(state.get("graded_chunks") or []),
+            )
+            return {
+                "guardrail_flags": _eg_flags,
+                "answer": _resolved_oos_template(state),
+                "answer_type": "empty_guard",
+                "answer_reason": "Empty-answer guard (blank generation → owner oos_answer_template)",
+            }
 
         # ── Numeric-fidelity OBSERVE (truth-audit Phase 4) ─────────────────
         # Deterministic, model-independent: classify every significant number
@@ -245,6 +284,59 @@ async def guard_output(
                         "answer": _resolved_oos_template(state),
                         "answer_type": "blocked",
                         "answer_reason": "Brand-scope block (false distribution denial)",
+                    }
+
+        # ── Claim-fidelity OBSERVE (deep-analysis 2026-07-08) ────────────────
+        # Deterministic NON-numeric grounding for a false AFFIRMATIVE scope claim:
+        # numeric_fidelity is number-only, brand_scope is denial-only, so a claim
+        # like warranty "bao gồm cả lốp xe tải" (while the served chunk scopes to
+        # "lốp xe du lịch") is un-gated. A config-seeded scope-affirmation phrase
+        # whose affirmed OBJECT token is absent from the served context is flagged.
+        # Phrases are locale DATA from config (empty code default → silent no-op
+        # until seeded). OBSERVE default logs only + NEVER touches the answer
+        # (sacred #10) — measure FP before any bot opts into block. Uses THIS
+        # turn's served context (``_nf_ctx``), not prior-turn history (a scope
+        # claim must ground in the docs served now).
+        _cf_phrases_cfg = _pcfg(
+            state, "claim_fidelity_scope_phrases",
+            DEFAULT_CLAIM_FIDELITY_SCOPE_PHRASES,
+        )
+        _cf_phrases = (
+            tuple(str(p) for p in _cf_phrases_cfg)
+            if isinstance(_cf_phrases_cfg, (list, tuple))
+            else DEFAULT_CLAIM_FIDELITY_SCOPE_PHRASES
+        )
+        if _cf_phrases:
+            _cf_unsupported = detect_scope_overextension(
+                _nf_answer, _nf_ctx, _cf_phrases,
+            )
+            if _cf_unsupported:
+                _cf_action = str(
+                    _pcfg(state, "claim_fidelity_action", DEFAULT_CLAIM_FIDELITY_ACTION)
+                    or DEFAULT_CLAIM_FIDELITY_ACTION
+                )
+                logger.info(
+                    CLAIM_FIDELITY_EVENT,
+                    record_bot_id=str(state.get("record_bot_id") or ""),
+                    trace_id=str(state.get("trace_id") or ""),
+                    unsupported_tokens=_cf_unsupported,
+                    n_unsupported=len(_cf_unsupported),
+                    action=_cf_action,
+                )
+                if _cf_action == CLAIM_FIDELITY_ACTION_BLOCK:
+                    _cf_flags = list(state.get("guardrail_flags", []))
+                    _cf_flags.append({
+                        "rule_id": "claim_fidelity",
+                        "severity": "block",
+                        "blocked": True,
+                        "unsupported_tokens": _cf_unsupported,
+                    })
+                    return {
+                        "guardrail_flags": _cf_flags,
+                        "numeric_fidelity": _nf,
+                        "answer": _resolved_oos_template(state),
+                        "answer_type": "blocked",
+                        "answer_reason": "Claim-fidelity block (scope over-extension)",
                     }
 
         # Numeric / citation grounding is the bot owner's responsibility via

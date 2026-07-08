@@ -30,6 +30,9 @@ from ragbot.shared.constants import (
     DEFAULT_NUMERIC_FIDELITY_ACTION,
     DEFAULT_BRAND_SCOPE_GATE_ACTION,
     DEFAULT_BRAND_SCOPE_NEGATION_PHRASES,
+    DEFAULT_EMPTY_ANSWER_GUARD_ENABLED,
+    DEFAULT_CLAIM_FIDELITY_SCOPE_PHRASES,
+    DEFAULT_CLAIM_FIDELITY_ACTION,
     DEFAULT_GROUNDING_FAILURE_MODE,
     DEFAULT_GUARDRAIL_LEAK_MIN_MATCH_COUNT,
     DEFAULT_GENERATE_SURFACE_VERBATIM_ENABLED,
@@ -934,6 +937,20 @@ async def _build_pipeline_config(cfg_svc: SystemConfigService, bot_cfg: Any) -> 
         "brand_scope_negation_phrases": resolve_bot_limit(
             bot_cfg, "brand_scope_negation_phrases",
             system_default=DEFAULT_BRAND_SCOPE_NEGATION_PHRASES,
+        ),
+        # P0.1: empty-answer guard (blank generation → owner oos_answer_template).
+        "empty_answer_guard_enabled": resolve_bot_limit(
+            bot_cfg, "empty_answer_guard_enabled",
+            system_default=DEFAULT_EMPTY_ANSWER_GUARD_ENABLED,
+        ),
+        # Claim-fidelity (non-numeric scope over-extension), observe|block per-bot.
+        "claim_fidelity_scope_phrases": resolve_bot_limit(
+            bot_cfg, "claim_fidelity_scope_phrases",
+            system_default=DEFAULT_CLAIM_FIDELITY_SCOPE_PHRASES,
+        ),
+        "claim_fidelity_action": resolve_bot_limit(
+            bot_cfg, "claim_fidelity_action",
+            system_default=DEFAULT_CLAIM_FIDELITY_ACTION,
         ),
         "guardrail_leak_min_match_count": resolve_bot_limit(
             bot_cfg, "guardrail_leak_min_match_count",
