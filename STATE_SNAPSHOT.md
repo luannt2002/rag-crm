@@ -3,7 +3,26 @@
 > Always-updated current state. Git history was reset on 2026-06-14 (fresh start);
 > commit-SHA anchors no longer apply — this file is the source of truth.
 
-## Session 2026-07-07 — ADR-0008 Manifest program: shape/value name-typing (A1/A4) + brand-aware (A2/B3) + brand-scope gate (B1) + full-200q agent-graded  ⟵ LATEST
+## Session 2026-07-08 — Guard fixes + RLS STAGE-0 + 200q agent-graded load-test + perf per-step + flag/architecture-truth  ⟵ LATEST
+
+**Anchor**: 5 commits on `fix-260623-ingest-expert` (chưa push): `7c2570c` guards · `7e175ab` RLS-prep · `67b82de` empty-guard-enable · `17f84d3` timeout+loadtest-report · (+ this STATE + reports). HEAD ≈ `17f84d3`.
+
+- **SHIPPED (measured, default-safe, committed)**:
+  - **P0.1 empty-answer guard** (`guard_output` + `shared`, per-bot flag `empty_answer_guard_enabled`): blank generation → owner `oos_answer_template` (sacred #10). 5/5 tests. Enabled xe+spa (`empty_guard_bots_260708`).
+  - **claim-fidelity gate** (`shared/claim_fidelity.py`, observe): deterministic NON-numeric scope-over-extension detector — closes gap where numeric_fidelity (number-only) + brand_scope (denial-only) miss a false AFFIRMATIVE claim. 7/7 tests, seeded observe xe (`claim_fidelity_obs_csx_260708`), 0 FP.
+  - **brand-scope observe→BLOCK** xe (`brand_scope_block_csx_260708`): false Rovelo denial → oos_template. Rovelo blocked, Michelin FP=0.
+  - **RLS pre-fix**: `BotRegistryService` cross-tenant `bootstrap_cache` → new `system_repo` (BYPASSRLS, `bot_repo_system` in bootstrap.py) so it won't fail-closed under ragbot_app; per-tenant lookup stays app-repo. 11/11 tests.
+  - **innocom timeout 30s→90s** (`innocom_timeout_90s_260708`): endpoint slow was cutting answers; truncation 25→1.
+- **REVERTED (measured-INEFFECTIVE, rule#0)**: B4 doc-fallback keep-raw (same-doc price, not cross-doc); WK anti-fabricate SYSPROMPT (verified in effective-prompt yet LLM fabricated 3/3 → sysprompt=probability-reduction, need deterministic gate).
+- **LOAD-TEST 200q AGENT-graded (10-agent workflow, corpus-anchored, perf-separated)**: **xe 91/97=94% · spa 91/99=92% · HALLU 1/200 (xe 0) · traps 15/15**. `reports/LOADTEST_RESULT_20260708.md`.
+- **14 fails → 2 layers**: ORCH — comparison-decompose 3 (G-095/097/098, `comparison 0/4`) + coref 4 (S-057/060/064/068). RETRIEVAL — arrival intermittent 3 (G-063/064/067; G-065/066/068 ✅) + coverage-miss 3 (S-039/046/075). GEN — 1 fabricated-hotline (S-005).
+- **PERF (SEPARATE from correctness, measured `request_steps`)**: p50 **45.6s** · p95 110s · max 185s · 237/301 >30s. LLM=74% time, BE=26%. **DB retrieve 88ms · rerank 1.5s · grade 368ms = FAST**. Slow = LLM: understand 18s (**7.6s @concurrency=1 → ~10s QUEUEING** + 7.6s base), generate 25s, grounding 25s (24/32 timeout waste). Root = **innocom endpoint slow (EXTERNAL/ops)** + 3-5 sequential LLM-calls/turn. `reports/PIPELINE_STEPS_NECESSITY_20260708.md`.
+- **DEEP-ANALYSIS 2 workflows → rule#0 CORRECTIONS**: "Hàn Quốc" GROUNDED not HALLU · brand-deny value-gate REFUTED · embedding=**zeroentropy-1280** (not jina) · CRM/observability ALREADY exists. `reports/DEEP_ANALYSIS_ALL_FLOWS_20260708.md` (pipeline L1/L2/L3).
+- **RLS STAGE-0 (gap #1: RLS INERT — app=postgres superuser via `RAGBOT_ALLOW_SUPERUSER_RUNTIME=1`)**: policy PROVEN (isolation-probe SET ROLE ragbot_app: bogus→0 fail-closed, tenant A→only A). Code RESILIENT (graceful-degrade, workers system-factory, global config not-RLS'd). 24 FORCE-RLS + 24 policies + ragbot_app NOBYPASSRLS ready. **Flip=ENV-only (DATABASE_URL_APP), BLOCKED on ragbot_app credential (owner; auto-mode denied mint on prod DB).** `plans/20260708-rls-dsn-flip/plan.md`.
+- **FLAG/ARCHITECTURE-TRUTH (rule#0)**: **83 ENABLED flags (41 on/42 off) + 4 action**. CORRECTION: `PIPELINE_PARALLEL_REWRITE_MQ` + `PARALLEL_CACHE_UNDERSTAND` = **default TRUE** (comment "OFF" is STALE — misled me + 2 external analyses). Code is NOT "student code" — has parallel/async optimizations, mostly ON; only `GROUNDING_CHECK_ASYNC=OFF`. Flags = genuine trade-offs (parallel-LLM on contended innocom = "503 under concurrency"; grounding-sync=HALLU-safety). Verdict: defaults defensible for slow endpoint EXCEPT async-grounding (should be ON). `reports/FLAG_TRADEOFF_ANALYSIS_20260708.md`. Also verified Cursor-doc `z_luannt_deubg.txt` audit = ~50% file:line hallucinated (`reports/CURSOR_DOC_DEEP_ANALYSIS_20260708.md`); fail_verify `specs/002-.../evidence/fail_verify_analysis_20260707.md`.
+- **NEXT (prioritized)**: (1) **enable `grounding_check_async_enabled`** per-bot (cut 8-30s, 0 correctness loss — code exists) + retry 3→2. (2) **fix comparison decompose prompt** (0/4 — read G-095/097/098 transcript, force "tách đủ N vế"). (3) coref P0.2 multi-turn harness. (4) RLS flip (needs owner ragbot_app DSN). (5) **push 5 commits**. (6) z_luannt_deubg.txt → archive/gỡ. (7) sync stale "default OFF" comments. Deferred: perf-endpoint (external), understand right-sizing (lighter model), block-pipeline registry typed-Block.
+
+## Session 2026-07-07 — ADR-0008 Manifest program: shape/value name-typing (A1/A4) + brand-aware (A2/B3) + brand-scope gate (B1) + full-200q agent-graded
 
 **Anchor**: work UNCOMMITTED on branch `fix-260623-ingest-expert` (HEAD `db7ee52`). ADR-0008 owner-approved (A0).
 
