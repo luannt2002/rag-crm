@@ -4,9 +4,10 @@
 > `reports/CURRENT_TRUTH_20260709.md` (sự thật hợp nhất) + `reports/AUDIT_500Q_PART1_ANSWERS.md`.
 > Correctness THẬT (reclassify DB): **xe 95.9% · spa 95.3%** · HALLU 1 (S-005). 8 câu SAI-logic thật.
 
-## Phase 0 — chờ Part-2 audit xong (đang chạy `wf_5ed1e2b1-4ed`)
-- Resume nếu cần: `Workflow({scriptPath: .../ragbot-audit-part2-wf_5ed1e2b1-4ed.js, resumeFromRunId: wf_5ed1e2b1-4ed})`.
-- Ghép `reports/AUDIT_500Q_PART2_ANSWERS.md` (còn GO/AU/**FL01 flag-table**/HC/**DC01 sprawl-map**/EV/DB/TR + 15 trap).
+## Phase 0 — Part-2 audit ✅ XONG (commit `c4a6f77`)
+- Workflow `wf_5ed1e2b1-4ed` hoàn tất 37/37 agent (0 error, 3.33M token). Ghép DETERMINISTIC từ journal (synthesize bị discard do truncate 70k → chỉ thấy 5 section). `reports/AUDIT_500Q_PART2_ANSWERS.md` (283KB, 18 section + verify).
+- Verify tally: **96 CONFIRMED / 14 REFUTED / 1 UNVERIFIABLE** (111 claim sắc nhất). 14 REFUTED = self-correction (cache KHÔNG chết 0%, metadata-extraction live-ON, char-cap value khác claim, DB head = seed migration hôm nay).
+- **"Check tất cả luồng" = XONG** (Part-1 + Part-2 full 18 section).
 
 ## Phase 1 — verify 2 báo động (read-only, TRƯỚC fix) ✅ DONE 2026-07-09 post-compact
 - [x] **HNSW `idx_scan=0`** → **KHÔNG PHẢI BUG** (planner-correct). EXPLAIN ANALYZE: query prod filter `record_bot_id` → `Bitmap Index Scan ix_chunks_bot_doc` + exact top-N heapsort = **1.4ms** (51–153 rows/bot); whole-table 906 rows = seq-scan 17.9ms. HNSW không đáng dùng ở scale này → planner đúng khi bỏ qua. HNSW = dead-weight vô hại (chỉ tốn ingest write-cost). **Latent scale-risk**: pgvector HNSW không push-down `record_bot_id` equality → 1 bot corpus lớn cần `hnsw.iterative_scan`/partial-index. KHÔNG ship fix now. (ST11)
