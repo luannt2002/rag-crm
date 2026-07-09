@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Báo cáo ngày — Chatbot tư vấn (lốp xe + spa) · 09/07/2026</title>
+<style>
+  :root{
+    --paper:#F3F4F7;
+    --card:#FFFFFF;
+    --ink:#191F2E;
+    --muted:#5A6576;
+    --accent:#14566B;
+    --accent-soft:#E6EEF0;
+    --rule:#E1E4EB;
+    --ok:#1E7D46;
+    --ok-soft:#E4F1E9;
+    --warn:#9A6400;
+    --warn-soft:#F6EEDD;
+    --bad:#AF3327;
+    --bad-soft:#F6E4E1;
+    --mono:ui-monospace,"SF Mono","Cascadia Code",Menlo,Consolas,monospace;
+    --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{background:var(--paper)}
+  .wrap{
+    max-width:880px;margin:0 auto;padding:48px 24px 72px;
+    font-family:var(--sans);color:var(--ink);background:var(--paper);
+    font-size:16.5px;line-height:1.68;min-height:100vh;
+  }
+  h1,h2,h3{text-wrap:balance;line-height:1.22;margin:0}
+  .eyebrow{
+    font-family:var(--mono);font-size:12px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--accent);font-weight:600;
+  }
+  .mast{border-bottom:2px solid var(--ink);padding-bottom:20px;margin-bottom:8px}
+  .mast .row{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap}
+  .mast h1{font-size:29px;font-weight:800;letter-spacing:-.01em;margin-top:6px}
+  .mast .date{font-family:var(--mono);font-size:14px;color:var(--muted);text-align:right;white-space:nowrap}
+  .mast .date b{color:var(--ink);font-size:16px;display:block}
+  .tldr{background:var(--accent-soft);border:1px solid #cadfe4;border-radius:10px;padding:16px 20px;margin:22px 0 10px;font-size:16px}
+  .tldr b{color:var(--accent)}
+  .readout{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:1px;
+    background:var(--rule);border:1px solid var(--rule);border-radius:10px;
+    overflow:hidden;margin:20px 0 36px;
+  }
+  .metric{background:var(--card);padding:16px 18px}
+  .metric .k{font-size:12.5px;color:var(--muted);line-height:1.35}
+  .metric .v{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:24px;font-weight:700;margin-top:8px;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+  .metric .v .arrow{font-size:15px;color:var(--muted);font-weight:500}
+  .metric .v .now{color:var(--ok)}
+  .metric .v .slow{color:var(--warn)}
+  section{margin:38px 0}
+  section > h2{font-size:20px;font-weight:750;margin:0 0 4px}
+  section > .lede{color:var(--muted);font-size:15px;margin:0 0 18px}
+  .goal{
+    background:var(--card);border:1px solid var(--rule);border-left:4px solid var(--ok);
+    border-radius:0 10px 10px 0;padding:18px 20px;margin:14px 0;
+  }
+  .goal.warn{border-left-color:var(--warn)}
+  .goal .top{display:flex;justify-content:space-between;align-items:flex-start;gap:14px}
+  .goal .num{font-family:var(--mono);font-size:13px;color:var(--muted);font-weight:600}
+  .goal h3{font-size:17.5px;font-weight:700;margin:2px 0 0}
+  .goal dl{margin:14px 0 0;display:grid;grid-template-columns:auto 1fr;gap:9px 16px;font-size:15.5px}
+  .goal dt{font-size:13px;color:var(--muted);font-weight:600;padding-top:2px;white-space:nowrap}
+  .goal dd{margin:0}
+  .goal dd .r{color:var(--ok);font-weight:600}
+  .goal dd .rw{color:var(--warn);font-weight:600}
+  .chip{
+    font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.05em;
+    text-transform:uppercase;padding:4px 10px;border-radius:999px;white-space:nowrap;
+    border:1px solid transparent;display:inline-block;
+  }
+  .chip.ok{background:var(--ok-soft);color:var(--ok);border-color:#bfe0cd}
+  .chip.warn{background:var(--warn-soft);color:var(--warn);border-color:#e6d3a6}
+  .chip.bad{background:var(--bad-soft);color:var(--bad);border-color:#e8c3bd}
+  .chip.info{background:var(--accent-soft);color:var(--accent);border-color:#c7dce1}
+  .items{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+  .items li{background:var(--card);border:1px solid var(--rule);border-radius:9px;padding:14px 16px;display:flex;gap:12px;align-items:flex-start}
+  .items li .body{flex:1;font-size:15.5px}
+  .items li .body b{display:block;margin-bottom:3px}
+  .items li .body .meta{color:var(--muted);font-size:14.5px}
+  .tablewrap{overflow-x:auto;border:1px solid var(--rule);border-radius:10px}
+  table{border-collapse:collapse;width:100%;font-size:15px;background:var(--card)}
+  th,td{padding:12px 16px;text-align:left;border-bottom:1px solid var(--rule)}
+  th{font-size:12.5px;color:var(--muted);font-weight:600;background:#FAFBFC}
+  td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right}
+  tr:last-child td{border-bottom:none}
+  td .up{color:var(--ok);font-weight:600}
+  td .dn{color:var(--bad);font-weight:600}
+  td .fast{color:var(--ok);font-weight:600}
+  td .slowc{color:var(--warn);font-weight:600}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;margin:10px 2px 0;font-size:13.5px;color:var(--muted)}
+  .legend span b{color:var(--ink)}
+  footer{margin-top:46px;padding-top:20px;border-top:1px solid var(--rule);font-size:13px;color:var(--muted);display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  @media (max-width:620px){
+    .readout{grid-template-columns:1fr}
+    .goal dl{grid-template-columns:1fr}
+    .goal dt{padding-top:8px}
+    .mast .row{flex-direction:column;align-items:flex-start}
+    .mast .date{text-align:left}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="mast">
+    <span class="eyebrow">Báo cáo tiến độ · Chatbot tư vấn (lốp xe + spa)</span>
+    <div class="row">
+      <h1>Tỉ lệ trả lời đúng/sai mới nhất &amp; luồng tốc độ của hệ thống</h1>
+      <div class="date">
+        <b>Ngày 09/07/2026</b>
+        Sản phẩm: chatbot lốp xe + spa
+      </div>
+    </div>
+  </div>
+
+  <p class="tldr">
+    <b>Tóm tắt cho leader:</b> Chất lượng trả lời hiện <b>tốt</b> — câu hỏi thường bot trả đúng <b>94%</b> (bot lốp xe) và <b>92%</b> (bot spa), gần như <b>không bịa</b> (1/200 câu). Điểm cần cải thiện là <b>tốc độ</b>: mỗi câu trung bình <b>~45 giây</b>, do phải gọi AI bên ngoài (chậm) nhiều lần — <b>phần code của mình chỉ chiếm ~2 giây, đã nhanh</b>. Hôm nay tập trung đào gốc rễ nhóm câu "so sánh giá" đang sai, và dọn cấu hình hệ thống trước khi lên chạy thật.
+  </p>
+
+  <div class="readout" role="group" aria-label="Chỉ số then chốt">
+    <div class="metric">
+      <div class="k">Câu hỏi thường trả đúng</div>
+      <div class="v"><span class="now">94%</span> <span class="arrow">xe ·</span> <span class="now">92%</span> <span class="arrow">spa</span></div>
+    </div>
+    <div class="metric">
+      <div class="k">Bot bịa thông tin (HALLU)</div>
+      <div class="v"><span class="now">≈ 0</span> <span class="arrow">(1/200)</span></div>
+    </div>
+    <div class="metric">
+      <div class="k">Tốc độ trả lời (trung vị)</div>
+      <div class="v"><span class="slow">~45 giây</span></div>
+    </div>
+  </div>
+
+  <!-- ===== ĐÚNG / SAI ===== -->
+  <section>
+    <h2>1 · Tỉ lệ trả lời ĐÚNG / SAI mới nhất</h2>
+    <p class="lede">Đo trên 200 câu hỏi (100 câu bot lốp xe + 100 câu bot spa), có "giám khảo AI" đối chiếu từng câu với dữ liệu gốc — không tính cảm tính. Số đo gần nhất; hôm nay không thay đổi (thay đổi thử đã gỡ bỏ, xem mục 3).</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Bot</th><th style="text-align:right">Trả đúng</th><th style="text-align:right">Trả sai</th><th style="text-align:right">Bịa</th><th style="text-align:right">Tỉ lệ đúng</th></tr></thead>
+        <tbody>
+          <tr><td>Lốp xe</td><td class="num">91</td><td class="num">6</td><td class="num">0</td><td class="num"><span class="up">94%</span></td></tr>
+          <tr><td>Spa</td><td class="num">91</td><td class="num">7</td><td class="num">1</td><td class="num"><span class="up">92%</span></td></tr>
+          <tr><td><b>Tổng</b></td><td class="num"><b>182</b></td><td class="num"><b>13</b></td><td class="num"><b>1</b></td><td class="num"><span class="up"><b>~93%</b></span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="legend">
+      <span><b>"Trả đúng"</b> = trả lời chính xác + từ chối đúng các câu bẫy.</span>
+      <span><b>"Bịa"</b> = tự chế ra thông tin không có trong hệ thống (nguy hiểm nhất — gần như đã triệt tiêu).</span>
+    </div>
+
+    <p class="lede" style="margin-top:26px">Chi tiết theo nhóm câu hỏi — chỗ nào mạnh, chỗ nào còn yếu:</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Nhóm câu hỏi</th><th style="text-align:right">Đúng</th><th>Nhận xét</th></tr></thead>
+        <tbody>
+          <tr><td>Tra giá 1 sản phẩm (xe)</td><td class="num"><span class="up">42/42</span></td><td>Hoàn hảo — tra giá chính xác tuyệt đối.</td></tr>
+          <tr><td>Câu bẫy (hỏi hãng không bán / ngoài phạm vi)</td><td class="num"><span class="up">15/15</span></td><td>Từ chối đúng 100%, không mắc bẫy, không bịa.</td></tr>
+          <tr><td>Giá lẻ / quy trình / UX (spa)</td><td class="num"><span class="up">35/35</span></td><td>Rất tốt.</td></tr>
+          <tr><td>Hỏi nối tiếp "của nó" (spa)</td><td class="num"><span class="slowc">11/15</span></td><td>Chưa hiểu đúng "nó" đang nhắc dịch vụ nào → 4 câu sai.</td></tr>
+          <tr><td><b>So sánh giá "A và B" (xe)</b></td><td class="num"><span class="dn">0/4</span></td><td>Nhóm yếu nhất — bot chỉ lấy được 1 vế, thiếu vế còn lại. <b>Đã đào ra gốc rễ hôm nay</b> (mục 3).</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ===== PERFORMANCE ===== -->
+  <section>
+    <h2>2 · Luồng tốc độ (performance) của hệ thống hiện tại</h2>
+    <p class="lede">Tách bạch rõ: <b>ĐÚNG/SAI là chất lượng, TỐC ĐỘ là tốc độ</b> — câu trả lời đúng nhưng chậm thì vẫn là câu đúng. Mỗi câu đi qua nhiều bước; phần lớn thời gian là gọi AI bên ngoài, phần code của mình rất nhanh.</p>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Bước xử lý một câu hỏi</th><th>Ai làm</th><th style="text-align:right">Thời gian</th><th>Ghi chú</th></tr></thead>
+        <tbody>
+          <tr><td>1. Hiểu câu hỏi (loại gì)</td><td>AI bên ngoài</td><td class="num"><span class="slowc">~18 giây</span></td><td>Mọi câu — đang tìm cách rút ngắn.</td></tr>
+          <tr><td>2. Tra cứu dữ liệu (database)</td><td>Code của mình</td><td class="num"><span class="fast">0,09 giây</span></td><td>Rất nhanh.</td></tr>
+          <tr><td>3. Xếp hạng kết quả</td><td>Code của mình</td><td class="num"><span class="fast">1,5 giây</span></td><td>Nhanh.</td></tr>
+          <tr><td>4. Lọc dữ liệu không liên quan</td><td>Code của mình</td><td class="num"><span class="fast">0,4 giây</span></td><td>Nhanh.</td></tr>
+          <tr><td>5. Viết câu trả lời</td><td>AI bên ngoài</td><td class="num"><span class="slowc">~25 giây</span></td><td>Mọi câu — chỗ tốn thời gian nhất.</td></tr>
+          <tr><td>6. Kiểm tra chống bịa</td><td>AI bên ngoài</td><td class="num"><span class="slowc">~25 giây</span></td><td>Câu hỏi số — có thể chuyển chạy ngầm để khách không phải chờ.</td></tr>
+          <tr><td>7. (Câu phức) Tách câu so sánh</td><td>AI bên ngoài</td><td class="num"><span class="slowc">~29 giây</span></td><td>Chỉ câu phức tạp.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="legend">
+      <span><b style="color:var(--ok)">Xanh</b> = code của mình (nhanh).</span>
+      <span><b style="color:var(--warn)">Cam</b> = gọi AI bên ngoài (chậm).</span>
+    </div>
+
+    <p class="lede" style="margin-top:26px">Con số tổng hợp (đo trên 301 lượt hỏi thật):</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Chỉ số tốc độ</th><th style="text-align:right">Giá trị</th><th>Nghĩa là</th></tr></thead>
+        <tbody>
+          <tr><td>Trung vị (một nửa số câu nhanh hơn mức này)</td><td class="num">45,6 giây</td><td>Một câu điển hình mất ~45 giây.</td></tr>
+          <tr><td>95% số câu trong khoảng</td><td class="num">110 giây</td><td>Câu chậm nhất tới ~1,8 phút.</td></tr>
+          <tr><td>Tỉ lệ AI ngoài / code mình</td><td class="num">74% / 26%</td><td>3/4 thời gian là chờ AI bên ngoài; code mình chỉ ~2 giây.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="goal warn" style="margin-top:22px">
+      <div class="top"><div><span class="num">Nguyên nhân gốc (đã xác định bằng số)</span><h3>Vì sao chậm — và vì sao KHÔNG phải do code mình</h3></div><span class="chip warn">Nút thắt</span></div>
+      <dl>
+        <dt>Gốc chính</dt><dd>Máy chủ AI bên ngoài (dùng để viết câu trả lời) <b>phản hồi chậm 3–30 giây mỗi lần gọi</b> — đây là dịch vụ ngoài, không nằm trong code của mình.</dd>
+        <dt>Gốc phụ</dt><dd>Câu phức phải gọi AI <b>4–5 lần nối tiếp</b> (hiểu → tách → viết → kiểm tra) → cộng dồn thời gian.</dd>
+        <dt>Đã làm</dt><dd><span class="rw">Nâng thời gian chờ AI từ 30s → 90s → số câu bị cắt ngang (trả về trống) giảm từ ~25 câu xuống còn 1 câu.</span></dd>
+        <dt>Hướng tiếp</dt><dd>Chuyển bước "kiểm tra chống bịa" sang chạy ngầm (khách không chờ) + giảm số lần gọi AI cho câu đơn giản. Đòn bẩy lớn nhất là <b>đổi/nâng cấp máy chủ AI</b> (quyết định vận hành).</dd>
+      </dl>
+    </div>
+  </section>
+
+  <!-- ===== VIỆC HÔM NAY ===== -->
+  <section>
+    <h2>3 · Việc làm hôm nay (09/07)</h2>
+
+    <div class="goal">
+      <div class="top"><div><span class="num">Việc 1</span><h3>Đào gốc rễ nhóm câu "so sánh giá A và B" (đang sai 0/4)</h3></div><span class="chip ok">Đã tìm ra gốc</span></div>
+      <dl>
+        <dt>Vấn đề</dt><dd>Khách hỏi "so sánh giá lốp A và lốp B, cái nào đắt hơn" → bot chỉ lấy được 1 sản phẩm, nói "không có thông tin" sản phẩm còn lại — dù hệ thống CÓ đủ cả hai.</dd>
+        <dt>Tìm ra</dt><dd>Ba tầng: (1) bot chỉ đọc mã sản phẩm ĐẦU TIÊN trong câu; (2) cơ chế tách-câu dự phòng không kích hoạt; (3) gốc sâu nhất — bot tra theo <b>kích cỡ lốp</b> mà bỏ qua <b>hãng</b>, nên một kích cỡ ra nhiều hãng → không chốt được đúng cái khách hỏi.</dd>
+        <dt>Kết quả</dt><dd><span class="rw">Thử một cách sửa, ĐO thật trên 4 câu → thấy làm KÉM hơn (bot từ chối cả 2 vế) → <b>gỡ bỏ ngay trong ngày, không đưa lỗi lên hệ thống</b>. Cách sửa đúng (lọc theo hãng) sẽ làm sau, đo trước khi bật.</span></dd>
+      </dl>
+    </div>
+
+    <div class="goal">
+      <div class="top"><div><span class="num">Việc 2</span><h3>Dọn &amp; siết cấu hình trước khi lên chạy thật</h3></div><span class="chip ok">Xong</span></div>
+      <dl>
+        <dt>Vấn đề</dt><dd>Giai đoạn phát triển lâu → cấu hình rải rác, khó biết cái nào còn dùng, cái nào đã nạp vào hệ thống.</dd>
+        <dt>Đã làm</dt><dd>Dựng "cổng kiểm tra" tự động chạy trước khi triển khai; tách vai trò rõ (lập trình / dữ liệu / vận hành); tắt 3 cấu hình chết không ai dùng.</dd>
+        <dt>Kết quả</dt><dd><span class="r">Phát hiện 71 cấu hình chưa nạp vào cơ sở dữ liệu (đang chạy bằng giá trị mặc định trong code) → có danh sách rõ để bộ phận dữ liệu bổ sung. Từ nay thiếu cấu hình sẽ bị chặn TRƯỚC khi lên máy chủ.</span></dd>
+      </dl>
+    </div>
+
+    <div class="goal">
+      <div class="top"><div><span class="num">Việc 3</span><h3>Soi lại toàn bộ luồng code bằng nhiều trợ lý AI song song</h3></div><span class="chip info">Đang chạy</span></div>
+      <dl>
+        <dt>Vấn đề</dt><dd>Cần một bản đánh giá trung thực: chỗ nào của hệ thống đã tốt, chỗ nào còn nghẽn / chưa chuẩn — đọc từ code thật, không tin tài liệu cũ.</dd>
+        <dt>Đã làm</dt><dd>Chạy 11 luồng kiểm tra song song (nạp dữ liệu, tra cứu, xếp hạng, viết trả lời, chống bịa, cấu hình, bảo mật, tốc độ...) + một vòng "phản biện" để loại phát hiện sai.</dd>
+        <dt>Kết quả</dt><dd><span class="r">Đang tổng hợp thành 1 báo cáo chuyên sâu — sẽ trình ngay khi xong.</span></dd>
+      </dl>
+    </div>
+  </section>
+
+  <!-- ===== CÒN LẠI ===== -->
+  <section>
+    <h2>4 · Còn lại chưa làm xong</h2>
+    <ul class="items">
+      <li><span class="chip info">Chất lượng</span><div class="body"><b>Nhóm "so sánh giá" (0/4) — cần sửa cách tra theo hãng</b><span class="meta">Đã có gốc rễ; cách sửa đúng cần lọc theo hãng + đo kỹ trước khi bật (tránh lặp lại lỗi hôm nay).</span></div></li>
+      <li><span class="chip info">Chất lượng</span><div class="body"><b>Câu hỏi nối tiếp "của nó" (spa, 4 câu)</b><span class="meta">Bot chưa hiểu đúng "nó" đang nhắc dịch vụ nào.</span></div></li>
+      <li><span class="chip info">Chất lượng</span><div class="body"><b>Vài câu bot có dữ liệu nhưng chưa tìm ra để trả</b><span class="meta">Tra cứu chưa lấy đúng (câu liệt kê / một số gói dịch vụ).</span></div></li>
+      <li><span class="chip warn">Tốc độ</span><div class="body"><b>Giảm thời gian chờ mỗi câu (~45s)</b><span class="meta">Chuyển kiểm-tra-chống-bịa sang chạy ngầm + giảm số lần gọi AI; đòn bẩy lớn nhất là nâng cấp máy chủ AI (vận hành).</span></div></li>
+    </ul>
+  </section>
+
+  <footer>
+    <span>Trạng thái: chất lượng tốt (đúng ~93%, gần như không bịa) · tốc độ cần cải thiện (~45s/câu, nút thắt là AI bên ngoài)</span>
+    <span>Cập nhật 09/07/2026</span>
+  </footer>
+
+</div>
+</body>
+</html>

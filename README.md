@@ -22,6 +22,26 @@
 
 ---
 
+## 👥 Read the playbook for your role — 3 roles, 3 config-ownership modes
+
+This README is the shared **architecture** reference. The day-to-day *workflow* is split by role,
+each owning one part of configuration so no value is ever half-owned or hand-edited into drift:
+
+| Your role | Playbook | Your mode — what you own |
+|---|---|---|
+| **BE developer** | [README_DEV.md](README_DEV.md) | **CONTRACT** — code + pipeline logic + the config *contract* (key names + types). Reads values from the DB, **fails loud on a missing key** — never an inline default. |
+| **Database / data team** | [README_DATABASE.md](README_DATABASE.md) | **VALUES** — every config *value* the platform runs on: `system_config` seed, alembic seed migrations, bot content. Keeps the seed complete; **no psql hot-fix**. |
+| **DevOps** | [README_DEVOPS.md](README_DEVOPS.md) | **GATE** — CI, the config-completeness gate, Docker build, env/secrets, deploy, RLS flip. The gate proves the seed covers the contract *before* build. |
+
+**Why the split:** config *values* belong to the data team (seed/DB), not to backend code. The
+backend declares only the *contract* and fails loud if a key is missing; DevOps' init-test gate
+guarantees a shipped image can't have a missing key. This removes silent code-defaults — prod
+never runs on a value nobody chose, and every DB behaves identically on a fresh clone.
+
+Runtime resolve chain (high → low): `bots.threshold_overrides → bots.<column> → bots.plan_limits → system_config → (schema default, being removed)`. Prod truth is in the DB, not in constants.
+
+---
+
 ## What changed & why (latest phase — 2026-06-19)
 
 > **Happy-case input control (2026-06-22)** — thay vì cố parse mọi format bẩn (vô hạn), platform định nghĩa **1 happy-case template chuẩn** (structured-markdown: `## section` + `| table |`) + **checker code-only** chấm điểm data đầu vào + **normalizer** kéo source về template + **per-bot summary-doc** (deterministic, fix câu "liệt kê/tóm tắt" qua giới hạn topK). Verified end-to-end: upload 7-step (L1→L7) + query 8-step (Q1→Q8), answer **11/11 × 3 lượt stable, 0 HALLU**. Spec: `docs/dev/HAPPY_CASE_DOCUMENT_FORMAT.md` · tools: `scripts/check_happy_case.py`, `verify_happy_case_pipeline.py`, `verify_query_flow.py`, `verify_answer_quality.py`.
@@ -234,7 +254,9 @@ Horizontal-scale mode (separate processes) still available via `python -m ragbot
 
 ## 9. Default config + reference docs
 
-All defaults in `shared/constants/` (package, re-exported), overridable via `system_config` (platform) or `bots.plan_limits` (per-bot). **Resolve chain (high→low)**: `bots.threshold_overrides` → `bots.<column>` → `bots.plan_limits` → `system_config` → `PLAN_LIMIT_SCHEMA.default` → `constants.DEFAULT_*`. Changing a default = sync 4 places: `constants` + `bot_limits.py` + `init_system_config.py` + an alembic UPSERT (never psql).
+Config **values** are owned by the [DATABASE team](README_DATABASE.md) (seed → `system_config` /
+`bots.plan_limits`, Redis-cached); the backend owns only the **contract** ([README_DEV.md](README_DEV.md))
+and DevOps owns the **completeness gate** ([README_DEVOPS.md](README_DEVOPS.md)). **Resolve chain (high→low)**: `bots.threshold_overrides` → `bots.<column>` → `bots.plan_limits` → `system_config` → `PLAN_LIMIT_SCHEMA.default` → `constants.DEFAULT_*` (last-resort, being removed in favour of fail-loud). Changing a default = sync 4 places via alembic: `constants` + `bot_limits.py` + `init_system_config.py` + an alembic UPSERT (never psql).
 
 | Domain | Key | Value (operative) |
 |---|---|---|
@@ -250,6 +272,7 @@ All defaults in `shared/constants/` (package, re-exported), overridable via `sys
 | Loops | `max_total_graph_iterations` (caps CRAG+reflect) | small int |
 
 **Reference docs:**
+- **Role playbooks** — [`README_DEV.md`](README_DEV.md) (backend contract) · [`README_DATABASE.md`](README_DATABASE.md) (config values / seed) · [`README_DEVOPS.md`](README_DEVOPS.md) (CI gate / deploy / RLS)
 - [`STATE_SNAPSHOT.md`](STATE_SNAPSHOT.md) — current state (READ FIRST in a new session) · [`STATE_SNAPSHOT_HISTORY.md`](STATE_SNAPSHOT_HISTORY.md) — append-only history
 - [`CLAUDE.md`](CLAUDE.md) — sacred rules for Claude Code agents
 - [`RAGBOT_STEP_PIPELINE.md`](RAGBOT_STEP_PIPELINE.md) — canonical pipeline reference · [`docs/master/`](docs/master/) — architecture sub-pages (A–P)
