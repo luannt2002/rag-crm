@@ -111,6 +111,33 @@ DEFAULT_GUARDRAIL_RULES: Final[tuple[dict[str, Any], ...]] = (
         "priority": 24,
         "metadata": {"classic": True},
     },
+    # ── Input: Vietnamese prompt-injection (NON-classic → enforced by
+    #          ``check_input`` via ``_run_db_input_regex_rules``; the English
+    #          ``prompt_injection`` rule does not cover VN phrasings, so a VN
+    #          injection like "bỏ qua hướng dẫn trước đó" previously passed).
+    #          Patterns require the injection OBJECT (instructions/system/
+    #          rules) after the trigger verb to keep false-positives off
+    #          ordinary Vietnamese ("bỏ qua bước này", "đóng vai trò"). ──────
+    {
+        "rule_id": "prompt_injection_vi",
+        "pattern": (
+            r"(?:bỏ qua|phớt lờ|quên(?:\s+(?:đi|hết|sạch))?)\s+"
+            r"(?:mọi\s+|tất cả\s+|các\s+|những\s+|hết\s+)?"
+            r"(?:hướng dẫn|chỉ dẫn|chỉ thị|lệnh|quy tắc|nguyên tắc|yêu cầu)"
+            r"(?:\s+(?:trước|phía trên|bên trên|ở trên|trước đó|đã cho))?"
+            r"|(?:(?:bạn|mày|ngươi)\s+(?:bây giờ|giờ đây)"
+            r"|(?:từ (?:bây )?giờ|kể từ giờ)[,\s]+(?:bạn|mày|ngươi))"
+            r"\s+(?:là|sẽ (?:là|đóng)|đóng vai)"
+            r"|(?:tiết lộ|in ra|cho (?:tôi|mình) xem)\s+.{0,20}?"
+            r"(?:system prompt|prompt hệ thống|câu lệnh hệ thống|chỉ thị hệ thống)"
+        ),
+        "pattern_flags": "IGNORECASE",
+        "severity": "block",
+        "action_taken": "block",
+        "scope": "input",
+        "priority": 11,
+        "metadata": {},
+    },
     # ── Input: PII (VN phone, email, CMND/CCCD; US SSN) ────────────────────
     {
         "rule_id": "pii_vi_phone",
