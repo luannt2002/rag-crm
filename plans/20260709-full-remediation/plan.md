@@ -47,7 +47,11 @@
 - **Test**: red-test `test_injection_vn_patterns.py` — compiled regex MATCH 6-8 câu VN injection + KHÔNG match 6-8 câu VN thường (false-positive gate). Rồi curl `/api/ragbot/chat` câu injection VN → guard block (runtime). Đo false-positive trên 1 batch câu hỏi VN thật.
 - **Risk**: medium — regex quá rộng → chặn nhầm câu thường. → bắt buộc false-positive test.
 
-### P0-2 · Domain-neutral guard ĐỎ (kiến trúc nhiễm ngành)  🔴 architecture
+### P0-2 · Domain-neutral guard ĐỎ (kiến trúc nhiễm ngành)  🟡 BRAND DONE / PRICE = ADR-0008
+> **BRAND ✅ FIXED** (commit `a974737`+`12eaef2`): scrub 3 guard-flagged + 17 guard-uncaught brand literal (Rovelo/NEO/Landspider) khỏi comment/docstring 8 file → **brand coupling = 0**; tighten `_BOT_BRAND_RE` thêm `rovelo|neoterra` → enforce (re-introduce = CI fail). `test_no_new_per_bot_or_brand_coupling` GREEN. 20 shape/brand-scope test pass, byte-compile OK.
+> **PRICE ❌ CHƯA (138>127)** = ADR-0007/0008 territory (guard comment tự nói "shrinks as ADR-0007/0008 lands"). **KHÔNG game ratchet** bằng cách cạo comment — coupling thật vẫn 127+. Để ADR-0008 (PRICE-index→ATTRIBUTE-index) xử lý. Test này CÒN ĐỎ = honest debt.
+
+
 - **Vấn đề**: `pytest tests/unit/test_domain_neutral_guard.py` **2/2 FAIL**. price-coupling **138 > baseline 127** (11 ref "price" mới), brand **3 > baseline 0** (3 brand literal mới). HC02 REFUTED: brand literal rải nhiều file hơn khai (`query_graph.py:353/386/2445/2463/2498`, `retrieve.py:276-279`, `guard_output.py:213/292/293`, `constants/_21`).
 - **Gốc rễ**: 2 nhánh. (a) brand = comment/docstring lẫn tên brand (scrub được ngay). (b) price-first-class = engine hardcode `price_primary|parse_money_vn|PRICE_BUCKETS_VND|query_by_price_range` — đây là **ADR-0008 territory** (structure-typing thay price-coupling).
 - **Fix**:
