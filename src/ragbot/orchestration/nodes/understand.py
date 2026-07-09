@@ -266,7 +266,7 @@ async def understand_query(
                             "intent_confidence": confidence,
                             "condensed": bool(condensed and condensed != state["query"]),
                             "condensed_query": condensed[:DEFAULT_UNDERSTAND_CONDENSED_QUERY_AUDIT_PREVIEW_LEN],
-                            "had_history": bool(has_meaningful_history),
+                            "had_history": _history_meaningful,
                         },
                     )
                     # Cache the successful classification for repeat
@@ -279,7 +279,7 @@ async def understand_query(
                         _uq_cache is not None
                         and _uq_bot_id
                         and _uq_query
-                        and not has_meaningful_history
+                        and not _history_meaningful
                     ):
                         try:
                             _ttl = int(
@@ -303,7 +303,7 @@ async def understand_query(
                     "intent_confidence": DEFAULT_INTENT_CONFIDENCE_FALLBACK,
                     "condensed": False,
                     "condensed_query": "",
-                    "had_history": bool(has_meaningful_history),
+                    "had_history": _history_meaningful,
                     "fallback": True,
                 },
             )
