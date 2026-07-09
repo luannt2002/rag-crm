@@ -411,6 +411,8 @@ def _is_shape_header(lines: list[str], li: int, cols: list[str]) -> bool:
             return False  # pure number → value, not a label
         if c[:1] in _STATS_BULLET_LEADS or _is_discourse_opener(c):
             return False  # prose / bullet lead
+        if len(c.split()) > DEFAULT_STATS_ATTR_MAX_WORDS:
+            return False  # a long clause is a prose sentence, not a column label
     ncol = len(cols)
     data_rows = 0
     for j in range(li + 1, len(lines)):
@@ -420,12 +422,15 @@ def _is_shape_header(lines: list[str], li: int, cols: list[str]) -> bool:
         nxt = _split_cols(ln)
         if not nxt:
             continue
-        if len(nxt) == ncol and not _is_prose_row(nxt):
+        _short_cells = all(
+            len(c.split()) <= DEFAULT_STATS_ATTR_MAX_WORDS for c in nxt if c.strip()
+        )
+        if len(nxt) == ncol and not _is_prose_row(nxt) and _short_cells:
             data_rows += 1
             if data_rows >= 2:  # noqa: PLR2004 — ≥2 consistent grid rows = tabular
                 return True
         else:
-            break  # column count broke → not a consistent grid
+            break  # column count broke OR a prose-clause cell → not a table grid
     return False
 
 
@@ -1109,12 +1114,17 @@ def parse_table_chunks(
         roles: dict[str, Any] = {}
         stub_fill: str | None = None
         current_category: str | None = None
-        # T012 positive-table-evidence: True only when the active header was
+        # T012 positive-table-evidence: True when the active header was
         # detected STRUCTURALLY (separator-backed / vocab or owner token match).
-        # A header promoted by the _is_shape_header heuristic alone is NOT
-        # structural — that heuristic is what turned prose lines into
-        # pseudo-headers whose following prose "rows" minted garbage entities.
         header_structural = False
+        # ADR-0008 sparse-drop fix: a header promoted by _is_shape_header is ALSO
+        # positive table evidence NOW that the heuristic requires ≥2 CONSISTENT,
+        # non-prose grid rows (see _is_shape_header line ~423) — a signal a
+        # comma-split prose sentence cannot forge. The stale warning that shape-
+        # headers minted prose-garbage pre-dates that grid tightening; without
+        # counting it, a well-formed comma-CSV whose headers are out-of-vocab and
+        # whose rows carry no price silently yielded 0 entities (canary INV-1/2).
+        header_shape = False
 
         for _li, line in enumerate(lines):
             stripped_line = line.strip()
@@ -1143,11 +1153,13 @@ def parse_table_chunks(
                 cols, _declared_labels,
                 next_is_separator=_next_nonempty_is_separator(lines, _li),
             )
-            if _hdr_structural or (not header and _is_shape_header(lines, _li, cols)):
+            _shape_hdr = not header and _is_shape_header(lines, _li, cols)
+            if _hdr_structural or _shape_hdr:
                 header = cols
                 roles = _column_roles(cols, custom_roles)
                 stub_fill = None  # new table → reset rowspan forward-fill
                 header_structural = _hdr_structural
+                header_shape = _shape_hdr
                 continue
 
             # Single non-delimiter col → category heading. Reject noise candidates so
@@ -1205,7 +1217,7 @@ def parse_table_chunks(
                     or entity.price_secondary is not None
                 )
                 _pipe_row = "|" in line or "\t" in line
-                if _has_price or _pipe_row or header_structural:
+                if _has_price or _pipe_row or header_structural or header_shape:
                     entities.append(entity)
 
     return entities
