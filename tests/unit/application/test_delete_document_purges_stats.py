@@ -74,10 +74,15 @@ async def test_delete_purges_stats_index() -> None:
     stats_repo = AsyncMock()
     stats_repo.delete_by_document.return_value = 3
     uc = _build(stats_repo=stats_repo, doc=_doc(doc_id))
+    cmd = _cmd()
 
-    result = await uc.execute(_cmd())
+    result = await uc.execute(cmd)
 
-    stats_repo.delete_by_document.assert_awaited_once_with(doc_id)
+    _await = stats_repo.delete_by_document.await_args
+    assert _await.args == (doc_id,)
+    assert _await.kwargs.get("record_bot_id") == cmd.record_bot_id, (
+        "stats purge must be scoped by the command's record_bot_id"
+    )
     assert result.deleted_chunks == 7
 
 

@@ -112,7 +112,11 @@ async def test_stats_delete_runs_even_when_not_reindex() -> None:
     ):
         await host._stage_finalize(ctx)
 
-    stats_repo.delete_by_document.assert_awaited_once_with(doc_id)
+    _await = stats_repo.delete_by_document.await_args
+    assert _await.args == (doc_id,)
+    assert _await.kwargs.get("record_bot_id") == ctx.record_bot_id, (
+        "delete must be scoped by the ingest ctx's record_bot_id"
+    )
     host._insert_stats_index.assert_awaited_once()
 
 

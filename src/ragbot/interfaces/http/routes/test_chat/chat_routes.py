@@ -21,6 +21,7 @@ from ragbot.infrastructure.repositories.history_reconcile import HistoryReconcil
 from ragbot.shared.bot_limits import resolve_bot_limit
 from ragbot.shared.hashing import content_hash_required
 from ragbot.shared.served_chunks import build_served_chunks
+from ragbot.shared.verdict_meta import build_verdict_meta
 from ragbot.shared.constants import (
     DEFAULT_CONNECT_ID,
     DEFAULT_LANGUAGE,
@@ -624,6 +625,10 @@ async def test_chat(req: TestChatRequest, request: Request) -> dict:
                 retrieved_chunks=_build_stats_attributed_refs(
                     graded_chunks, final_state
                 ),
+                # Deterministic guard self-verdict → metadata_json (observe-only,
+                # sacred #10 safe): unlocks DB-queryable grounding-fail /
+                # numeric-flag rates without re-running. NOT a correctness grade.
+                metadata={"guard_verdict": build_verdict_meta(final_state)},
             )
         except (SQLAlchemyError, ValueError, TypeError) as exc:
             logger.warning(
@@ -1006,6 +1011,10 @@ async def test_chat_stream(req: TestChatRequest, request: Request) -> StreamingR
                 retrieved_chunks=_build_stats_attributed_refs(
                     graded_chunks, final_state
                 ),
+                # Deterministic guard self-verdict → metadata_json (observe-only,
+                # sacred #10 safe): unlocks DB-queryable grounding-fail /
+                # numeric-flag rates without re-running. NOT a correctness grade.
+                metadata={"guard_verdict": build_verdict_meta(final_state)},
             )
         except (SQLAlchemyError, ValueError, TypeError) as exc:
             logger.warning(

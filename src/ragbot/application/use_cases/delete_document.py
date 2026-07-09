@@ -89,7 +89,9 @@ class DeleteDocumentUseCase:
         # and the serving queries filter ``deleted_at IS NULL``).
         if self._stats_index_repo is not None:
             try:
-                purged = await self._stats_index_repo.delete_by_document(doc.id)
+                purged = await self._stats_index_repo.delete_by_document(
+                    doc.id, record_bot_id=cmd.record_bot_id
+                )
             except (OSError, RuntimeError, ValueError, TypeError) as exc:
                 logger.warning(
                     "delete_document.stats_purge_failed",

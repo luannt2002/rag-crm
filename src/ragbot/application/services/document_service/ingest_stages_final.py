@@ -557,7 +557,9 @@ class _StageFinalizeMixin:
                 # successful ingest re-populate.
                 _stats_delete_ok = True
                 try:
-                    await self._stats_index_repo.delete_by_document(doc_id)
+                    await self._stats_index_repo.delete_by_document(
+                        doc_id, record_bot_id=record_bot_id
+                    )
                 except Exception as exc:  # noqa: BLE001 — best-effort; skip insert on fail
                     _stats_delete_ok = False
                     logger.warning(

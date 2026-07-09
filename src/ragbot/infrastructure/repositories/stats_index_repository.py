@@ -233,28 +233,35 @@ class StatsIndexRepository:
             n_entities=len(entities),
         )
 
-    async def delete_by_document(self, record_document_id: uuid.UUID) -> int:
-        """DELETE all index rows for a given document.
+    async def delete_by_document(
+        self,
+        record_document_id: uuid.UUID,
+        *,
+        record_bot_id: uuid.UUID,
+    ) -> int:
+        """DELETE all index rows for a given document, scoped to its bot.
 
         Used before re-ingest to avoid stale entities from the old version
         polluting price queries.
 
         Returns the number of rows deleted.
 
-        Note: this call does NOT require record_tenant_id because
-        ``record_document_id`` is a UUID PK that is globally unique — two
-        tenants cannot have the same ``record_document_id``.  The Postgres
-        RLS is not enforced here (no tenant parameter), so this method MUST
-        only be called from a trusted internal path (ingest pipeline),
-        never from a user-facing endpoint.
+        The DELETE is scoped by BOTH ``record_document_id`` (globally-unique
+        UUID PK) AND ``record_bot_id`` as defence-in-depth tenant isolation:
+        a mismatched (document, bot) pair deletes nothing rather than another
+        bot's rows. This mirrors the vector store's tenant-bound delete
+        (F14-CRIT-1). Both are bound params, never inline literals. This
+        method MUST still only be called from a trusted internal path (ingest
+        pipeline / delete use-case), never from a user-facing endpoint.
         """
         async with self._sf() as session:
             result = await session.execute(
                 text(
                     "DELETE FROM document_service_index "
-                    "WHERE record_document_id = :doc_id"
+                    "WHERE record_document_id = :doc_id "
+                    "AND record_bot_id = :bot_id"
                 ),
-                {"doc_id": record_document_id},
+                {"doc_id": record_document_id, "bot_id": record_bot_id},
             )
             await session.commit()
             deleted = result.rowcount or 0
@@ -262,6 +269,7 @@ class StatsIndexRepository:
         logger.info(
             "stats_index_delete_by_document",
             record_document_id=str(record_document_id),
+            record_bot_id=str(record_bot_id),
             rows_deleted=deleted,
         )
         return deleted

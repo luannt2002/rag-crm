@@ -272,10 +272,11 @@ async def test_stats_repo_cross_tenant_isolation() -> None:
 
 @pytest.mark.asyncio
 async def test_reingest_deletes_old_stats_before_insert() -> None:
-    """delete_by_document removes stale rows (mocked rowcount=2)."""
+    """delete_by_document removes stale rows (mocked rowcount=2), scoped by bot."""
     from ragbot.infrastructure.repositories.stats_index_repository import StatsIndexRepository
 
     doc_id = uuid.uuid4()
+    bot_id = uuid.uuid4()
     mock_result = MagicMock()
     mock_result.rowcount = 2
 
@@ -291,7 +292,7 @@ async def test_reingest_deletes_old_stats_before_insert() -> None:
     sf.return_value.__aexit__ = AsyncMock(return_value=False)
 
     repo = StatsIndexRepository(session_factory=sf)
-    deleted = await repo.delete_by_document(doc_id)
+    deleted = await repo.delete_by_document(doc_id, record_bot_id=bot_id)
 
     assert deleted == 2
     session.execute.assert_called_once()
@@ -301,6 +302,41 @@ async def test_reingest_deletes_old_stats_before_insert() -> None:
     sql_str = str(call_args[0][0]).lower()
     assert "delete from document_service_index" in sql_str
     assert "record_document_id" in sql_str
+
+
+@pytest.mark.asyncio
+async def test_delete_by_document_scoped_by_bot() -> None:
+    """DELETE MUST be scoped by ``record_bot_id`` (defense-in-depth tenant
+    isolation, parity with vector-store F14-CRIT-1): a mismatched
+    (document, bot) pair deletes nothing rather than another bot's rows.
+    The bot UUID MUST be a bound param, never an inline literal."""
+    from ragbot.infrastructure.repositories.stats_index_repository import StatsIndexRepository
+
+    doc_id = uuid.uuid4()
+    bot_id = uuid.uuid4()
+    mock_result = MagicMock()
+    mock_result.rowcount = 1
+
+    session = AsyncMock()
+    session.execute = AsyncMock(return_value=mock_result)
+    session.commit = AsyncMock()
+    session.__aenter__ = AsyncMock(return_value=session)
+    session.__aexit__ = AsyncMock(return_value=False)
+
+    sf = MagicMock()
+    sf.return_value = session
+    sf.return_value.__aenter__ = AsyncMock(return_value=session)
+    sf.return_value.__aexit__ = AsyncMock(return_value=False)
+
+    repo = StatsIndexRepository(session_factory=sf)
+    await repo.delete_by_document(doc_id, record_bot_id=bot_id)
+
+    call_args = session.execute.call_args
+    sql_str = str(call_args[0][0]).lower()
+    assert "record_bot_id" in sql_str, "DELETE must be scoped by record_bot_id"
+    params = call_args[0][1]
+    assert "bot_id" in params, "bot UUID must be a bind param, not inline literal"
+    assert str(bot_id) in {str(v) for v in params.values()}
 
 
 @pytest.mark.asyncio

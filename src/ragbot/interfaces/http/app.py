@@ -441,6 +441,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
             names=[t.get_name() for t in embedded_worker_tasks],
         )
 
+    # Expose the task handles so /health can report embedded-worker liveness.
+    # Empty list when workers are disabled (they run as separate processes) —
+    # the health check then omits the worker dep rather than flagging degraded.
+    app.state.embedded_worker_tasks = embedded_worker_tasks
+
     logger.info("ragbot.startup_complete", env=settings.app.env, version=settings.app.version)
 
     try:

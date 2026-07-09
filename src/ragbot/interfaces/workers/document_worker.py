@@ -57,6 +57,8 @@ from ragbot.shared.constants import (
     DEFAULT_HTTP_TIMEOUT_S,
     DEFAULT_NARRATE_PROVIDER,
     DEFAULT_NARRATE_THEN_EMBED_ENABLED,
+    DEFAULT_UPLOAD_STREAM_CHUNK_SIZE,
+    DEFAULT_UPLOAD_STREAM_MAX_BYTES,
     DEFAULT_VLM_CAPTION_PROMPT,
     DEFAULT_VLM_PROVIDER,
     SUBJECT_DOCUMENT_UPLOADED,
@@ -85,6 +87,54 @@ logger = structlog.get_logger(__name__)
 class _LocalSourceNotRefetchable(Exception):
     """Raised when a non-http(s) source (``local://``) has no stored content
     to reuse and therefore cannot be (re)fetched."""
+
+
+class _RemoteBodyTooLarge(ValueError):
+    """Raised when a fetched remote body exceeds the byte cap.
+
+    Base ``ValueError`` on purpose: a body over the ceiling is a TERMINAL
+    condition (it is not in ``_TRANSIENT_INGEST_ERRORS``), so the ingest is
+    marked failed rather than retried — re-fetching the same oversized URL
+    would only OOM again.
+    """
+
+
+async def _fetch_url_bounded(cli: httpx.AsyncClient, url: str) -> bytes:
+    """GET *url* into memory with a hard byte ceiling to bound worker RSS.
+
+    ``response.content`` buffers the WHOLE body, so one unbounded remote
+    document can OOM the shared worker process and take down every co-tenant
+    ingest running in it. Two guards enforce ``DEFAULT_UPLOAD_STREAM_MAX_BYTES``:
+
+      * Content-Length preflight — reject before reading a byte when the server
+        declares an over-cap body.
+      * Streaming accumulation — enforce the cap even when Content-Length is
+        absent or lies (chunked transfer), aborting mid-stream.
+
+    Raises :class:`_RemoteBodyTooLarge` (terminal) on breach so the caller fails
+    the ingest cleanly instead of OCR-refetching the same oversized URL.
+    """
+    cap = DEFAULT_UPLOAD_STREAM_MAX_BYTES
+    async with cli.stream("GET", url) as resp:
+        resp.raise_for_status()
+        declared = resp.headers.get("content-length")
+        if declared is not None:
+            try:
+                declared_n: int | None = int(declared)
+            except ValueError:
+                declared_n = None  # malformed header — rely on the stream guard
+            if declared_n is not None and declared_n > cap:
+                raise _RemoteBodyTooLarge(
+                    f"remote body Content-Length {declared_n} exceeds cap {cap}"
+                )
+        buf = bytearray()
+        async for chunk in resp.aiter_bytes(DEFAULT_UPLOAD_STREAM_CHUNK_SIZE):
+            buf += chunk
+            if len(buf) > cap:
+                raise _RemoteBodyTooLarge(
+                    f"remote body exceeded cap {cap} bytes mid-stream"
+                )
+    return bytes(buf)
 
 
 def _is_refetchable_url(url: str) -> bool:
@@ -443,9 +493,9 @@ async def _handle_document_uploaded_inner(payload: dict[str, Any], container: Co
                 async with httpx.AsyncClient(
                     timeout=DEFAULT_HTTP_TIMEOUT_S, follow_redirects=True,
                 ) as cli:
-                    _resp = await cli.get(source_url)
-                    _resp.raise_for_status()
-                    _raw = _resp.content
+                    # Bounded fetch — cap worker RSS so one oversized remote
+                    # document cannot OOM the shared process (co-tenant ingest).
+                    _raw = await _fetch_url_bounded(cli, source_url)
                 if parser is None:
                     # detect_parser_robust = detect_parser + byte-sniff fallback
                     # (registry.py). NOT plain detect_parser — which returns None
@@ -478,6 +528,11 @@ async def _handle_document_uploaded_inner(payload: dict[str, Any], container: Co
                             bytes=len(_raw),
                             doc_id=str(document_id),
                         )
+            except _RemoteBodyTooLarge:
+                # Terminal — do NOT fall through to the OCR fallback below,
+                # which would REFETCH the same oversized URL and OOM again.
+                # Propagate so the ingest fails cleanly (non-transient).
+                raise
             except Exception as exc:  # noqa: BLE001 — registry is best-effort; fall through to OCR
                 logger.warning(
                     "worker_parser_registry_failed_fallback_ocr",

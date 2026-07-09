@@ -9,12 +9,21 @@ the new keys.
 
 This test detects the pattern at code level:
 
-  * Every key passed to ``_pcfg(state, "<key>", ...)`` in
-    ``query_graph.py`` MUST appear in ``_build_pipeline_config`` body
-    (the only thing that puts data into ``state["pipeline_config"]``).
+  * Every key passed to ``_pcfg(state, "<key>", ...)`` in ``query_graph.py``
+    AND in every ``orchestration/nodes/*.py`` node MUST appear in
+    ``_build_pipeline_config`` body (the only thing that puts data into
+    ``state["pipeline_config"]``). The DAG was refactored so the bulk of the
+    ``_pcfg`` reads (~150) now live in the node modules, not query_graph —
+    scanning query_graph alone left them unguarded.
   * ``_PIPELINE_CFG_KEYS`` + ``_CHAT_CONFIG_KEYS`` MUST stay in lockstep
     (the existing ``scripts/audit_pipeline_cfg_parity.py`` already
     checks this — promoted here so CI gates ship.
+
+Documented, verified-benign drift lives in ``_KNOWN_PCFG_DRIFT`` — keys read
+in a node but not populated by a builder. Each was checked to be UNSEEDED in
+``system_config`` (so ``_pcfg``'s caller default IS the effective value; there
+is no dead seed / silent override). The allow-list keeps the guard green while
+still failing CI the moment a NEW — or worse, a seeded — key drifts.
 
 A miss in either guard makes a freshly-seeded ``system_config`` row
 behave as if it were never set — the per-bot opt-in via ``plan_limits``
@@ -33,6 +42,7 @@ import pytest
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _QUERY_GRAPH = _REPO_ROOT / "src" / "ragbot" / "orchestration" / "query_graph.py"
+_NODES_DIR = _REPO_ROOT / "src" / "ragbot" / "orchestration" / "nodes"
 _TEST_CHAT = _REPO_ROOT / "src" / "ragbot" / "interfaces" / "http" / "routes" / "test_chat" / "_pipeline_config.py"
 # chat_worker was split into a package; ``_CHAT_CONFIG_KEYS`` lives in the
 # config sub-module.
@@ -53,6 +63,30 @@ _PCFG_ALLOWLIST: frozenset[str] = frozenset(
 )
 
 
+# Documented, VERIFIED-BENIGN drift (2026-07-09): keys a node reads via
+# ``_pcfg(state, key, DEFAULT)`` but no builder populates. Each was confirmed
+# (a) UNSEEDED in ``system_config`` — so the ``_pcfg`` caller default is the
+# effective value, there is no dead seed / silent override, and (b) absent
+# from the worker builder (0 hits, not a remap). Activating any of these means
+# ADDING it to BOTH builders + measuring the impact (a behaviour change, not a
+# guard fix) — do that, then delete it here. A NEW key that is not on this list
+# still fails CI; a key here that later gets seeded should be promoted to a
+# real builder entry (the seed would otherwise be dead).
+_KNOWN_PCFG_DRIFT: frozenset[str] = frozenset(
+    {
+        "adaptive_context_high_score",
+        "adaptive_context_max_n",
+        "decompose_stats_max_subs",
+        "guard_output_parallel_enabled",
+        "heuristic_intent_confidence_threshold",
+        "heuristic_intent_enabled",
+        "mmr_min_keep",
+        "pipeline_pre_retrieval_parallel_enabled",
+        "rerank_max_chunks_to_llm",
+    },
+)
+
+
 def _extract_pcfg_keys(source_path: Path) -> set[str]:
     """Return the set of literal string keys passed to ``_pcfg(state, "<key>", ...)``.
 
@@ -62,6 +96,18 @@ def _extract_pcfg_keys(source_path: Path) -> set[str]:
     # Match `_pcfg(state, "<key>"` — single quotes also tolerated.
     pattern = re.compile(r'_pcfg\(\s*state\s*,\s*["\']([a-zA-Z_][\w.]*)["\']')
     return set(pattern.findall(text))
+
+
+def _all_pcfg_keys() -> set[str]:
+    """Every ``_pcfg`` key read across query_graph.py AND all node modules.
+
+    The DAG refactor moved most reads into ``orchestration/nodes/*.py``; a
+    guard that scans query_graph alone (43 keys) misses ~150 node reads.
+    """
+    keys = _extract_pcfg_keys(_QUERY_GRAPH)
+    for node in sorted(_NODES_DIR.glob("*.py")):
+        keys |= _extract_pcfg_keys(node)
+    return keys
 
 
 def _extract_tuple_keys(source_path: Path, tuple_name: str) -> set[str]:
@@ -120,7 +166,7 @@ def _extract_dict_keys(source_path: Path, marker_function: str) -> set[str]:
 
 @pytest.fixture(scope="module")
 def pcfg_keys() -> set[str]:
-    return _extract_pcfg_keys(_QUERY_GRAPH)
+    return _all_pcfg_keys()
 
 
 def _extract_worker_builder_keys(source_path: Path) -> set[str]:
@@ -162,15 +208,16 @@ def test_query_graph_pcfg_keys_all_built_in_test_chat(
 ) -> None:
     """Every key ``query_graph._pcfg`` reads must be populated by the
     test_chat ``_build_pipeline_config`` dict (modulo the allow-list)."""
-    missing = pcfg_keys - test_chat_builder_keys - _PCFG_ALLOWLIST
+    missing = pcfg_keys - test_chat_builder_keys - _PCFG_ALLOWLIST - _KNOWN_PCFG_DRIFT
     assert not missing, (
-        "query_graph._pcfg reads these keys but _build_pipeline_config "
+        "query_graph/nodes._pcfg reads these keys but _build_pipeline_config "
         "(test_chat.py) never populates them — call sites will silently "
         "fall back to the caller-supplied default forever.\n"
         f"Missing keys: {sorted(missing)!r}\n"
         "Fix: add an entry to _build_pipeline_config OR — if the key is "
         "populated elsewhere (e.g. from bot_cfg, JWT) — add it to "
-        "_PCFG_ALLOWLIST in this test."
+        "_PCFG_ALLOWLIST; only add to _KNOWN_PCFG_DRIFT after confirming the "
+        "key is UNSEEDED in system_config (benign constant-fallback)."
     )
 
 
@@ -182,14 +229,15 @@ def test_query_graph_pcfg_keys_all_built_in_worker(
     test_chat check only inspects the test_chat dict — so a knob present in
     test_chat but missing from the worker dict (the mirage-knob class) slips
     through both and the per-bot override is silently ignored on B2B prod."""
-    missing = pcfg_keys - worker_builder_keys - _PCFG_ALLOWLIST
+    missing = pcfg_keys - worker_builder_keys - _PCFG_ALLOWLIST - _KNOWN_PCFG_DRIFT
     assert not missing, (
-        "query_graph._pcfg reads these keys but the WORKER _build_pipeline_config "
+        "query_graph/nodes._pcfg reads these keys but the WORKER _build_pipeline_config "
         "(chat_worker/pipeline_config.py) never populates them — the per-bot "
         "override is silently ignored on the production B2B path (mirage-knob).\n"
         f"Missing keys: {sorted(missing)!r}\n"
         "Fix: add the entry to the worker builder dict OR add to _PCFG_ALLOWLIST "
-        "if genuinely populated upstream on BOTH paths."
+        "if genuinely populated upstream on BOTH paths; only add to "
+        "_KNOWN_PCFG_DRIFT after confirming the key is UNSEEDED in system_config."
     )
 
 
@@ -242,7 +290,7 @@ def test_per_intent_keys_in_pipeline_cfg_tuple(
     back to the caller default → per-intent boost never fired.
     """
     by_intent_keys_in_code = {
-        k for k in _extract_pcfg_keys(_QUERY_GRAPH) if k.endswith("_by_intent")
+        k for k in _all_pcfg_keys() if k.endswith("_by_intent")
     }
     missing_test = by_intent_keys_in_code - test_chat_tuple
     missing_worker = by_intent_keys_in_code - chat_worker_tuple
@@ -253,4 +301,33 @@ def test_per_intent_keys_in_pipeline_cfg_tuple(
     assert not missing_worker, (
         f"_by_intent keys read by code but missing from _CHAT_CONFIG_KEYS: "
         f"{sorted(missing_worker)!r}"
+    )
+
+
+def test_scan_covers_node_modules_not_just_query_graph() -> None:
+    """Guard-has-teeth: the ``_pcfg`` scan MUST include the node modules —
+    the DAG refactor moved most reads out of query_graph. Pin that the widened
+    set strictly exceeds the query_graph-only set (a regression narrowing the
+    scan back would blind the guard to ~150 node reads and fail here), and that
+    a representative node-only key is present."""
+    qg_only = _extract_pcfg_keys(_QUERY_GRAPH)
+    widened = _all_pcfg_keys()
+    assert len(widened) > len(qg_only), (
+        "pcfg scan must cover orchestration/nodes/*.py, not query_graph alone"
+    )
+    # ``grounding_check_threshold`` is read in the guard_output node, never in
+    # query_graph — its presence proves node modules are in scope.
+    assert "grounding_check_threshold" in widened
+    assert "grounding_check_threshold" not in qg_only
+
+
+def test_known_pcfg_drift_stays_unseeded_shape() -> None:
+    """Every ``_KNOWN_PCFG_DRIFT`` entry must still be an actual ``_pcfg`` read
+    (a stale allow-list entry hides nothing and rots). If a key is removed from
+    the code, drop it here too."""
+    widened = _all_pcfg_keys()
+    stale = _KNOWN_PCFG_DRIFT - widened
+    assert not stale, (
+        f"_KNOWN_PCFG_DRIFT entries no longer read by any node (remove them): "
+        f"{sorted(stale)!r}"
     )

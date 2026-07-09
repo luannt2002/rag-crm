@@ -104,6 +104,32 @@ async def _check_redis(redis_client: Any) -> str:
         return "down"
 
 
+def _check_workers(request: Request, settings: Any) -> str | None:
+    """Liveness of the embedded worker tasks.
+
+    Returns ``None`` when this API instance does not run embedded workers
+    (``embed_workers_enabled`` is False → workers run as separate processes);
+    the caller then omits the dep so an API-only node is never flagged
+    degraded for workers it does not own. When embedded workers ARE enabled:
+    ``"ok"`` while every supervised task is still running, ``"down"`` when any
+    task has completed — a supervised worker exits only on crash (see
+    ``embedded_workers._supervise``: it logs + returns, never auto-restarts),
+    so a finished task is a dead consumer, not a normal state.
+    """
+    if not settings.app.embed_workers_enabled:
+        return None
+    tasks = getattr(request.app.state, "embedded_worker_tasks", None) or []
+    if not tasks:
+        # Enabled but nothing spawned = a startup misconfiguration.
+        logger.warning("health_embedded_workers_absent")
+        return "down"
+    dead = [t.get_name() for t in tasks if t.done()]
+    if dead:
+        logger.warning("health_embedded_workers_down", dead=dead)
+        return "down"
+    return "ok"
+
+
 @router.get("/health", response_model=HealthResponse)
 async def health(request: Request) -> HealthResponse:
     """Liveness + readiness in one call.
@@ -146,6 +172,12 @@ async def health(request: Request) -> HealthResponse:
 
         if redis_client is not None:
             pool_stats.update(_redis_pool_stats(redis_client))
+
+    # Embedded-worker liveness — only added when this instance runs them,
+    # so an API-only node is never marked degraded for external workers.
+    worker_status = _check_workers(request, settings)
+    if worker_status is not None:
+        deps["workers"] = worker_status
 
     overall: str = "ok" if all(v == "ok" for v in deps.values()) else "degraded"
     return HealthResponse(

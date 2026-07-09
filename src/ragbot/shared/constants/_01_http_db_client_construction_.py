@@ -149,24 +149,17 @@ DEFAULT_RERANKER_MIN_SCORE: Final[float] = 0.01
 # selectable per-bot for tenants that prefer a hard cut.
 DEFAULT_RERANK_FILTER_STRATEGY: Final[str] = "cliff"  # "threshold" | "cliff"
 DEFAULT_RERANK_CLIFF_GAP_RATIO: Final[float] = 0.35
-# S2 cliff floor recalibration (2026-05-11): lowered from 0.15 → 0.05.
-# Empirical evidence from 90Q load test (reports/LOADTEST_90Q_RESULT_
-# 20260511_161747.json): of 16 REFUSE_GAP cases (legitimate answers the bot
-# refused), 7 carried top_score in the 0.15-0.46 band — those survive the
-# floor but still cliff-cut. The remaining 9 carried top_score=0 (cut before
-# the floor stage). At 0.15 the floor was originally pinned to "match the
-# threshold-strategy floor" so the hard-cut and the adaptive cut agreed,
-# but Jina v3 + cross-encoder rerank produces a distribution where short /
-# ambiguous Vietnamese queries score 0.05-0.20 on legitimate chunks. The
-# adaptive gap-ratio cut (DEFAULT_RERANK_CLIFF_GAP_RATIO) already drops
-# low-relevance neighbours; the floor's role is only the "negative-relevance
-# noise" cut described in _cliff_detect_filter. 0.05 is the conservative
-# loosening that protects against negative-score numerical artefacts while
-# letting weak-but-positive chunks reach the LLM (the system prompt + the
-# grounding judge are responsible for the precision call, not the floor).
-# Bot owners needing stricter floor override via
-# plan_limits.rerank_cliff_absolute_floor.
-DEFAULT_RERANK_CLIFF_ABSOLUTE_FLOOR: Final[float] = 0.05
+# Absolute floor for the adaptive cliff cut in _cliff_detect_filter: the
+# "negative-relevance noise" gate below which a reranked chunk is dropped
+# regardless of the gap-ratio cut (DEFAULT_RERANK_CLIFF_GAP_RATIO). The value
+# is reranker-distribution dependent — the current zerank cross-encoder scores
+# legitimate-but-weak chunks higher than the prior embedding-reranker did, so
+# the operating floor is 0.2 (a chunk below it is noise, not a weak match).
+# This constant is only the fallback default; the effective value is resolved
+# from system_config.rerank_cliff_absolute_floor (seeded to 0.2 — clone parity
+# with production) and overridable per-bot via plan_limits. Keep this in step
+# with the seed so a fresh clone-without-data-dump behaves like production.
+DEFAULT_RERANK_CLIFF_ABSOLUTE_FLOOR: Final[float] = 0.2
 # Default 3 (not 1): a single reranker mis-score must not collapse the kept set
 # to one chunk. Step-level forensic (2026-06-05, a legal-clause lookup) showed the
 # semantic reranker can under-rank an exact-answer legal/clause chunk that

@@ -26,6 +26,7 @@ from ragbot.infrastructure.observability.metrics import (
 )
 from ragbot.infrastructure.observability.p99_outlier import record_chat_latency
 from ragbot.shared.hashing import content_hash_required
+from ragbot.shared.verdict_meta import build_verdict_meta
 from ragbot.shared.types import Channel, MessageId
 
 logger = structlog.get_logger(__name__)
@@ -239,6 +240,9 @@ async def _persist_and_callback(
         status="success",
         retrieved_chunks=_refs,
         citations=citations,
+        # Deterministic guard self-verdict → metadata_json (observe-only,
+        # sacred #10 safe): DB-queryable grounding-fail / numeric-flag rate.
+        metadata={"guard_verdict": build_verdict_meta(final_state)},
     )
 
     # Fire chat-completed hooks (Open-Closed extension point).

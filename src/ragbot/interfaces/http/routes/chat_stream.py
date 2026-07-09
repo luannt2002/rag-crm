@@ -47,6 +47,7 @@ from ragbot.shared.constants import (
     DEFAULT_SSE_SINK_MAXSIZE,
 )
 from ragbot.shared.hashing import content_hash_required
+from ragbot.shared.verdict_meta import build_verdict_meta
 from ragbot.shared.workspace_id_validator import resolve_workspace_id
 
 logger = structlog.get_logger(__name__)
@@ -395,6 +396,9 @@ async def chat_stream(req: ChatRequest, request: Request) -> StreamingResponse:
                     "rank": idx,
                     "score": float(c.get("score", 0) or 0),
                 } for idx, c in enumerate(graded_chunks)],
+                # Deterministic guard self-verdict → metadata_json (observe-only,
+                # sacred #10 safe): DB-queryable grounding-fail / numeric-flag rate.
+                metadata={"guard_verdict": build_verdict_meta(final_state)},
             )
         except SQLAlchemyError as exc:
             # Best-effort audit finalize: never fail the user's chat just
