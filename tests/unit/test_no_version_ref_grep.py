@@ -46,6 +46,9 @@ _EXEMPT_FILES: set[str] = {
     # on them. Renaming would defeat the test's purpose.
     "test_auditor_agent.py",
     "test_auditor_regex_markdown_exclude.py",
+    # Fixture iterates the literal version-ref tokens ("_v1".."_legacy") as
+    # test DATA to prove model-name detection skips them — must contain them.
+    "test_canonical_default_model_per_purpose.py",
 }
 
 # Hard ceiling — new code MUST NOT push this above the post-sweep baseline.

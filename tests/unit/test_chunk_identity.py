@@ -92,7 +92,7 @@ def test_deterministic_chunk_id_same_index_same_content_idempotent():
     assert u_a == u_b
 
 
-def test_deterministic_chunk_id_index_none_is_legacy_seed():
+def test_deterministic_chunk_id_index_none_is_prior_seed():
     """chunk_index=None keeps the legacy position-independent seed
     (backward compatibility for callers that guarantee unique content)."""
     bot_id = uuid.uuid4()

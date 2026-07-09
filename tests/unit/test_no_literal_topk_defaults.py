@@ -72,7 +72,7 @@ def test_no_literal_int_default_for_top_k_or_rerank_top_n() -> None:
     )
 
 
-def test_no_legacy_topk_keys_in_system_config_audit() -> None:
+def test_no_prior_topk_keys_in_system_config_audit() -> None:
     """Migration 010o deleted legacy ``top_k_retrieve`` / ``top_k_rerank``
     rows from ``system_config``. Source must not re-introduce them.
 

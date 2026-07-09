@@ -357,7 +357,7 @@ async def test_supports_tools_uses_tool_mode_for_non_anthropic_name() -> None:
 
 
 @pytest.mark.asyncio
-async def test_legacy_routing_unchanged_when_caps_none() -> None:
+async def test_prior_routing_unchanged_when_caps_none() -> None:
     """No capability flags → legacy json_schema for OpenAI-compatible."""
     body = json.dumps({"grade": "partial", "reason": ""})
     stub = _StubLiteLLMOpenAI(body)
