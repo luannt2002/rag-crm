@@ -20,7 +20,7 @@ from ragbot.shared.tabular_markdown import _is_pure_money
 
 # A "word" = a run of ≥2 letters (Unicode). Digits/underscore excluded, so a code
 # token like "R16" or "A68" does NOT count as a descriptive word — only real
-# letter-words ("Rovelo", "LANDSPIDER", "Lốp") do. This is the name/code divider.
+# letter-words ("BrandX", "PRODUCTLINE", "Category") do. This is the name/code divider.
 _WORD_RE = re.compile(r"[^\W\d_]{2,}", re.UNICODE)
 # A size/SKU skeleton: digit-run + separator + digit-run ("195/55", "175-65").
 _SIZE_RE = re.compile(r"\d+[/\-]\d+")
@@ -105,7 +105,7 @@ def discriminating_token_filter(query: str, cand_texts: list[str]) -> list[int]:
     """Narrow a candidate set by the query's DISCRIMINATING tokens (B3, brand-aware).
 
     A size-code lookup ("195/55R16") returns every brand of that size; the user
-    who asked for "Rovelo 195/55R16" must not be served a same-size Landspider.
+    who asked for "BrandX 195/55R16" must not be served a same-size BrandY.
     For each ≥3-letter query token, if SOME candidates contain it and others do
     NOT, it discriminates (a brand/model word) → keep only those. A token EVERY
     candidate shares (the generic category "Lốp") or NONE contains (grammar words

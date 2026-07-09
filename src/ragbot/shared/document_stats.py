@@ -653,8 +653,8 @@ def _extract_entity_from_row(
     # A4 (ADR-0008): no header name-role (headerless / uninferred table) → pick the
     # most DESCRIPTIVE cell as the name by value-SHAPE, not the positional first
     # cell (usually a group/warehouse stub or an internal code). Fixes catalog
-    # sheets whose brand-bearing product name sits in a later column (xe-1:
-    # "Kho lốp | 2-R16 195/55 LPD | Lốp Rovelo 195/55R16 …" → name is the 3rd cell,
+    # sheets whose brand-bearing product name sits in a later column (e.g.
+    # "Aisle | 2-R16 195/55 BRD | Item BrandX 195/55R16 …" → name is the 3rd cell,
     # not the 1st). Off → byte-identical legacy positional. Zero vocab, zero model.
     if name_idx is None and name_by_shape:
         _shape_pick = pick_descriptive_name([(c or "").strip() for c in cols])
