@@ -93,7 +93,8 @@ def _build_pipeline_config(_cfg: dict[str, Any], bot_cfg: Any) -> dict[str, Any]
                                           system_default=_sys_rerank_top_n),
         "embedding_dimension": _cfg_int(_cfg, "embedding_dimension", DEFAULT_ZEROENTROPY_EMBEDDING_DIM),
         "condense_history_limit": _cfg_int(_cfg, "pipeline_condense_history_limit", 6),
-        "grade_chunk_preview": _cfg_int(_cfg, "pipeline_grade_chunk_preview", 500),
+        # DEAD 2026-07-08 — no consumer reads "grade_chunk_preview" (reports/CONFIG_FLOW_DEEPDIVE_20260708.md):
+        # "grade_chunk_preview": _cfg_int(_cfg, "pipeline_grade_chunk_preview", 500),
         "reflect_answer_preview": _cfg_int(_cfg, "pipeline_reflect_answer_preview", 500),
         "crag_fallback_count": _cfg_int(_cfg, "pipeline_crag_fallback_count", 2),
         "max_grade_retries": _cfg_int(_cfg, "pipeline_max_grade_retries", 1),
@@ -410,7 +411,8 @@ def _build_pipeline_config(_cfg: dict[str, Any], bot_cfg: Any) -> dict[str, Any]
             ),
         ),
         "embedding_query_prefix": _cfg_get(_cfg, "embedding_query_prefix", ""),
-        "short_query_word_threshold": _cfg_int(_cfg, "short_query_word_threshold", 5),
+        # DEAD 2026-07-08 — no consumer reads it (reports/CONFIG_FLOW_DEEPDIVE_20260708.md):
+        # "short_query_word_threshold": _cfg_int(_cfg, "short_query_word_threshold", 5),
         "semantic_cache_ttl_s": _cfg_int(_cfg, "semantic_cache_ttl_s", 3600),
         "crag_min_fallback_score": _cfg_float(
             _cfg, "crag_min_fallback_score", DEFAULT_CRAG_MIN_FALLBACK_SCORE,
@@ -448,7 +450,8 @@ def _build_pipeline_config(_cfg: dict[str, Any], bot_cfg: Any) -> dict[str, Any]
             _cfg, "multi_query_model", DEFAULT_MULTI_QUERY_MODEL,
         ),
         "generation_temperature": _cfg_float(_cfg, "generation_temperature", DEFAULT_GENERATION_TEMPERATURE),
-        "default_answer_autonomy_percent": _cfg_int(_cfg, "default_answer_autonomy_percent", DEFAULT_ANSWER_AUTONOMY_PERCENT),
+        # DEAD 2026-07-08 — no consumer reads it (reports/CONFIG_FLOW_DEEPDIVE_20260708.md):
+        # "default_answer_autonomy_percent": _cfg_int(_cfg, "default_answer_autonomy_percent", DEFAULT_ANSWER_AUTONOMY_PERCENT),
         "skip_rewrite_intents": _parse_intent_list(
             _cfg_get(
                 _cfg, "skip_rewrite_intents", json.dumps(list(DEFAULT_SKIP_REWRITE_INTENTS))

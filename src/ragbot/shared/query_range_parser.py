@@ -506,6 +506,40 @@ def parse_code_query(query: str) -> RangeFilter | None:
     )
 
 
+def extract_all_codes(query: str) -> list[str]:
+    """Return every DISTINCT product/spec CODE token in *query*, in order.
+
+    ``parse_code_query`` returns only the FIRST code (``re.search``). A
+    comparison ("so sánh giá A và B") names ≥2 codes and the caller must look up
+    EACH — else the 2nd entity is never fetched and the comparison refuses
+    "no info for B" though the corpus has it (measured G-095/097/098 → 0/4).
+
+    Filters to SIZE-shaped code tokens (a digit AND a letter AND a `- / .`
+    separator, ≥5 chars) so brand/spec suffix fragments ("G/P", "H/T") — which
+    carry a letter + separator but no digit — are not mistaken for codes.
+    Domain-neutral: keyed on token SHAPE only, never a brand/corpus literal.
+    """
+    if not query or not query.strip():
+        return []
+    out: list[str] = []
+    seen: set[str] = set()
+    for m in _CODE_QUERY_RE.finditer(query):
+        tok = m.group(0).strip()
+        if len(tok) < 5:
+            continue
+        if not (
+            re.search(r"\d", tok)
+            and re.search(r"[A-Za-z]", tok)
+            and re.search(r"[-/.]", tok)
+        ):
+            continue
+        if tok in seen:
+            continue
+        seen.add(tok)
+        out.append(tok)
+    return out
+
+
 def _extract_original_span(original: str, start: int, end: int) -> str:
     """Return the substring of *original* aligned to folded-string offsets.
 

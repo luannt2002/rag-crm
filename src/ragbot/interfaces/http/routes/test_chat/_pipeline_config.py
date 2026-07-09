@@ -86,7 +86,8 @@ _PIPELINE_CFG_KEYS: tuple[str, ...] = (
     "embedding_dimension",
     "embedding_model",
     "pipeline_condense_history_limit",
-    "pipeline_grade_chunk_preview",
+    # DEAD 2026-07-08 (no consumer reads "grade_chunk_preview"; reports/CONFIG_FLOW_DEEPDIVE_20260708.md):
+    # "pipeline_grade_chunk_preview",
     "pipeline_reflect_answer_preview",
     "pipeline_crag_fallback_count",
     "pipeline_max_grade_retries",
@@ -147,7 +148,8 @@ _PIPELINE_CFG_KEYS: tuple[str, ...] = (
     "autocut_enabled",
     "autocut_min_gap_ratio",
     "embedding_query_prefix",
-    "short_query_word_threshold",
+    # DEAD 2026-07-08 (no consumer reads it; reports/CONFIG_FLOW_DEEPDIVE_20260708.md):
+    # "short_query_word_threshold",
     "semantic_cache_ttl_s",
     "crag_skip_retry_above_score",
     "multi_query_enabled",
@@ -157,7 +159,8 @@ _PIPELINE_CFG_KEYS: tuple[str, ...] = (
     "multi_query_timeout_s",
     "multi_query_model",
     "generation_temperature",
-    "default_answer_autonomy_percent",
+    # DEAD 2026-07-08 (no consumer reads it; reports/CONFIG_FLOW_DEEPDIVE_20260708.md):
+    # "default_answer_autonomy_percent",
     "skip_rewrite_intents",
     "skip_reflect_intents",
     "mmr_similarity_threshold",
@@ -391,7 +394,8 @@ async def _build_pipeline_config(cfg_svc: SystemConfigService, bot_cfg: Any) -> 
         # so a provider/dim swap cannot serve stale cross-distribution vectors.
         "embedding_provider": raw.get("embedding_provider") or "unknown",
         "condense_history_limit": _coerce_int(raw.get("pipeline_condense_history_limit"), 6),
-        "grade_chunk_preview": _coerce_int(raw.get("pipeline_grade_chunk_preview"), 500),
+        # DEAD 2026-07-08 — no consumer reads "grade_chunk_preview" (reports/CONFIG_FLOW_DEEPDIVE_20260708.md):
+        # "grade_chunk_preview": _coerce_int(raw.get("pipeline_grade_chunk_preview"), 500),
         "reflect_answer_preview": _coerce_int(raw.get("pipeline_reflect_answer_preview"), 500),
         "crag_fallback_count": _coerce_int(raw.get("pipeline_crag_fallback_count"), 2),
         "max_grade_retries": _coerce_int(raw.get("pipeline_max_grade_retries"), 1),
@@ -772,9 +776,10 @@ async def _build_pipeline_config(cfg_svc: SystemConfigService, bot_cfg: Any) -> 
             raw.get("autocut_min_gap_ratio"), 0.3,
         ),
         "embedding_query_prefix": raw.get("embedding_query_prefix") or "",
-        "short_query_word_threshold": _coerce_int(
-            raw.get("short_query_word_threshold"), 5,
-        ),
+        # DEAD 2026-07-08 — no consumer reads it (reports/CONFIG_FLOW_DEEPDIVE_20260708.md):
+        # "short_query_word_threshold": _coerce_int(
+        #     raw.get("short_query_word_threshold"), 5,
+        # ),
         "semantic_cache_ttl_s": _coerce_int(
             raw.get("semantic_cache_ttl_s"), 3600,
         ),
@@ -808,10 +813,11 @@ async def _build_pipeline_config(cfg_svc: SystemConfigService, bot_cfg: Any) -> 
         "generation_temperature": _coerce_float(
             raw.get("generation_temperature"), DEFAULT_GENERATION_TEMPERATURE,
         ),
-        "default_answer_autonomy_percent": _coerce_int(
-            raw.get("default_answer_autonomy_percent"),
-            DEFAULT_ANSWER_AUTONOMY_PERCENT,
-        ),
+        # DEAD 2026-07-08 — no consumer reads it (reports/CONFIG_FLOW_DEEPDIVE_20260708.md):
+        # "default_answer_autonomy_percent": _coerce_int(
+        #     raw.get("default_answer_autonomy_percent"),
+        #     DEFAULT_ANSWER_AUTONOMY_PERCENT,
+        # ),
         "skip_rewrite_intents": _parse_intent_list(
             raw.get("skip_rewrite_intents", list(DEFAULT_SKIP_REWRITE_INTENTS)),
         ),

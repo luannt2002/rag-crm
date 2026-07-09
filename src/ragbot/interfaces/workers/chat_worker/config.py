@@ -108,7 +108,8 @@ _CHAT_CONFIG_KEYS: tuple[str, ...] = (
     "rag_top_k",
     "embedding_dimension",
     "pipeline_condense_history_limit",
-    "pipeline_grade_chunk_preview",
+    # DEAD 2026-07-08 (no consumer reads "grade_chunk_preview"; reports/CONFIG_FLOW_DEEPDIVE_20260708.md):
+    # "pipeline_grade_chunk_preview",
     "pipeline_reflect_answer_preview",
     "pipeline_crag_fallback_count",
     "pipeline_max_grade_retries",
@@ -158,7 +159,8 @@ _CHAT_CONFIG_KEYS: tuple[str, ...] = (
     "semantic_cache_skip_multi_turn",
     "structural_ref_fallback_pattern",
     "embedding_query_prefix",
-    "short_query_word_threshold",
+    # DEAD 2026-07-08 (no consumer reads it; reports/CONFIG_FLOW_DEEPDIVE_20260708.md):
+    # "short_query_word_threshold",
     "semantic_cache_ttl_s",
     "crag_min_fallback_score",
     "crag_skip_retry_above_score",
@@ -169,7 +171,8 @@ _CHAT_CONFIG_KEYS: tuple[str, ...] = (
     "multi_query_timeout_s",
     "multi_query_model",
     "generation_temperature",
-    "default_answer_autonomy_percent",
+    # DEAD 2026-07-08 (no consumer reads it; reports/CONFIG_FLOW_DEEPDIVE_20260708.md):
+    # "default_answer_autonomy_percent",
     "skip_rewrite_intents",
     "skip_reflect_intents",
     "mmr_similarity_threshold",

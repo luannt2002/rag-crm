@@ -1,0 +1,78 @@
+# Config keys the backend batch-loads from system_config but that are
+# NOT seeded — each currently resolves from its code DEFAULT_* constant.
+# This is the drift backlog: the DATABASE team should seed each value
+# (README_DATABASE.md), or the key should be reclassified pure-technical
+# and removed from _PIPELINE_CFG_KEYS. DECREASING-ONLY: never add a key
+# here to silence the gate — seed it instead. Regenerate only when the
+# set genuinely shrinks: python scripts/check_config_completeness.py --write-baseline
+adaptive_router_l1_enabled
+batch_step_logging_enabled
+bm25_substring_fallback_enabled
+crag_grade_concurrency
+crag_lenient_grade_for_compound_intents_enabled
+crag_min_relevant_count
+crag_min_relevant_fraction
+decompose_confidence_gate
+decompose_enabled
+decompose_min_tokens
+decompose_top_k_per_subquery
+diacritic_restoration_enabled
+diacritic_restoration_use_model
+draft_model
+entity_grounding_enabled
+entity_grounding_max_entities
+generate_context_chars_cap
+generate_context_trust_hint_enabled
+generate_p95_sla_ms
+generic_vocab_enabled
+generic_vocab_max_expansions
+generic_vocab_max_matches
+grade_timeout_s
+grounding_check_async_top_score_threshold
+grounding_intents
+guardrail_leak_shingle_size
+guardrail_oos_similarity_threshold
+intent_extractor_model
+intent_extractor_system_prompt
+max_total_graph_iterations
+metadata_extraction_vocabulary
+metadata_layer3_llm_enabled
+multi_query_complexity_min
+multi_query_dedup_threshold
+multi_query_entity_gate_enabled
+multi_query_min_tokens
+multi_query_skip_chitchat_intent
+neighbor_expand_enabled
+neighbor_max_concurrency
+neighbor_token_budget
+neighbor_window_size
+pipeline_multi_query_speculative_timeout_s
+prompt_max_tokens
+prompt_token_opt_dedupe_jaccard_threshold
+prompt_token_opt_enabled
+prompt_token_opt_factoid_skip_history
+prompt_token_opt_min_chunk_score
+rag_max_documents
+range_query_min_confidence
+reflection_enabled
+refuse_short_circuit_enabled
+rerank_cliff_skip_intents
+rerank_retrieval_safety_n
+rerank_skip_intents
+rerank_threshold_gate_after_cliff_enabled
+retrieve_fallback_enabled
+retrieve_fallback_top_k
+self_rag_critique_enabled
+self_rag_critique_threshold
+semantic_cache_skip_multi_turn
+semantic_cache_skip_numeric
+skip_reflect_intents
+skip_rewrite_intents
+speculative_hallu_verify_enabled
+speculative_retrieve_timeout_s
+speculative_similarity_threshold
+stats_index_limit
+stats_index_race_enabled
+stats_race_timeout_s
+structural_ref_fallback_pattern
+understand_use_structured_output
