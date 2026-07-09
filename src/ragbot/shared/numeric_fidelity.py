@@ -40,16 +40,49 @@ _URL_RE = re.compile(NUMERIC_FIDELITY_URL_PATTERN)
 _CONTACT_RE = re.compile(NUMERIC_FIDELITY_CONTACT_NUMBER_PATTERN)
 
 
-def _strip_number_noise(text: str) -> str:
+def _norm_contact(run: str) -> str:
+    """Separator-insensitive key for a contact digit-run (``0926 559 268`` and
+    ``0926.559.268`` compare equal)."""
+    return re.sub(r"[ .\-]", "", run)
+
+
+def _grounded_contact_runs(*texts: str) -> frozenset[str]:
+    """Normalized contact digit-runs present in the given (grounded) texts —
+    a hotline that appears in the served context or the user's question is real,
+    so echoing it is NOT a fabrication and may be stripped from the answer."""
+    out: set[str] = set()
+    for t in texts:
+        for m in _CONTACT_RE.finditer(t or ""):
+            out.add(_norm_contact(m.group(0)))
+    return frozenset(out)
+
+
+def _strip_number_noise(
+    text: str, *, grounded_contacts: frozenset[str] | None = None,
+) -> str:
     """Blank out digit runs that are NOT per-row corpus values before the
     tokenizer sees them, so the fidelity check never mistakes a link fragment
     or a contact number for a price (002-H, measured observe FPs). Structural,
     domain-neutral: a URL and a leading-0 contact run are shapes, not literals.
+
+    URLs are always stripped. Contacts: when *grounded_contacts* is given, a
+    contact run is stripped ONLY if it is grounded (present in context/question);
+    an answer-only contact number SURVIVES to classification — it is the
+    fabrication signal (spa S-005 minted hotline ``0909.999.999``). When
+    *grounded_contacts* is None (context text, and the cross-row detector where
+    every contact is grounded by construction) all contacts are stripped.
     """
     if not text:
         return text
     text = _URL_RE.sub(" ", text)
-    text = _CONTACT_RE.sub(" ", text)
+    if grounded_contacts is None:
+        text = _CONTACT_RE.sub(" ", text)
+    else:
+        text = _CONTACT_RE.sub(
+            lambda m: " " if _norm_contact(m.group(0)) in grounded_contacts
+            else m.group(0),
+            text,
+        )
     return text
 
 
@@ -80,7 +113,11 @@ def classify_answer_numbers(
     naming "Thông tư 2020") — it is excluded from the unsupported signal.
     URLs and contact numbers are stripped first (002-H).
     """
-    answer = _strip_number_noise(answer)
+    # A hotline echoed from a served chunk OR the user's question is grounded —
+    # strip it from the answer; an answer-ONLY contact run survives to be
+    # classified as unsupported (the fabricated-phone HALLU signal).
+    grounded_contacts = _grounded_contact_runs(*context_texts, question or "")
+    answer = _strip_number_noise(answer, grounded_contacts=grounded_contacts)
     joined = "\n".join(_strip_number_noise(t) for t in context_texts if t)
     context_values: set[int] = set()
     for tok in iter_significant_number_tokens(joined, min_digits=min_digits):
@@ -151,7 +188,7 @@ def detect_cross_row_misattribution(
 ) -> dict:
     """Cross-row mixing detector — the LỆCH class the grounded/unsupported
     check is blind to: a REAL context number attributed to the WRONG entity
-    (baseline: Landspider's price answered for a Rovelo question, 45/45 runs).
+    (baseline: row B's price answered for a row A question, 45/45 runs).
 
     Deterministic, domain-neutral (no brand vocabulary): split the served
     context into ROWS (lines); for each answer SEGMENT (line) containing a

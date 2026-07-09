@@ -71,6 +71,27 @@ def test_real_cross_row_grab_still_flagged() -> None:
     assert r["n_misattributed"] == 1, r
 
 
+def test_fabricated_hotline_flagged_when_not_in_context() -> None:
+    """spa S-005: a hotline the bot INVENTS (present in NO served chunk and not
+    in the question) is a fabrication and MUST be flagged — the contact-strip
+    may only suppress a hotline that is actually grounded, else the numeric gate
+    is structurally blind to fabricated phone numbers (the one load-test HALLU)."""
+    answer = "Dạ anh/chị liên hệ hotline 0909.999.999 để được hỗ trợ ạ."
+    ctx = ["Dr. Medispa: dịch vụ triệt lông, chăm sóc da — không có số điện thoại."]
+    r = classify_answer_numbers(answer, ctx, question="Thanh toán bằng thẻ tín dụng được không?")
+    assert r["n_unsupported"] >= 1, r
+    assert any("0909" in t for t in r["unsupported_tokens"]), r["unsupported_tokens"]
+
+
+def test_grounded_hotline_not_flagged_separator_insensitive() -> None:
+    """A hotline present in the served context (grounded) must NOT be flagged,
+    even with separator drift: answer '0926.559.268' vs context '0926 559 268'."""
+    answer = "Dạ anh/chị liên hệ hotline 0926.559.268 để được hỗ trợ ạ."
+    ctx = ["Dr. Medispa — Hotline hỗ trợ khách hàng: 0926 559 268"]
+    r = classify_answer_numbers(answer, ctx)
+    assert r["n_unsupported"] == 0, r["unsupported_tokens"]
+
+
 def test_number_grounded_via_prior_turn_context() -> None:
     """002-J chain-context: a number the bot grounded in a PRIOR turn (passed via
     extra context_texts, as guard_output now does with conversation_history) is
