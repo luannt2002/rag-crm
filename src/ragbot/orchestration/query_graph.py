@@ -350,7 +350,7 @@ def _entity_display_name(entity: dict, name_by_shape: bool) -> str:
     ADR-0008 A1: when ``name_by_shape`` the raw ``entity_name`` may be an internal
     CODE ("2-R16 195/55 LPD"); pick the fullest DESCRIPTIVE name from the entity's
     OWN field values by value-shape (zero vocab, zero model) so the brand-bearing
-    product name ("Lốp Rovelo 195/55R16 …") reaches the LLM instead of the code.
+    product name ("Lốp BrandX 195/55R16 …") reaches the LLM instead of the code.
     Off → byte-identical to the legacy raw ``entity_name``.
     """
     raw = (str(entity.get("entity_name") or "")).strip().strip('"')
@@ -383,7 +383,7 @@ def _serialize_stats_entity_row(
     rows (``chunk_has_price``), a null-price entity emits an EXPLICIT structural
     absent-marker for its price column. Without it the line carried no price
     field at all, so the generator borrowed the neighbour row's number
-    (truth-audit 002 B-001: NEO price-NULL → answered adjacent Rovelo
+    (truth-audit 002 B-001: BrandY price-NULL → answered adjacent BrandX
     1.350.000). The marker is a structural description of an empty cell — it
     injects no behaviour (QG#10-safe). Suppressed when NO row in the set is
     priced (a delivery sheet with no price column must not sprout one).
@@ -2459,8 +2459,8 @@ def build_graph(
                     # (the serialization marks ``price: —``), never fall through
                     # to hybrid — there the raw table chunk of a DIFFERENT
                     # same-size product sits next to the empty cell and the LLM
-                    # borrows its number (measured N=10: 195/65R16 NEO →
-                    # adjacent Rovelo 1.350.000, 10/10). Only fires when the
+                    # borrows its number (measured N=10: 195/65R16 BrandY →
+                    # adjacent BrandX 1.350.000, 10/10). Only fires when the
                     # value gate is what hid the row; a true no-match still
                     # returns [] below → hybrid.
                     entities = await stats_index_repo.query_by_name_keyword(
@@ -2495,7 +2495,7 @@ def build_graph(
             # price from a spec+date record with no price — but the fall-through
             # then served the raw table chunks where a DIFFERENT same-size
             # product's price sits next to the empty cell, and the LLM borrowed
-            # it (measured N=10: 195/65R16 NEO → adjacent Rovelo 1.350.000,
+            # it (measured N=10: 195/65R16 BrandY → adjacent BrandX 1.350.000,
             # 10/10). The explicit ``price: —`` marker closes the invent fear
             # (the record now says "price IS absent") AND serving it
             # authoritatively stops the raw neighbour chunk from being retrieved.

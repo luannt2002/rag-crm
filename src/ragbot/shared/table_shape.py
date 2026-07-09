@@ -4,7 +4,7 @@ SHAPE of its VALUES, never by a header word list or column position.
 This is the deterministic, ZERO-model, ZERO-vocabulary replacement for the
 structured-index guessing that lost the product brand (truth-audit 2026-07-07:
 ``entity_name`` held an internal code ``2-R16 195/55 LPD`` while the real name
-``Lốp Rovelo 195/55R16 …`` sat unused → 97% false-deny). It honours the module's
+``Lốp BrandX 195/55R16 …`` sat unused → 97% false-deny). It honours the module's
 own stated law — "shape, not vocabulary" — that the header/price detectors already
 follow but the NAME selection abandoned.
 

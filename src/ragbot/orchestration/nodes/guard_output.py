@@ -210,7 +210,7 @@ async def guard_output(
         # numeric-fidelity is blind to a FALSE distribution denial ("chưa phân
         # phối hãng X") — the claim carries no number, yet it is misinformation
         # when the structured index actually stocks brand X (truth-audit step20:
-        # Rovelo denied while 50+ SKUs exist). Deterministic + LLM-independent:
+        # BrandX denied while 50+ SKUs exist). Deterministic + LLM-independent:
         # a config-seeded negation phrase + a proper-noun brand token, then a DSI
         # existence COUNT scoped to this bot. The gate fires ONLY when the corpus
         # DOES carry the brand (count > 0) — a true refusal (Michelin, 0 rows) is

@@ -3,7 +3,7 @@
 Finds the brand a bot claims it does NOT distribute, so the caller can check
 that claim against the structured index. A "chưa phân phối hãng <Brand>" answer
 is a FALSE refusal when the corpus actually stocks that brand (truth-audit
-step20: Rovelo denied while 50+ Rovelo SKUs exist). numeric-fidelity cannot see
+step20: BrandX denied while 50+ BrandX SKUs exist). numeric-fidelity cannot see
 this — the claim carries no number.
 
 Pure string/regex — no I/O, no DB, no model. Domain/language-neutral by
@@ -25,7 +25,7 @@ import re
 _BRAND_TOKEN_RE = re.compile(r"[A-ZÀ-Ỹ][A-Za-zÀ-ỹ0-9]{2,}")
 
 # How many characters after a negation phrase to scan for the brand token — a
-# brand name follows the phrase closely ("chưa phân phối hãng Rovelo ạ").
+# brand name follows the phrase closely ("chưa phân phối hãng BrandX ạ").
 _SCAN_WINDOW = 48
 
 

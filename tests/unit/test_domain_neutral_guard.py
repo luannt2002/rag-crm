@@ -26,7 +26,8 @@ SRC_ROOT = Path(__file__).resolve().parents[2] / "src" / "ragbot"
 # the "support 1 bot" betrayal. Word/slug shaped to avoid false hits ("spatial").
 _BOT_BRAND_RE = re.compile(
     r"medispa|dr\.?medi|chinh-sach-xe|thong-?tu|legalbot|gisbot|test-spa"
-    r"|payot|landspider|citytraxx|spa-0[0-9]|xe-[0-9]|spa q[0-9]|spa Q[0-9]",
+    r"|payot|landspider|citytraxx|rovelo|neoterra"
+    r"|spa-0[0-9]|xe-[0-9]|spa q[0-9]|spa Q[0-9]",
     re.IGNORECASE,
 )
 # Numbers below are FALSE-POSITIVE excluders for the bot/brand pattern.

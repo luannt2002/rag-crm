@@ -265,8 +265,8 @@ TRACE_CHUNK_CAPTURE_MAX_CHARS: Final[int] = 2000
 # 002-F: explicit price-absent marker in the stats synthetic chunk. When a
 # served set mixes priced rows with price-LESS rows, a null-price entity used
 # to emit NO price field at all — so the LLM silently borrowed the neighbour
-# row's number (truth-audit 002 B-001: NEO 195/65R16 price-NULL → answered with
-# adjacent Rovelo 1.350.000). Emitting an explicit structural absent-marker for
+# row's number (truth-audit 002 B-001: BrandY 195/65R16 price-NULL → answered with
+# adjacent BrandX 1.350.000). Emitting an explicit structural absent-marker for
 # the price column gives the LLM the missing "this cell IS empty" signal, so it
 # can honour the owner's "chưa có giá" behaviour instead of guessing. The marker
 # is a structural description of an empty cell — same category as the ``price:``
@@ -276,7 +276,7 @@ TRACE_CHUNK_CAPTURE_MAX_CHARS: Final[int] = 2000
 # different convention.
 STATS_NULL_PRICE_MARKER: Final[str] = "—"
 
-# ADR-0008 A1: serve the SHAPE-detected descriptive name (e.g. "Lốp Rovelo
+# ADR-0008 A1: serve the SHAPE-detected descriptive name (e.g. "Lốp BrandX
 # 195/55R16 …") as the stats entity's identity instead of the raw ``entity_name``
 # when that turned out to be an internal code ("2-R16 195/55 LPD"). The name is
 # picked from the entity's OWN field values by value-shape (zero vocab, zero
@@ -285,7 +285,7 @@ STATS_NULL_PRICE_MARKER: Final[str] = "—"
 DEFAULT_STATS_NAME_BY_SHAPE: Final[bool] = False
 
 # ADR-0008 A2/B3: narrow the stats candidate set by the query's DISCRIMINATING
-# tokens so a brand-named spec query ("giá lốp Rovelo 195/55R16") is not served a
+# tokens so a brand-named spec query ("giá lốp BrandX 195/55R16") is not served a
 # same-size row of a DIFFERENT brand (the size-code keyword alone is brand-blind).
 # Domain-neutral: uses the candidate set itself as the dictionary (a token some
 # candidates carry and others don't = a brand/model word) — zero vocab, zero

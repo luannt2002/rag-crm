@@ -353,7 +353,7 @@ NUMERIC_FIDELITY_ACTION_OBSERVE: Final[str] = "observe"
 NUMERIC_FIDELITY_ACTION_BLOCK: Final[str] = "block"
 DEFAULT_NUMERIC_FIDELITY_ACTION: Final[str] = NUMERIC_FIDELITY_ACTION_OBSERVE
 # 002-B1: brand-scope gate — a "chưa phân phối hãng X" denial is a FALSE refusal
-# when the corpus actually stocks brand X (measured: Rovelo denied while 50+ SKUs
+# when the corpus actually stocks brand X (measured: BrandX denied while 50+ SKUs
 # exist). Action per-bot (observe|block, default observe — measure FP first).
 # The negation phrases are LANGUAGE data, injected from config per-locale — the
 # code default is EMPTY so no Vietnamese/brand literal lives here (gate is a
