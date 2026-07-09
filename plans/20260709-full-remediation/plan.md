@@ -37,7 +37,10 @@
 
 ## P0 — NGUY HIỂM (làm trước, evidence-verified)
 
-### P0-1 · Injection guard EN-only → tiếng Việt LỌT  🔴 security
+### P0-1 · Injection guard EN-only → tiếng Việt LỌT  ✅ DONE (commit `87d55e9`)
+> **ĐÃ FIX + VERIFIED**: rule `prompt_injection_vi` (non-classic, block, input) vào SSoT `_default_patterns.py` + alembic `seed_prompt_injection_vi_260710` (idempotent, platform-default NULL tenant). Runtime: pure-VN injection → `blocked` via prompt_injection_vi ALONE; normal VN ("hướng dẫn"+"bỏ qua bước") → `answered` 0 flag. Unit: 8 match / 7 no-FP + 92 guardrail pass. Chi tiết cách làm dưới đây (giữ lại làm reference):
+
+
 - **Vấn đề**: `guardrail_rules` (DB, alembic 010f) regex prompt_injection **chỉ tiếng Anh**: `ignore\s+(previous|above|prior)\s+instructions?`, `you\s+are\s+now`, `system\s*[:>]`… Câu VN "bỏ qua hướng dẫn trước đó" / "quên hết chỉ dẫn phía trên" → **KHÔNG match**. Served qua `local_guardrail.py:121 get_default_compiled("prompt_injection")`, chạy `:697 detect_prompt_injection`.
 - **Gốc rễ**: rule seed EN-only, chưa cover ngôn ngữ tenant (VN). Tầng = **guardrail rule (DB)**, KHÔNG phải code.
 - **Fix (đúng tầng, sacred#7 + domain-neutral)**: alembic migration thêm **pattern VN** vào platform-default `prompt_injection` rule (pattern là NGÔN NGỮ, không phải brand → domain-neutral OK). Ví dụ: `bỏ qua|phớt lờ|quên (hết|đi)\s.*(hướng dẫn|chỉ dẫn|chỉ thị|lệnh)(\s+(trước|phía trên|bên trên))?`, `bạn (bây giờ|giờ) là`, `đóng vai`. ON CONFLICT giữ tenant override.
