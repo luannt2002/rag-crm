@@ -3,7 +3,24 @@
 > Always-updated current state. Git history was reset on 2026-06-14 (fresh start);
 > commit-SHA anchors no longer apply — this file is the source of truth.
 
-## Session 2026-07-08 — Guard fixes + RLS STAGE-0 + 200q agent-graded load-test + perf per-step + flag/architecture-truth  ⟵ LATEST
+## Session 2026-07-09 — Multi-agent ALL-FLOWS code-truth audit + 4 shipped fixes + config gate + 3-role README + MERGE→main  ⟵ LATEST
+
+**Anchor**: 5 new commits on `fix-260623-ingest-expert` → **fast-forward merged into `main`** (main was strict ancestor, 0/159). `9cdd4c6` numeric-fidelity phone-HALLU fix · `b88dcc9` understand memo revive · `5fe952b` worker SQLAlchemyError self-heal · `485ef25` config gate + dead-key + extract_all_codes · `85a4f63` docs (README split + audit synthesis). HEAD merged; pushed origin main + branch.
+
+- **ALL-FLOWS DEEP AUDIT (multi-agent, 24 agents, code-truth, adversarial-verify)**: 11 flows read from CODE (not .md), cross-verified vs load-test DB → **52 CONFIRMED / 3 PLAUSIBLE / 0 REFUTED**. `reports/ALLFLOWS_DEEP_AUDIT_SYNTHESIS_20260709.md` + consolidation. Theme: **"đã CÓ ≠ đã BẬT ≠ đã TỐT"** — 9 expert machines INERT/DEAD/DRIFTED (AdapChunk block-pipeline no-op · rrf_round_robin dead · extract_all_codes unwired · understand cache never-writes · RLS 100% inert · MMR 0.98≠DB 0.88 · cliff floor 0.05≠DB 0.2 · config parity-guard blind to 152 nodes/ pcfg · audit_pipeline_cfg_parity.py referenced-but-absent).
+- **SHIPPED (TDD + measured, committed, merged main)**:
+  - **fix#1 numeric-fidelity phone blind-spot** (`numeric_fidelity.py`): `_strip_number_noise` blanked ALL contacts → fabricated hotline (S-005 `0909.999.999`) unflaggable. Now strip contact only when grounded (context/question). **Measured on real S-005 row → n_unsupported=1** (corpus has no 0909). 23 tests.
+  - **fix#2 understand_query memo** (`understand.py`): write-guard tested a FUNCTION object (`not <fn>`=always False) → 3600s cache NEVER wrote → 15s LLM every turn. Use `_history_meaningful` bool (269/282/306). 25 tests.
+  - **fix#3 worker resilience** (`embedded_workers.py`): cost_cap/cache_purge/_supervise now catch `SQLAlchemyError` → self-heal on PG failover (were dying silent, no restart, health still "ok").
+  - **config hygiene** (`check_config_completeness.py` + baseline + test): CI gate — **71/175 batch-loaded system_config keys UNSEEDED** (fall to code constant); comment 3 truly-dead contract keys (0 consumer); extractors comment-aware (175→172).
+- **DEFERRED — measured, NOT shipped (rule#0, no blind-ship)**:
+  - **comparison multi-code** (retrieve.py): shipped deterministic per-code lookup → **measured LIVE regress** (brand over-match by size → LLM defers both legs) → **REVERTED clean**. Real fix = brand+size disambiguation, needs N≥10. `extract_all_codes` util kept. `specs/002-.../comparison_rootcause_20260709.md` (5-layer chain).
+  - **chitchat docs** (generate.py): genuine greetings DO retrieve (measured 3 chunks) → blast-radius on real greetings → needs greeting-quality measure. fix#1 already covers the S-005 phone.
+- **RECLASSIFY INSIGHT (audit)**: ≥3-4 of the "14 correctness fails" are **infra generate-5xx** (innocom InternalServerError, output_tokens=0, last step litm_order) MISLABELED as orchestration/retrieval → **true correctness may be >93%**. `is_correct/quality_evaluator/refusal_reason` NULL 302/302 → baseline not DB-reproducible (fix = persist verdict).
+- **3-role README split** (`README_DEV`/`README_DEVOPS`/`README_DATABASE`): config-ownership model — dev=contract (fail-loud on missing key), database=values (seed), devops=gate (init-test before build). README.md = router.
+- **NEXT (remediation roadmap, workflow `w8nvmzjqq` designing)**: safe-now — URL-ingest OOM cap · rrf_round_robin wire · MMR/floor alembic sync · grade over-refuse rescue · config parity-guard extend nodes/ · decomposer atomic-token · health worker-liveness · stats-delete scope. measure-first — comparison L3 · async grounding · retry 3→2 · block-native ingest · coref/coverage (reclassify first). external — RLS flip (cred) · seed 71 keys · persist is_correct.
+
+## Session 2026-07-08 — Guard fixes + RLS STAGE-0 + 200q agent-graded load-test + perf per-step + flag/architecture-truth
 
 **Anchor**: 5 commits on `fix-260623-ingest-expert` (chưa push): `7c2570c` guards · `7e175ab` RLS-prep · `67b82de` empty-guard-enable · `17f84d3` timeout+loadtest-report · (+ this STATE + reports). HEAD ≈ `17f84d3`.
 
