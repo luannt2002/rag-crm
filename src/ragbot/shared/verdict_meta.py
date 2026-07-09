@@ -58,6 +58,13 @@ def build_verdict_meta(final_state: dict[str, Any] | None) -> dict[str, Any]:
         "numeric_unsupported": n_unsupported,
         "numeric_misattributed": n_misattributed,
         "numeric_flagged": n_unsupported > 0 or n_misattributed > 0,
+        # Retrieval-degradation signal: query embed FAILED this turn (dense
+        # vector unavailable → lexical-only fallback). Set by _embed_query but
+        # was otherwise a dead-write; surfacing it here makes degraded turns
+        # DB-queryable for alerting. NOT a behavioural gate (blocking on it
+        # would over-refuse when lexical retrieval still found good chunks —
+        # that decision is measure_first).
+        "embed_degraded": bool(state.get("embed_degraded")),
         "answer_type": state.get("answer_type"),
         "flag_count": len(flags),
     }

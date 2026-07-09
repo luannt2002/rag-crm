@@ -959,9 +959,16 @@ class LocalGuardrail(GuardrailPort):
                         "details": h.details,
                     }
                 )
-            except Exception:  # noqa: BLE001 — logging best-effort
-                # Never let logging block the pipeline; upstream has metrics.
-                pass
+            except Exception as exc:  # noqa: BLE001 — persist is best-effort, must not block the pipeline
+                # A silently-swallowed guardrail_events INSERT makes a
+                # compliance audit read 0 events and wrongly conclude the bot
+                # was unguarded. Log the failure (never block the pipeline).
+                _logger.warning(
+                    "guardrail_persist_failed",
+                    rule_id=h.rule_id,
+                    guardrail_type=guardrail_type,
+                    error_type=type(exc).__name__,
+                )
 
 
 __all__ = [

@@ -15,9 +15,18 @@ def test_none_state_is_all_clear() -> None:
     assert v["grounding_rule_id"] is None
     assert v["grounding_blocked"] is False
     assert v["numeric_flagged"] is False
+    assert v["embed_degraded"] is False
     assert v["flag_count"] == 0
     # MUST NOT invent a correctness grade.
     assert "is_correct" not in v
+
+
+def test_embed_degraded_surfaced() -> None:
+    """The HALLU-safety embed-degraded flag (was a dead-write) is now read
+    and persisted, so a degraded turn is DB-queryable."""
+    assert build_verdict_meta({"embed_degraded": True})["embed_degraded"] is True
+    assert build_verdict_meta({"embed_degraded": False})["embed_degraded"] is False
+    assert build_verdict_meta({})["embed_degraded"] is False
 
 
 def test_empty_state_is_all_clear() -> None:
