@@ -68,7 +68,7 @@ async def test_build_pipeline_config_applies_defaults_for_missing_keys():
     assert out["top_k"] == DEFAULT_TOP_K
     assert out["rerank_top_n"] == DEFAULT_RERANK_TOP_N
     assert out["condense_history_limit"] == 6
-    assert out["grade_chunk_preview"] == 500
+    # grade_chunk_preview removed as a dead key (485ef25 — 0 readers).
     assert out["reflect_answer_preview"] == 500
     assert out["crag_fallback_count"] == 2
     assert out["max_grade_retries"] == 1

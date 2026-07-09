@@ -86,9 +86,13 @@ def test_generate_node_passes_override_to_llm_helpers() -> None:
     # The generate node body was lifted out of build_graph into
     # orchestration/nodes/generate.py (pure relocation); scan both.
     src = inspect.getsource(query_graph) + "\n" + inspect.getsource(generate_module)
-    # Intent lookup is computed inside the generate node.
+    # The per-response output cap is computed inside the generate node.
     assert "_intent_max_tokens" in src
-    assert "DEFAULT_GENERATE_MAX_TOKENS_BY_INTENT" in src
+    # Cap source moved from the DEFAULT_GENERATE_MAX_TOKENS_BY_INTENT dict to
+    # compute_output_cap(system_output_default + bot_extra_output) — a flat cap.
+    # (The old per-intent dict constant is now unused; a per-intent cap, if
+    # wanted, is a separate product decision.)
+    assert "compute_output_cap" in src
     # Both helper invocations carry the override kwarg.
     assert "max_tokens_override=_intent_max_tokens" in src
 
