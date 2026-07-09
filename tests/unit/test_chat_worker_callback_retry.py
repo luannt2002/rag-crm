@@ -24,6 +24,19 @@ from ragbot.shared.constants import (
 )
 
 
+@pytest.fixture(autouse=True)
+def _bypass_ssrf_guard(monkeypatch):
+    """Deliver-time SSRF guard re-resolves the host; these tests use
+    RFC-reserved hosts that do not resolve, so bypass the resolver (SSRF is
+    covered by test_chat_worker_callback_negative_paths)."""
+    async def _safe(_url: str):
+        return True, ""
+
+    monkeypatch.setattr(
+        "ragbot.infrastructure.delivery.callback_delivery._is_url_safe", _safe
+    )
+
+
 class _SequentialClient:
     """Returns status codes in sequence; raises ``httpx.ConnectError`` when list exhausted."""
 

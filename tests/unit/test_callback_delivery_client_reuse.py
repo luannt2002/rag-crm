@@ -64,6 +64,16 @@ def _patch_async_client(monkeypatch):
         "ragbot.infrastructure.delivery.callback_delivery.httpx.AsyncClient",
         _MockAsyncClient,
     )
+    # The deliver-time SSRF guard re-resolves the host; these tests exercise
+    # client-reuse/retry against RFC-reserved test hosts that do not resolve,
+    # so bypass the resolver (SSRF itself is covered by
+    # test_chat_worker_callback_negative_paths).
+    async def _safe(_url: str):
+        return True, ""
+
+    monkeypatch.setattr(
+        "ragbot.infrastructure.delivery.callback_delivery._is_url_safe", _safe
+    )
     yield
     _MockAsyncClient.reset()
 

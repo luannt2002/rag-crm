@@ -22,6 +22,19 @@ from ragbot.infrastructure.delivery.callback_delivery import CallbackDelivery
 from ragbot.infrastructure.delivery.noop_delivery import NoopDelivery
 
 
+@pytest.fixture(autouse=True)
+def _bypass_ssrf_guard(monkeypatch):
+    """Deliver-time SSRF guard re-resolves the host; these tests use
+    RFC-reserved hosts that do not resolve, so bypass the resolver (SSRF is
+    covered by test_chat_worker_callback_negative_paths)."""
+    async def _safe(_url: str):
+        return True, ""
+
+    monkeypatch.setattr(
+        "ragbot.infrastructure.delivery.callback_delivery._is_url_safe", _safe
+    )
+
+
 class _FakeResponse:
     def __init__(self, status_code: int = 200) -> None:
         self.status_code = status_code

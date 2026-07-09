@@ -18,6 +18,20 @@ from ragbot.infrastructure.delivery.callback_delivery import CallbackDelivery
 from ragbot.shared.callback_validator import _is_url_safe
 
 
+@pytest.fixture(autouse=True)
+def _bypass_ssrf_guard(monkeypatch):
+    """Bypass the deliver-time SSRF resolver for the retry/status tests (they
+    use RFC-reserved hosts that do not resolve). Patches only the reference
+    deliver() uses; the direct ``_is_url_safe`` SSRF-validation tests import
+    from callback_validator and are unaffected."""
+    async def _safe(_url: str):
+        return True, ""
+
+    monkeypatch.setattr(
+        "ragbot.infrastructure.delivery.callback_delivery._is_url_safe", _safe
+    )
+
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
