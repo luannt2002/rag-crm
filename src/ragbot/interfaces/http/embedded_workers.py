@@ -38,6 +38,7 @@ from typing import TYPE_CHECKING, Any
 
 import structlog
 from redis.exceptions import RedisError
+from sqlalchemy.exc import SQLAlchemyError
 
 from ragbot.application.services.cost_cap_alerter import evaluate_tenants
 from ragbot.interfaces.workers.document_recovery_worker import run_recovery_loop
@@ -160,7 +161,8 @@ async def run_embedded_cost_cap_alerter(container: "Container") -> None:
         except asyncio.CancelledError:
             logger.info("embedded_cost_cap_alerter_stopping")
             raise
-        except (OSError, RuntimeError, RedisError, asyncio.TimeoutError) as exc:
+        except (OSError, RuntimeError, RedisError, asyncio.TimeoutError,
+                SQLAlchemyError) as exc:
             # Best-effort sweep — never crash the API on a transient DB error.
             logger.warning(
                 "cost_cap_sweep_failed", error_type=type(exc).__name__,
@@ -200,7 +202,8 @@ async def run_embedded_cache_purge(container: "Container") -> None:
         except asyncio.CancelledError:
             logger.info("embedded_cache_purge_stopping")
             raise
-        except (OSError, RuntimeError, RedisError, asyncio.TimeoutError) as exc:
+        except (OSError, RuntimeError, RedisError, asyncio.TimeoutError,
+                SQLAlchemyError) as exc:
             logger.warning("cache_purge_failed", error_type=type(exc).__name__)
         await asyncio.sleep(DEFAULT_CACHE_PURGE_INTERVAL_S)
 
@@ -221,7 +224,8 @@ async def _supervise(name: str, coro_factory: Any, container: "Container") -> No
         await coro_factory(container)
     except asyncio.CancelledError:
         raise
-    except (OSError, RuntimeError, RedisError, asyncio.TimeoutError) as exc:
+    except (OSError, RuntimeError, RedisError, asyncio.TimeoutError,
+            SQLAlchemyError) as exc:
         # Narrow top-level supervisor wrapper — connection/runtime errors
         # from the bus loop / publisher loop. We do NOT auto-restart;
         # operator-visible journalctl + Prometheus counter surface the
