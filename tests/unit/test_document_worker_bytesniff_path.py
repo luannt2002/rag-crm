@@ -42,13 +42,32 @@ def _xlsx_bytes() -> bytes:
 
 
 def _mock_httpx_returning(body: bytes):
-    """Patch object for ``document_worker.httpx`` whose AsyncClient GET returns
-    *body* with a successful status."""
+    """Patch object for ``document_worker.httpx`` whose AsyncClient streams
+    *body* with a successful status. The worker fetches via the bounded
+    ``_fetch_url_bounded`` helper (``cli.stream(...)`` async CM + ``aiter_bytes``),
+    so the mock must model streaming, not a plain ``get``."""
     resp = MagicMock()
     resp.content = body
+    resp.headers = {}  # no Content-Length → exercise the streaming-guard path
     resp.raise_for_status = MagicMock(return_value=None)
+
+    async def _aiter(_size: int | None = None):
+        yield body
+
+    resp.aiter_bytes = _aiter
+
+    class _StreamCtx:
+        async def __aenter__(self) -> object:
+            return resp
+
+        async def __aexit__(self, *_a: object) -> bool:
+            return False
+
     client = AsyncMock()
-    client.get = AsyncMock(return_value=resp)
+    client.get = AsyncMock(return_value=resp)  # retained for any legacy caller
+    # ``stream`` returns the async CM SYNCHRONOUSLY (like real httpx) — override
+    # the AsyncMock attribute so it is not a coroutine.
+    client.stream = MagicMock(return_value=_StreamCtx())
     client.__aenter__ = AsyncMock(return_value=client)
     client.__aexit__ = AsyncMock(return_value=False)
     httpx_mod = MagicMock()

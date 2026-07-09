@@ -36,20 +36,20 @@ _S2_MIGRATION_PATH = (
 )
 
 
-def test_default_cliff_floor_pin_at_zero_point_zero_five() -> None:
-    """Pin the recalibrated S2 floor.
+def test_default_cliff_floor_pin() -> None:
+    """Pin the cliff floor to the production value.
 
-    Changing this value MUST also update the alembic migration body and the
+    Changing this value MUST also update the seed migration body and the
     explanatory comment block in ``shared/constants.py`` — the 3-source sync
     rule from memory ``feedback_threshold_drift_post_migration``.
     """
-    assert DEFAULT_RERANK_CLIFF_ABSOLUTE_FLOOR == 0.05, (
-        "S2 (2026-05-11) lowered the cliff floor from 0.15 → 0.05. The "
-        "previous 0.15 calibration matched the threshold-strategy floor "
-        "(alembic 0068) but Jina v3 + cross-encoder rerank produces a "
-        "distribution where short Vietnamese queries score 0.05-0.20 on "
-        "legitimate chunks. If this assertion fails the constant drifted; "
-        "verify the alembic 0078 migration value matches before changing."
+    assert DEFAULT_RERANK_CLIFF_ABSOLUTE_FLOOR == 0.2, (
+        "Cliff floor is pinned to the production value 0.2 (the current zerank "
+        "cross-encoder scores legitimate-but-weak chunks higher than the prior "
+        "embedding-reranker did, so the noise floor sits at 0.2). Seeded to the "
+        "same value by alembic seed_cliff_mmr_parity_260709. If this assertion "
+        "fails the constant drifted; verify the seed migration value matches "
+        "before changing."
     )
 
 
