@@ -796,6 +796,20 @@ class DynamicLiteLLMRouter(LLMPort):
                 messages, text, prompt_tokens, completion_tokens,
             )
 
+        # Observability (all-flows audit 2026-07-10): surface the provider's
+        # completion finish_reason on the answer path. A truncated/dropped
+        # completion (finish_reason not "stop"/"tool_calls", or a stop with a
+        # near-empty body) is otherwise accepted silently as a normal answer —
+        # this log makes it visible before a completeness guard is wired.
+        if purpose == "generation":
+            logger.info(
+                "llm_generation_finish",
+                provider=provider_code,
+                finish_reason=resp.choices[0].finish_reason,
+                completion_tokens=completion_tokens,
+                text_len=len(text),
+            )
+
         # Observability — provider-side prompt-cache hit ratio.
         if cached_tokens > 0 and prompt_cache_hits_total is not None:
             try:
