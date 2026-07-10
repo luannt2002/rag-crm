@@ -28,7 +28,7 @@ never applied to the live DB (still 80). This migration deliberately snapshots
 the live level (80) — it does NOT silently change security posture. The
 elevation is a separate owner decision that should ship as its own migration.
 
-Revision ID: seed_module_permissions_rbac_260710
+Revision ID: seed_module_perms_rbac_260710
 Revises: seed_prompt_injection_vi_260710
 Create Date: 2026-07-10
 """
@@ -41,7 +41,7 @@ from sqlalchemy import text
 from ragbot.shared.constants import DEFAULT_SERVICE_LEVEL
 from ragbot.shared.rbac import ROLE_LEVELS
 
-revision = "seed_module_permissions_rbac_260710"
+revision = "seed_module_perms_rbac_260710"
 down_revision = "seed_prompt_injection_vi_260710"
 branch_labels = None
 depends_on = None

@@ -14,8 +14,8 @@ as a tracked migration so the elevation reproduces on every DB, per sacred #7
 Idempotent: only rows currently BELOW super_admin are raised, so a re-run or an
 already-elevated DB is a no-op. Downgrade restores the tenant level.
 
-Revision ID: elevate_ai_mutate_super_admin_260710
-Revises: seed_module_permissions_rbac_260710
+Revision ID: elevate_ai_mutate_260710
+Revises: seed_module_perms_rbac_260710
 Create Date: 2026-07-10
 """
 
@@ -29,8 +29,8 @@ from ragbot.shared.constants import (
     DEFAULT_TENANT_ADMIN_LEVEL,
 )
 
-revision = "elevate_ai_mutate_super_admin_260710"
-down_revision = "seed_module_permissions_rbac_260710"
+revision = "elevate_ai_mutate_260710"
+down_revision = "seed_module_perms_rbac_260710"
 branch_labels = None
 depends_on = None
 

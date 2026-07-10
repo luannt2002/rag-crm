@@ -3,7 +3,7 @@
 Bug #7: every ``module:permission`` gate was seeded by run-once scripts, not
 alembic, so ``alembic upgrade head`` alone left ``module_permissions`` empty and
 the fail-closed RBAC check 403'd every gated route. Migration
-``seed_module_permissions_rbac_260710`` folds the complete set into alembic.
+``seed_module_perms_rbac_260710`` folds the complete set into alembic.
 
 This test pins the migration's seed contents so a fresh DB matches production:
     1. The seed has no duplicate (module, permission) pairs.
