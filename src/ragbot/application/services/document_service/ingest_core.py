@@ -521,7 +521,7 @@ class _IngestMixin(
                         "workspace_id": workspace_id,
                         "source_url": source_url,
                         "document_name": title,
-                        "tool_name": title.lower().replace(" ", "_")[:64],
+                        "tool_name": derive_tool_name(title),
                         "mime_type": mime_type,
                         # Domain-neutral: when caller passes "auto", fall back
                         # to the deployment-wide ``DEFAULT_LANGUAGE``. Multi-

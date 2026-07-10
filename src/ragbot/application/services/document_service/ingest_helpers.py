@@ -39,6 +39,8 @@ from ragbot.shared.chunking_policy import resolve_chunking_policy
 from ragbot.shared.markdown_normalizer import normalize_to_markdown
 from ragbot.shared.constants import (
     ALLOWED_EMBEDDING_COLUMNS,
+    DEFAULT_TOOL_NAME_HASH_SUFFIX_LEN,
+    DEFAULT_TOOL_NAME_MAX_CHARS,
     POSTGRES_MAX_BIND_PARAMS,
     DEFAULT_MARKDOWN_NORMALIZE_ENABLED,
     DEFAULT_TABLE_STRATEGY,
@@ -500,8 +502,37 @@ async def _maybe_validate_source_allowlist(
     )
 
 
+def derive_tool_name(title: str) -> str:
+    """Derive the collision-resistant ``tool_name`` key from a document title.
+
+    ``tool_name`` is the doc's unique identity (``uq_doc_tool`` = tenant + bot +
+    tool_name); the ingest upsert does ``ON CONFLICT DO UPDATE``, so two docs
+    that derive the SAME tool_name silently overwrite each other. The historic
+    ``title.lower().replace(" ", "_")[:64]`` blind-truncated, so two DISTINCT
+    long titles sharing a 64-char prefix collapsed into one row (data loss).
+
+    Behaviour is UNCHANGED for any normalized title within the budget — those
+    still map to their plain normalized form, so existing docs re-ingest
+    idempotently with zero churn. A title that EXCEEDS the budget keeps a
+    shortened prefix plus a stable hash suffix of the FULL normalized title, so
+    distinct long titles stay distinct. The derivation is pure + deterministic:
+    the same title always yields the same tool_name (re-ingest still updates in
+    place).
+    """
+    normalized = title.lower().replace(" ", "_")
+    if len(normalized) <= DEFAULT_TOOL_NAME_MAX_CHARS:
+        return normalized
+    digest = hashlib.sha256(normalized.encode("utf-8")).hexdigest()[
+        :DEFAULT_TOOL_NAME_HASH_SUFFIX_LEN
+    ]
+    # prefix + "_" + digest == DEFAULT_TOOL_NAME_MAX_CHARS exactly.
+    prefix_len = DEFAULT_TOOL_NAME_MAX_CHARS - DEFAULT_TOOL_NAME_HASH_SUFFIX_LEN - 1
+    return f"{normalized[:prefix_len]}_{digest}"
+
+
 __all__ = [
     "_bulk_insert_chunks",
     "_maybe_redact_ingest_content",
     "_maybe_validate_source_allowlist",
+    "derive_tool_name",
 ]

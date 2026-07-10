@@ -11,6 +11,18 @@ from ._20_cag_mode_cache_augmented_gen import *  # noqa: F401,F403
 # defends the host from disk-fill DoS even before the per-tenant quota
 # kicks in.
 DEFAULT_UPLOAD_STREAM_MAX_BYTES: Final[int] = 500 * 1024 * 1024  # 500 MiB
+# tool_name is derived from the document title and is the doc's unique key
+# (``uq_doc_tool`` = tenant+bot+tool_name). Keep the historic 64-char budget so
+# every title already <=64 chars derives identically (idempotent re-ingest,
+# zero migration churn). Titles that EXCEED the budget get a stable hash suffix
+# of the FULL normalized title instead of a blind truncation, so two distinct
+# long titles no longer collapse to the same 64-char prefix and silently
+# overwrite each other. (The DB column is VARCHAR(255); 64 is an app-side
+# identity budget, not a schema limit.)
+DEFAULT_TOOL_NAME_MAX_CHARS: Final[int] = 64
+# Hex chars of the full-title SHA-256 kept as the disambiguating suffix. 8 hex
+# = 32 bits ≈ 1 in 4.3e9 collision odds for same-prefix long titles — ample.
+DEFAULT_TOOL_NAME_HASH_SUFFIX_LEN: Final[int] = 8
 # 1 MiB read window — balance between syscall overhead (smaller) and
 # resident memory peak (larger). Matches the default block size used by
 # Python's tempfile and aiofiles helpers.
