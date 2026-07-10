@@ -1,4 +1,4 @@
-"""[T2-CostPerf] Bug #1 regression guard — workspace_id in stream route.
+"""[T2-CostPerf] Bug #1 regression guard — workspace_id in stream routes.
 
 Commit ``6529db4`` (2026-05-05) made ``workspace_id`` a required keyword-only
 argument on ``RequestLogRepository.create_request_log``.  The streaming route
@@ -8,11 +8,21 @@ TypeError)`` handler — request_log row not inserted → StepTracker raises
 ``TenantIsolationViolation`` → pipeline crashes early → stream emits empty
 ``done`` event.
 
-This test file pins:
+The SAME bug class survived in the PRODUCTION streaming route
+``POST /chat/stream`` (``routes/chat_stream.py``): the ``create_request_log``
+call there omitted ``workspace_id`` AND caught only ``SQLAlchemyError`` — so the
+``TypeError`` escaped the best-effort audit guard and 500'd every request (the
+route is mounted in ``router.py`` and ``chat:stream`` is a live seeded
+permission, so RBAC lets the request through to the crashing call).
+
+This test file pins BOTH routes:
     1. ``create_request_log`` signature requires ``workspace_id`` (keyword-only).
     2. Calling without ``workspace_id`` raises ``TypeError``.
     3. Calling with ``workspace_id`` does NOT raise TypeError on the signature.
-    4. The route-level call site passes the correct arg (static AST check).
+    4. The test-harness route call site passes the correct arg (static check).
+    5. The production ``chat_stream.py`` call site passes ``workspace_id``.
+    6. The production ``chat_stream.py`` audit guard catches ``TypeError`` too,
+       so a future arg drift degrades (best-effort) instead of 500ing.
 """
 
 from __future__ import annotations
@@ -160,4 +170,76 @@ def test_workspace_slug_resolved_before_create_request_log_in_stream_route():
     assert workspace_resolve_line < create_log_stream_line, (
         f"workspace_slug must be resolved (line {workspace_resolve_line + 1}) "
         f"BEFORE create_request_log (line {create_log_stream_line + 1})"
+    )
+
+
+# ── 5. PRODUCTION route (chat_stream.py) passes workspace_id ─────────────────
+
+
+def test_production_stream_route_passes_workspace_id():
+    """The production ``POST /chat/stream`` handler must pass ``workspace_id``.
+
+    Root cause of Bug #1 (production path): ``chat_stream.py`` called
+    ``create_request_log`` without ``workspace_id`` — a required keyword-only
+    arg → ``TypeError`` at call time.  ``workspace_id`` is resolved earlier in
+    the handler (``resolve_workspace_id``), so the fix passes it through.
+    """
+    import pathlib
+
+    route_file = pathlib.Path(
+        "src/ragbot/interfaces/http/routes/chat_stream.py"
+    )
+    source = route_file.read_text(encoding="utf-8")
+
+    call_match = re.search(
+        r"create_request_log\((.*?)\n        \)",
+        source,
+        re.DOTALL,
+    )
+    assert call_match is not None, (
+        "Could not find create_request_log call in chat_stream.py — the "
+        "production stream route may have been restructured"
+    )
+    block = call_match.group(0)
+    assert "workspace_id" in block, (
+        "Bug #1 regression (production path): create_request_log in "
+        "chat_stream.py is missing 'workspace_id' — POST /chat/stream will 500 "
+        "with an uncaught TypeError.  Add 'workspace_id=workspace_id'."
+    )
+
+
+# ── 6. PRODUCTION route audit guard also catches TypeError ───────────────────
+
+
+def test_production_stream_route_audit_guard_catches_typeerror():
+    """The best-effort ``create_request_log`` guard must catch ``TypeError``.
+
+    The guard exists so an audit-log failure never 500s the user's chat.
+    Catching only ``SQLAlchemyError`` defeats that intent: an arg-shape drift
+    (``TypeError``) or a value error escapes and 500s.  Mirror the defensive
+    sibling in ``test_chat/chat_routes.py`` — ``(SQLAlchemyError, ValueError,
+    TypeError)``.
+    """
+    import pathlib
+
+    route_file = pathlib.Path(
+        "src/ragbot/interfaces/http/routes/chat_stream.py"
+    )
+    source = route_file.read_text(encoding="utf-8")
+
+    # The except clause immediately guarding the create_request_log call.
+    guard_match = re.search(
+        r"create_request_log\(.*?\n        \)\n    except (\([^)]*\)|\w+) as exc:",
+        source,
+        re.DOTALL,
+    )
+    assert guard_match is not None, (
+        "Could not locate the except clause guarding create_request_log in "
+        "chat_stream.py"
+    )
+    clause = guard_match.group(1)
+    assert "TypeError" in clause, (
+        "Bug #1 hardening: the create_request_log audit guard in "
+        "chat_stream.py must catch TypeError (best-effort audit must not 500 "
+        f"the chat on arg drift). Found: {clause}"
     )

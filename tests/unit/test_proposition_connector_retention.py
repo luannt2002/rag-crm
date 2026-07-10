@@ -58,3 +58,35 @@ def test_coordinating_connector_still_splits() -> None:
     # must still carry both (no data loss), regardless of grouping.
     joined = " ".join(chunks)
     assert "mở cửa" in joined and "đặt lịch" in joined
+
+
+def test_short_clause_is_not_silently_dropped() -> None:
+    """A short coordinated clause carrying a fact must survive (no data loss).
+
+    Root cause (ING-04): clauses shorter than ``DEFAULT_CHUNK_MIN_CLAUSE_LEN``
+    were appended-or-dropped — a sentence mixing a long clause with a short
+    factual one (e.g. a dimension ``rộng 2m``) silently lost the short clause,
+    because the whole-text fallback only fires when EVERY clause is short. A
+    dropped number is exactly the silent-data-loss hazard the platform treats
+    as sacred. Fix: merge tiny fragments into the adjacent proposition instead
+    of discarding them.
+    """
+    text = "Sản phẩm có chiều dài tối đa năm mét cho khoang chính; rộng 2m"
+    chunks = _chunk_proposition(text, chunk_size=1024, chunk_overlap=0)
+    joined = " ".join(chunks)
+    assert "rộng 2m" in joined, (
+        f"short factual clause silently dropped (data loss): {chunks}"
+    )
+    # The long clause must also survive — the merge must not swallow it.
+    assert "chiều dài tối đa năm mét" in joined, (
+        f"long clause lost during merge: {chunks}"
+    )
+
+
+def test_leading_short_clause_survives() -> None:
+    """A short clause BEFORE a long one must also survive (buffer-then-attach)."""
+    text = "Có sẵn; sản phẩm được giao trong vòng ba ngày làm việc kể từ khi đặt"
+    chunks = _chunk_proposition(text, chunk_size=1024, chunk_overlap=0)
+    joined = " ".join(chunks)
+    assert "Có sẵn" in joined, f"leading short clause dropped: {chunks}"
+    assert "ba ngày làm việc" in joined, f"long clause lost: {chunks}"

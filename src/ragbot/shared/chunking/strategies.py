@@ -664,10 +664,30 @@ def _chunk_proposition(
             r'|,\s*(?:and|or|but|however|moreover|additionally))',
             sent,
         )
+        # A clause shorter than the min length is not a stand-alone proposition,
+        # but it still carries content (e.g. a dimension "rộng 2m") — dropping it
+        # is silent data loss. Merge tiny fragments into the ADJACENT proposition
+        # instead: attach to the previous one, or buffer a leading fragment to
+        # prepend to the next kept clause.
+        pending = ""
         for clause in clauses:
             clause = clause.strip()
-            if len(clause) > DEFAULT_CHUNK_MIN_CLAUSE_LEN:  # skip tiny fragments
+            if not clause:
+                continue
+            if len(clause) > DEFAULT_CHUNK_MIN_CLAUSE_LEN:
+                if pending:
+                    clause = f"{pending}; {clause}"
+                    pending = ""
                 propositions.append(clause)
+            elif propositions:
+                propositions[-1] = f"{propositions[-1]}; {clause}"
+            else:
+                pending = f"{pending}; {clause}" if pending else clause
+        if pending:  # trailing/only short fragment with nothing kept to attach to
+            if propositions:
+                propositions[-1] = f"{propositions[-1]}; {pending}"
+            else:
+                propositions.append(pending)
 
     if not propositions:
         return [text.strip()] if text.strip() else []

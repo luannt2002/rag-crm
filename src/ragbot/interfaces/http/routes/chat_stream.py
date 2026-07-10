@@ -190,6 +190,7 @@ async def chat_stream(req: ChatRequest, request: Request) -> StreamingResponse:
         await request_log_repo.create_request_log(
             request_id=request_id,
             record_tenant_id=tenant_uuid,
+            workspace_id=workspace_id,
             connect_id=connect_id,
             question_hash=question_hash,
             message_id=message_id,
@@ -197,11 +198,17 @@ async def chat_stream(req: ChatRequest, request: Request) -> StreamingResponse:
             channel_type=req.channel_type,
             trace_id=getattr(request.state, "trace_id", str(request_id)),
         )
-    except SQLAlchemyError as exc:
+    except (SQLAlchemyError, ValueError, TypeError) as exc:
         # Audit-log create is best-effort: if the request_logs INSERT fails
-        # we still want the user's chat to work. Traceback preserved via
-        # ``logger.exception`` instead of silent swallow.
-        logger.exception("chat_stream_log_create_failed", error=str(exc))
+        # we still want the user's chat to work. Widen beyond SQLAlchemyError so
+        # an arg-shape drift (TypeError) or bad value never 500s the chat — the
+        # whole point of this guard is that a missing audit row is non-fatal.
+        # Traceback preserved via ``logger.exception`` instead of silent swallow.
+        logger.exception(
+            "chat_stream_log_create_failed",
+            error=str(exc),
+            error_type=type(exc).__name__,
+        )
 
     tracker = StepTracker(
         request_id=request_id,
