@@ -45,6 +45,8 @@ from ragbot.shared.constants import (
     DEFAULT_GROUNDING_NUMERIC_OVERLAP_ENABLED,
     DEFAULT_GROUNDING_SUBSTRING_MIN,
     DEFAULT_GROUNDING_USE_STRUCTURED,
+    DEFAULT_PII_REDACT_MASK,
+    DEFAULT_PII_REDACTABLE_RULE_IDS,
     DEFAULT_GUARDRAIL_LEAK_MIN_MATCH_COUNT,
     DEFAULT_GUARDRAIL_LEAK_SHINGLE_SIZE,
     DEFAULT_GUARDRAIL_MAX_INPUT_LENGTH,
@@ -231,6 +233,33 @@ class InputGuardrail:
                 details={"match_count": len(matches)},
             )
         return None
+
+
+# ---------------------------------------------------------------------------
+# PII redaction — the executable form of the rules' ``action="redact"``
+# ---------------------------------------------------------------------------
+def redact_pii(text: str) -> tuple[str, int]:
+    """Mask PII spans in *text*; return ``(redacted_text, n_masked)``.
+
+    Only rules in :data:`DEFAULT_PII_REDACTABLE_RULE_IDS` rewrite the text —
+    patterns that are an unambiguous PII SHAPE (VN/intl phone, email, US SSN).
+    ``pii_vi_cmnd`` is deliberately NOT in that set: its pattern matches ANY bare
+    9- or 12-digit number, which in a catalog corpus includes PRICES and SKUs, so
+    masking on it would corrupt legitimate questions. It still FLAGS (the hit is
+    recorded), it just never rewrites.
+
+    Only the matched span is replaced — the rest of the question is untouched, so
+    the retrieval/answer path still sees the user's actual intent.
+    """
+    out = text or ""
+    n = 0
+    for rule_id in sorted(DEFAULT_PII_REDACTABLE_RULE_IDS):
+        pattern = get_default_compiled(rule_id)
+        if pattern is None:
+            continue
+        out, hits = pattern.subn(DEFAULT_PII_REDACT_MASK, out)
+        n += hits
+    return out, n
 
 
 # ---------------------------------------------------------------------------

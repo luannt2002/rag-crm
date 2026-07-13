@@ -8,9 +8,14 @@ from __future__ import annotations
 
 from typing import Any
 
+import structlog
+
 from ragbot.application.ports.guardrail_port import GuardrailBlocked
+from ragbot.infrastructure.guardrails.local_guardrail import redact_pii
 from ragbot.orchestration.state import GraphState
 from ragbot.shared.constants import DEFAULT_LANGUAGE
+
+logger = structlog.get_logger(__name__)
 
 
 async def guard_input(
@@ -51,6 +56,24 @@ async def guard_input(
                     }
                 )
             out: dict[str, Any] = {"guardrail_flags": flags}
+            # EXECUTE the ``redact`` action the PII rules declare. Before this the
+            # hit was only appended to ``guardrail_flags`` and the RAW query — with
+            # the phone / email / SSN still in it — flowed on to the third-party LLM
+            # gateway, the persisted conversation and the audit preview. Only the
+            # matched span is masked (``redact_pii`` allow-lists unambiguous PII
+            # shapes; the bare-digit rule that also matches prices never rewrites),
+            # so retrieval still sees the user's actual intent.
+            if any(h.action == "redact" for h in hits):
+                redacted, n_masked = redact_pii(state["query"])
+                if n_masked:
+                    out["query"] = redacted
+                    logger.info(
+                        "pii_redacted",
+                        record_bot_id=str(state.get("record_bot_id") or ""),
+                        trace_id=str(state.get("trace_id") or ""),
+                        n_masked=n_masked,
+                        rule_ids=[h.rule_id for h in hits if h.action == "redact"],
+                    )
             if lpack_rows is not None:
                 out["_language_pack_rows"] = lpack_rows
             return out

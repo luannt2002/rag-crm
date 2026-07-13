@@ -121,6 +121,22 @@ DEFAULT_GUARDRAIL_MAX_INPUT_LENGTH: Final[int] = 8000
 DEFAULT_GUARDRAIL_MIN_ALPHA_CHARS: Final[int] = 2
 DEFAULT_GUARDRAIL_TIMEOUT_S: Final[int] = 30
 DEFAULT_GUARDRAIL_LEAK_SHINGLE_SIZE: Final[int] = 24
+# --- PII redaction (the ``action="redact"`` the rules declare) ---------------
+# The PII rules have always returned ``action="redact"``, but nothing ever
+# rewrote the query — so a phone / email / SSN reached the third-party LLM
+# gateway, the persisted conversation and the audit preview verbatim. The mask
+# below is a neutral technical placeholder (not response text): it replaces only
+# the matched PII span, leaving the rest of the question intact.
+DEFAULT_PII_REDACT_MASK: Final[str] = "[redacted]"
+# ALLOW-LIST — only rules whose pattern is an unambiguous PII SHAPE may rewrite
+# the query. ``pii_vi_cmnd`` is deliberately EXCLUDED: its pattern is
+# ``\b(\d{9}|\d{12})\b``, i.e. ANY bare 9- or 12-digit number — which in a
+# catalog corpus includes PRICES (150000000 = 150 triệu is 9 digits) and SKUs.
+# Masking on it would corrupt legitimate questions, so it keeps FLAGGING (the
+# hit is still recorded for observability) but never rewrites the text.
+DEFAULT_PII_REDACTABLE_RULE_IDS: Final[frozenset[str]] = frozenset({
+    "pii_vi_phone", "pii_vi_email", "pii_en_ssn",
+})
 # Minimum number of matching 24-word shingles before the system_prompt_leak guard
 # BLOCKS. The guard exists to stop prompt EXTRACTION (an attacker making the bot
 # dump its instructions) — that reproduces dozens of contiguous shingles. But a
