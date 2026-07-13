@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import asyncio
 import random
+from collections import deque
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -18,10 +19,15 @@ from typing import TypeVar
 import structlog
 
 from ragbot.shared.constants import (
+    CB_MODE_RATE,
     DEFAULT_CB_COOLDOWN_MAX_S,
     DEFAULT_CB_COOLDOWN_STEP_S,
+    DEFAULT_CB_FAILURE_RATE_THRESHOLD,
+    DEFAULT_CB_MIN_CALLS,
+    DEFAULT_CB_MODE,
     DEFAULT_CB_POLICY_FAIL_MAX,
     DEFAULT_CB_POLICY_RESET_TIMEOUT_S,
+    DEFAULT_CB_WINDOW_SIZE,
 )
 from ragbot.shared.errors import CircuitBreakerOpen
 
@@ -85,6 +91,14 @@ class CircuitBreakerPolicy:
     reset_timeout_s: int = DEFAULT_CB_POLICY_RESET_TIMEOUT_S
     cooldown_step_s: int = DEFAULT_CB_COOLDOWN_STEP_S
     cooldown_max_s: int = DEFAULT_CB_COOLDOWN_MAX_S
+    # Trip condition. ``consecutive`` (default) = legacy ``fail_max`` in a row,
+    # reset by ANY success — blind to an upstream that fails a scattered 10-30%.
+    # ``rate`` = open when >= ``failure_rate_threshold`` of the last
+    # ``window_size`` outcomes failed, once >= ``min_calls`` samples exist.
+    mode: str = DEFAULT_CB_MODE
+    window_size: int = DEFAULT_CB_WINDOW_SIZE
+    failure_rate_threshold: float = DEFAULT_CB_FAILURE_RATE_THRESHOLD
+    min_calls: int = DEFAULT_CB_MIN_CALLS
 
 
 @dataclass(slots=True)
@@ -104,6 +118,20 @@ class CircuitBreaker:
         self.name = name
         self._policy = policy
         self._state = CircuitBreakerState()
+        # Rolling outcome window (True = failure). Only consulted in ``rate``
+        # mode; kept unconditionally so the two modes share one record path.
+        self._window: deque[bool] = deque(maxlen=max(1, policy.window_size))
+
+    def _rate_should_open(self) -> bool:
+        """``rate`` mode: >= threshold of the last ``window_size`` outcomes failed.
+
+        Below ``min_calls`` samples the verdict is withheld — a tiny burst of
+        failures at startup must not fast-fail a healthy provider.
+        """
+        n = len(self._window)
+        if n < self._policy.min_calls:
+            return False
+        return (sum(self._window) / n) >= self._policy.failure_rate_threshold
 
     @property
     def state(self) -> CBState:
@@ -157,11 +185,20 @@ class CircuitBreaker:
             pass
 
     def record_success(self) -> None:
+        prev_state = self._state.state
+        self._window.append(False)
         was_open_cycle = self._state.consec_open_fails > 0
         self._state.state = CBState.CLOSED
         self._state.fail_count = 0
         self._state.last_failure_at = None
         self._state.consec_open_fails = 0
+        # The consecutive counter still resets on success (legacy semantics), but
+        # in rate mode the rolling WINDOW deliberately survives — that history is
+        # the whole point: it is what lets a scattered-failure upstream trip at
+        # all. Only a HALF_OPEN recovery probe wipes it, so a provider that just
+        # came back is not instantly re-tripped by its own stale failures.
+        if self._policy.mode == CB_MODE_RATE and prev_state is CBState.HALF_OPEN:
+            self._window.clear()
         if was_open_cycle:
             self._safe_log(
                 "info",
@@ -173,8 +210,16 @@ class CircuitBreaker:
     def record_failure(self) -> None:
         prev_state = self._state.state
         self._state.fail_count += 1
+        self._window.append(True)
         self._state.last_failure_at = self._now()
-        if self._state.fail_count >= self._policy.fail_max:
+        # ADDITIVE trip. The consecutive check is kept in BOTH modes so a
+        # hard-down upstream still opens fast (before ``min_calls`` samples even
+        # exist). Rate mode ADDS the rolling-window check on top, catching the
+        # scattered-failure upstream the consecutive counter is blind to.
+        _should_open = self._state.fail_count >= self._policy.fail_max
+        if not _should_open and self._policy.mode == CB_MODE_RATE:
+            _should_open = self._rate_should_open()
+        if _should_open:
             self._state.state = CBState.OPEN
             # Only count this as an *additional* consecutive OPEN cycle
             # when transitioning into OPEN — repeated record_failure while

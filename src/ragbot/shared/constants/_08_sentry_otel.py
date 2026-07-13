@@ -25,6 +25,27 @@ DEFAULT_CB_COOLDOWN_STEP_S: Final[int] = 15
 DEFAULT_CB_COOLDOWN_MAX_S: Final[int] = 120
 DEFAULT_CB_HALF_OPEN_MAX_CALLS: Final[int] = 1
 
+# Trip condition. CONSECUTIVE (legacy default): open after ``fail_max`` failures
+# IN A ROW — but ``record_success`` resets the counter, so an upstream that fails
+# ~10-30% of calls SCATTERED among successes never trips it (measured 2026-07-13:
+# 236 provider failures, ZERO breaker opens — the breaker gave no protection at
+# all against the "slow + flaky gateway" mode). RATE (resilience4j-style): open on
+# the failure RATE over a rolling window, so a genuinely degraded upstream is
+# fast-failed and given room to recover, while scattered blips below the threshold
+# never trip it. Default stays CONSECUTIVE — every existing adapter keeps its
+# behaviour byte-identical; only the LLM provider breaker opts into RATE.
+CB_MODE_CONSECUTIVE: Final[str] = "consecutive"
+CB_MODE_RATE: Final[str] = "rate"
+DEFAULT_CB_MODE: Final[str] = CB_MODE_CONSECUTIVE
+# Rolling window: trip when >= FAILURE_RATE_THRESHOLD of the last WINDOW_SIZE
+# outcomes failed, and only once at least MIN_CALLS samples exist (so a tiny
+# burst never trips it). 0.5 over 20 with a 10-call floor: a provider failing
+# half its calls is degraded; the ~10-25% scatter measured against innocom stays
+# comfortably below it and is never fast-failed.
+DEFAULT_CB_WINDOW_SIZE: Final[int] = 20
+DEFAULT_CB_FAILURE_RATE_THRESHOLD: Final[float] = 0.5
+DEFAULT_CB_MIN_CALLS: Final[int] = 10
+
 # --- Failover orchestrator (Phase D / D1) ----------------------------------
 # Default ENABLED (defensive). Set ``circuit_breaker_enabled = false`` in
 # ``system_config`` to revert all resources to ``NullCircuitBreaker``

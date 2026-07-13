@@ -48,6 +48,7 @@ from ragbot.config.logging import (
 from ragbot.infrastructure.token_ledger.null_token_ledger import NullTokenLedger
 from ragbot.shared.constants import (
     ANTHROPIC_PROVIDER_CODES,
+    CB_MODE_RATE,
     DEFAULT_CB_COOLDOWN_S,
     DEFAULT_CB_FAILURE_THRESHOLD,
     DEFAULT_DETERMINISTIC_LLM_PURPOSES,
@@ -465,6 +466,16 @@ class DynamicLiteLLMRouter(LLMPort):
                 policy=CircuitBreakerPolicy(
                     fail_max=DEFAULT_CB_FAILURE_THRESHOLD,
                     reset_timeout_s=DEFAULT_CB_COOLDOWN_S,
+                    # RATE trip (not consecutive-count): an LLM gateway that fails
+                    # a SCATTERED 10-30% never produces ``fail_max`` failures in a
+                    # row, so the legacy counter — reset by every success — never
+                    # opened (measured 2026-07-13: 236 provider failures, ZERO
+                    # opens). Rate mode fast-fails a genuinely degraded upstream
+                    # (>= threshold over the window) and gives it room to recover,
+                    # while the measured 10-25% scatter stays well below the trip
+                    # line and is never fast-failed. Embedder/reranker breakers
+                    # keep the default consecutive mode.
+                    mode=CB_MODE_RATE,
                 ),
             )
             self._provider_circuit_breakers[provider_code] = cb
