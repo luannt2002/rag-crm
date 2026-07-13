@@ -135,6 +135,33 @@ def _entity_richness(entity: ParsedEntity) -> tuple[int, int, int]:
     )
 
 
+def _stats_rows_for_document(
+    chunks: list | None, rows: list[dict],
+) -> list[dict]:
+    """Rows the stats-index rebuild must parse — the document's FULL chunk set.
+
+    On a re-ingest, ``rows`` holds only the chunks whose hash CHANGED (the store
+    stage builds them from ``chunks_to_embed``). But the rebuild first calls
+    ``delete_by_document``, which wipes EVERY index row for the document — so
+    re-inserting from ``rows`` silently erases every entity that lives in an
+    unchanged chunk (edit 3 chunks of a 500-chunk catalog and 497 entities vanish
+    from the stats/SQL route while their vectors survive).
+
+    ``chunks`` is the chunker's full, ordered, pre-enrichment output, so feeding it
+    also keeps ``chunk_index`` correct — ``parse_table_chunks`` derives that from
+    list POSITION, and handing it only the changed rows mis-numbered every entity.
+
+    Falls back to ``rows`` when no chunk list is available (legacy/edge caller).
+    """
+    if not chunks:
+        return rows
+    out: list[dict] = []
+    for _c in chunks:
+        text = _c.get("content", "") if isinstance(_c, dict) else str(_c or "")
+        out.append({"content": text})
+    return out
+
+
 def _dedup_stats_entities(
     entities: list[ParsedEntity],
 ) -> list[ParsedEntity]:
@@ -494,7 +521,14 @@ class _StageFinalizeMixin:
                         error_type=type(exc).__name__,
                         error=str(exc)[:200],
                     )
-            _stats_rows = [_raw_row(_r) for _r in rows]
+            # Rebuild from the document's FULL chunk set, not just the chunks this
+            # run re-embedded — ``delete_by_document`` below wipes every row for the
+            # doc, so parsing only ``rows`` (the CHANGED chunks on a re-ingest)
+            # silently erased every entity in an unchanged chunk. See
+            # ``_stats_rows_for_document``.
+            _stats_rows = _stats_rows_for_document(
+                chunks, [_raw_row(_r) for _r in rows],
+            )
             _raw_entities = parse_table_chunks(
                 _stats_rows, _custom_roles, name_by_shape=_name_by_shape
             )
