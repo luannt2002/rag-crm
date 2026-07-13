@@ -390,6 +390,23 @@ CLAIM_FIDELITY_ACTION_OBSERVE: Final[str] = "observe"
 CLAIM_FIDELITY_ACTION_BLOCK: Final[str] = "block"
 DEFAULT_CLAIM_FIDELITY_ACTION: Final[str] = CLAIM_FIDELITY_ACTION_OBSERVE
 CLAIM_FIDELITY_EVENT: Final[str] = "claim_fidelity_observe"
+# Degeneration / repetition guard (QA #8, 2026-07): the answer LLM collapsed into
+# repeating the same phrase hundreds of times — an unusable answer that no guard
+# caught. Deterministic + model-independent: word/phrase repetition ratios (no
+# vocabulary, domain-neutral, shape-only). Short answers are never judged. Action
+# per-bot: "observe" (default — log only, never touches the answer, sacred #10) vs
+# "block" (owner opt-in → substitute the bot's OWN oos_answer_template, the same
+# governed path — a looping non-answer is not an LLM answer to preserve). An answer
+# is degenerate when it is long enough AND any of: too few distinct words, one
+# token dominates, or too few distinct 3-grams (a phrase loop).
+DEFAULT_DEGENERATION_MIN_WORDS: Final[int] = 30
+DEFAULT_DEGENERATION_DISTINCT_WORD_RATIO_MAX: Final[float] = 0.15
+DEFAULT_DEGENERATION_TOP_TOKEN_RATIO_MAX: Final[float] = 0.40
+DEFAULT_DEGENERATION_DISTINCT_TRIGRAM_RATIO_MAX: Final[float] = 0.25
+DEGENERATION_ACTION_OBSERVE: Final[str] = "observe"
+DEGENERATION_ACTION_BLOCK: Final[str] = "block"
+DEFAULT_DEGENERATION_ACTION: Final[str] = DEGENERATION_ACTION_OBSERVE
+DEGENERATION_EVENT: Final[str] = "answer_degeneration"
 NUMERIC_FIDELITY_URL_PATTERN: Final[str] = r"https?://\S+"
 # Contact-number shape: leading 0, then 6–11 digits each separated by at most a
 # SINGLE space/dot/dash. The single-separator bound is load-bearing — a greedy

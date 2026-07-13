@@ -470,8 +470,20 @@ async def test_chat(req: TestChatRequest, request: Request) -> dict:
     _svc_unavailable = False
     final_state = {}
 
+    _pipeline_timeout_s = int(pipeline_config.get("pipeline_timeout_s") or 0)
     try:
-        final_state = await graph.ainvoke(initial_state, config={"recursion_limit": pipeline_config["graph_recursion_limit"]})
+        _graph_coro = graph.ainvoke(
+            initial_state,
+            config={"recursion_limit": pipeline_config["graph_recursion_limit"]},
+        )
+        # Server-side wall-clock kill: a runaway pipeline (a hung upstream LLM)
+        # must not hold the request slot indefinitely. Mirrors the async worker
+        # (chat_worker/pipeline.py) so this harness reflects the SAME timeout a
+        # production consumer gets; 0 disables. Value is config-driven per bot.
+        if _pipeline_timeout_s > 0:
+            final_state = await asyncio.wait_for(_graph_coro, timeout=_pipeline_timeout_s)
+        else:
+            final_state = await _graph_coro
         answer = final_state.get("answer", "") or ""
         _llm_circuit.record_success()
     except GuardrailBlocked as exc:
@@ -508,7 +520,7 @@ async def test_chat(req: TestChatRequest, request: Request) -> dict:
             exc_info=True,
         )
     except LLMError as exc:
-        # B4 — the LLM provider failed after retries (e.g. innocom 5xx on a
+        # B4 — the LLM provider failed after retries (e.g. an upstream gateway 5xx on a
         # heavy "liệt kê" query). This is TRANSIENT infra, not a pipeline bug:
         # map it to a retryable 503 (like ExternalServiceError) instead of a
         # 500. It IS an LLM failure, so the LLM circuit still counts it (so the
@@ -521,6 +533,18 @@ async def test_chat(req: TestChatRequest, request: Request) -> dict:
             error=llm_error,
             error_type=type(exc).__name__,
             exc_info=True,
+        )
+    except asyncio.TimeoutError:
+        # Pipeline exceeded the server wall-clock budget — a hung upstream, not a
+        # pipeline bug. Free the slot and return a retryable 503 (same envelope as
+        # LLMError). NOT counted against the LLM breaker: the timeout is a
+        # whole-pipeline budget, not a confirmed single-provider failure.
+        _svc_unavailable = True
+        llm_error = f"PipelineTimeout: exceeded {_pipeline_timeout_s}s"
+        logger.warning(
+            "test_chat_pipeline_timeout",
+            timeout_s=_pipeline_timeout_s,
+            error_type="TimeoutError",
         )
     except Exception as exc:  # noqa: BLE001 — request entrypoint; must catch all to record CB + return 5xx envelope. exc_info=True preserves stack.
         _llm_circuit.record_failure()

@@ -33,6 +33,7 @@ from ragbot.shared.constants import (
     DEFAULT_EMPTY_ANSWER_GUARD_ENABLED,
     DEFAULT_CLAIM_FIDELITY_SCOPE_PHRASES,
     DEFAULT_CLAIM_FIDELITY_ACTION,
+    DEFAULT_DEGENERATION_ACTION,
     DEFAULT_GROUNDING_FAILURE_MODE,
     DEFAULT_GUARDRAIL_LEAK_MIN_MATCH_COUNT,
     DEFAULT_GENERATE_SURFACE_VERBATIM_ENABLED,
@@ -957,6 +958,11 @@ async def _build_pipeline_config(cfg_svc: SystemConfigService, bot_cfg: Any) -> 
         "claim_fidelity_action": resolve_bot_limit(
             bot_cfg, "claim_fidelity_action",
             system_default=DEFAULT_CLAIM_FIDELITY_ACTION,
+        ),
+        # QA #8: degeneration/repetition guard (observe|block), owner opt-in.
+        "degeneration_action": resolve_bot_limit(
+            bot_cfg, "degeneration_action",
+            system_default=DEFAULT_DEGENERATION_ACTION,
         ),
         "guardrail_leak_min_match_count": resolve_bot_limit(
             bot_cfg, "guardrail_leak_min_match_count",

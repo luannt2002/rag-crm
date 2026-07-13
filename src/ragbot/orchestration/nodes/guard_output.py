@@ -61,8 +61,12 @@ from ragbot.shared.constants import (
     DEFAULT_CLAIM_FIDELITY_ACTION,
     CLAIM_FIDELITY_ACTION_BLOCK,
     CLAIM_FIDELITY_EVENT,
+    DEFAULT_DEGENERATION_ACTION,
+    DEGENERATION_ACTION_BLOCK,
+    DEGENERATION_EVENT,
 )
 from ragbot.shared.brand_scope import detect_denied_brand
+from ragbot.shared.degeneration import classify_answer_degeneration
 from ragbot.shared.claim_fidelity import detect_scope_overextension
 from ragbot.shared.errors import InvariantViolation
 from ragbot.shared.numeric_fidelity import (
@@ -117,6 +121,52 @@ async def guard_output(
                 "answer": _resolved_oos_template(state),
                 "answer_type": "empty_guard",
                 "answer_reason": "Empty-answer guard (blank generation → owner oos_answer_template)",
+            }
+
+        # ── Degeneration / repetition guard (owner-gated action; default observe) ──
+        # A looping generation (the same phrase repeated many times — QA #8) is a
+        # broken, unusable answer that no other guard catches. Deterministic +
+        # model-independent (shape-only repetition ratios, no vocabulary, no LLM).
+        # Computed once; the event is action-neutral (action + blocked fields).
+        # Default "observe" ships the answer untouched (sacred #10); "block" is the
+        # owner opt-in that substitutes the bot's OWN oos_answer_template — a
+        # looping non-answer is not an LLM answer to preserve (same governed path
+        # as empty-answer / numeric-fidelity). Placed before the number/brand gates
+        # so a garbage loop is not analysed for fabricated numbers.
+        _dg = classify_answer_degeneration(str(state.get("answer") or ""))
+        state["answer_degeneration"] = _dg
+        _dg_action = str(
+            _pcfg(state, "degeneration_action", DEFAULT_DEGENERATION_ACTION)
+            or DEFAULT_DEGENERATION_ACTION
+        )
+        _dg_will_block = _dg["is_degenerate"] and _dg_action == DEGENERATION_ACTION_BLOCK
+        if _dg["is_degenerate"]:
+            logger.warning(
+                DEGENERATION_EVENT,
+                record_bot_id=str(state.get("record_bot_id") or ""),
+                trace_id=str(state.get("trace_id") or ""),
+                n_words=_dg["n_words"],
+                distinct_word_ratio=_dg["distinct_word_ratio"],
+                top_token_ratio=_dg["top_token_ratio"],
+                distinct_trigram_ratio=_dg["distinct_trigram_ratio"],
+                action=_dg_action,
+                blocked=_dg_will_block,
+            )
+        if _dg_will_block:
+            _dg_flags = list(state.get("guardrail_flags", []))
+            _dg_flags.append({
+                "rule_id": "answer_degeneration",
+                "severity": "block",
+                "blocked": True,
+                "distinct_word_ratio": _dg["distinct_word_ratio"],
+                "top_token_ratio": _dg["top_token_ratio"],
+            })
+            return {
+                "guardrail_flags": _dg_flags,
+                "answer_degeneration": _dg,
+                "answer": _resolved_oos_template(state),
+                "answer_type": "degeneration_guard",
+                "answer_reason": "Degeneration guard (looping generation → owner oos_answer_template)",
             }
 
         # ── Numeric-fidelity OBSERVE (truth-audit Phase 4) ─────────────────

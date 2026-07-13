@@ -1,0 +1,82 @@
+"""Deterministic degeneration / repetition detector (QA #8).
+
+Model-independent, domain-neutral: the classic failure where a generation
+collapses into repeating the same token / phrase / sentence many times
+(bug#8 — "công ty bảo hiểm xã hội…" repeated hundreds of times). Pure
+string/arithmetic — no LLM, no DB, no I/O, no vocabulary. Short answers are
+never judged (a brief answer that repeats a word is not a degenerate loop).
+
+Signals (shape-only, OR-combined; each is deep in loop territory for real
+prose, so the false-positive rate is near-zero):
+  * distinct_word_ratio  — unique / total words. A loop drives this toward 0.
+  * top_token_ratio      — the single most frequent token's share. A loop lets
+                           one token dominate.
+  * distinct_trigram_ratio — unique / total 3-grams. Catches a phrase loop of
+                           otherwise-distinct words (single-word frequency stays
+                           moderate but the 3-gram set collapses).
+
+This module NEVER modifies the answer — blocking is a separate owner-gated step
+in ``guard_output`` (default observe), the same governed path the
+numeric-fidelity / empty-answer guards use (sacred #10 safe).
+"""
+from __future__ import annotations
+
+from collections import Counter
+from typing import Any
+
+from ragbot.shared.constants import (
+    DEFAULT_DEGENERATION_DISTINCT_TRIGRAM_RATIO_MAX,
+    DEFAULT_DEGENERATION_DISTINCT_WORD_RATIO_MAX,
+    DEFAULT_DEGENERATION_MIN_WORDS,
+    DEFAULT_DEGENERATION_TOP_TOKEN_RATIO_MAX,
+)
+
+# 3-gram window; a phrase loop collapses the distinct-3-gram set.
+_TRIGRAM_N = 3
+
+
+def _not_degenerate(n_words: int) -> dict[str, Any]:
+    return {
+        "is_degenerate": False,
+        "n_words": n_words,
+        "distinct_word_ratio": 1.0,
+        "top_token_ratio": 0.0,
+        "distinct_trigram_ratio": 1.0,
+    }
+
+
+def classify_answer_degeneration(answer: str) -> dict[str, Any]:
+    """Return a degeneration verdict for *answer* (never modifies it).
+
+    Keys: ``is_degenerate`` (bool), ``n_words`` (int), and the three shape
+    ratios. Answers shorter than ``DEFAULT_DEGENERATION_MIN_WORDS`` words are
+    reported non-degenerate with neutral ratios.
+    """
+    words = (answer or "").split()
+    n = len(words)
+    if n < DEFAULT_DEGENERATION_MIN_WORDS:
+        return _not_degenerate(n)
+
+    lowered = [w.lower() for w in words]
+    distinct_word_ratio = len(set(lowered)) / n
+    top_count = Counter(lowered).most_common(1)[0][1]
+    top_token_ratio = top_count / n
+
+    if n >= _TRIGRAM_N:
+        trigrams = [tuple(lowered[i : i + _TRIGRAM_N]) for i in range(n - _TRIGRAM_N + 1)]
+        distinct_trigram_ratio = len(set(trigrams)) / len(trigrams)
+    else:
+        distinct_trigram_ratio = 1.0
+
+    is_degenerate = (
+        distinct_word_ratio <= DEFAULT_DEGENERATION_DISTINCT_WORD_RATIO_MAX
+        or top_token_ratio >= DEFAULT_DEGENERATION_TOP_TOKEN_RATIO_MAX
+        or distinct_trigram_ratio <= DEFAULT_DEGENERATION_DISTINCT_TRIGRAM_RATIO_MAX
+    )
+    return {
+        "is_degenerate": is_degenerate,
+        "n_words": n,
+        "distinct_word_ratio": round(distinct_word_ratio, 4),
+        "top_token_ratio": round(top_token_ratio, 4),
+        "distinct_trigram_ratio": round(distinct_trigram_ratio, 4),
+    }
