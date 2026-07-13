@@ -160,6 +160,24 @@ async def guard_output(
         # (adding it would blur the row boundaries the check depends on).
         _nf.update(detect_cross_row_misattribution(_nf_answer, _nf_ctx))
         state["numeric_fidelity"] = _nf
+        # 002-I: numeric-fidelity BLOCK (sacred #10 exception, per-bot opt-in).
+        # When the bot owner set ``numeric_fidelity_action = "block"`` and a
+        # number in the answer is fabricated (unsupported) or grabbed from the
+        # wrong row (misattributed), substitute the bot's OWN oos_answer_template
+        # — the same governed substitution the grounding judge uses (owner text,
+        # never app-injected). Default "observe" keeps flag-and-ship. Measured
+        # before enabling: gate-set FP 0/84 (see ladder Step 14-15). The check
+        # is deterministic (no model), so it never adds latency or a round-trip.
+        # Resolved BEFORE the observe log so the event reports the real action +
+        # whether THIS answer was blocked (audit-integrity — no "observe" name
+        # masking a block).
+        _nf_action = str(
+            _pcfg(state, "numeric_fidelity_action", DEFAULT_NUMERIC_FIDELITY_ACTION)
+            or DEFAULT_NUMERIC_FIDELITY_ACTION
+        )
+        _nf_will_block = _nf_action == NUMERIC_FIDELITY_ACTION_BLOCK and (
+            _nf["n_unsupported"] > 0 or _nf["n_misattributed"] > 0
+        )
         if _nf["n_numbers"]:
             logger.info(
                 NUMERIC_FIDELITY_EVENT,
@@ -172,24 +190,12 @@ async def guard_output(
                 unsupported_tokens=_nf["unsupported_tokens"],
                 n_misattributed=_nf["n_misattributed"],
                 misattributed=_nf["misattributed"],
+                action=_nf_action,
+                blocked=_nf_will_block,
                 context_source=str(state.get("retrieve_mode") or ""),
             )
 
-        # 002-I: numeric-fidelity BLOCK (sacred #10 exception, per-bot opt-in).
-        # When the bot owner set ``numeric_fidelity_action = "block"`` and a
-        # number in the answer is fabricated (unsupported) or grabbed from the
-        # wrong row (misattributed), substitute the bot's OWN oos_answer_template
-        # — the same governed substitution the grounding judge uses (owner text,
-        # never app-injected). Default "observe" keeps flag-and-ship. Measured
-        # before enabling: gate-set FP 0/84 (see ladder Step 14-15). The check
-        # is deterministic (no model), so it never adds latency or a round-trip.
-        _nf_action = str(
-            _pcfg(state, "numeric_fidelity_action", DEFAULT_NUMERIC_FIDELITY_ACTION)
-            or DEFAULT_NUMERIC_FIDELITY_ACTION
-        )
-        if _nf_action == NUMERIC_FIDELITY_ACTION_BLOCK and (
-            _nf["n_unsupported"] > 0 or _nf["n_misattributed"] > 0
-        ):
+        if _nf_will_block:
             _nf_flags = list(state.get("guardrail_flags", []))
             _nf_flags.append({
                 "rule_id": "numeric_fidelity",
@@ -268,6 +274,7 @@ async def guard_output(
                     brand=_bs_brand,
                     stocked_rows=_bs_count,
                     action=_bs_action,
+                    blocked=_bs_action == BRAND_SCOPE_ACTION_BLOCK,
                 )
                 if _bs_action == BRAND_SCOPE_ACTION_BLOCK:
                     _bs_flags = list(state.get("guardrail_flags", []))

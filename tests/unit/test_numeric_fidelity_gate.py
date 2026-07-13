@@ -94,6 +94,37 @@ def test_constants_exist() -> None:
     assert NUMERIC_FIDELITY_UNSUPPORTED_TOKENS_CAP > 0
 
 
+def test_gate_event_names_are_action_neutral() -> None:
+    """Audit-integrity: the log event key must NOT bake an action word into it.
+
+    The SAME event fires for both observe and block, so a hardcoded
+    ``*_observe`` name logs a real block as "observe" — an ops person reading
+    the log cannot tell what actually happened. The action belongs in a FIELD,
+    not the event name.
+    """
+    from ragbot.shared.constants import BRAND_SCOPE_EVENT, NUMERIC_FIDELITY_EVENT
+
+    for ev in (NUMERIC_FIDELITY_EVENT, BRAND_SCOPE_EVENT):
+        assert "observe" not in ev and "block" not in ev, (
+            f"event '{ev}' bakes an action into its name — move it to a field"
+        )
+
+
+def test_numeric_fidelity_log_reports_action_and_blocked() -> None:
+    """The numeric-fidelity observability event must carry the resolved action
+    AND whether THIS answer was actually blocked — otherwise the log cannot
+    distinguish observe from block (the audit-integrity bug)."""
+    from ragbot.orchestration.nodes import guard_output
+
+    src = inspect.getsource(guard_output)
+    assert "action=_nf_action" in src, (
+        "numeric-fidelity log must emit the resolved action as a field"
+    )
+    assert "blocked=_nf_will_block" in src, (
+        "numeric-fidelity log must emit whether this answer was blocked"
+    )
+
+
 def test_guard_output_numeric_fidelity_is_owner_gated() -> None:
     """Pin (002-I): guard_output computes the verdict once, and the ONLY way it
     substitutes the answer is the owner-gated block path — default is observe.

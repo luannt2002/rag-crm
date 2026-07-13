@@ -328,11 +328,12 @@ DEFAULT_GROUNDING_CONFIRMED_ACTION: Final[str] = GROUNDING_CONFIRMED_ACTION_OBSE
 
 
 
-# --- Numeric-fidelity observe gate (truth-audit Phase 4, contract in specs/) --
-# structlog event name for the observe-mode verdict (one per answered request
-# with >=1 significant number). Observe-only: the verdict NEVER modifies the
-# answer (sacred #10); blocking is a separate owner-gated future step.
-NUMERIC_FIDELITY_EVENT: Final[str] = "numeric_fidelity_observe"
+# --- Numeric-fidelity gate (truth-audit Phase 4, contract in specs/) ----------
+# structlog event name for the verdict (one per answered request with >=1
+# significant number). Action-NEUTRAL: the same event fires whether the bot is
+# in observe or block mode — the actual action + whether this answer was blocked
+# are carried in the ``action`` / ``blocked`` FIELDS, never baked into the name.
+NUMERIC_FIDELITY_EVENT: Final[str] = "numeric_fidelity"
 # Cap the unsupported-token list in events/trace (counts stay exact).
 NUMERIC_FIDELITY_UNSUPPORTED_TOKENS_CAP: Final[int] = 8
 # 002-H: noise patterns stripped BEFORE numeric-fidelity tokenizing so the gate
@@ -362,7 +363,9 @@ BRAND_SCOPE_ACTION_OBSERVE: Final[str] = "observe"
 BRAND_SCOPE_ACTION_BLOCK: Final[str] = "block"
 DEFAULT_BRAND_SCOPE_GATE_ACTION: Final[str] = BRAND_SCOPE_ACTION_OBSERVE
 DEFAULT_BRAND_SCOPE_NEGATION_PHRASES: Final[tuple[str, ...]] = ()
-BRAND_SCOPE_EVENT: Final[str] = "brand_scope_observe"
+# Action-NEUTRAL event name (see NUMERIC_FIDELITY_EVENT): the ``action`` /
+# ``blocked`` fields carry what actually happened, not the event name.
+BRAND_SCOPE_EVENT: Final[str] = "brand_scope"
 # P0.1: empty-answer guard (cross-bot fail-verify 2026-07-07 — S-048/B-050/B-052
 # returned a BLANK answer). An empty/whitespace answer is a silent generation
 # failure (chunks present, LLM produced nothing), not an answer. When the owner

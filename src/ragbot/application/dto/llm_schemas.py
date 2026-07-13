@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from ragbot.shared.constants import (
     DEFAULT_DECOMPOSE_MAX_SUB_QUERIES,
@@ -72,6 +72,27 @@ class UnderstandOutput(BaseModel):
     """
 
     model_config = _STRICT_JSON_SCHEMA_CONFIG
+
+    @model_validator(mode="before")
+    @classmethod
+    def _accept_query_alias(cls, data: Any) -> Any:
+        """Tolerate gateways that echo the prompt under a bare ``query`` key.
+
+        Some OpenAI-shape gateways ignore the ``condensed_query`` field name
+        and return ``{"query": "<prompt>", "intent": ...}``. Map ``query`` onto
+        ``condensed_query`` (canonical wins if both present) so a valid intent
+        classification is kept instead of failing ``extra_forbidden`` — which
+        would otherwise burn a repair round-trip and, on giving up, demote the
+        turn to the ``intent`` fallback with the tightest retrieval budget.
+        Runs BEFORE ``extra='forbid'``, so only ``query`` is absorbed; every
+        other unexpected key is still rejected. Schema sent to strict providers
+        is unchanged (validators do not affect ``model_json_schema``).
+        """
+        if isinstance(data, dict) and "query" in data:
+            data = {**data}
+            aliased = data.pop("query")
+            data.setdefault("condensed_query", aliased)
+        return data
 
     condensed_query: str = Field(
         default="",

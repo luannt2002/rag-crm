@@ -39,21 +39,24 @@ def test_default_grade_timeout_s_is_positive_finite_seconds() -> None:
     assert 0.0 < DEFAULT_GRADE_TIMEOUT_S < 10.0
 
 
-def test_default_grade_timeout_s_matches_p95_diagnostic() -> None:
-    """Default 2.0s sits between p50 (~0ms via skip) and p95 (2.56s) so
-    cold-LLM grade still has room while clipping the long tail.
+def test_default_grade_timeout_s_covers_grader_p95() -> None:
+    """The cap MUST cover the grade-LLM's measured p95 so a NORMAL cold grade
+    completes, and clip only the genuine (super-p95) hang.
 
-    If this drops below the p50 the cap turns into a misclassifier —
-    we'd lose grade quality on every cold call. If it exceeds the p95
-    the cap stops doing its job. The diagnostic is in
-    ``reports/RAGBOT_21_QUESTIONS_ANSWERS.md`` (Q16-Q17).
+    Measured p95 = 2.56s (2026-05-18 diagnostic, re-seen in the 2026-07-13
+    load test). A cap BELOW p95 (the earlier 2.0s) force-times-out the normal
+    2.0–2.56s cold-grade band and ships all chunks ungraded to generate —
+    exactly the "cold-LLM grade still has room" intent it was documented to
+    preserve. So the cap sits just above p95 (room for the normal tail) but
+    still modest (clips a real hang from chat-graph p95). ``0`` = disabled.
     """
-    assert DEFAULT_GRADE_TIMEOUT_S >= 1.0, (
-        "below p50 cold-call latency — grade quality would drop on every "
-        "non-skip path"
+    MEASURED_GRADE_P95_S = 2.56  # documented grade-LLM p95 (see grade.py comment)
+    assert DEFAULT_GRADE_TIMEOUT_S >= MEASURED_GRADE_P95_S, (
+        "cap below measured p95 — a normal cold grade is force-passed ungraded"
     )
-    assert DEFAULT_GRADE_TIMEOUT_S <= 3.0, (
-        "above p95 — cap no longer trims the tail attack we measured"
+    assert DEFAULT_GRADE_TIMEOUT_S <= 3.5, (
+        "cap too high — a genuinely hung grade call no longer trimmed from "
+        "chat-graph p95"
     )
 
 

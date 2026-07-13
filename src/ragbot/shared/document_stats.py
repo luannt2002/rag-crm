@@ -202,6 +202,22 @@ _ALIASES_COL_TOKENS: frozenset[str] = frozenset({
     "aliases", "synonym", "synonyms", "tu khoa", "keyword", "keywords",
     "bien the", "variant", "variants",
 })
+# COUNT / MEASURE column headers — a numeric NON-value column (quantity, stock,
+# ordinal, dimension). Same domain-neutral policy as the value/name sets: generic
+# structure/grammar words, NO brand/service literal. Bound to the ``count`` role →
+# the row extractor keeps a money-shaped cell as a LABELLED ATTRIBUTE and EXCLUDES
+# it from the unknown-pure-money value fallback. Without this a large count
+# (``_is_pure_money("40400")`` is True — floor 10_000) is mis-read as a value and,
+# served via the stats route, surfaces to the user as a fabricated number
+# (numeric-HALLU, bug#13 class). Tokens are exact/whole-word only and picked to
+# avoid a tie with category ("kho") — bare "ton" is omitted so "ton kho" binds
+# count via the exact phrase, not an ambiguous word tie.
+_COUNT_COL_TOKENS: frozenset[str] = frozenset({
+    "so luong", "so luong ton", "so luong ton kho", "ton kho",
+    "sl", "quantity", "qty", "count", "stock", "inventory",
+    "khoi luong", "trong luong", "dien tich",
+    "stt", "so thu tu", "id",
+})
 # Non-role header words (ordinals / ids) — used for header DETECTION only, no role.
 _HEADER_EXTRA_TOKENS: frozenset[str] = frozenset({
     "stt", "buoi", "no", "id", "qty", "quantity",
@@ -210,7 +226,7 @@ _HEADER_EXTRA_TOKENS: frozenset[str] = frozenset({
 # _is_header_row(). Generic, domain-neutral.
 _HEADER_EXACT_TOKENS: frozenset[str] = (
     _NAME_COL_TOKENS | _CATEGORY_COL_TOKENS | _PRICE_COL_TOKENS
-    | _ALIASES_COL_TOKENS | _HEADER_EXTRA_TOKENS
+    | _ALIASES_COL_TOKENS | _COUNT_COL_TOKENS | _HEADER_EXTRA_TOKENS
 )
 # Aggregate / structural-label words that are NEVER a catalog entity name — a
 # transposed / key-value / total row promotes one of these to a "name" ("Giá"=100k,
@@ -575,12 +591,20 @@ def _column_roles(
         ("category", _CATEGORY_COL_TOKENS),
         ("aliases", _ALIASES_COL_TOKENS),
         ("price", _PRICE_COL_TOKENS),
+        ("count", _COUNT_COL_TOKENS),
     )
     # ``price`` is a LIST (multiple price columns); name/category/aliases are
     # single-valued, first-wins. One ``_bind`` ladder is shared by both tiers so the
     # Tier-2 and Tier-1 assignment can't drift (and keeps the branch count low).
     single_idx: dict[str, int | None] = {"name": None, "category": None, "aliases": None}
     price_idxs: list[int] = []
+    # COUNT/measure columns (quantity, stock, ordinal, dimension). A money-looking
+    # value here is a count, not a value — the extractor labels it as an attribute
+    # and keeps it out of the value slots. Kept SEPARATE from attr_idxs so a
+    # column-MISALIGNED cell (a short section's row broadcast under a wider
+    # header) is not swallowed: only a money-shaped cell is intercepted; a
+    # non-money cell still flows to the normal name/attribute handling.
+    count_idxs: list[int] = []
     # Columns the OWNER explicitly declared as a generic ``attribute`` (no special
     # role). They must keep their value as a labelled attribute and — crucially —
     # NEVER be hijacked by the unknown-pure-money→price fallback: a stock/count the
@@ -592,6 +616,8 @@ def _column_roles(
     def _bind(role: str, i: int) -> None:
         if role == "price":
             price_idxs.append(i)
+        elif role == "count":
+            count_idxs.append(i)
         elif single_idx.get(role) is None:
             single_idx[role] = i
 
@@ -623,7 +649,7 @@ def _column_roles(
     return {
         "name": single_idx["name"], "category": single_idx["category"],
         "price": price_idxs, "aliases": single_idx["aliases"],
-        "attribute": attr_idxs,
+        "attribute": attr_idxs, "count": count_idxs,
     }
 
 
@@ -675,6 +701,13 @@ def _extract_entity_from_row(
     # SUPPRESSED here so a numeric value the owner tagged ``attribute`` (a stock /
     # count that parses as money) is kept a labelled attribute, never a fake price.
     attr_cols = set(roles["attribute"]) if roles and roles.get("attribute") else None
+    # COUNT/measure columns (quantity, stock, ordinal, dimension): a money-shaped
+    # cell here is a COUNT, not a value, so it is labelled as an attribute instead
+    # of feeding the value slots (a large count like 40400 would otherwise parse as
+    # money and, served via the stats route, surface as a fabricated number). Only
+    # a money-shaped cell is intercepted — a NON-money cell (e.g. a misaligned name
+    # broadcast under a wider header) still flows to the normal name handling.
+    count_cols = set(roles["count"]) if roles and roles.get("count") else None
     # A category/stub column is a SEPARATE axis only when a distinct NAME column
     # also exists (``Nhóm | Tên | Giá``). In a 2-col ``Vùng | Giá`` the category-token
     # column IS the entity name — skipping it would drop the row (no name left).
@@ -727,6 +760,14 @@ def _extract_entity_from_row(
         if attr_cols is not None and idx in attr_cols:
             label = header[idx] if idx < len(header) else f"col_{idx}"
             attributes[label] = col
+            continue
+        if count_cols is not None and idx in count_cols and _is_pure_money(col):
+            # COUNT/measure column with a money-looking value → a count, NOT a
+            # value. Label it (kept + searchable) and skip the value slots so it
+            # can never surface as a fabricated number. A non-money cell in a
+            # count column falls through to normal handling (name fallback).
+            _clabel = header[idx].strip() if idx < len(header) and header[idx] else ""
+            attributes.setdefault(_clabel or f"col_{idx}", col.strip())
             continue
         if price_cols is not None and idx in price_cols:
             # KNOWN price column → parse even with extra words ("500k/buổi").

@@ -173,7 +173,11 @@ DEFAULT_CRAG_SKIP_RETRY_ABOVE_SCORE: Final[float] = 0.7
 # top reranker chunks, just without CRAG re-ordering. Per-bot override
 # via ``pipeline_config.grade_timeout_s`` for tenants who prefer
 # fidelity over latency. ``0`` disables the cap.
-DEFAULT_GRADE_TIMEOUT_S: Final[float] = 2.0
+# Sits just ABOVE the measured p95 (2.56s) so a NORMAL cold grade
+# completes instead of being force-passed ungraded — the earlier 2.0s
+# undershot its own p95 and clipped the normal 2.0–2.56s band. Still
+# modest, so a genuinely hung call is trimmed from chat-graph p95.
+DEFAULT_GRADE_TIMEOUT_S: Final[float] = 3.0
 
 # BE-to-BE upload idempotency window. Partner retries within this
 # window with the same ``X-Idempotency-Key`` get a 200 + original
