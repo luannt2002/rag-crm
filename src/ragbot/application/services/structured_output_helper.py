@@ -425,6 +425,14 @@ async def _safe_acompletion(
     branch — fewer broad-except sites, identical degrade-silent behaviour
     (transport error → ``None`` → caller skips repair).
     """
+    # Single controlled retry layer: disable the provider-SDK's OWN inner retry
+    # (litellm defaults AsyncOpenAI to max_retries=2, which stacks under the
+    # caller's retry loop and hammers a failing provider — the load-test's 244
+    # uncoordinated "Retrying request" lines). ``max_retries=0`` zeroes the OpenAI
+    # client; ``num_retries=0`` keeps litellm's own retry wrapper off. setdefault
+    # never overrides an explicit caller value.
+    call_kwargs.setdefault("num_retries", 0)
+    call_kwargs.setdefault("max_retries", 0)
     try:
         return await litellm_module.acompletion(**call_kwargs)
     except Exception as exc:  # noqa: BLE001 — LLM output parse/repair fallback — degrade, never raise

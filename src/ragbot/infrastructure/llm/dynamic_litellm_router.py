@@ -139,6 +139,26 @@ _RETRYABLE_LLM_EXCEPTIONS: tuple[type[BaseException], ...] = (
     litellm.exceptions.InternalServerError,
 )
 
+
+def _disable_sdk_inner_retry(call_kwargs: dict[str, Any]) -> None:
+    """Force the provider-SDK's OWN inner retry loop OFF so ONLY our
+    ``retry_with_backoff`` layer retries.
+
+    litellm otherwise constructs ``AsyncOpenAI(max_retries=2)`` (its default when
+    no ``max_retries`` kwarg is passed), whose retry loop STACKS under our
+    ``retry_with_backoff(max_attempts=3)`` — ~6x hammering of an already-struggling
+    provider (the load-test's 244 uncoordinated ``Retrying request`` lines). A
+    SINGLE controlled retry layer (ours, with backoff + jitter) is the AWS/Google-
+    SRE best practice; nested retries amplify load on a failing upstream. Our
+    ``_RETRYABLE_LLM_EXCEPTIONS`` already covers every transient the SDK would
+    retry (connection / timeout / 429 / 5xx), so no coverage is lost.
+    ``max_retries=0`` is load-bearing (zeroes the OpenAI client); ``num_retries=0``
+    also keeps litellm's own retry wrapper off. ``setdefault`` never overrides an
+    explicit caller value.
+    """
+    call_kwargs.setdefault("num_retries", 0)
+    call_kwargs.setdefault("max_retries", 0)
+
 # A 429 rate-limit is flow-control, NOT a provider outage: the provider is
 # healthy and asking us to slow down. The TPM limiter + backoff already pace it.
 # Counting it as a circuit-breaker failure is the Nygard/resilience4j
@@ -698,6 +718,7 @@ class DynamicLiteLLMRouter(LLMPort):
         )
 
         async def _call() -> Any:
+            _disable_sdk_inner_retry(kwargs)
             return await litellm.acompletion(
                 model=cfg.litellm_name,
                 messages=cached_messages,
@@ -786,7 +807,7 @@ class DynamicLiteLLMRouter(LLMPort):
 
         # Single extraction path (sync + stream + structured share helper).
         prompt_tokens, completion_tokens, cached_tokens = extract_usage_from_response(resp)
-        # Cost-metering fallback: the innocom gateway (and some proxies) omit the
+        # Cost-metering fallback: some upstream gateways (and proxies) omit the
         # ``usage`` block, so both counts return 0 → cost logs $0 (unmeasurable).
         # Estimate the missing count locally (tiktoken) from the prompt + answer
         # text so the cost audit has a usable figure. Never overwrites a real
@@ -944,6 +965,7 @@ class DynamicLiteLLMRouter(LLMPort):
         ):
             kwargs["stream_options"] = {"include_usage": True}
         try:
+            _disable_sdk_inner_retry(kwargs)
             stream = await litellm.acompletion(
                 model=cfg.litellm_name,
                 messages=cached_messages,
@@ -982,7 +1004,7 @@ class DynamicLiteLLMRouter(LLMPort):
         cached_total = 0
         # OBS-F6 — accumulate the yielded answer text so the post-stream cost
         # fallback can tiktoken-estimate completion tokens when the provider omits
-        # the ``usage`` chunk (the innocom gateway). Cheap list append; joined once
+        # the ``usage`` chunk (some upstream gateways). Cheap list append; joined once
         # at the end ONLY when the estimate is actually needed (a real usage payload
         # skips it). Mirrors the sync path, which already holds the full answer text.
         answer_parts: list[str] = []
@@ -1050,8 +1072,8 @@ class DynamicLiteLLMRouter(LLMPort):
             except Exception:  # noqa: BLE001
                 pass
 
-        # OBS-F6 — cost-metering fallback (parity with the sync path): the
-        # innocom gateway (and some proxies) omit the streaming ``usage`` chunk,
+        # OBS-F6 — cost-metering fallback (parity with the sync path): some
+        # upstream gateways (and proxies) omit the streaming ``usage`` chunk,
         # so both totals stay 0 → streamed generation logs $0 (unmeasurable — the
         # HOTTEST call path). Estimate the missing count locally (tiktoken) from the
         # prompt messages + the accumulated answer text so the cost audit has a
@@ -1147,6 +1169,7 @@ class DynamicLiteLLMRouter(LLMPort):
         # P25-L4: retry on retryable transient LLM errors. Non-retryable
         # exceptions (auth, bad request) propagate immediately as LLMError.
         async def _call() -> Any:
+            _disable_sdk_inner_retry(kwargs)
             return await litellm.acompletion(
                 messages=litellm_messages,
                 **kwargs,
@@ -1279,6 +1302,7 @@ class DynamicLiteLLMRouter(LLMPort):
         kwargs = spec.to_litellm_kwargs()
         kwargs["stream"] = True
         try:
+            _disable_sdk_inner_retry(kwargs)
             stream = await litellm.acompletion(messages=litellm_messages, **kwargs)
         except Exception as exc:  # noqa: BLE001
             raise LLMError(f"litellm stream failed: {exc}") from exc
