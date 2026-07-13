@@ -180,6 +180,20 @@ DEFAULT_STATEMENT_TIMEOUT_MS: Final[int] = 30_000
 DEFAULT_RETRY_MAX_ATTEMPTS: Final[int] = 3
 DEFAULT_RETRY_INITIAL_MS: Final[int] = 500
 DEFAULT_RETRY_MAX_MS: Final[int] = 10_000
+# Best-effort LLM purposes degrade gracefully when they fail — understand →
+# raw query, decompose → no split, rewrite → raw query, multi_query → single
+# query, grade → reranker order, reflect → keep answer, hyde → skip. So they
+# FAIL FAST (1 attempt, no retry) instead of holding a provider slot for
+# attempts × timeout and hammering a struggling upstream (SRE best practice:
+# distinguish critical from best-effort calls; retrying a call that degrades
+# anyway just amplifies load + head-of-line blocking under provider stress).
+# Only the CRITICAL answer call (generation) and the safety check (grounding)
+# keep the full retry budget. Purpose names are internal technical identifiers.
+DEFAULT_BEST_EFFORT_RETRY_MAX_ATTEMPTS: Final[int] = 1
+DEFAULT_BEST_EFFORT_LLM_PURPOSES: Final[frozenset[str]] = frozenset({
+    "understand_query", "condensing", "decompose", "rewriting",
+    "multi_query", "grading", "reflection", "hyde",
+})
 
 # --- Embedding batch --------------------------------------------------------
 DEFAULT_EMBEDDING_MAX_BATCH: Final[int] = 64

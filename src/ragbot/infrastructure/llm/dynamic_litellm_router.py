@@ -55,6 +55,8 @@ from ragbot.shared.constants import (
     DEFAULT_DYNAMIC_ROUTER_REFRESH_INTERVAL_S,
     DEFAULT_EXTERNAL_CALL_ERROR_SNIPPET_CHARS,
     DEFAULT_LLM_FAILOVER_ENABLED,
+    DEFAULT_BEST_EFFORT_LLM_PURPOSES,
+    DEFAULT_BEST_EFFORT_RETRY_MAX_ATTEMPTS,
     DEFAULT_PROVIDER_BACKGROUND_MAX_CONCURRENT,
     DEFAULT_PROVIDER_MAX_CONCURRENT,
     DEFAULT_RETRY_INITIAL_MS,
@@ -158,6 +160,22 @@ def _disable_sdk_inner_retry(call_kwargs: dict[str, Any]) -> None:
     """
     call_kwargs.setdefault("num_retries", 0)
     call_kwargs.setdefault("max_retries", 0)
+
+
+def _retry_attempts_for_purpose(purpose: str) -> int:
+    """Retry budget for a call, by its purpose.
+
+    Best-effort calls (query understanding / expansion / grading — see
+    ``DEFAULT_BEST_EFFORT_LLM_PURPOSES``) FAIL FAST: they degrade gracefully, so
+    retrying a call that will be discarded anyway only pins a provider slot for
+    attempts×timeout and hammers a struggling upstream (head-of-line blocking).
+    The critical answer call (``generation``) and the safety check (``grounding``)
+    keep the full ``DEFAULT_RETRY_MAX_ATTEMPTS`` budget. Default is the FULL budget
+    so a new/unclassified purpose is never accidentally made fail-fast.
+    """
+    if purpose in DEFAULT_BEST_EFFORT_LLM_PURPOSES:
+        return DEFAULT_BEST_EFFORT_RETRY_MAX_ATTEMPTS
+    return DEFAULT_RETRY_MAX_ATTEMPTS
 
 # A 429 rate-limit is flow-control, NOT a provider outage: the provider is
 # healthy and asking us to slow down. The TPM limiter + backoff already pace it.
@@ -765,7 +783,7 @@ class DynamicLiteLLMRouter(LLMPort):
                 resp = await retry_with_backoff(
                     _call,
                     policy=RetryPolicy(
-                        max_attempts=DEFAULT_RETRY_MAX_ATTEMPTS,
+                        max_attempts=_retry_attempts_for_purpose(purpose),
                         initial_backoff_ms=DEFAULT_RETRY_INITIAL_MS,
                         max_backoff_ms=DEFAULT_RETRY_MAX_MS,
                     ),

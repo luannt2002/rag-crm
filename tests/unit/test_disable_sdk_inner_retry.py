@@ -13,7 +13,16 @@ from __future__ import annotations
 import asyncio
 import inspect
 
-from ragbot.infrastructure.llm.dynamic_litellm_router import _disable_sdk_inner_retry
+import pytest
+
+from ragbot.infrastructure.llm.dynamic_litellm_router import (
+    _disable_sdk_inner_retry,
+    _retry_attempts_for_purpose,
+)
+from ragbot.shared.constants import (
+    DEFAULT_BEST_EFFORT_RETRY_MAX_ATTEMPTS,
+    DEFAULT_RETRY_MAX_ATTEMPTS,
+)
 
 
 def test_helper_sets_both_to_zero() -> None:
@@ -101,3 +110,29 @@ def test_structured_helper_respects_explicit_retries() -> None:
     asyncio.run(_run())
     assert mock.captured is not None
     assert mock.captured["max_retries"] == 7  # explicit not clobbered
+
+
+# --- B7#2: fail-fast retry budget by call purpose --------------------------
+
+@pytest.mark.parametrize(
+    "purpose",
+    ["understand_query", "condensing", "decompose", "rewriting",
+     "multi_query", "grading", "reflection", "hyde"],
+)
+def test_best_effort_purposes_fail_fast(purpose: str) -> None:
+    """Best-effort calls (degrade gracefully) get the reduced retry budget."""
+    assert _retry_attempts_for_purpose(purpose) == DEFAULT_BEST_EFFORT_RETRY_MAX_ATTEMPTS
+    assert DEFAULT_BEST_EFFORT_RETRY_MAX_ATTEMPTS < DEFAULT_RETRY_MAX_ATTEMPTS
+
+
+@pytest.mark.parametrize("purpose", ["generation", "grounding", "routing"])
+def test_critical_and_safety_purposes_keep_full_retries(purpose: str) -> None:
+    """The answer call + the safety check must NOT be made fail-fast."""
+    assert _retry_attempts_for_purpose(purpose) == DEFAULT_RETRY_MAX_ATTEMPTS
+
+
+def test_unknown_purpose_defaults_to_full_retries() -> None:
+    """Fail SAFE: an unclassified/new purpose keeps the full budget, never
+    accidentally fail-fast."""
+    assert _retry_attempts_for_purpose("some_new_future_purpose") == DEFAULT_RETRY_MAX_ATTEMPTS
+    assert _retry_attempts_for_purpose("") == DEFAULT_RETRY_MAX_ATTEMPTS
