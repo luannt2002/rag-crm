@@ -241,6 +241,25 @@ async def stream_real_llm(
     except Exception as exc:  # noqa: BLE001
         logger.warning("chat_stream_finalize_hook_failed", error=str(exc))
 
+    # The graph DIED (e.g. the upstream provider dropped mid-generation). Tokens
+    # are ALREADY on the wire, so the client is showing a truncated answer. Before
+    # this, the error was only logged + stashed on the holder and the terminal
+    # frame was a normal ``done`` with answer="" / answer_type="no_context" — the
+    # client silently rendered the cut text (possibly mid-number) as if it were
+    # the whole reply, with no way to know it should retry. Emit an explicit
+    # failure so it can discard/flag the partial text.
+    _pipeline_error = final_state_holder.get("error")
+    if _pipeline_error:
+        _err_payload = {
+            "error": str(_pipeline_error),
+            "partial": bool(streamed_answer),
+            "chars_streamed": len(streamed_answer),
+        }
+        if named_events:
+            yield _sse_named("error", _err_payload)
+        else:
+            yield _sse({"type": "error", **_err_payload})
+
     # If pipeline post-processing rewrote the answer (math-lockdown, citation
     # cleanup, guardrail) the streamed text no longer matches the canonical
     # state — emit a replace event so clients can correct UX.
@@ -284,6 +303,9 @@ async def stream_real_llm(
                 "latency_ms": duration_ms,
                 "duration_ms": duration_ms,  # legacy alias
                 "first_token_ms": first_token_ms,
+                # Additive: a client that only listens to the terminal frame can
+                # still tell a truncated-by-failure stream from a real answer.
+                "error": str(_pipeline_error) if _pipeline_error else None,
             },
         )
     else:
@@ -294,6 +316,7 @@ async def stream_real_llm(
             "answer_reason": answer_reason,
             "sources": sources,
             "duration_ms": duration_ms,
+            "error": str(_pipeline_error) if _pipeline_error else None,
         })
 
     # Per spec (FILE-OWNERSHIP-MATRIX stream 2D): step_name="streaming_response"
