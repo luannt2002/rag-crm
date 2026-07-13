@@ -57,6 +57,8 @@ from ragbot.shared.constants import (
     DEFAULT_LLM_FAILOVER_ENABLED,
     DEFAULT_BEST_EFFORT_LLM_PURPOSES,
     DEFAULT_BEST_EFFORT_RETRY_MAX_ATTEMPTS,
+    DEFAULT_CRITICAL_LLM_PURPOSES,
+    DEFAULT_CRITICAL_RETRY_MAX_ATTEMPTS,
     DEFAULT_PROVIDER_BACKGROUND_MAX_CONCURRENT,
     DEFAULT_PROVIDER_MAX_CONCURRENT,
     DEFAULT_RETRY_INITIAL_MS,
@@ -169,12 +171,17 @@ def _retry_attempts_for_purpose(purpose: str) -> int:
     ``DEFAULT_BEST_EFFORT_LLM_PURPOSES``) FAIL FAST: they degrade gracefully, so
     retrying a call that will be discarded anyway only pins a provider slot for
     attempts×timeout and hammers a struggling upstream (head-of-line blocking).
-    The critical answer call (``generation``) and the safety check (``grounding``)
-    keep the full ``DEFAULT_RETRY_MAX_ATTEMPTS`` budget. Default is the FULL budget
-    so a new/unclassified purpose is never accidentally made fail-fast.
+    The CRITICAL answer call (``generation``) gets a LARGER budget — its failure
+    is the user-facing 503, so it retries harder (still a single coordinated
+    layer, bounded by the pipeline wall-clock). Everything else — the safety check
+    (``grounding``), routing, embedding — keeps the default budget. Default is the
+    FULL default budget so a new/unclassified purpose is never accidentally made
+    fail-fast.
     """
     if purpose in DEFAULT_BEST_EFFORT_LLM_PURPOSES:
         return DEFAULT_BEST_EFFORT_RETRY_MAX_ATTEMPTS
+    if purpose in DEFAULT_CRITICAL_LLM_PURPOSES:
+        return DEFAULT_CRITICAL_RETRY_MAX_ATTEMPTS
     return DEFAULT_RETRY_MAX_ATTEMPTS
 
 # A 429 rate-limit is flow-control, NOT a provider outage: the provider is

@@ -21,6 +21,7 @@ from ragbot.infrastructure.llm.dynamic_litellm_router import (
 )
 from ragbot.shared.constants import (
     DEFAULT_BEST_EFFORT_RETRY_MAX_ATTEMPTS,
+    DEFAULT_CRITICAL_RETRY_MAX_ATTEMPTS,
     DEFAULT_RETRY_MAX_ATTEMPTS,
 )
 
@@ -125,9 +126,17 @@ def test_best_effort_purposes_fail_fast(purpose: str) -> None:
     assert DEFAULT_BEST_EFFORT_RETRY_MAX_ATTEMPTS < DEFAULT_RETRY_MAX_ATTEMPTS
 
 
-@pytest.mark.parametrize("purpose", ["generation", "grounding", "routing"])
-def test_critical_and_safety_purposes_keep_full_retries(purpose: str) -> None:
-    """The answer call + the safety check must NOT be made fail-fast."""
+def test_generation_gets_critical_budget() -> None:
+    """The critical answer call retries HARDER than the default (its failure is
+    the user-facing 503) — but still a single coordinated layer."""
+    assert _retry_attempts_for_purpose("generation") == DEFAULT_CRITICAL_RETRY_MAX_ATTEMPTS
+    assert DEFAULT_CRITICAL_RETRY_MAX_ATTEMPTS > DEFAULT_RETRY_MAX_ATTEMPTS
+
+
+@pytest.mark.parametrize("purpose", ["grounding", "routing"])
+def test_safety_and_default_purposes_keep_default_retries(purpose: str) -> None:
+    """The safety check + unclassified default purposes keep the default budget
+    (not fail-fast, not the critical bump)."""
     assert _retry_attempts_for_purpose(purpose) == DEFAULT_RETRY_MAX_ATTEMPTS
 
 

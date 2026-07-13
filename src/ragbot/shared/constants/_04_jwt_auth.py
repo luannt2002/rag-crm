@@ -194,6 +194,15 @@ DEFAULT_BEST_EFFORT_LLM_PURPOSES: Final[frozenset[str]] = frozenset({
     "understand_query", "condensing", "decompose", "rewriting",
     "multi_query", "grading", "reflection", "hyde",
 })
+# The CRITICAL answer call gets a LARGER budget than the default — it is the one
+# call whose failure the user sees as a 503, so it is worth retrying harder
+# (with our coordinated backoff+jitter, still a SINGLE layer — the provider-SDK
+# inner retry stays off). Measured 2026-07-13: with only 3 attempts the answer
+# rate fell ~5pp vs the pre-fix 6 effective attempts (3 ours x 2 inner-SDK);
+# 5 recovers most of it without re-introducing the uncoordinated inner storm.
+# Bounded overall by the pipeline_timeout wall-clock, so it cannot hang.
+DEFAULT_CRITICAL_RETRY_MAX_ATTEMPTS: Final[int] = 5
+DEFAULT_CRITICAL_LLM_PURPOSES: Final[frozenset[str]] = frozenset({"generation"})
 
 # --- Embedding batch --------------------------------------------------------
 DEFAULT_EMBEDDING_MAX_BATCH: Final[int] = 64
