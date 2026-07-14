@@ -78,4 +78,78 @@ Nhánh: `fix-260623-ingest-expert`. Base trước phiên: `71682a2`.
 | C1 | `revert(stats): drop _COUNT_COL_TOKENS — owner already ruled this a known-limit (6796cd9)` | `document_stats.py`, `-test_stats_count_column_not_price.py` | 229 pass |
 | C2-C5 | `chore: verified working-tree cleanups (dead Redis L2 write · docstring · brand scrub · gather-first)` | 4 file | 62 pass |
 
-**Chưa fix (đợi plan-v3):** 0.2 CB flap · 0.3 PII boundary · 0.4 pii_vi_phone · 0.5 degeneration · 1.x seed/RBAC · 2.x VN-segment/raw_bytes.
+**Chưa fix (đợi plan-v3):** 0.2 CB flap · 0.3 PII boundary · 0.4 pii_vi_phone · 1.x seed/RBAC · 2.x VN-segment/raw_bytes.
+
+---
+
+## NHÓM 3 — Batch SHIP-NOW plan-v3 (phiên 2026-07-14, sau /compact) — 6 task, red→green TDD
+
+> Mọi task: **red-test viết TRƯỚC, chứng minh ĐỎ ở HEAD** (quote output), XANH sau fix. Import-check 7 module OK. Sacred guards (version-ref/secret/magic-number) = 0. **74 test file-touched PASS.**
+
+### S1 — 0.5 degeneration tokenizer (false-positive bảng markdown)
+
+| | |
+|---|---|
+| **File** | `src/ragbot/shared/degeneration.py` · `constants/_14_...py` (−1 constant) · `+tests/unit/test_answer_degeneration.py` (4 test) |
+| **SỬA GÌ** | Thêm `_tokens()` strip markdown scaffolding (`\|`*#>~_=[]`) + filter alnum; **bỏ clause `top_token_ratio`** khỏi `is_degenerate` (giữ giá trị trong return cho log); xóa constant `DEFAULT_DEGENERATION_TOP_TOKEN_RATIO_MAX`. |
+| **NGUYÊN NHÂN** | `answer.split()` đếm `\|`/`---` là "word" → bảng markdown hợp lệ đẩy `top_token_ratio` (bảng feature) hoặc `distinct_word_ratio` (bảng 60 dòng) qua ngưỡng → **false-positive degenerate**. `top_token_ratio` recall trên degeneration thật = **0** (bug#8 ttr=0.167 < 0.40; dwr/dtr đã bắt). |
+| **BẰNG CHỨNG** | Probe đo ratio 4 biến thể fix (scratchpad): feature_matrix strip-only vẫn FLAG (ttr .429), long-table droptt-only vẫn FLAG (dwr .088) → **cần CẢ HAI**. HEAD test đỏ: `assert True is False`. |
+| **ĐÃ VERIFY** | 14/14 pass (10 cũ + 4 mới, 2 discriminator chứng minh cần cả strip+drop-ttr + recall guard bug#8). Grep constant sau xóa = 0 ref. |
+| **BLAST** | Restart (latent). KHÔNG đo được live (0/1683→0/1683 — plan §7); TDD-only. #10 ✅ (giảm substitution). |
+
+### S2 — 1.4-U1 xóa test MMR stale + fix comment
+
+| | |
+|---|---|
+| **File** | `tests/unit/orchestration/test_per_intent_caps.py` · `constants/_14_...py` (comment) |
+| **SỬA GÌ** | Thay `test_default_constant_aggregation_loosens_threshold` (so map vs **constant**, cả hai =0.98 → đỏ) bằng invariant đúng (within-map: aggregation/comparison > factoid). Fix comment "Default 0.88" (module default giờ =0.98). **KHÔNG đụng threshold/map value.** |
+| **NGUYÊN NHÂN** | `002-D`/`9f93804` nâng `DEFAULT_MMR_SIMILARITY_THRESHOLD` 0.88→0.98 (bằng aggregation) → assert `map["aggregation"] > constant` thành `0.98 > 0.98` = False. Runtime thật: DB global=0.88, map loosens aggregation lên 0.98 (test khác cover). |
+| **BẰNG CHỨNG** | HEAD đỏ: `AssertionError: assert 0.98 > 0.98`. |
+| **ĐÃ VERIFY** | 43/43 pass. |
+| **BLAST** | 0 runtime (test+comment). 1.4-U2 (collapse map) DEFER (§8, cần A/B factoid). |
+
+### S3 — 3.6 dense-query NFC (BẮT thêm path thứ 3 plan bỏ sót)
+
+| | |
+|---|---|
+| **File** | `orchestration/query_graph.py` (`_embed_query` + `_prewarm_embedding_cache`) · `orchestration/nodes/retrieve.py` (`_embed_batch_queries`) · `+tests/unit/test_embed_query_nfc.py` |
+| **SỬA GÌ** | `normalize_vn()` (NFC, shared helper) trên query text ở **3 embed path dense** trước prefix/cache — cache key byte-identical, embedder nhận NFC. |
+| **NGUYÊN NHÂN** | Sparse (`pgvector_store.py:389`) + ingest đã NFC; **dense không** → query NFD (iOS/macOS IME) embed ra vector khác corpus NFC = silent dense-recall miss. **Test behavioral bắt path thứ 3** (`_embed_batch_queries` retrieve.py:1007) mà plan §6 chỉ nêu 2 path — source-pin sẽ bỏ sót. |
+| **BẰNG CHỨNG** | RED-at-HEAD chứng minh nghiêm ngặt: `git stash` 2 file fix → 2 test đỏ (embedder nhận `giá lốp` decomposed); pop → xanh. Fixture = `NFD(NFC-hợp-lệ)` round-trip. |
+| **ĐÃ VERIFY** | 2 test NFC pass; regression MQ/prewarm/pipeline/normalization = 30 pass, 0 fail. |
+| **BLAST** | Restart. Latent (0 NFD trong 6527 row — mẫu ASCII harness). Cache-key đổi cho NFD input (miss 1 lần, tự lành). |
+
+### S4 — 3.5 cache-guard content-hash (RuleSet.version)
+
+| | |
+|---|---|
+| **File** | `application/services/guardrail_rule_loader.py` · `+tests/unit/infrastructure/guardrails/test_guardrail_rule_loader.py` (3 test) |
+| **SỬA GÌ** | `RuleSet.version` từ **monotonic counter** (`_version_counter += 1`) → **content-hash** (`_ruleset_content_version()`: sha256 nội dung rule, order-independent, empty→`""`). |
+| **NGUYÊN NHÂN** | Counter reset mỗi restart + bump cả khi content KHÔNG đổi + khác nhau giữa process → **desync** cache. Là "loader counter" plan §6 chỉ đích danh bỏ. **0 consumer đọc `.version`** (dormant, safe đổi type int→str). |
+| **BẰNG CHỨNG** | HEAD đỏ: 2 loader fresh đều `version=1` (change-test `1==1` fail); empty `assert 1 == ''` fail. |
+| **ĐÃ VERIFY** | 9/9 loader pass; guardrail suites rộng 97 pass, 0 fail. |
+| **BLAST** | Restart. **Honest scope:** đây là *primitive* content-hash; wire vào `_compute_bot_cache_version` end-to-end = KHÔNG 0-dep (thread ruleset-hash vào state + cache-flush) → follow-up, ngoài SHIP-NOW. |
+
+### S5 — 1.3a wire `check_config_completeness` vào CI (advisory)
+
+| | |
+|---|---|
+| **File** | `+.github/workflows/config-completeness.yml` · `+tests/unit/test_config_completeness_wired.py` |
+| **SỬA GÌ** | Workflow mới: Postgres + `alembic upgrade head` + chạy gate script (baseline-aware). **Advisory (`continue-on-error`)** tới khi 1.1 seed fresh-DB; comment flip-to-required. |
+| **NGUYÊN NHÂN** | `grep .github check_config_completeness` = 0 hit; `README_DEVOPS:133` hứa "required CI step, red=no build". Gate tồn tại, **guard 0**. |
+| **BẰNG CHỨNG** | HEAD red-test: `assert []`. YAML valid, gate step present. Smoke read-only (prod-denom): contract 172/seeded 264/0 NEW gate-blocking, exit 0. |
+| **ĐÃ VERIFY** | red→green (workflow chứa literal). **⚠ màu gate fresh-CI = L8** (không chạy Actions ở đây được); advisory tránh block team khi 1.1 chưa seed. |
+| **BLAST** | Near-zero (advisory). Target = FRESH DB, KHÔNG prod (wrong-denominator). |
+
+### S6 — SEC.1 IDOR write-fence (cherry-pick `integ-260624-wave1`, adapted)
+
+| | |
+|---|---|
+| **File** | `infrastructure/repositories/document_repository.py` · `conversation_repository.py` · `+tests/unit/repositories/test_idor_write_fence.py` (5 test) |
+| **SỬA GÌ** | Nhánh UPDATE của `save()`: từ `session.get(Model, id)` (PK-only) + mutate → **một statement `update().where(id==.. AND record_tenant_id==tid).returning(...)`**; 0 row → INSERT tenant-scoped. Message INSERT force `record_tenant_id=tid` (không tin field entity). |
+| **NGUYÊN NHÂN** | HEAD check `document.record_tenant_id` (**self-declared** — attacker set = tid mình, pass) rồi `session.get(PK)` fetch **victim row** rồi mutate + commit **không** check `existing.record_tenant_id==tid` → clobber cross-tenant. RLS inert (DSN chạy `postgres` BYPASSRLS) → fence repo là lớp DUY NHẤT. |
+| **BẰNG CHỨNG** | RED-at-HEAD nghiêm ngặt: stash 2 repo file → 5 test đỏ (HEAD dùng `session.get` → FakeSession không có `.get` → AttributeError); pop → 5 pass. |
+| **ĐÃ VERIFY** | 5/5 IDOR pass; repositories dir 29 pass; ingest/persist/conversation/document/chat 559 pass, 0 fail. **Adapt:** giữ HEAD `_persistable_metadata` (KHÔNG lấy `dict()` của branch = regress `has_raw_content`). |
+| **BLAST** | Restart. Fence semantics = parity (cùng field set; `onupdate` fire trên bulk). **⚠ Honest (GIẢ THUYẾT):** chưa chứng minh entrypoint external nào cho caller truyền cross-tenant `document.id`; finding vững = control tầng repo THIẾU ở HEAD + fix đã viết+test. RLS cutover (RỦI RO §8.1) vẫn cần owner. |
+
+**Không đo được / để lại honest:** 0.5 & 3.6 live (mẫu load-test không có table-query/NFD); 3.5 wiring end-to-end (0-dep vi phạm); 1.3a fresh-CI gate color (L8, không có Actions runner); SEC.1 external IDOR entrypoint (GIẢ THUYẾT).
