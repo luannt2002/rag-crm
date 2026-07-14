@@ -278,6 +278,7 @@ from ragbot.shared.constants import (
     INTENT_COMPARISON,
 )
 from ragbot.shared.i18n import LanguagePack, get_pack, language_pack_from_dict
+from ragbot.shared.text_normalization import normalize_vn
 
 # CRAG grade vocabulary + pure chunk/grade filters live in retrieval_filter
 # (strangler Phase 2). Re-exported here so existing call sites + test imports
@@ -1490,9 +1491,14 @@ def build_graph(
         # fallback to vector_store default risks dimension mismatch when new
         # providers are added).
         state["embedding_column"] = DEFAULT_EMBEDDING_COLUMN
-        # Mirror _embed_query's prefix logic so cache keys collide on hit.
+        # Mirror _embed_query exactly: NFC-normalize each variant BEFORE the
+        # prefix so the prewarmed cache key is byte-identical to the per-branch
+        # embed key (a half-normalized mirror would seed keys that never collide).
         query_prefix = str(_pcfg(state, "embedding_query_prefix", "") or "").strip('"')
-        prefixed = [f"{query_prefix}{q}" if query_prefix else q for q in queries]
+        prefixed = [
+            f"{query_prefix}{nq}" if query_prefix else nq
+            for nq in (normalize_vn(q) for q in queries)
+        ]
         emb_provider = str(_pcfg(state, "embedding_provider", DEFAULT_EMBEDDING_PROVIDER) or DEFAULT_EMBEDDING_PROVIDER)
         emb_model = str(_pcfg(state, "embedding_model", "") or "") or "unknown"
         emb_dim = int(_pcfg(state, "embedding_dimension", DEFAULT_EMBEDDING_DIM) or DEFAULT_EMBEDDING_DIM)
@@ -1558,6 +1564,12 @@ def build_graph(
         # Set up front so any later exception path still leaves
         # state["embedding_column"] populated for downstream vector-store calls.
         state["embedding_column"] = DEFAULT_EMBEDDING_COLUMN
+
+        # NFC-normalize before HyDE/prefix/embed to match the NFC-indexed corpus
+        # (ingest + hybrid_search already normalize). An NFD query from a
+        # macOS/iOS IME would otherwise embed to a different vector than its NFC
+        # twin — a silent dense-recall miss. The cache key uses this form too.
+        query_text = normalize_vn(query_text)
 
         # HyDE (T1.4 Wave F production wire) — when the per-bot
         # ``hyde_enabled`` flag is True and a generator is wired into the

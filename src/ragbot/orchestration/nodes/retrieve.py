@@ -69,6 +69,7 @@ from ragbot.shared.chunking import (
 )
 from ragbot.shared.embedding_cache import set_cached_embedding
 from ragbot.shared.errors import InvariantViolation
+from ragbot.shared.text_normalization import normalize_vn
 from ragbot.shared.query_range_parser import (
     is_price_ask_query,
     parse_code_query as _parse_code_query,
@@ -1003,10 +1004,14 @@ async def retrieve(
                         if spec is None and cfg is not None:
                             spec = _to_embedding_spec(cfg)
                     if spec is not None:
+                        # NFC-normalize before the prefix (mirror _embed_query /
+                        # _prewarm) so this batch path embeds and cache-keys the
+                        # same composed form as the corpus — an NFD variant would
+                        # otherwise seed a key the per-branch embed never hits.
                         query_prefix = str(_pcfg(st, "embedding_query_prefix", "") or "").strip('"')
                         prefixed = [
-                            f"{query_prefix}{q}" if query_prefix else q
-                            for q in batch_queries
+                            f"{query_prefix}{nq}" if query_prefix else nq
+                            for nq in (normalize_vn(q) for q in batch_queries)
                         ]
                         spec = spec.model_copy(update={"task": DEFAULT_EMBEDDING_TASK_QUERY})
                         sig = inspect.signature(embedder.embed_batch)
