@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from uuid import uuid4
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from ragbot.application.ports.repository_ports import ConversationRepositoryPort
@@ -160,8 +160,30 @@ class SqlAlchemyConversationRepository(TenantScopedRepository, ConversationRepos
             raise TenantIsolationViolation("conversation.tenant != request tenant")
 
         async with self._new_session() as session:
-            existing = await session.get(ConversationModel, conversation.id)
-            if existing is None:
+            # IDOR-write fence: a tenant-scoped UPDATE, NOT a SELECT-by-PK then
+            # mutate. Filtering on BOTH the primary key AND ``record_tenant_id``
+            # (``RETURNING workspace_id``) means a foreign-tenant conversation id
+            # matches zero rows and falls through to INSERT under the request
+            # tenant — it can never overwrite another tenant's conversation. The
+            # returned slug feeds the message rows without a second SELECT. Holds
+            # even when the runtime DSN bypasses RLS.
+            stmt = (
+                update(ConversationModel)
+                .where(
+                    ConversationModel.id == conversation.id,
+                    ConversationModel.record_tenant_id == tid,
+                )
+                .values(
+                    rolling_summary=conversation.rolling_summary,
+                    turn_count=conversation.turn_count,
+                    last_message_at=conversation.last_message_at,
+                    metadata_json=dict(conversation.metadata),
+                )
+                .returning(ConversationModel.workspace_id)
+                .execution_options(synchronize_session=False)
+            )
+            parent_slug = (await session.execute(stmt)).scalar_one_or_none()
+            if parent_slug is None:
                 session.add(
                     ConversationModel(
                         id=conversation.id,
@@ -180,14 +202,10 @@ class SqlAlchemyConversationRepository(TenantScopedRepository, ConversationRepos
                 # for the message rows below without an extra round-trip.
                 msg_workspace_id = workspace_id
             else:
-                existing.rolling_summary = conversation.rolling_summary
-                existing.turn_count = conversation.turn_count
-                existing.last_message_at = conversation.last_message_at
-                existing.metadata_json = dict(conversation.metadata)
                 # Messages inherit the parent conversation's slug; the
                 # caller-supplied value is ignored here so the FK chain stays
                 # the single source of truth.
-                msg_workspace_id = WorkspaceId(existing.workspace_id)
+                msg_workspace_id = WorkspaceId(parent_slug)
 
             # Persist new messages (those not yet in DB — keyed by id).
             existing_ids = {
@@ -207,7 +225,10 @@ class SqlAlchemyConversationRepository(TenantScopedRepository, ConversationRepos
                     MessageModel(
                         id=msg.id,
                         record_conversation_id=msg.conversation_id,
-                        record_tenant_id=msg.record_tenant_id,
+                        # Force the REQUEST tenant — never trust the message
+                        # entity's own tenant field (defence vs a cross-tenant
+                        # message smuggled onto a tenant-scoped conversation).
+                        record_tenant_id=tid,
                         workspace_id=msg_workspace_id,
                         record_bot_id=msg.record_bot_id,
                         role=msg.role,

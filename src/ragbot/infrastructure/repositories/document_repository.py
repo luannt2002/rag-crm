@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime as _dt
 from typing import Any
 
-from sqlalchemy import select, text
+from sqlalchemy import select, text, update
 
 from ragbot.application.ports.repository_ports import DocumentRepositoryPort
 from ragbot.domain.entities.document import Document
@@ -113,20 +113,36 @@ class SqlAlchemyDocumentRepository(TenantScopedRepository, DocumentRepositoryPor
         if document.record_tenant_id != tid:
             raise TenantIsolationViolation("document tenant != request tenant")
         async with self._new_session() as session:
-            existing = await session.get(DocumentModel, document.id)
-            if existing is None:
+            # IDOR-write fence: a tenant-scoped UPDATE, NOT a SELECT-by-PK then
+            # mutate. Filtering on BOTH the primary key AND ``record_tenant_id``
+            # (``RETURNING id``) means a foreign-tenant document id matches zero
+            # rows and falls through to the tenant-scoped INSERT — it can never
+            # overwrite another tenant's row by primary key alone. Holds even
+            # when the runtime DSN bypasses RLS.
+            stmt = (
+                update(DocumentModel)
+                .where(
+                    DocumentModel.id == document.id,
+                    DocumentModel.record_tenant_id == tid,
+                )
+                .values(
+                    source_url=document.source_url,
+                    document_name=document.document_name,
+                    tool_name=document.tool_name,
+                    mime_type=document.mime_type,
+                    language=document.language,
+                    state=document.state,
+                    version=document.version,
+                    content_hash=document.content_hash,
+                    acl=list(document.acl),
+                    metadata_json=_persistable_metadata(document.metadata),
+                )
+                .returning(DocumentModel.id)
+                .execution_options(synchronize_session=False)
+            )
+            updated_id = (await session.execute(stmt)).scalar_one_or_none()
+            if updated_id is None:
                 session.add(_document_to_row(document, workspace_id=workspace_id))
-            else:
-                existing.source_url = document.source_url
-                existing.document_name = document.document_name
-                existing.tool_name = document.tool_name
-                existing.mime_type = document.mime_type
-                existing.language = document.language
-                existing.state = document.state
-                existing.version = document.version
-                existing.content_hash = document.content_hash
-                existing.acl = list(document.acl)
-                existing.metadata_json = _persistable_metadata(document.metadata)
             await session.commit()
 
     async def get_by_id(
