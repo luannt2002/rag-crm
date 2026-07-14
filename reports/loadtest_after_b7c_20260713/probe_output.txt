@@ -1,0 +1,11 @@
+============================================================
+RELIABILITY PROBE — concurrency=4 n=60
+============================================================
+  answered             54  (90.0%)
+  upstream_503          6  (10.0%)
+  ------------------------------
+  answered             54  (90.0%)
+  error_rate (non-answer/non-empty) 10.0%
+  latency ms  p50=23341  p95=60117  max=60187
+
+{"scenario": "tests/scenarios/chinh-sach-xe_deepdive60.json", "concurrency": 4, "n": 60, "answered": 54, "answered_pct": 90.0, "error_rate_pct": 10.0, "buckets": {"answered": 54, "upstream_503": 6}, "latency_ms": {"p50": 23341, "p95": 60117, "max": 60187}}

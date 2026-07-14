@@ -1,0 +1,15 @@
+=== LOAD TEST: concurrency=8, n=60 (bot xe) — innocom version mới ===
+============================================================
+RELIABILITY PROBE — concurrency=8 n=60
+============================================================
+  answered             55  (91.7%)
+  transport_error       4  ( 6.7%)
+  upstream_503          1  ( 1.7%)
+  ------------------------------
+  answered             55  (91.7%)
+  error_rate (non-answer/non-empty) 8.3%
+  latency ms  p50=54574  p95=180009  max=180023
+
+{"scenario": "tests/scenarios/chinh-sach-xe_deepdive60.json", "concurrency": 8, "n": 60, "answered": 55, "answered_pct": 91.7, "error_rate_pct": 8.3, "buckets": {"answered": 55, "upstream_503": 1, "transport_error": 4}, "latency_ms": {"p50": 54574, "p95": 180009, "max": 180023}}
+START_UTC=2026-07-13T08:52:20
+END_UTC=2026-07-13T09:02:19

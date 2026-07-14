@@ -3,7 +3,30 @@
 > Always-updated current state. Git history was reset on 2026-06-14 (fresh start);
 > commit-SHA anchors no longer apply — this file is the source of truth.
 
-## Session 2026-07-10 — Debug-report fixes shipped + deploy + all-flows reliability audit + innocom-truncation root cause  ⟵ LATEST
+## Session 2026-07-14 — 5-tầng verify audit + plan-v3 (26 task) + 2 fix shipped  ⟵ LATEST
+
+**Anchor**: branch `fix-260623-ingest-expert` HEAD = **`5fd6ecd`** (⚠ **KHÔNG phải main; 16 commit CHƯA push**). 2 commit ship phiên này: **`a58ac8d`** revert `_COUNT_COL_TOKENS` (task 0.1 — em tái phạm quyết định owner `6796cd9`; 221 stats test pass; owner-path `custom_roles` verify chặn được money-fallback) · **`5fd6ecd`** 4 dọn dẹp verified (dead Redis write · docstring 2560→1280 · scrub brand `llm_usage` · gather-first MQ prewarm). UNCOMMITTED: scratch `z_*.txt` (CẤM commit) + các report/plan .md phiên này.
+
+> ### 🧭 CHỐNG MIS-LUỒNG — nguồn sự thật HIỆN TẠI (đọc đúng file, đừng đọc file cũ)
+> - **Luồng (flow truth)**: [`reports/L5_CODE_TRUTH_20260714.md`](reports/L5_CODE_TRUTH_20260714.md) ⭐ — **THAY THẾ** `MASTER_FLOW_DEBUG`, `CONFIG_FLAG_HISTORY_AUDIT`, `TRUTH_VERIFICATION` (đã gắn banner superseded). Ledger đầy đủ: [`reports/APPENDIX_FULL_LEDGERS_20260714.md`](reports/APPENDIX_FULL_LEDGERS_20260714.md).
+> - **Kế hoạch thi công**: [`plans/260714-expert-gap-remediation/plan-v3.md`](plans/260714-expert-gap-remediation/plan-v3.md) ⭐ — **THAY THẾ** `plan.md` + `plan-v2.md` (banner superseded; **18/20 fix trong plan cũ bị verify SAI/CHƯA ĐỦ**).
+> - **Changelog verify từng thay đổi**: [`reports/CHANGELOG_VERIFY_20260714.md`](reports/CHANGELOG_VERIFY_20260714.md).
+
+- **5 TẦNG VERIFY** (mỗi tầng bắt lỗi tầng trên): L1 audit 7-agent → L2 verify 5-agent (**12/29 cáo buộc gốc SAI**) → L3 tự-đối-chứng (em dẫn SAI số p95 vào commit `5c4fdda`) → L4 flag/config/history → **L5 đọc code thật** (mẫu số sai 741→1778 · root-cause structured-output SAI · RBAC prod thực ra ỔN). Rồi **workflow plan-v3** verify độc lập 20 fix + DAG + 6-lens red-team + synthesize → **18/20 fix (của report + plan cũ) là FIX_WRONG/INCOMPLETE**.
+- **9 commit em ship tuần trước — phán quyết**: 3 win (`213b3d2` B7#1 · `ad82511` re-ingest stats rebuild · `71682a2` SSE error frame) · **3 KHÔNG làm được điều commit nói** (`5c4fdda` grade timeout 30/30 vẫn fail; `91163d5` B7#2 fail-fast **bypass** understand/grade/decompose; `3006171` rate-CB **FLAP**) · 1 phải revert (`_COUNT_COL_TOKENS` — đã làm) · 2 partial.
+- **🔴 Phát hiện nặng nhất (đã verify runtime/DB, KHÔNG phải suy đoán)**:
+  1. **DB fresh KHÔNG ingest nổi 1 tài liệu** — `alembic upgrade head` seed **5/264** key (squash schema-only, 9 migration `UPDATE` no-op trên bảng rỗng); cột `vector(1280)` vs config fallback 1024 → **INSERT hard-fail**; `ai_providers/models = 0` (INSERT-from-self, row nguồn đã discard). **98% config ngoài alembic = vi phạm sacred #7.**
+  2. **19 route ghi/xóa `test_chat` KHÔNG có RBAC** trên bề mặt API công khai (prod `routes/*.py` thì **43/44 gated** — em từng báo sai là prod hở). Kẻ tấn công = **bất kỳ khách B2B đã cấp token, ở level 0**: `PUT /admin/config/{key}`, `POST /tokens` (đúc token). + **2 task security MỚI** plan-v3 phát hiện: **SEC.1 IDOR write-fence hở ở HEAD** (fix có trên branch `integ-260624-wave1`, chưa merge) · **SEC.2 split-brain** (migration `20260624_stats_index_entity_synonyms` CÓ trên HEAD & chạy mọi DB, nhưng code+4 test file mắc kẹt trên branch).
+  3. **PII redact boundary CORRUPT query** — `VnRegexPiiRedactor` ăn mã sản phẩm/biển số (bot `chinh-sach-xe` CÓ THẬT)/số VIN; 2 redactor chính sách NGƯỢC nhau. Move-to-boundary ngây thơ = phá retrieval → phải siết redactor TRƯỚC (0.4 prereq của 0.3).
+  4. **VN segmentation ingest** = index bloat (436/906 chunk drift, 477 welded-compound chết); headline "brand 4-vs-28" của em **KHÔNG tái lập** (đo lại 21/21). Đây là de-bloat, **KHÔNG phải recall-rescue**.
+  5. **Structured-output = 3 bug** (không phải "gateway phớt lờ response_format" như em nói): A `extra_forbidden` (đã fix `5c4fdda`, CHƯA verify) · B truncation · C bare-literal. Fix ở **validator**, không phải prompt. 2 LLM purpose lớn nhất (understand 1530 + grade 741) **bypass router** (không sem/breaker/retry) → **49.7% call log $0**.
+- **PLAN-V3: 26 task / 7 batch.** Ship-now (0-dep, làm trước): **SEC.1 IDOR · 0.5 degeneration · 1.4-U1 xóa test MMR đỏ · 3.6 dense-NFC · 1.3a wire CI · 3.5 cache-hash**. Hub = **2.2** (worker `raw_bytes` — root của `col_N`/fabrication, gate cả cụm re-ingest B4). Critical path: `SEC.2 + 0.4→0.3 → 1.1 → 1.3b`. **CẤM: 3.1 cliff back-fill (FIX_WRONG).** Fold: 3.2→3.4. Blocker: 1.1 cần `CREATE DATABASE` trong CI (chưa có).
+- **TEST đỏ tại HEAD**: `test_per_intent_caps.py::test_default_constant_aggregation_loosens_threshold` (`0.98 > 0.98`) — xử ở 1.4-U1 (xóa test, tiền đề đã bị `9f93804` vô hiệu).
+- **CHƯA làm gì ngoài 0.1** — mọi task khác pending, chờ ship theo plan-v3 sau /compact.
+
+---
+
+## Session 2026-07-10 — Debug-report fixes shipped + deploy + all-flows reliability audit + innocom-truncation root cause
 
 **Anchor**: `main` = `origin/main` = `e77ed74` (3 commits pushed: `b477795` #1/ING-04/#7-RBAC-seed · `9c136d6` ING-01/s12a-elevate · `e77ed74` alembic-id-fix). **Deployed to prod**: `ragbot-py.service` restarted on new code + **2 migrations applied to live DB** (RBAC 45-gate seed + AI-mutate gates 80→100). UNCOMMITTED: `dynamic_litellm_router.py` (finish_reason observability log), `reports/ALL_FLOWS_RELIABILITY_AUDIT_20260710.md`, `reports/rag_trace_deepdive60_20260710.json`.
 
