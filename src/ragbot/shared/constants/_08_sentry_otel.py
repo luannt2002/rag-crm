@@ -39,12 +39,14 @@ CB_MODE_RATE: Final[str] = "rate"
 DEFAULT_CB_MODE: Final[str] = CB_MODE_CONSECUTIVE
 # Rolling window: trip when >= FAILURE_RATE_THRESHOLD of the last WINDOW_SIZE
 # outcomes failed, and only once at least MIN_CALLS samples exist (so a tiny
-# burst never trips it). 0.5 over 20 with a 10-call floor: a provider failing
-# half its calls is degraded; the ~10-25% scatter measured against innocom stays
-# comfortably below it and is never fast-failed.
-DEFAULT_CB_WINDOW_SIZE: Final[int] = 20
+# burst never trips it). 0.5 over 50 with a 50-call floor: 38/46 bindings share
+# one provider lane, so a single breaker gates every purpose — a wider window +
+# higher floor cuts the spurious-trip probability of a scattered ~25% upstream
+# (exact binomial: 1.386% per window at size 20 → 0.012% at size 50) while still
+# fast-failing a genuinely degraded provider, and improves detection at p=0.60.
+DEFAULT_CB_WINDOW_SIZE: Final[int] = 50
 DEFAULT_CB_FAILURE_RATE_THRESHOLD: Final[float] = 0.5
-DEFAULT_CB_MIN_CALLS: Final[int] = 10
+DEFAULT_CB_MIN_CALLS: Final[int] = 50
 
 # --- Failover orchestrator (Phase D / D1) ----------------------------------
 # Default ENABLED (defensive). Set ``circuit_breaker_enabled = false`` in

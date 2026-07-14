@@ -164,3 +164,104 @@ def test_embedder_reranker_breakers_keep_default_mode() -> None:
         and "retry_policy" not in str(p)
     ]
     assert offenders == [], f"rate mode leaked into non-LLM adapters: {offenders}"
+
+
+# --- state-machine correctness (0.2 flap / illegal OPEN->CLOSED) ------------
+
+def test_open_breaker_holds_against_late_inflight_success() -> None:
+    """A success recorded WHILE OPEN (a call admitted just before the breaker
+    tripped, landing after) must NOT close the breaker or cancel the cooldown —
+    only a HALF_OPEN recovery probe may close it. Pre-fix ``record_success`` set
+    CLOSED unconditionally, so a scattered upstream flapped OPEN<->CLOSED."""
+    cb = _rate_cb(min_calls=4, window_size=4, failure_rate_threshold=0.5,
+                  reset_timeout_s=30)
+    for _ in range(4):
+        cb.record_failure()
+    assert cb.state == CBState.OPEN
+
+    cb.record_success()  # a late in-flight completion lands after the trip
+
+    assert cb.state == CBState.OPEN, "a late success must not close an OPEN breaker"
+    assert cb.can_execute() is False, "cooldown must still hold"
+
+
+def test_half_open_admits_only_one_probe() -> None:
+    """HALF_OPEN admits at most one recovery probe; a second concurrent caller
+    is refused until the probe resolves. Pre-fix HALF_OPEN returned True
+    unconditionally, so every concurrent request was admitted at once."""
+    cb = _rate_cb(min_calls=4, window_size=4, failure_rate_threshold=0.5,
+                  reset_timeout_s=0)
+    for _ in range(4):
+        cb.record_failure()
+    assert cb.state == CBState.OPEN
+
+    assert cb.can_execute() is True          # first probe → HALF_OPEN
+    assert cb.state == CBState.HALF_OPEN
+    assert cb.can_execute() is False, "only ONE probe may be in flight"
+
+
+def test_cooldown_ladder_extends_on_repeated_half_open_failures() -> None:
+    """Each HALF_OPEN probe that fails re-opens with a longer cooldown: base 30,
+    then +15 per consecutive open — 30 -> 45 -> 60 -> 75 -> 90."""
+    from datetime import datetime, timedelta, timezone
+
+    clock = {"t": datetime(2026, 1, 1, tzinfo=timezone.utc)}
+    cb = _rate_cb(min_calls=4, window_size=4, failure_rate_threshold=0.5,
+                  reset_timeout_s=30, cooldown_step_s=15, cooldown_max_s=120)
+    cb._now = lambda: clock["t"]  # type: ignore[method-assign]
+
+    for _ in range(4):
+        cb.record_failure()
+    assert cb.state == CBState.OPEN
+    assert cb.effective_cooldown_s == 30
+
+    for expected in (45, 60, 75, 90):
+        clock["t"] += timedelta(seconds=cb.effective_cooldown_s + 1)
+        assert cb.can_execute() is True          # cooldown elapsed → probe
+        assert cb.state == CBState.HALF_OPEN
+        cb.record_failure()                      # probe fails → re-open, extend
+        assert cb.state == CBState.OPEN
+        assert cb.effective_cooldown_s == expected
+
+
+def test_reset_force_closes_even_from_open() -> None:
+    """``reset()`` must force CLOSED from OPEN — it can no longer route through
+    ``record_success`` (which is now a no-op while OPEN)."""
+    cb = _rate_cb(min_calls=4, window_size=4, failure_rate_threshold=0.5,
+                  reset_timeout_s=30)
+    for _ in range(4):
+        cb.record_failure()
+    assert cb.state == CBState.OPEN
+
+    cb.reset()
+
+    assert cb.state == CBState.CLOSED
+    assert cb.can_execute() is True
+
+
+def test_state_transition_emits_observability_event(monkeypatch) -> None:
+    """Every transition emits ``cb_state_transition`` with the from/to states,
+    provider and observed window fail-rate — the only signal a load-test has to
+    assert ``count(OPEN->CLOSED)==0`` on the flap fix."""
+    captured: list[tuple[str, dict]] = []
+
+    class _Recorder:
+        def __getattr__(self, _level: str):
+            def _record(event: str, **kw) -> None:
+                captured.append((event, kw))
+            return _record
+
+    import ragbot.application.services.retry_policy as rp
+    monkeypatch.setattr(rp, "logger", _Recorder())
+
+    cb = _rate_cb(min_calls=4, window_size=4, failure_rate_threshold=0.5,
+                  reset_timeout_s=0)
+    for _ in range(4):
+        cb.record_failure()  # → OPEN
+
+    events = [(e, kw) for e, kw in captured if e == "cb_state_transition"]
+    assert events, "no cb_state_transition emitted on CLOSED->OPEN"
+    _, kw = events[0]
+    assert kw["from_state"] == "closed" and kw["to_state"] == "open"
+    assert kw["provider"] == "test:rate"
+    assert kw["window_fail_rate"] == 1.0

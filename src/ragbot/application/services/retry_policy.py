@@ -23,6 +23,7 @@ from ragbot.shared.constants import (
     DEFAULT_CB_COOLDOWN_MAX_S,
     DEFAULT_CB_COOLDOWN_STEP_S,
     DEFAULT_CB_FAILURE_RATE_THRESHOLD,
+    DEFAULT_CB_HALF_OPEN_MAX_CALLS,
     DEFAULT_CB_MIN_CALLS,
     DEFAULT_CB_MODE,
     DEFAULT_CB_POLICY_FAIL_MAX,
@@ -99,6 +100,11 @@ class CircuitBreakerPolicy:
     window_size: int = DEFAULT_CB_WINDOW_SIZE
     failure_rate_threshold: float = DEFAULT_CB_FAILURE_RATE_THRESHOLD
     min_calls: int = DEFAULT_CB_MIN_CALLS
+    # HALF_OPEN admits at most this many recovery probes at once (resilience4j
+    # ``permittedNumberOfCallsInHalfOpenState``). Extra concurrent callers are
+    # refused until a probe resolves, so a burst does not stampede a provider
+    # that just came back.
+    half_open_max_calls: int = DEFAULT_CB_HALF_OPEN_MAX_CALLS
 
 
 @dataclass(slots=True)
@@ -110,6 +116,10 @@ class CircuitBreakerState:
     # CLOSED state. Drives ``effective_cooldown_s`` linearly until the
     # ``cooldown_max_s`` ceiling. Reset to 0 on ``record_success``.
     consec_open_fails: int = 0
+    # Recovery probes admitted in the CURRENT HALF_OPEN cycle. Reset to 0 on
+    # every entry to HALF_OPEN; gates ``can_execute`` so only the configured
+    # probe budget is let through.
+    half_open_calls: int = 0
     metadata: dict[str, str] = field(default_factory=dict)
 
 
@@ -156,18 +166,55 @@ class CircuitBreaker:
         growth = max(0, self._state.consec_open_fails - 1) * step
         return min(base + growth, self._policy.cooldown_max_s)
 
+    def _enter(self, new_state: CBState) -> None:
+        """Transition to *new_state*, rotating the rolling window and emitting a
+        structured ``cb_state_transition`` event.
+
+        Every state change funnels through here for two reasons: (1) the window
+        is cleared on transition so a prior cycle's outcomes never carry into the
+        next — a poisoned window would re-trip a just-recovered provider; (2) the
+        OPEN/CLOSE is observable (the only place a flapping breaker is visible).
+        """
+        prev = self._state.state
+        if new_state is prev:
+            return
+        n = len(self._window)
+        window_fail_rate = (sum(self._window) / n) if n else 0.0
+        self._state.state = new_state
+        self._window.clear()
+        if new_state is not CBState.HALF_OPEN:
+            self._state.half_open_calls = 0
+        self._safe_log(
+            "warning" if new_state is CBState.OPEN else "info",
+            "cb_state_transition",
+            provider=self.name,
+            from_state=prev.value,
+            to_state=new_state.value,
+            window_fail_rate=round(window_fail_rate, 4),
+            consec_open_fails=self._state.consec_open_fails,
+        )
+
     def can_execute(self) -> bool:
-        if self._state.state == CBState.CLOSED:
+        st = self._state.state
+        if st == CBState.CLOSED:
             return True
-        if self._state.state == CBState.OPEN:
+        if st == CBState.OPEN:
             assert self._state.last_failure_at is not None
             elapsed = (self._now() - self._state.last_failure_at).total_seconds()
             if elapsed >= self.effective_cooldown_s:
-                self._state.state = CBState.HALF_OPEN
+                # Cooldown elapsed → admit the FIRST recovery probe and move to
+                # HALF_OPEN. ``half_open_calls`` is set BEFORE ``_enter`` (which
+                # zeroes it on entry) so this admit is counted.
+                self._enter(CBState.HALF_OPEN)
+                self._state.half_open_calls = 1
                 return True
             return False
-        # half_open
-        return True
+        # HALF_OPEN — admit only up to the probe budget; refuse the rest until
+        # the in-flight probe resolves (success → CLOSED, failure → OPEN).
+        if self._state.half_open_calls < self._policy.half_open_max_calls:
+            self._state.half_open_calls += 1
+            return True
+        return False
 
     @staticmethod
     def _safe_log(level: str, event: str, **fields: object) -> None:
@@ -184,56 +231,94 @@ class CircuitBreaker:
         except (ValueError, OSError, AttributeError):
             pass
 
+    def _log_cooldown_extended(self) -> None:
+        if self._state.consec_open_fails > 1:
+            self._safe_log(
+                "warning",
+                "cb_cooldown_extended",
+                provider=self.name,
+                cooldown_s=self.effective_cooldown_s,
+                consec_fails=self._state.consec_open_fails,
+            )
+
     def record_success(self) -> None:
         prev_state = self._state.state
-        self._window.append(False)
-        was_open_cycle = self._state.consec_open_fails > 0
-        self._state.state = CBState.CLOSED
+        if prev_state is CBState.OPEN:
+            # A late in-flight success (a call admitted just before the trip,
+            # landing after) must NOT cancel the cooldown — only a HALF_OPEN
+            # recovery probe may close the breaker. Pre-fix this closed the
+            # breaker unconditionally → OPEN<->CLOSED flap under scattered load.
+            return
         self._state.fail_count = 0
+        if prev_state is CBState.HALF_OPEN:
+            # Recovery probe succeeded → close and reset the cooldown ladder.
+            # ``_enter`` clears the window so the recovered provider is not
+            # re-tripped by its own stale failure history.
+            was_open_cycle = self._state.consec_open_fails > 0
+            self._state.consec_open_fails = 0
+            self._state.last_failure_at = None
+            self._enter(CBState.CLOSED)
+            if was_open_cycle:
+                self._safe_log(
+                    "info",
+                    "cb_cooldown_reset",
+                    provider=self.name,
+                    cooldown_s=self._policy.reset_timeout_s,
+                )
+            return
+        # CLOSED — a normal success. Record the outcome (dilutes the rate window,
+        # the whole point of rate mode) and clear any transient failure state.
+        self._window.append(False)
         self._state.last_failure_at = None
         self._state.consec_open_fails = 0
-        # The consecutive counter still resets on success (legacy semantics), but
-        # in rate mode the rolling WINDOW deliberately survives — that history is
-        # the whole point: it is what lets a scattered-failure upstream trip at
-        # all. Only a HALF_OPEN recovery probe wipes it, so a provider that just
-        # came back is not instantly re-tripped by its own stale failures.
-        if self._policy.mode == CB_MODE_RATE and prev_state is CBState.HALF_OPEN:
-            self._window.clear()
-        if was_open_cycle:
-            self._safe_log(
-                "info",
-                "cb_cooldown_reset",
-                provider=self.name,
-                cooldown_s=self._policy.reset_timeout_s,
-            )
 
     def record_failure(self) -> None:
         prev_state = self._state.state
+        if prev_state is CBState.OPEN:
+            # Late in-flight failure while already OPEN — expected and ignored.
+            # Do NOT refresh the cooldown clock: a stream of late failures must
+            # not push the recovery probe out indefinitely.
+            return
+        if prev_state is CBState.HALF_OPEN:
+            # A recovery probe failed → straight back to OPEN and extend the
+            # cooldown ladder. One failed probe is enough — no rate re-eval.
+            self._state.fail_count += 1
+            self._state.last_failure_at = self._now()
+            self._state.consec_open_fails += 1
+            self._enter(CBState.OPEN)
+            self._log_cooldown_extended()
+            return
+        # CLOSED — evaluate the trip condition on the fresh outcome. The
+        # consecutive check is kept in BOTH modes so a hard-down upstream opens
+        # fast (before ``min_calls`` samples exist); rate mode ADDS the
+        # rolling-window check to catch the scattered-failure upstream.
         self._state.fail_count += 1
         self._window.append(True)
         self._state.last_failure_at = self._now()
-        # ADDITIVE trip. The consecutive check is kept in BOTH modes so a
-        # hard-down upstream still opens fast (before ``min_calls`` samples even
-        # exist). Rate mode ADDS the rolling-window check on top, catching the
-        # scattered-failure upstream the consecutive counter is blind to.
         _should_open = self._state.fail_count >= self._policy.fail_max
         if not _should_open and self._policy.mode == CB_MODE_RATE:
             _should_open = self._rate_should_open()
         if _should_open:
-            self._state.state = CBState.OPEN
-            # Only count this as an *additional* consecutive OPEN cycle
-            # when transitioning into OPEN — repeated record_failure while
-            # already OPEN must not inflate cooldown.
-            if prev_state != CBState.OPEN:
-                self._state.consec_open_fails += 1
-                if self._state.consec_open_fails > 1:
-                    self._safe_log(
-                        "warning",
-                        "cb_cooldown_extended",
-                        provider=self.name,
-                        cooldown_s=self.effective_cooldown_s,
-                        consec_fails=self._state.consec_open_fails,
-                    )
+            self._state.consec_open_fails += 1
+            self._enter(CBState.OPEN)
+            self._log_cooldown_extended()
+
+    def reset(self) -> None:
+        """Force the breaker CLOSED and wipe all transient state (window, fail
+        count, cooldown ladder, probe budget).
+
+        Explicit because ``record_success`` is now a no-op while OPEN — an admin
+        / failover reset must not route through it or a stuck-OPEN breaker would
+        never clear.
+        """
+        self._state.fail_count = 0
+        self._state.last_failure_at = None
+        self._state.consec_open_fails = 0
+        self._state.half_open_calls = 0
+        if self._state.state is not CBState.CLOSED:
+            self._enter(CBState.CLOSED)
+        else:
+            self._window.clear()
 
     def __enter__(self) -> CircuitBreaker:
         if not self.can_execute():

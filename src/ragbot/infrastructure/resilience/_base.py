@@ -74,8 +74,13 @@ class _ResourceBreakerAdapter:
         self._breaker.record_failure()
 
     def reset(self) -> None:
-        """Force-CLOSE — clears fail-count, last-failure, consec-open."""
-        self._breaker.record_success()
+        """Force-CLOSE — clears fail-count, last-failure, consec-open, window.
+
+        Routes through the breaker's explicit ``reset()``: ``record_success`` is
+        a no-op while OPEN (only a HALF_OPEN probe may close), so a reset via
+        record_success would silently leave a stuck-OPEN breaker open.
+        """
+        self._breaker.reset()
 
 
 __all__ = ["_ResourceBreakerAdapter"]
