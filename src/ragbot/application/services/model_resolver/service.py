@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
-import json
 import time
 from collections import OrderedDict
 from dataclasses import dataclass
@@ -538,16 +537,12 @@ class ModelResolverService(CacheMixin, BindingMixin):
         )
         self._l1_put(key, cfg)
 
-        # Best-effort L2 write (masked payload only — no api_key)
-        try:
-            await self._cache.set(
-                key,
-                json.dumps(cfg.mask()).encode("utf-8"),
-                ttl_s=self._l2_ttl,
-            )
-        except Exception:  # noqa: BLE001 — cache write is non-critical; next call will rebuild from DB. Log so a dying Redis is visible.
-            logger.debug("model_resolver_cache_set_failed", key=key, exc_info=True)
-
+        # No L2 (Redis) write here: the runtime path reads ONLY L1 (`_l1_get`
+        # above + bootstrap `_l1_put`). The masked payload (no api_key) cannot
+        # rehydrate a runtime config, and `_get_cached`'s `_cache.get` reads a
+        # different namespace (`ai_cfg:*`), never `model_runtime:*` — so a write
+        # here was a dead side-effect (json serialize + Redis round-trip) that
+        # nothing ever read back.
         return cfg
 
     async def preview_runtime(

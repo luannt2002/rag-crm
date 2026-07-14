@@ -1,4 +1,4 @@
-"""ZeroEntropy embedder — hosted multilingual embedding (zembed-1, 2560-dim).
+"""ZeroEntropy embedder — hosted multilingual embedding (zembed-1, 1280-dim).
 
 Direct HTTP adapter (bypasses LiteLLM — ZeroEntropy is not on the LiteLLM
 provider list as of 2026-05). Follows the same shape as the existing
@@ -62,7 +62,7 @@ _RETRYABLE_HTTP_STATUS: frozenset[int] = frozenset({429, 500, 502, 503, 504})
 
 
 class ZeroEntropyEmbedder(EmbeddingPort):
-    """Direct-HTTP embedder for ZeroEntropy zembed-1 (2560-dim multilingual)."""
+    """Direct-HTTP embedder for ZeroEntropy zembed-1 (1280-dim multilingual, matryoshka)."""
 
     _PROVIDER_CODE: str = "zeroentropy"
     _PURPOSE: str = "embed"

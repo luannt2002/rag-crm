@@ -1496,11 +1496,23 @@ def build_graph(
         emb_provider = str(_pcfg(state, "embedding_provider", DEFAULT_EMBEDDING_PROVIDER) or DEFAULT_EMBEDDING_PROVIDER)
         emb_model = str(_pcfg(state, "embedding_model", "") or "") or "unknown"
         emb_dim = int(_pcfg(state, "embedding_dimension", DEFAULT_EMBEDDING_DIM) or DEFAULT_EMBEDDING_DIM)
-        cold: list[tuple[int, str]] = []
-        for idx, qp in enumerate(prefixed):
-            cached = await get_cached_embedding(redis_client, qp, provider=emb_provider, model=emb_model, dim=emb_dim)
-            if not cached:
-                cold.append((idx, qp))
+        # Independent per-variant Redis reads → fan out concurrently. Behavior-
+        # identical to the previous sequential loop (same results, same order via
+        # enumerate over `prefixed`, same first-exception propagation) so the MQ
+        # pre-warm pays max(RTT) instead of sum(RTT).
+        cached_list = await asyncio.gather(
+            *(
+                get_cached_embedding(
+                    redis_client, qp, provider=emb_provider, model=emb_model, dim=emb_dim
+                )
+                for qp in prefixed
+            )
+        )
+        cold: list[tuple[int, str]] = [
+            (idx, qp)
+            for idx, (qp, cached) in enumerate(zip(prefixed, cached_list))
+            if not cached
+        ]
         if not cold:
             return
         try:

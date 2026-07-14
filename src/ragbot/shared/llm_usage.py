@@ -51,7 +51,7 @@ def estimate_tokens_fallback(
 ) -> tuple[int, int]:
     """Fill a MISSING (zero) token count with a local tiktoken estimate.
 
-    Some upstream proxies (e.g. the innocom gateway) omit the ``usage`` block, so
+    Some upstream proxies (e.g. certain LLM gateways) omit the ``usage`` block, so
     the provider returns 0 tokens and cost logs as $0 — unmeasurable. This
     estimates the count locally from the prompt messages + completion text. It is
     an ESTIMATE (a generic BPE, not the model's exact tokenizer — ~±5-15% for
