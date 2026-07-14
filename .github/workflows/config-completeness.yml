@@ -1,0 +1,85 @@
+name: config-completeness
+
+# Config-completeness gate (README_DEVOPS.md §1).
+#
+# Every system_config key the backend batch-loads (_PIPELINE_CFG_KEYS) MUST be
+# seeded, else it silently falls back to a code DEFAULT_* constant — prod runs
+# on a value nobody chose in the DB, unreproducible on a fresh clone.
+#
+# The gate runs on a FRESH database (alembic upgrade head only) — NOT prod. A
+# green prod check is a wrong-denominator: prod has 264 seeded keys accreted
+# out-of-band, a fresh clone has ~5, so only the fresh DB reveals the real seed
+# gap the gate exists to catch.
+#
+# ADVISORY (continue-on-error) until the fresh-DB seed migrations land (plan-v3
+# task 1.1: config/guardrail/ai_* seed currently lives outside alembic). Once
+# 1.1 seeds the contract keys and the baseline is regenerated against a fresh
+# DB, DELETE the `continue-on-error` line below to make it required — README §1
+# ("red = no build"). Until then the step still runs and prints the
+# contract/seeded/unseeded counts so the gap is visible on every PR.
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  config-completeness:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: ragbot
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/ragbot
+      PYTHONPATH: src
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Install dependencies
+        run: uv sync --extra dev
+
+      - name: Wait for PostgreSQL
+        run: |
+          for _ in $(seq 1 30); do
+            if pg_isready -h localhost -U postgres; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "postgres did not become ready" >&2
+          exit 1
+        env:
+          PGPASSWORD: postgres
+
+      - name: Run alembic migrations (fresh DB)
+        run: uv run alembic upgrade head
+
+      - name: Config-completeness gate (baseline-aware)
+        # Advisory until task 1.1 seeds the fresh-DB config keys; remove the
+        # continue-on-error line below to make this a required gate.
+        continue-on-error: true
+        run: uv run python scripts/check_config_completeness.py
