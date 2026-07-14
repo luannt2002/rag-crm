@@ -32,6 +32,7 @@ the loader, since one bad pattern would take down moderation entirely.
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import re
 import time
 from dataclasses import dataclass, field
@@ -47,6 +48,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from ragbot.infrastructure.guardrails._default_patterns import parse_flag_mask
 from ragbot.shared.constants import (
+    DEFAULT_BOT_CACHE_VERSION_HASH_LEN,
     DEFAULT_GUARDRAIL_RULE_LOADER_TTL_S,
     SUBJECT_GUARDRAIL_RULES_CHANGED,
 )
@@ -70,18 +72,50 @@ class CompiledRule:
     metadata: Mapping[str, Any] = field(default_factory=dict)
 
 
+def _ruleset_content_version(rules: list[CompiledRule]) -> str:
+    """Deterministic CONTENT hash of *rules* — order-independent and stable
+    across processes and restarts.
+
+    Used as a cache-bust signal: an answer-cache key derived from it busts iff
+    the rules actually change. A monotonic counter (the previous design) reset
+    to 0 on every process start, bumped on every TTL refresh even when nothing
+    changed, and gave the same ruleset different numbers across workers — so the
+    shared answer cache would either serve a stale post-rule-change answer or
+    thrash. An EMPTY ruleset hashes to ``""`` so appending the segment to a
+    legacy cache key leaves it byte-identical (no global cold-cache flush).
+    """
+    if not rules:
+        return ""
+    parts = sorted(
+        "\x1f".join((
+            r.rule_id,
+            r.pattern.pattern,
+            str(r.pattern.flags),
+            r.severity,
+            r.action,
+            r.scope,
+            str(r.priority),
+            orjson.dumps(dict(r.metadata), option=orjson.OPT_SORT_KEYS).decode("utf-8"),
+        ))
+        for r in rules
+    )
+    digest = hashlib.sha256("\x1e".join(parts).encode("utf-8")).hexdigest()
+    return digest[:DEFAULT_BOT_CACHE_VERSION_HASH_LEN]
+
+
 @dataclass(frozen=True, slots=True)
 class RuleSet:
     """Compiled rules grouped by scope, priority-sorted.
 
-    ``version`` is a monotonic counter the loader bumps on every refresh —
-    callers may check it to invalidate downstream caches keyed off a
-    RuleSet identity.
+    ``version`` is a CONTENT hash of the compiled rules (``""`` when empty) —
+    identical rules yield the same version in every process and across restarts,
+    so a downstream answer-cache key derived from it busts exactly when the rules
+    change. See ``_ruleset_content_version``.
     """
 
     input_rules: tuple[CompiledRule, ...]
     output_rules: tuple[CompiledRule, ...]
-    version: int = 0
+    version: str = ""
 
 
 # ---------------------------------------------------------------------------
@@ -108,7 +142,6 @@ class GuardrailRuleLoader:
         # Cache key is the tenant UUID (or None for platform-only fetches).
         self._cache: dict[UUID | None, tuple[RuleSet, float]] = {}
         self._locks: dict[UUID | None, asyncio.Lock] = {}
-        self._version_counter = 0
 
     # ---- bootstrap ------------------------------------------------------
     async def bootstrap(self) -> None:
@@ -180,7 +213,6 @@ class GuardrailRuleLoader:
         rows = await self._fetch_rows(record_tenant_id)
         merged = self._merge_tenant_override(rows, record_tenant_id)
         compiled = self._compile_rows(merged)
-        self._version_counter += 1
         input_rules = tuple(
             sorted(
                 (r for r in compiled if r.scope in ("input", "both")),
@@ -196,7 +228,7 @@ class GuardrailRuleLoader:
         return RuleSet(
             input_rules=input_rules,
             output_rules=output_rules,
-            version=self._version_counter,
+            version=_ruleset_content_version(compiled),
         )
 
     async def _fetch_rows(

@@ -320,6 +320,70 @@ async def test_compile_failure_skipped_not_crash(
 
 
 # ---------------------------------------------------------------------------
+# 6. RuleSet.version is a CONTENT hash, not a per-process refresh counter (3.5)
+# ---------------------------------------------------------------------------
+def _rule_row(rule_id: str, pattern: str, **over: Any) -> dict[str, Any]:
+    row = {
+        "rule_id": rule_id,
+        "pattern": pattern,
+        "pattern_flags": "",
+        "severity": "block",
+        "action_taken": "block",
+        "scope": "output",
+        "priority": 10,
+        "metadata_json": {},
+        "record_tenant_id": None,
+    }
+    row.update(over)
+    return row
+
+
+@pytest.mark.asyncio
+async def test_ruleset_change_moves_cache_version() -> None:
+    """A changed ruleset must yield a DIFFERENT version so any answer-cache key
+    derived from it busts; both versions are non-empty content hashes."""
+    rows_a = [_rule_row("secret_leak", r"sk-\w+")]
+    rows_b = [_rule_row("secret_leak", r"sk-\w+"), _rule_row("phone", r"0\d{9}")]
+
+    va = (await GuardrailRuleLoader(
+        session_factory=_make_session_factory(rows_a), redis_client=None,
+    ).get_rules(record_tenant_id=None)).version
+    vb = (await GuardrailRuleLoader(
+        session_factory=_make_session_factory(rows_b), redis_client=None,
+    ).get_rules(record_tenant_id=None)).version
+
+    assert va and vb
+    assert va != vb
+
+
+@pytest.mark.asyncio
+async def test_identical_ruleset_version_stable_across_refresh_and_instance() -> None:
+    """The version tracks CONTENT, not how many times a process re-fetched:
+    a re-compile of identical rules (TTL expiry / invalidate) and a fresh loader
+    instance (a restarted worker) must all agree — a monotonic counter would
+    drift (1, 2, 1) and desync the shared answer cache across workers."""
+    rows = [_rule_row("secret_leak", r"sk-\w+")]
+
+    loader_a = GuardrailRuleLoader(session_factory=_make_session_factory(rows), redis_client=None)
+    va1 = (await loader_a.get_rules(record_tenant_id=None)).version
+    await loader_a.invalidate(record_tenant_id=None)  # force a same-content re-compile
+    va2 = (await loader_a.get_rules(record_tenant_id=None)).version
+
+    loader_b = GuardrailRuleLoader(session_factory=_make_session_factory(rows), redis_client=None)
+    vb1 = (await loader_b.get_rules(record_tenant_id=None)).version
+
+    assert va1 == va2 == vb1
+
+
+@pytest.mark.asyncio
+async def test_empty_ruleset_versions_to_empty_string() -> None:
+    """A rule-less bot must version to "" so appending the segment to a legacy
+    answer-cache key leaves it byte-identical (no global cold-cache flush)."""
+    loader = GuardrailRuleLoader(session_factory=_make_session_factory([]), redis_client=None)
+    assert (await loader.get_rules(record_tenant_id=None)).version == ""
+
+
+# ---------------------------------------------------------------------------
 # Bonus: CompiledRule + RuleSet are frozen (no in-place mutation surprise)
 # ---------------------------------------------------------------------------
 def test_compiled_rule_is_immutable() -> None:
