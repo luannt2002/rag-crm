@@ -231,21 +231,17 @@ def test_unknown_intent_falls_back_to_global_mmr_default() -> None:
     assert override is False
 
 
-def test_default_constant_aggregation_loosens_threshold() -> None:
-    """Module-level default dict must boost aggregation above the global
-    DEFAULT_MMR_SIMILARITY_THRESHOLD (0.88)."""
-    from ragbot.shared.constants import (
-        DEFAULT_MMR_SIMILARITY_THRESHOLD,
-        DEFAULT_MMR_SIMILARITY_THRESHOLD_BY_INTENT,
-    )
+def test_aggressive_intents_dedup_tighter_than_aggregation() -> None:
+    """The map's whole point: aggregation/comparison keep a LOOSER (higher)
+    dedup threshold than the aggressive intents (factoid/greeting at 0.88), so
+    distinct row-shape chunks are not collapsed. This compares intents WITHIN
+    the map — it does not reference the module default (raised to 0.98 in 002-D
+    as the unknown-intent fallback, which made the old constant-vs-constant
+    assertion meaningless)."""
+    from ragbot.shared.constants import DEFAULT_MMR_SIMILARITY_THRESHOLD_BY_INTENT as m
 
-    assert (
-        DEFAULT_MMR_SIMILARITY_THRESHOLD_BY_INTENT["aggregation"]
-        > DEFAULT_MMR_SIMILARITY_THRESHOLD
-    ), (
-        "aggregation must get a LOOSER MMR threshold than the default — "
-        "this is the whole point of the Bug #10 fix."
-    )
+    assert m["aggregation"] > m["factoid"]
+    assert m["comparison"] > m["factoid"]
 
 
 @pytest.mark.parametrize("intent", _CANONICAL_INTENTS)

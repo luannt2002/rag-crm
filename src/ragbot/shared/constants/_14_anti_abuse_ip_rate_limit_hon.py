@@ -241,16 +241,19 @@ DEFAULT_MMR_MIN_KEEP: Final[int] = 3
 # score = lambda * relevance - (1-lambda) * redundancy.
 DEFAULT_MMR_LAMBDA: Final[float] = 0.7
 
-# Per-intent MMR similarity threshold (260525 Bug #10). Default 0.88 is
-# too aggressive for ``aggregation`` queries: row-shape CSV chunks with
+# Per-intent MMR similarity threshold (260525 Bug #10). An aggressive 0.88
+# baseline is wrong for ``aggregation`` queries: row-shape CSV chunks with
 # the same column structure but different data values (e.g. "Item A,123000"
 # vs "Item B,123000") share template-level similarity but represent
 # DISTINCT entities. MMR-dedup collapses them into one chunk → the LLM
 # only sees one example → "1 dịch vụ" answer where 4 was expected.
 #
-# Per-intent threshold loosens dedup for aggregation (only drop near-
-# identical pairs at 0.98) and comparison / multi_hop (0.95). Factoid /
-# greeting keep 0.88 — those intents benefit from aggressive dedup.
+# So this map holds the loose intents high — aggregation drops only near-
+# identical pairs (0.98), comparison / multi_hop (0.95) — while the aggressive
+# intents (factoid / greeting / …) are pinned at the tighter 0.88 baseline.
+# NOTE: this baseline (0.88) is NOT the module default; ``DEFAULT_MMR_SIMILARITY
+# _THRESHOLD`` was raised to 0.98 in 002-D and serves only as the unknown-intent
+# fallback — do not compare map entries against it.
 #
 # Resolution order: ``plan_limits.mmr_similarity_threshold_by_intent`` >
 # ``system_config.mmr_similarity_threshold_by_intent`` > this constant.
@@ -397,11 +400,11 @@ CLAIM_FIDELITY_EVENT: Final[str] = "claim_fidelity_observe"
 # per-bot: "observe" (default — log only, never touches the answer, sacred #10) vs
 # "block" (owner opt-in → substitute the bot's OWN oos_answer_template, the same
 # governed path — a looping non-answer is not an LLM answer to preserve). An answer
-# is degenerate when it is long enough AND any of: too few distinct words, one
-# token dominates, or too few distinct 3-grams (a phrase loop).
+# is degenerate when it is long enough AND either: too few distinct words, or too
+# few distinct 3-grams (a phrase loop). Tokens are content-only (markdown
+# scaffolding stripped) so a real table is not mistaken for a repeated-token loop.
 DEFAULT_DEGENERATION_MIN_WORDS: Final[int] = 30
 DEFAULT_DEGENERATION_DISTINCT_WORD_RATIO_MAX: Final[float] = 0.15
-DEFAULT_DEGENERATION_TOP_TOKEN_RATIO_MAX: Final[float] = 0.40
 DEFAULT_DEGENERATION_DISTINCT_TRIGRAM_RATIO_MAX: Final[float] = 0.25
 DEGENERATION_ACTION_OBSERVE: Final[str] = "observe"
 DEGENERATION_ACTION_BLOCK: Final[str] = "block"

@@ -78,6 +78,71 @@ def test_return_shape() -> None:
         assert k in r
 
 
+# --- markdown structure must NOT flag (0.5 tokenizer) ---------------------
+# A markdown table's `|`/`---`/`*` scaffolding is not prose — counted as words
+# it masquerades as a repeated token and trips the ratios on a perfectly good
+# table. The fix needs BOTH a tokenizer that discards structural punctuation AND
+# dropping the single-token-ratio clause; the next two cases discriminate: one
+# stays flagged if we only strip, the other if we only drop the ratio.
+
+def _availability_matrix() -> str:
+    """60-branch × 5-slot availability grid, ~80% 'Có' — legitimate structured
+    content whose distinct-word ratio collapses to ~0.09 under a naive split
+    (the pipes dominate). Stays flagged under drop-ttr-only (dwr ≤ 0.15) → this
+    case proves the tokenizer strip is required."""
+    rows = "".join(
+        "| CN{:02d} | {} |\n".format(
+            i, " | ".join("Có" if (i + k) % 3 else "Không" for k in range(5))
+        )
+        for i in range(1, 61)
+    )
+    return (
+        "| Chi nhánh | Sáng | Trưa | Chiều | Tối | Đêm |\n"
+        "| --- | --- | --- | --- | --- | --- |\n" + rows
+    )
+
+
+def test_markdown_pipe_table_not_flagged() -> None:
+    """A plain markdown spec table (pipes + one repeated header word)."""
+    ans = (
+        "| Thông số | Giá trị |\n| --- | --- |\n"
+        "| Chiều rộng | 205 mm |\n| Chiều cao | 55 phần trăm |\n"
+        "| Đường kính | 16 inch |\n| Tải trọng | 91 V |\n"
+        "| Áp suất | 2.5 bar |\n| Bảo hành | 6 năm |\n"
+        "| Xuất xứ | Nhật Bản |\n| Trọng lượng | 8 kg |\n"
+        "| Model | XM2 |\n| Gai | đối xứng |\n"
+    )
+    assert classify_answer_degeneration(ans)["is_degenerate"] is False
+
+
+def test_feature_matrix_not_flagged() -> None:
+    """Feature grid where one real word ('Có') is ~43% of tokens even AFTER the
+    pipes are stripped — stays flagged under strip-only → proves the
+    single-token-ratio clause must be dropped."""
+    ans = (
+        "| Tính năng | Gói A | Gói B |\n| --- | --- | --- |\n"
+        "| Sao lưu | Có | Có |\n| Mã hóa | Có | Có |\n"
+        "| API | Có | Có |\n| SSO | Có | Không |\n"
+        "| Webhook | Có | Có |\n| Báo cáo | Có | Có |\n"
+        "| Xuất Excel | Có | Có |\n| Tích hợp | Có | Có |\n"
+    )
+    assert classify_answer_degeneration(ans)["is_degenerate"] is False
+
+
+def test_long_pipe_table_not_flagged() -> None:
+    """Large availability matrix — flagged under drop-ttr-only, proves strip."""
+    assert classify_answer_degeneration(_availability_matrix())["is_degenerate"] is False
+
+
+def test_dropping_top_token_ratio_keeps_bug8_recall() -> None:
+    """Removing the top-token-ratio clause must not lose the real loop: bug#8's
+    top_token_ratio was 0.167 (never fired the clause) — the word/trigram
+    signals still catch it."""
+    r = classify_answer_degeneration("công ty bảo hiểm xã hội " * 120)
+    assert r["is_degenerate"] is True
+    assert r["top_token_ratio"] < 0.40  # the dropped clause never caught it anyway
+
+
 # --- guard_output wiring (owner-gated, default observe) --------------------
 
 def test_guard_output_degeneration_is_owner_gated() -> None:

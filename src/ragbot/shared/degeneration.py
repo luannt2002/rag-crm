@@ -6,14 +6,18 @@ collapses into repeating the same token / phrase / sentence many times
 string/arithmetic — no LLM, no DB, no I/O, no vocabulary. Short answers are
 never judged (a brief answer that repeats a word is not a degenerate loop).
 
-Signals (shape-only, OR-combined; each is deep in loop territory for real
-prose, so the false-positive rate is near-zero):
+Gating signals (shape-only, OR-combined; each is deep in loop territory for
+real prose, so the false-positive rate is near-zero):
   * distinct_word_ratio  — unique / total words. A loop drives this toward 0.
-  * top_token_ratio      — the single most frequent token's share. A loop lets
-                           one token dominate.
   * distinct_trigram_ratio — unique / total 3-grams. Catches a phrase loop of
                            otherwise-distinct words (single-word frequency stays
                            moderate but the 3-gram set collapses).
+
+``top_token_ratio`` (the single most frequent token's share) is still reported
+for observability but does NOT gate: its recall on real degeneration was zero
+while a legitimate feature matrix can push one real word past the old cutoff.
+Tokens are content-only — markdown scaffolding (`|`, `---`, `*`) is stripped so
+a table is not mistaken for a repeated-token loop.
 
 This module NEVER modifies the answer — blocking is a separate owner-gated step
 in ``guard_output`` (default observe), the same governed path the
@@ -28,11 +32,30 @@ from ragbot.shared.constants import (
     DEFAULT_DEGENERATION_DISTINCT_TRIGRAM_RATIO_MAX,
     DEFAULT_DEGENERATION_DISTINCT_WORD_RATIO_MAX,
     DEFAULT_DEGENERATION_MIN_WORDS,
-    DEFAULT_DEGENERATION_TOP_TOKEN_RATIO_MAX,
 )
 
 # 3-gram window; a phrase loop collapses the distinct-3-gram set.
 _TRIGRAM_N = 3
+
+# Markdown scaffolding — `|` cell borders, `---` rules, `*`/`#`/`>`/`~`/`=`
+# emphasis & headings. Counted as words they masquerade as a repeated token and
+# trip the ratios on a legitimate table/list. Discarded before the shape maths.
+_STRUCTURAL_PUNCT = "|`*#>~_=[]"
+
+
+def _tokens(answer: str) -> list[str]:
+    """Split *answer* into content tokens, dropping markdown structural marks.
+
+    Strips leading/trailing structural punctuation and keeps only tokens that
+    still carry an alphanumeric character, so `|`, `---` and `**` never count
+    as words (a naive ``.split()`` lets them dominate a real table's ratios).
+    """
+    out: list[str] = []
+    for raw in (answer or "").split():
+        tok = raw.strip(_STRUCTURAL_PUNCT)
+        if any(ch.isalnum() for ch in tok):
+            out.append(tok)
+    return out
 
 
 def _not_degenerate(n_words: int) -> dict[str, Any]:
@@ -52,7 +75,7 @@ def classify_answer_degeneration(answer: str) -> dict[str, Any]:
     ratios. Answers shorter than ``DEFAULT_DEGENERATION_MIN_WORDS`` words are
     reported non-degenerate with neutral ratios.
     """
-    words = (answer or "").split()
+    words = _tokens(answer)
     n = len(words)
     if n < DEFAULT_DEGENERATION_MIN_WORDS:
         return _not_degenerate(n)
@@ -68,9 +91,12 @@ def classify_answer_degeneration(answer: str) -> dict[str, Any]:
     else:
         distinct_trigram_ratio = 1.0
 
+    # top_token_ratio is REPORTED (logged by guard_output) but no longer gates:
+    # its recall on real degeneration was 0 (bug#8 sat at 0.167), while a
+    # legitimate feature matrix can push one real word past 0.40. The word- and
+    # trigram-distinctness signals carry the detection.
     is_degenerate = (
         distinct_word_ratio <= DEFAULT_DEGENERATION_DISTINCT_WORD_RATIO_MAX
-        or top_token_ratio >= DEFAULT_DEGENERATION_TOP_TOKEN_RATIO_MAX
         or distinct_trigram_ratio <= DEFAULT_DEGENERATION_DISTINCT_TRIGRAM_RATIO_MAX
     )
     return {
